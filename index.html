@@ -97,6 +97,14 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 }
 .sidebar-show-btn.visible{display:flex;}
 
+.signin-topright-btn{
+  position:fixed; top:18px; right:18px; z-index:80; display:flex; align-items:center; gap:7px;
+  padding:10px 18px; border-radius:10px; border:1px solid var(--panel-border); background:#fff;
+  color:var(--text); font-family:'Work Sans',sans-serif; font-weight:300; font-size:13.5px;
+  box-shadow:0 6px 18px rgba(20,22,26,.14);
+}
+.signin-topright-btn:hover{border-color:var(--accent); color:var(--accent);}
+
 .main-content{flex:1; min-width:0; padding:28px 30px 60px;}
 .wrap{max-width:1320px; margin:0 auto;}
 
@@ -316,6 +324,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 <div class="app-shell">
 
   <button class="sidebar-show-btn" id="btnShowSidebar" title="Show menu">☰</button>
+  <button type="button" class="signin-topright-btn" id="btnOpenSpLogin"><span>🔐</span>Sign-in</button>
 
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -330,7 +339,6 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         <input type="file" id="projectListInput" accept=".xlsx,.xls,.csv" style="display:none">
         <button class="nav-btn" id="btnImportPriceList"><span class="icon">📑</span>Import Price List</button>
         <input type="file" id="priceListInput" accept=".xlsx,.xls" style="display:none">
-        <button class="nav-btn" id="btnOpenSpLogin"><span class="icon">🔐</span>Sign in with MS 365</button>
         </div>
       </div>
       <div class="nav-group">
@@ -530,6 +538,19 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   </div>
 </div>
 
+<!-- WELCOME OVERLAY — shown on every page load; sign in for the live Project List, or skip it -->
+<div class="settings-overlay" id="welcomeOverlay" style="display:none;">
+  <div class="settings-modal" style="max-width:400px; text-align:center;">
+    <div style="padding:36px 30px 30px;">
+      <img id="welcomeLogo" style="height:42px; margin-bottom:20px;">
+      <h3 style="margin:0 0 10px; font-size:16px; color:var(--text);">Welcome</h3>
+      <p class="settings-note" style="margin:0 0 24px;">Sign in with Microsoft 365 to load the live Project List from SharePoint, or continue as a guest and use the built-in snapshot — you can still sign in later from the sidebar.</p>
+      <button type="button" class="act btn-primary" id="btnWelcomeSignIn" style="width:100%; margin-bottom:10px;">🔐 Sign in with Microsoft 365</button>
+      <button type="button" class="btn-ghost act" id="btnWelcomeGuest" style="width:100%;">Continue as Guest →</button>
+    </div>
+  </div>
+</div>
+
 <!-- MS 365 / SHAREPOINT LOGIN OVERLAY (optional — needs an Azure AD App Registration, see notes) -->
 <div class="settings-overlay" id="spLoginOverlay" style="display:none">
   <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Sign in with Microsoft 365">
@@ -538,8 +559,11 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <button type="button" class="acc-modal-close" id="btnSpLoginClose">×</button>
     </div>
     <div class="settings-body">
-      <div class="field"><label>Application (Client) ID</label><input id="spClientId" value="43e401c3-5c50-4ab1-a4b1-f66ebcbbbfc4"></div>
-      <div class="field"><label>Tenant ID or domain</label><input id="spTenantId" value="d8fd0d39-8b2f-4760-af9e-84aadb8587ef"></div>
+      <div id="spAdvancedFields" style="display:none;">
+        <div class="field"><label>Application (Client) ID</label><input id="spClientId" value="43e401c3-5c50-4ab1-a4b1-f66ebcbbbfc4"></div>
+        <div class="field"><label>Tenant ID or domain</label><input id="spTenantId" value="d8fd0d39-8b2f-4760-af9e-84aadb8587ef"></div>
+      </div>
+      <button type="button" class="btn-ghost act" id="btnUnlockDebug" style="margin-bottom:4px;">🔧 Advanced Settings</button>
       <div class="field"><label>Site host</label><input id="spSiteHost" value="rielloups.sharepoint.com"></div>
       <div class="field"><label>Site path</label><input id="spSitePath" value="/sites/DCSales2"></div>
       <div class="field"><label>List name</label><input id="spListName" value="Progress tracker list"></div>
@@ -587,6 +611,16 @@ let CATALOG_AUX = [];            // accessory rows (TYPE = AUX)
 
 function escapeHtml(str){
   return String(str ?? '').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// Closes an overlay on a genuine "click on the backdrop" — but NOT when a text selection is
+// dragged from inside the modal out over the backdrop (a plain 'click' check alone fires in that
+// case too, since the mouseup lands on the backdrop; requiring mousedown to ALSO have started on
+// the backdrop itself fixes that without losing the click-outside-to-close convenience).
+function setupBackdropClose(overlayEl, closeFn){
+  let downOnBackdrop = false;
+  overlayEl.addEventListener('mousedown', (e)=>{ downOnBackdrop = (e.target === overlayEl); });
+  overlayEl.addEventListener('click', (e)=>{ if(e.target === overlayEl && downOnBackdrop) closeFn(); });
 }
 
 // ---- currency (EUR is always the base/storage currency — Gross Price & Cost inputs are always
@@ -665,7 +699,7 @@ document.getElementById('settingsCustomSymbol').addEventListener('input', update
 function closeSettings(){ settingsOverlay.style.display = 'none'; }
 document.getElementById('btnSettingsClose').addEventListener('click', closeSettings);
 document.getElementById('btnSettingsCancel').addEventListener('click', closeSettings);
-settingsOverlay.addEventListener('click', (e)=>{ if(e.target===settingsOverlay) closeSettings(); });
+setupBackdropClose(settingsOverlay, closeSettings);
 document.getElementById('btnSettingsApply').addEventListener('click', ()=>{
   const sel = document.getElementById('settingsCurrencySelect').value;
   const symbols = {EUR:'€', USD:'$', GBP:'£'};
@@ -786,10 +820,25 @@ let msalAccount = null;
 
 const spLoginOverlay = document.getElementById('spLoginOverlay');
 document.getElementById('btnOpenSpLogin').addEventListener('click', ()=>{ spLoginOverlay.style.display = 'flex'; });
-function closeSpLogin(){ spLoginOverlay.style.display = 'none'; }
+function closeSpLogin(){
+  spLoginOverlay.style.display = 'none';
+  // re-lock the debug fields every time the panel closes, so a fresh password entry is needed next time
+  document.getElementById('spAdvancedFields').style.display = 'none';
+  document.getElementById('btnUnlockDebug').style.display = 'block';
+}
 document.getElementById('btnSpLoginClose').addEventListener('click', closeSpLogin);
+document.getElementById('btnUnlockDebug').addEventListener('click', ()=>{
+  const pw = prompt('Enter the debug password to view/edit the Application ID and Tenant ID:');
+  if(pw === null) return; // cancelled
+  if(pw === 'debug@007'){
+    document.getElementById('spAdvancedFields').style.display = 'block';
+    document.getElementById('btnUnlockDebug').style.display = 'none';
+  } else {
+    alert('Incorrect password.');
+  }
+});
 document.getElementById('btnSpLoginCancel').addEventListener('click', closeSpLogin);
-spLoginOverlay.addEventListener('click', (e)=>{ if(e.target===spLoginOverlay) closeSpLogin(); });
+setupBackdropClose(spLoginOverlay, closeSpLogin);
 
 function updateSpStatus(msg, state){
   const el = document.getElementById('spStatus');
@@ -851,7 +900,8 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
     await msalInstance.initialize();
     const loginResp = await msalInstance.loginPopup({scopes:['Sites.Read.All']});
     msalAccount = loginResp.account;
-    updateSpStatus(`Signed in as ${msalAccount.username}. Click "Refresh" to load the list.`, 'loaded');
+    updateSpStatus(`Signed in as ${msalAccount.username}. Loading the Project List…`, 'loaded');
+    await fetchSharePointList();
   }catch(err){
     console.error(err);
     const msg = String(err.message || err);
@@ -1622,7 +1672,7 @@ function openAccessoryModal(headerRow){
   const close = ()=>{ overlay.remove(); document.removeEventListener('keydown', onEsc); };
   function onEsc(e){ if(e.key==='Escape') close(); }
   document.addEventListener('keydown', onEsc);
-  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) close(); });
+  setupBackdropClose(overlay, close);
   overlay.querySelector('.acc-modal-close').addEventListener('click', close);
   overlay.querySelector('.acc-modal-cancel').addEventListener('click', close);
 
@@ -1704,7 +1754,7 @@ function openBatteryModal(totalRow){
   const close = ()=>{ overlay.remove(); document.removeEventListener('keydown', onEsc); };
   function onEsc(e){ if(e.key==='Escape') close(); }
   document.addEventListener('keydown', onEsc);
-  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) close(); });
+  setupBackdropClose(overlay, close);
   overlay.querySelector('.acc-modal-close').addEventListener('click', close);
   overlay.querySelector('.batt-cancel').addEventListener('click', close);
 
@@ -1782,7 +1832,7 @@ function openServiceModal(headerRow){
   const close = ()=>{ overlay.remove(); document.removeEventListener('keydown', onEsc); };
   function onEsc(e){ if(e.key==='Escape') close(); }
   document.addEventListener('keydown', onEsc);
-  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) close(); });
+  setupBackdropClose(overlay, close);
   overlay.querySelector('.acc-modal-close').addEventListener('click', close);
   overlay.querySelector('.svc-cancel').addEventListener('click', close);
 
@@ -2046,7 +2096,7 @@ document.getElementById('btnNewRevision').addEventListener('click', ()=>{
 });
 document.getElementById('btnNewRevClose').addEventListener('click', closeNewRevModal);
 document.getElementById('btnNewRevCancel').addEventListener('click', closeNewRevModal);
-document.getElementById('newRevOverlay').addEventListener('click', (e)=>{ if(e.target.id==='newRevOverlay') closeNewRevModal(); });
+setupBackdropClose(document.getElementById('newRevOverlay'), closeNewRevModal);
 document.getElementById('btnNewRevConfirm').addEventListener('click', ()=>{
   REVISION_DESCRIPTION = document.getElementById('newRevDesc').value.trim();
   REVISION++;
@@ -2693,6 +2743,19 @@ document.getElementById('btnExportBomXlsx').addEventListener('click', exportBomX
 document.getElementById('btnPreviewOffer').addEventListener('click', previewOfferPdf);
 document.getElementById('btnExportOfferPdf').addEventListener('click', exportOfferPdf);
 document.getElementById('btnExportOfferXlsx').addEventListener('click', exportOfferXlsx);
+
+// ---- Welcome overlay — shown on every page load: sign in with MS 365, or continue as guest ----
+document.getElementById('welcomeLogo').src = LOGO_B64;
+const welcomeOverlay = document.getElementById('welcomeOverlay');
+welcomeOverlay.style.display = 'flex';
+document.getElementById('btnWelcomeGuest').addEventListener('click', ()=>{
+  welcomeOverlay.style.display = 'none';
+});
+document.getElementById('btnWelcomeSignIn').addEventListener('click', ()=>{
+  welcomeOverlay.style.display = 'none';
+  spLoginOverlay.style.display = 'flex';
+  document.getElementById('btnSpConnect').click();
+});
 
 // init
 updateBomHeaders();

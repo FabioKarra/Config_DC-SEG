@@ -538,10 +538,8 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <button type="button" class="acc-modal-close" id="btnSpLoginClose">×</button>
     </div>
     <div class="settings-body">
-      <p class="settings-note">Signs you in with a real Microsoft popup (login.microsoftonline.com) — your password is entered there, never on this page. This needs an Azure AD <b>App Registration</b> (Application/Client ID) with the delegated Graph permission <code>Sites.Read.All</code>, and this page hosted at a fixed URL registered as that app's Redirect URI (a <code>file://</code> path or a temporary preview link won't work). <b>Most app registrations are single-tenant</b> (the default since Oct 2018), so the <b>Tenant ID or domain</b> below is normally required — leaving it blank only works if your app was explicitly set to "multi-tenant" in Azure AD. <b>Sign in</b> only authenticates; click <b>Refresh</b> afterwards to actually load the list, so a failure is easy to place on one side or the other.</p>
-      <div class="field"><label>Application (Client) ID</label><input id="spClientId" placeholder="required — from Azure AD"></div>
-      <div class="field"><label>Tenant ID or domain</label><input id="spTenantId" placeholder="e.g. rielloups.onmicrosoft.com, or the Directory (tenant) ID"></div>
-      <p class="settings-note" style="margin-top:-6px;">Find both on the same Azure Portal page: <b>Azure Active Directory → App registrations → your app → Overview</b> — "Application (client) ID" and "Directory (tenant) ID" sit right next to each other.</p>
+      <div class="field"><label>Application (Client) ID</label><input id="spClientId" value="43e401c3-5c50-4ab1-a4b1-f66ebcbbbfc4"></div>
+      <div class="field"><label>Tenant ID or domain</label><input id="spTenantId" value="d8fd0d39-8b2f-4760-af9e-84aadb8587ef"></div>
       <div class="field"><label>Site host</label><input id="spSiteHost" value="rielloups.sharepoint.com"></div>
       <div class="field"><label>Site path</label><input id="spSitePath" value="/sites/DCSales2"></div>
       <div class="field"><label>List name</label><input id="spListName" value="Progress tracker list"></div>

@@ -371,19 +371,6 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         </div>
       </div>
       <div class="nav-group">
-        <button type="button" class="nav-group-header"><span class="nav-group-title">Project</span><span class="nav-group-chevron">▾</span></button>
-        <div class="nav-group-body">
-        <button class="nav-btn" id="btnLoad"><span class="icon">↑</span>Load Project Data</button>
-        <button class="nav-btn" id="btnAddRowNav"><span class="icon">+</span>Add Position</button>
-        </div>
-      </div>
-      <div class="nav-group">
-        <button type="button" class="nav-group-header"><span class="nav-group-title">Generate</span><span class="nav-group-chevron">▾</span></button>
-        <div class="nav-group-body">
-        <button class="nav-btn primary" id="btnGenerate"><span class="icon">⚡</span>Generate Offer</button>
-        </div>
-      </div>
-      <div class="nav-group">
         <button type="button" class="nav-group-header"><span class="nav-group-title">Documents</span><span class="nav-group-chevron">▾</span></button>
         <div class="nav-group-body">
         <button class="nav-btn" id="btnPreviewBom"><span class="icon">👁</span>Preview BOM</button>
@@ -438,7 +425,10 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         <div class="grid">
           <div class="field">
             <label for="prjRef">Project Reference</label>
-            <input list="prjList" id="prjRef" placeholder="e.g. 260005">
+            <div style="display:flex; gap:6px;">
+              <input list="prjList" id="prjRef" placeholder="e.g. 260005" style="flex:1; min-width:0;">
+              <button type="button" class="btn-ghost act" id="btnLoad" style="flex-shrink:0; padding:9px 12px; white-space:nowrap;" title="Look up this Project Reference and fill in the fields below">↑ Load</button>
+            </div>
             <datalist id="prjList"></datalist>
           </div>
           <div class="field auto"><label>Project Name</label><input id="prjName" readonly></div>
@@ -474,8 +464,9 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
             <tbody id="cfgBody"></tbody>
           </table>
         </div>
-        <div class="add-row-wrap">
+        <div class="add-row-wrap" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <button class="btn-add" id="btnAddRow">+ Add Position</button>
+          <button type="button" class="act btn-primary" id="btnGenerate"><span class="icon">⚡</span> Generate Offer</button>
         </div>
       </section>
 
@@ -538,15 +529,6 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         <input id="settingsDeliveryPercent" type="number" step="0.1" min="0" max="100" value="0">
       </div>
       <p class="settings-note">The Delivery line in the Offer's SERVICES section is computed automatically as this percentage of the total <b>HW net price</b> of all generated solutions (matching the reference offer's own formula) — it updates live as prices change.</p>
-      <hr>
-      <div class="field">
-        <label>Download Folder</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button type="button" class="btn-ghost act" id="btnChooseFolder" style="flex-shrink:0; white-space:nowrap;">📁 Choose Folder</button>
-          <span id="folderStatus" style="font-size:12px; color:var(--dim);">Checking…</span>
-        </div>
-      </div>
-      <p class="settings-note">Pick a base folder once — e.g. <code>C:\Programmi\DC_Sales_OFF</code> — and every export/save/Close Offer will write straight into a subfolder named after the current Project Reference (e.g. <code>...\260026\</code>), created automatically if it doesn't exist yet, with no further prompts. Chosen once, remembered next time. Needs Chrome or Edge with this page served over <code>http(s)</code> (not a double-clicked local file). <b>Tip:</b> Windows commonly blocks writing under "Program Files" for standard (non-admin) accounts — a folder under your own user profile avoids that.</p>
     </div>
     <div class="acc-modal-footer">
       <button type="button" class="btn-ghost act" id="btnSettingsCancel">Cancel</button>
@@ -1048,7 +1030,6 @@ document.getElementById('btnLoad').addEventListener('click', ()=>{
 
 document.getElementById('btnReset').addEventListener('click', resetAll);
 document.getElementById('btnAddRow').addEventListener('click', ()=>buildRow());
-document.getElementById('btnAddRowNav').addEventListener('click', ()=>buildRow());
 
 // ---- config rows (dynamic, add/remove freely) ----
 let uniqueModels = [...new Set(ARCH_ACTIVE.filter(a=>a.pmax).map(a=>a.model))];
@@ -2107,7 +2088,6 @@ function setReadOnly(ro){
   document.getElementById('btnLoad').disabled = ro;
   document.querySelectorAll('#cfgBody input, #cfgBody select, #cfgBody button').forEach(el=>{ el.disabled = ro; });
   document.getElementById('btnAddRow').disabled = ro;
-  document.getElementById('btnAddRowNav').disabled = ro;
   document.getElementById('btnGenerate').disabled = ro;
   document.getElementById('btnCloseOffer').disabled = ro;
   document.querySelectorAll('#bomBody input, #bomBody button').forEach(el=>{ el.disabled = ro; });
@@ -2207,104 +2187,26 @@ function buildConfigState(){
   };
 }
 
-// ---- Optional: save straight into a chosen local folder via the File System Access API.
-// Needs a secure context (http(s) or localhost) and Chrome/Edge — falls back to a normal browser
-// download everywhere else (Firefox, Safari, or this page opened as a plain local file://). ----
-let downloadDirHandle = null;
-const hasFSAccess = 'showDirectoryPicker' in window;
-
-function idbOpen(){
-  return new Promise((resolve, reject)=>{
-    const req = indexedDB.open('ups-configurator-fs', 1);
-    req.onupgradeneeded = ()=>{ req.result.createObjectStore('handles'); };
-    req.onsuccess = ()=>resolve(req.result);
-    req.onerror = ()=>reject(req.error);
-  });
-}
-async function idbSaveDirHandle(handle){
-  const db = await idbOpen();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction('handles','readwrite');
-    tx.objectStore('handles').put(handle, 'downloadDir');
-    tx.oncomplete = ()=>resolve();
-    tx.onerror = ()=>reject(tx.error);
-  });
-}
-async function idbLoadDirHandle(){
-  const db = await idbOpen();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction('handles','readonly');
-    const req = tx.objectStore('handles').get('downloadDir');
-    req.onsuccess = ()=>resolve(req.result || null);
-    req.onerror = ()=>reject(req.error);
-  });
-}
-
-function updateFolderStatus(text){
-  const el = document.getElementById('folderStatus');
-  if(el) el.textContent = text;
-}
-
-async function ensureFolderPermission(){
-  if(!downloadDirHandle) return false;
-  try{
-    let perm = await downloadDirHandle.queryPermission({mode:'readwrite'});
-    if(perm !== 'granted') perm = await downloadDirHandle.requestPermission({mode:'readwrite'});
-    return perm === 'granted';
-  }catch(err){ return false; }
-}
-
-async function chooseDownloadFolder(){
-  if(!hasFSAccess){
-    alert("This browser can't save straight to a chosen folder from a webpage — that needs Chrome or Edge on desktop. On phones/tablets (and Safari/Firefox everywhere) it's not available at all, so files will keep downloading normally instead — that's expected, not an error.");
-    return;
-  }
-  try{
-    downloadDirHandle = await window.showDirectoryPicker();
-    await idbSaveDirHandle(downloadDirHandle);
-    updateFolderStatus(`Saving into "${downloadDirHandle.name}" → a subfolder per Project Reference.`);
-  }catch(err){ /* user cancelled the picker — not an error */ }
-}
-document.getElementById('btnChooseFolder').addEventListener('click', chooseDownloadFolder);
-
-(async ()=>{
-  if(!hasFSAccess){ updateFolderStatus('Not available here (expected on phones/tablets and Safari/Firefox) — files download normally instead.'); return; }
-  try{
-    const handle = await idbLoadDirHandle();
-    if(!handle){ updateFolderStatus('Not set — files download normally.'); return; }
-    downloadDirHandle = handle;
-    const ok = await ensureFolderPermission();
-    updateFolderStatus(ok
-      ? `Saving into "${handle.name}" → a subfolder per Project Reference.`
-      : `Folder "${handle.name}" was chosen before — click "Choose Folder" again to re-confirm permission.`);
-  }catch(err){ updateFolderStatus('Not set — files download normally.'); }
-})();
-
-async function getProjectSubfolder(){
-  const ref = (document.getElementById('prjRef').value.trim() || 'draft').replace(/[^a-z0-9_-]/gi, '_');
-  return await downloadDirHandle.getDirectoryHandle(ref, {create:true});
-}
-
-// Writes directly into the chosen project subfolder when available and permitted; otherwise
-// falls back to a normal browser download. Returns true if written directly (no download prompt).
-// iOS Safari (and iPadOS) largely ignores the `download` attribute for many file types — instead
-// of saving, it just navigates the current tab to the blob, losing the file. Opening it in a new
-// tab instead lets the user use Safari's own Share → "Save to Files" to actually keep the file.
+// ---- Filename prompt + download. iOS Safari (and iPadOS) largely ignores the `download`
+// attribute for many file types — instead of saving, it just navigates the current tab to the
+// blob, losing the file. Opening it in a new tab instead lets the user use Safari's own
+// Share -> "Save to Files" to actually keep the file. ----
 function isIOS(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
+// Lets the person rename the file before it saves — confirming as-is keeps the suggested default.
+// Returns null if they cancel (callers should then skip the download entirely).
+function promptFilename(defaultName){
+  const entered = prompt('Save as:', defaultName);
+  if(entered === null) return null;
+  const trimmed = entered.trim();
+  return trimmed || defaultName;
+}
+
 async function saveBlob(blob, filename){
-  if(downloadDirHandle && await ensureFolderPermission()){
-    try{
-      const subfolder = await getProjectSubfolder();
-      const fileHandle = await subfolder.getFileHandle(filename, {create:true});
-      const writable = await fileHandle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return true;
-    }catch(err){ console.warn('Direct folder save failed, falling back to a normal download:', err); }
-  }
+  const finalName = promptFilename(filename);
+  if(finalName === null) return false; // cancelled
   const url = URL.createObjectURL(blob);
   if(isIOS()){
     // opens in a new tab; the user taps the Share icon there and chooses "Save to Files"
@@ -2312,7 +2214,7 @@ async function saveBlob(blob, filename){
     setTimeout(()=>URL.revokeObjectURL(url), 60000);
   } else {
     const a = document.createElement('a');
-    a.href = url; a.download = filename;
+    a.href = url; a.download = finalName;
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   }
@@ -2509,7 +2411,7 @@ function buildBomPdfDoc(){
     head: [['Qty','Model','Code','Description']],
     body,
     margin:{left:margin, right:margin},
-    styles:{font:'helvetica', fontSize:8.5, cellPadding:4, lineColor:[225,225,225], lineWidth:0.5, overflow:'ellipsize'},
+    styles:{font:'helvetica', fontSize:8.5, cellPadding:4, lineColor:[225,225,225], lineWidth:0.5, overflow:'visible'},
     headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize:9},
     columnStyles:{0:{cellWidth:32, halign:'center'}, 1:{cellWidth:140}, 2:{cellWidth:140}, 3:{overflow:'linebreak', cellWidth:'auto'}},
   });
@@ -2670,12 +2572,15 @@ function buildOfferPdfDoc(withMargin){
     head: [headCols],
     body,
     margin:{left:margin, right:margin},
-    styles:{font:'helvetica', fontSize: withMargin?7.2:7.8, cellPadding:3.2, lineColor:[225,225,225], lineWidth:0.5, overflow:'ellipsize'},
-    headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize: withMargin?7.5:8},
-    columnStyles:{
-      0:{cellWidth:24, halign:'center'}, 1:{cellWidth:withMargin?85:105}, 2:{cellWidth:withMargin?85:105}, 3:{overflow:'linebreak', cellWidth:'auto'},
-      4:{halign:'right', cellWidth:56}, 5:{halign:'right', cellWidth:42}, 6:{halign:'right', cellWidth:54}, 7:{halign:'right', cellWidth:54},
-      ...(withMargin ? {8:{halign:'right', cellWidth:48}, 9:{halign:'right', cellWidth:48}, 10:{halign:'right', cellWidth:42}} : {}),
+    styles:{font:'helvetica', fontSize: withMargin?6.8:7.4, cellPadding:3.2, lineColor:[225,225,225], lineWidth:0.5, overflow:'visible'},
+    headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize: withMargin?7:7.6},
+    columnStyles: withMargin ? {
+      0:{cellWidth:20, halign:'center'}, 1:{cellWidth:74}, 2:{cellWidth:74}, 3:{overflow:'linebreak', cellWidth:'auto'},
+      4:{halign:'right', cellWidth:66}, 5:{halign:'right', cellWidth:36}, 6:{halign:'right', cellWidth:64}, 7:{halign:'right', cellWidth:66},
+      8:{halign:'right', cellWidth:64}, 9:{halign:'right', cellWidth:66}, 10:{halign:'right', cellWidth:38},
+    } : {
+      0:{cellWidth:22, halign:'center'}, 1:{cellWidth:95}, 2:{cellWidth:95}, 3:{overflow:'linebreak', cellWidth:'auto'},
+      4:{halign:'right', cellWidth:74}, 5:{halign:'right', cellWidth:40}, 6:{halign:'right', cellWidth:72}, 7:{halign:'right', cellWidth:74},
     },
   });
 
@@ -2723,13 +2628,7 @@ async function exportOfferPdf(){
   const withM = buildOfferPdfDoc(true);
   const stdBlob = std.doc.output('blob');
   const withMBlob = withM.doc.output('blob');
-  if(downloadDirHandle && await ensureFolderPermission()){
-    // direct writes into the chosen project folder — two files, no browser download prompt at all
-    await saveBlob(stdBlob, std.filename);
-    await saveBlob(withMBlob, withM.filename);
-    return;
-  }
-  // no folder chosen yet — bundle into one zip so the browser doesn't challenge multiple downloads
+  // bundled into one zip so the browser doesn't challenge downloading two files at once
   const safeRef = (getProjectInfo().ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
   await downloadAsZip(
     [
@@ -2775,11 +2674,10 @@ function buildBomHtmlDoc(){
 <head><meta charset="UTF-8">
 <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>BOM</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
 <style>
-  body{font-family:Calibri,Arial,sans-serif;}
+  body{font-family:'Work Sans Light','Work Sans',Calibri,Arial,sans-serif; font-weight:300;}
   table.main{border-collapse:collapse; width:100%; margin-top:10px;}
-  table.main td, table.main th{border:1px solid #D9D9D9; padding:5px 8px; font-size:11pt; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:260px;}
-  table.main td:nth-child(2), table.main td:nth-child(3), table.main th:nth-child(2), table.main th:nth-child(3){max-width:none; overflow:visible; text-overflow:clip;}
-  table.main td:nth-child(4), table.main th:nth-child(4){white-space:normal; max-width:none; overflow:visible; text-overflow:clip;}
+  table.main td, table.main th{border:1px solid #D9D9D9; padding:5px 8px; font-size:11pt; white-space:nowrap;}
+  table.main td:nth-child(4), table.main th:nth-child(4){white-space:normal;}
   table.main th{background:#4472C4; color:#FFFFFF; font-weight:bold; text-align:left;}
 </style></head>
 <body>
@@ -2856,11 +2754,10 @@ function buildOfferHtmlDoc(withMargin){
 <head><meta charset="UTF-8">
 <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Offer</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
 <style>
-  body{font-family:Calibri,Arial,sans-serif;}
+  body{font-family:'Work Sans Light','Work Sans',Calibri,Arial,sans-serif; font-weight:300;}
   table.main{border-collapse:collapse; width:100%; margin-top:12px;}
-  table.main td, table.main th{border:1px solid #D9D9D9; padding:5px 8px; font-size:10.5pt; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px;}
-  table.main td:nth-child(2), table.main td:nth-child(3), table.main th:nth-child(2), table.main th:nth-child(3){max-width:none; overflow:visible; text-overflow:clip;}
-  table.main td:nth-child(4), table.main th:nth-child(4){white-space:normal; max-width:none; overflow:visible; text-overflow:clip;}
+  table.main td, table.main th{border:1px solid #D9D9D9; padding:5px 8px; font-size:10.5pt; white-space:nowrap;}
+  table.main td:nth-child(4), table.main th:nth-child(4){white-space:normal;}
   table.main th{background:#4472C4; color:#FFFFFF; font-weight:bold; text-align:left;}
 </style></head>
 <body>
@@ -2907,11 +2804,6 @@ async function exportOfferXlsx(){
   const withMBlob = new Blob(['\ufeff', withMHtml], {type:'application/vnd.ms-excel'});
   const stdFilename = `${safeRef}_Offer_R${REVISION}.xls`;
   const withMFilename = `${safeRef}_Offer_R${REVISION}_with_margin.xls`;
-  if(downloadDirHandle && await ensureFolderPermission()){
-    await saveBlob(stdBlob, stdFilename);
-    await saveBlob(withMBlob, withMFilename);
-    return;
-  }
   await downloadAsZip(
     [
       {filename: stdFilename, blob: stdBlob},

@@ -1675,6 +1675,16 @@ function addBomRow(data, insertBeforeNode){
     }
     row.querySelector('.bom-actions').appendChild(accBtn);
     if(data.isCustomSection){
+      const upBtn = document.createElement('button');
+      upBtn.type = 'button'; upBtn.className = 'row-remove'; upBtn.title = 'Move section up';
+      upBtn.textContent = '↑';
+      upBtn.addEventListener('click', ()=>moveSectionUp(row));
+      row.querySelector('.bom-actions').appendChild(upBtn);
+      const downBtn = document.createElement('button');
+      downBtn.type = 'button'; downBtn.className = 'row-remove'; downBtn.title = 'Move section down';
+      downBtn.textContent = '↓';
+      downBtn.addEventListener('click', ()=>moveSectionDown(row));
+      row.querySelector('.bom-actions').appendChild(downBtn);
       const rmSectionBtn = document.createElement('button');
       rmSectionBtn.type = 'button'; rmSectionBtn.className = 'row-remove'; rmSectionBtn.title = 'Remove this whole section';
       rmSectionBtn.textContent = '×';
@@ -2093,7 +2103,10 @@ function openTechIntegrationModal(triggerRow){
 // ---- "+ Add Project Section" — lets the person create as many freely-named project-level
 // sections as they need (e.g. "Technology Integration", "Site Preparation", whatever fits the
 // project), instead of one fixed pre-named section. A section only exists once created this way,
-// and only survives a "Generate Offer" regenerate if it actually has at least one item in it. ----
+// and only survives a "Generate Offer" regenerate if it actually has at least one item in it.
+// New sections default to sitting right above SERVICES; the ↑/↓ buttons on each section's header
+// then let the person freely reposition it — including between two specific UPS positions — and
+// that position is remembered across a regenerate too. ----
 document.getElementById('btnAddProjectSection').addEventListener('click', ()=>{
   if(!bomHasRows()){
     alert('Generate the Offer first — there\'s nothing to attach a section to yet.');
@@ -2103,11 +2116,45 @@ document.getElementById('btnAddProjectSection').addEventListener('click', ()=>{
   if(name === null) return;
   const trimmed = name.trim();
   if(!trimmed) return;
-  const header = addBomRow({kind:'header', label:trimmed, isCustomSection:true});
-  addBomRow({kind:'total', groupOf:header.dataset.rowId, isCustomSection:true});
+  const servicesHeader = bomBody.querySelector('tr[data-kind="header"][data-is-services="true"]');
+  const header = addBomRow({kind:'header', label:trimmed, isCustomSection:true}, servicesHeader);
+  addBomRow({kind:'total', groupOf:header.dataset.rowId, isCustomSection:true}, servicesHeader);
   recalcGroupTotal(header.dataset.rowId);
   openTechIntegrationModal(header);
 });
+
+// Moves a custom section's whole block (header + its lines + its total) up or down past the
+// adjacent top-level group — a position, SERVICES, or another custom section, whichever is next.
+function getGroupBlock(headerRow){
+  const ownerId = headerRow.dataset.rowId;
+  const block = [headerRow];
+  let node = headerRow.nextElementSibling;
+  while(node){
+    block.push(node);
+    if(node.dataset.kind === 'total' && node.dataset.groupOf === ownerId) break;
+    node = node.nextElementSibling;
+  }
+  return block;
+}
+function moveSectionUp(headerRow){
+  const block = getGroupBlock(headerRow);
+  let prevHeader = block[0].previousElementSibling;
+  while(prevHeader && prevHeader.dataset.kind !== 'header') prevHeader = prevHeader.previousElementSibling;
+  if(!prevHeader) return; // already first
+  block.forEach(row=>bomBody.insertBefore(row, prevHeader));
+}
+function moveSectionDown(headerRow){
+  const block = getGroupBlock(headerRow);
+  const lastRow = block[block.length-1];
+  let nextNode = lastRow.nextElementSibling;
+  if(!nextNode) return; // already last
+  const nextOwnerId = nextNode.dataset.kind === 'header' ? nextNode.dataset.rowId : nextNode.dataset.groupOf;
+  let nextTotal = nextNode;
+  while(nextTotal && !(nextTotal.dataset.kind === 'total' && nextTotal.dataset.groupOf === nextOwnerId)) nextTotal = nextTotal.nextElementSibling;
+  if(!nextTotal) return;
+  const insertionPoint = nextTotal.nextElementSibling; // null → moves to the very end
+  block.forEach(row=>{ if(insertionPoint) bomBody.insertBefore(row, insertionPoint); else bomBody.appendChild(row); });
+}
 
 // ---- Services (manual, free-form line entry — installation/commissioning/SAT/training/etc.,
 // always added at the very end of the offer; the auto Delivery line always stays last) ----
@@ -2238,14 +2285,18 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
   // Preserve any custom project-level sections the same way — there can be several now (each
   // named by the user via "+ Add Project Section"), so capture all of them by name, not just one
   // fixed section. Sections with zero items are deliberately dropped here (not carried forward),
-  // so an empty section doesn't linger and reappear after every regenerate.
+  // so an empty section doesn't linger and reappear after every regenerate. Also record each
+  // section's position relative to every other top-level group (positions, SERVICES, other custom
+  // sections) at capture time, so a manual ↑/↓ reorder survives the rebuild below.
   let savedCustomSections = [];
-  const existingCustomHeaders = [...bomBody.querySelectorAll('tr[data-kind="header"][data-is-custom-section="true"]')];
+  const allHeadersAtCapture = [...bomBody.querySelectorAll('tr[data-kind="header"]')];
+  const existingCustomHeaders = allHeadersAtCapture.filter(h=>h.dataset.isCustomSection === 'true');
   existingCustomHeaders.forEach(h=>{
     const rows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${h.dataset.rowId}"]`)];
     if(!rows.length) return;
     savedCustomSections.push({
       name: h.cells[4].textContent,
+      orderIndex: allHeadersAtCapture.indexOf(h),
       items: rows.map(r=>({
         model: r.cells[2].textContent.replace(/^↳\s*/,''),
         code: r.cells[3].textContent,
@@ -2403,19 +2454,25 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     // one item (savedCustomSections already filtered that above), so an unused section doesn't
     // linger. Solution-level Battery/Technology Integration items instead live inside each
     // position's own group and are carried across regenerate together with that position's other
-    // accessories, above — this is only for sections added via "+ Add Project Section".
-    savedCustomSections.forEach(section=>{
-      const sectionHeader = addBomRow({kind:'header', label:section.name, isCustomSection:true});
-      const sectionOwner = sectionHeader.dataset.rowId;
-      section.items.forEach(item=>{
-        addBomRow({
-          qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-          gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:sectionOwner,
+    // accessories, above — this is only for sections added via "+ Add Project Section". Each is
+    // reinserted at its remembered relative position (via orderIndex) so a manual ↑/↓ reorder
+    // isn't silently reset back to "always last" on every regenerate.
+    savedCustomSections
+      .sort((a,b)=>a.orderIndex-b.orderIndex)
+      .forEach(section=>{
+        const currentHeaders = [...bomBody.querySelectorAll('tr[data-kind="header"]')];
+        const insertBeforeHeader = currentHeaders[section.orderIndex] || null; // null → append at the end
+        const sectionHeader = addBomRow({kind:'header', label:section.name, isCustomSection:true}, insertBeforeHeader);
+        const sectionOwner = sectionHeader.dataset.rowId;
+        section.items.forEach(item=>{
+          addBomRow({
+            qty:item.qty, model:item.model, code:item.code, desc:item.desc,
+            gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:sectionOwner,
+          }, insertBeforeHeader);
         });
+        addBomRow({kind:'total', groupOf:sectionOwner, isCustomSection:true}, insertBeforeHeader);
+        recalcGroupTotal(sectionOwner);
       });
-      addBomRow({kind:'total', groupOf:sectionOwner, isCustomSection:true});
-      recalcGroupTotal(sectionOwner);
-    });
   }
   updateBomHeaders();
 });

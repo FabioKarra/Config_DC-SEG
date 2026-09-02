@@ -212,6 +212,11 @@ table.bom input{
 }
 table.bom input.in-qty{width:50px; text-align:center;}
 .model-cell{color:var(--accent-dark); font-weight:300;}
+.ext-supplier-badge{
+  display:inline-block; font-size:9.5px; font-weight:600; letter-spacing:.02em; color:#8A5A00;
+  background:#FFF1D6; border:1px solid #F0D9A6; border-radius:5px; padding:1px 6px; margin-left:5px; vertical-align:middle;
+}
+.tech-cat-badge{color:#1E5A96; background:#DCEBFA; border-color:#B8D6F0;}
 tr.bom-header-row td{color:#fff; background:var(--navy); font-weight:600; border-bottom:none;}
 tr.bom-total-row td{color:var(--navy); background:var(--cream); font-weight:600; border-bottom:2px solid var(--panel-border);}
 .margin-pos{color:var(--teal); font-weight:300;} .margin-neg{color:var(--red); font-weight:300;}
@@ -311,7 +316,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 }
 
 /* ---- settings panel ---- */
-.settings-body{padding:18px 20px; display:flex; flex-direction:column; gap:16px;}
+.settings-body{padding:18px 20px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; flex:1;}
 .settings-body .field{margin-bottom:0;}
 .settings-body hr{border:none; border-top:1px solid var(--panel-border); margin:2px 0;}
 .settings-note{font-size:11.5px; font-weight:300; color:var(--dim); line-height:1.6; margin:0;}
@@ -368,6 +373,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         <input type="file" id="projectListInput" accept=".xlsx,.xls,.csv" style="display:none">
         <button class="nav-btn" id="btnImportPriceList"><span class="icon">📑</span>Import Price List</button>
         <input type="file" id="priceListInput" accept=".xlsx,.xls" style="display:none">
+        <button class="nav-btn" id="btnNewOffer"><span class="icon">✨</span>Create New Offer</button>
         </div>
       </div>
       <div class="nav-group">
@@ -486,6 +492,9 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
           </table>
         </div>
         <p id="offerGrandTotal" style="text-align:right; font-weight:600; color:var(--navy); font-size:14px; margin:14px 4px 0;">Project Total: €0.00</p>
+        <div style="margin-top:10px;">
+          <button type="button" class="btn-add" id="btnAddProjectSection">+ Add Project Section</button>
+        </div>
       </section>
 
     </div>
@@ -567,6 +576,50 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <p class="settings-note" style="margin:0 0 24px;">Sign in with Microsoft 365 to load the live Project List from SharePoint, or continue as a guest and use the built-in snapshot — you can still sign in later from the sidebar.</p>
       <button type="button" class="act btn-primary" id="btnWelcomeSignIn" style="width:100%; margin-bottom:10px;">🔐 Sign in with Microsoft 365</button>
       <button type="button" class="btn-ghost act" id="btnWelcomeGuest" style="width:100%;">Continue as Guest →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE NEW OFFER OVERLAY — writes a new item to the SharePoint "Progress tracker list" via
+     Microsoft Graph (Sites.ReadWrite.All), then starts a local project with the same details. -->
+<div class="settings-overlay" id="newOfferOverlay" style="display:none;">
+  <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Create new offer">
+    <div class="acc-modal-header">
+      <h3>Create New Offer</h3>
+      <button type="button" class="acc-modal-close" id="btnNewOfferClose">×</button>
+    </div>
+    <div class="settings-body">
+      <p class="settings-note">Creates a new row in the SharePoint "Progress tracker list" (via Microsoft Graph), then fills in Project Details here so you can start configuring right away. Needs to be <a href="#" id="lnkNewOfferSignIn" style="color:var(--accent);">signed in with MS 365</a> first, with write access granted. <b>Project Reference is assigned automatically by SharePoint after creation</b> — there's nothing to type for it here.</p>
+      <div class="field"><label>Project Name</label><input id="noName" placeholder="e.g. RFQ Datacenter — Customer X"></div>
+      <div class="field"><label>Customer</label><input id="noCustomer"></div>
+      <div class="field">
+        <label>Country</label>
+        <select id="noCountry"><option value="">Sign in first to load the list…</option></select>
+      </div>
+      <div class="field"><label>Due Date</label><input id="noDue" type="date"></div>
+      <div class="field"><label>Pre-Sales Owner</label><input id="noOwner"></div>
+      <div class="field"><label>Product</label><select id="noProduct"><option value="">—</option><option>MP2 - M2S</option><option>MHE</option></select></div>
+      <div class="field"><label>Battery</label><select id="noBattery"><option value="">—</option><option>VRLA</option><option>Lithium</option></select></div>
+      <div class="field"><label>Battery Brand</label><input id="noBatteryBrand"></div>
+
+      <button type="button" class="btn-ghost act" id="btnNewOfferMapping" style="margin-top:6px;">🔧 Advanced: SharePoint field mapping</button>
+      <div id="newOfferMappingFields" style="display:none;">
+        <p class="settings-note" style="margin-top:-2px;">Internal SharePoint column names each field above writes to (Country is handled separately above, via its own lookup list — not shown here). Defaults come from a real snapshot of this list's data. If "Create" fails below, the error usually names the wrong column directly — fix it here and try again, no need to reopen anything.</p>
+        <div class="field"><label>Project Name column</label><input id="mapName" value="Project Name"></div>
+        <div class="field"><label>Customer column</label><input id="mapCustomer" value="Customer"></div>
+        <div class="field"><label>Due Date column</label><input id="mapDue" value="Due date"></div>
+        <div class="field"><label>Owner column <span style="color:var(--red);">⚠ may be system-managed</span></label><input id="mapOwner" value=""></div>
+        <div class="field"><label>Product column</label><input id="mapProduct" value="Product"></div>
+        <div class="field"><label>Battery column</label><input id="mapBattery" value="Battery"></div>
+        <div class="field"><label>Battery Brand column</label><input id="mapBatteryBrand" value="Battery Brand"></div>
+        <p class="settings-note">Owner may correspond to the system "Created By" field, which Graph sets automatically to whoever is signed in and can't be overridden — left blank by default (skipped on create) for that reason. Fill it in only if you've confirmed a separate, writable "Owner" column exists.</p>
+      </div>
+
+      <p class="catalog-status" id="newOfferStatus" style="margin:10px 0 0;">Not submitted yet.</p>
+    </div>
+    <div class="acc-modal-footer">
+      <button type="button" class="btn-ghost act" id="btnNewOfferCancel">Cancel</button>
+      <button type="button" class="act btn-primary" id="btnNewOfferSubmit">✨ Create in SharePoint &amp; Start Offer</button>
     </div>
   </div>
 </div>
@@ -838,7 +891,7 @@ function processProjectList(rows, filename){
 
 // ---- Optional: live SharePoint connection via MSAL.js + Microsoft Graph ----
 // Real Microsoft sign-in popup only — this page never sees or handles the password. Requires an
-// Azure AD App Registration (Client ID) with delegated Graph permission Sites.Read.All, and this
+// Azure AD App Registration (Client ID) with delegated Graph permission Sites.ReadWrite.All, and this
 // page hosted at a URL registered as that app's Redirect URI. Uses the generic "common" endpoint
 // so any work/school account works without a tenant to configure.
 let msalInstance = null;
@@ -886,7 +939,7 @@ function buildMsalInstance(){
 }
 
 async function getGraphToken(){
-  const req = { scopes: ['Sites.Read.All'], account: msalAccount };
+  const req = { scopes: ['Sites.ReadWrite.All'], account: msalAccount };
   try{
     const resp = await msalInstance.acquireTokenSilent(req);
     return resp.accessToken;
@@ -903,6 +956,35 @@ async function graphGet(url, token){
     throw new Error(`Graph API ${resp.status} — ${text.slice(0,200) || resp.statusText}`);
   }
   return resp.json();
+}
+
+async function graphPost(url, token, body){
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {Authorization:`Bearer ${token}`, 'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  });
+  if(!resp.ok){
+    const text = await resp.text().catch(()=> '');
+    throw new Error(`Graph API ${resp.status} — ${text.slice(0,300) || resp.statusText}`);
+  }
+  return resp.json();
+}
+
+// Shared by "Refresh" (read the whole list) and "Create New Offer" (write one new item) — resolves
+// the SharePoint site then the specific list, using whatever host/path/name are set in this panel.
+async function resolveSharePointList(token){
+  const siteHost = document.getElementById('spSiteHost').value.trim() || 'rielloups.sharepoint.com';
+  const sitePath = document.getElementById('spSitePath').value.trim() || '/sites/DCSales2';
+  const listName = document.getElementById('spListName').value.trim() || 'Progress tracker list';
+  const site = await graphGet(`https://graph.microsoft.com/v1.0/sites/${siteHost}:${sitePath}`, token);
+  const listsResp = await graphGet(
+    `https://graph.microsoft.com/v1.0/sites/${site.id}/lists?$filter=${encodeURIComponent(`displayName eq '${listName}'`)}`,
+    token
+  );
+  const list = listsResp.value && listsResp.value[0];
+  if(!list) throw new Error(`List "${listName}" was not found on this site.`);
+  return {site, list};
 }
 
 document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
@@ -924,7 +1006,7 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
     updateSpStatus('Opening the Microsoft sign-in popup…', 'loading');
     msalInstance = buildMsalInstance();
     await msalInstance.initialize();
-    const loginResp = await msalInstance.loginPopup({scopes:['Sites.Read.All']});
+    const loginResp = await msalInstance.loginPopup({scopes:['Sites.ReadWrite.All']});
     msalAccount = loginResp.account;
     updateSpStatus(`Signed in as ${msalAccount.username}. Loading the Project List…`, 'loaded');
     await fetchSharePointList();
@@ -947,20 +1029,10 @@ document.getElementById('btnSpRefresh').addEventListener('click', ()=>{
 });
 
 async function fetchSharePointList(){
-  const siteHost = document.getElementById('spSiteHost').value.trim() || 'rielloups.sharepoint.com';
-  const sitePath = document.getElementById('spSitePath').value.trim() || '/sites/DCSales2';
-  const listName = document.getElementById('spListName').value.trim() || 'Progress tracker list';
   try{
     const token = await getGraphToken();
-    updateSpStatus('Resolving the SharePoint site…');
-    const site = await graphGet(`https://graph.microsoft.com/v1.0/sites/${siteHost}:${sitePath}`, token);
-    updateSpStatus('Resolving the list…');
-    const listsResp = await graphGet(
-      `https://graph.microsoft.com/v1.0/sites/${site.id}/lists?$filter=${encodeURIComponent(`displayName eq '${listName}'`)}`,
-      token
-    );
-    const list = listsResp.value && listsResp.value[0];
-    if(!list) throw new Error(`List "${listName}" was not found on this site.`);
+    updateSpStatus('Resolving the SharePoint site and list…');
+    const {site, list} = await resolveSharePointList(token);
     updateSpStatus('Fetching items…');
     let items = [];
     let url = `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$top=200`;
@@ -971,13 +1043,181 @@ async function fetchSharePointList(){
     }
     const rows = items.map(it=>it.fields || {});
     if(rows.length) console.log('First SharePoint item — raw field names for mapping/debugging:', rows[0]);
-    processProjectList(rows, `SharePoint (live): ${listName}`);
+    processProjectList(rows, `SharePoint (live): ${list.displayName || 'Progress tracker list'}`);
     updateSpStatus(`Connected — ${rows.length} records loaded at ${new Date().toLocaleTimeString('en-GB')}. Note: Person/Lookup columns may come through as IDs — check the browser console (first item logged) if a field looks wrong.`, 'loaded');
   }catch(err){
     console.error(err);
     updateSpStatus(`Refresh failed: ${err.message || err}`, 'error');
   }
 }
+
+// ---- Create New Offer — writes a new item to the SharePoint "Progress tracker list" via Graph,
+// then pre-fills Project Details locally so the person can start configuring immediately.
+// Project Reference is assigned automatically by a SharePoint-side routine after creation (not
+// entered here) — after posting, we poll the new item briefly to pick it up once it appears.
+// Country is a Lookup column sourced from the separate "Country REF_Alpha2" list (its Code
+// column), so it's offered as a proper dropdown here rather than free text. ----
+const newOfferOverlay = document.getElementById('newOfferOverlay');
+let countryOptions = []; // [{id, code}] from the Country REF_Alpha2 list
+
+function closeNewOffer(){ newOfferOverlay.style.display = 'none'; }
+document.getElementById('btnNewOffer').addEventListener('click', ()=>{
+  newOfferOverlay.style.display = 'flex';
+  updateNewOfferStatus('Not submitted yet.');
+  if(msalInstance && msalAccount) loadCountryOptions();
+});
+document.getElementById('btnNewOfferClose').addEventListener('click', closeNewOffer);
+document.getElementById('btnNewOfferCancel').addEventListener('click', closeNewOffer);
+setupBackdropClose(newOfferOverlay, closeNewOffer);
+
+document.getElementById('btnNewOfferMapping').addEventListener('click', ()=>{
+  const el = document.getElementById('newOfferMappingFields');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+});
+
+document.getElementById('lnkNewOfferSignIn').addEventListener('click', (e)=>{
+  e.preventDefault();
+  closeNewOffer();
+  spLoginOverlay.style.display = 'flex';
+});
+
+function updateNewOfferStatus(msg, state){
+  const el = document.getElementById('newOfferStatus');
+  el.textContent = msg;
+  el.className = 'catalog-status' + (state==='loaded' ? ' loaded' : state==='error' ? ' error' : '');
+}
+
+async function loadCountryOptions(){
+  const select = document.getElementById('noCountry');
+  select.innerHTML = '<option value="">Loading…</option>';
+  try{
+    const token = await getGraphToken();
+    const siteHost = document.getElementById('spSiteHost').value.trim() || 'rielloups.sharepoint.com';
+    const sitePath = document.getElementById('spSitePath').value.trim() || '/sites/DCSales2';
+    const site = await graphGet(`https://graph.microsoft.com/v1.0/sites/${siteHost}:${sitePath}`, token);
+    const listsResp = await graphGet(
+      `https://graph.microsoft.com/v1.0/sites/${site.id}/lists?$filter=${encodeURIComponent(`displayName eq 'Country REF_Alpha2'`)}`,
+      token
+    );
+    const list = listsResp.value && listsResp.value[0];
+    if(!list) throw new Error('List "Country REF_Alpha2" not found on this site.');
+    let items = [];
+    let url = `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$top=200`;
+    while(url){
+      const page = await graphGet(url, token);
+      items = items.concat(page.value || []);
+      url = page['@odata.nextLink'] || null;
+    }
+    countryOptions = items.map(it=>({
+      id: it.id,
+      code: (it.fields && (it.fields.Code || it.fields.code)) || '?',
+      title: it.fields && it.fields.Title,
+    })).sort((a,b)=>a.code.localeCompare(b.code));
+    select.innerHTML = '<option value="">—</option>' + countryOptions.map(c=>
+      `<option value="${c.id}">${escapeHtml(c.code)}${c.title ? ' — '+escapeHtml(c.title) : ''}</option>`
+    ).join('');
+  }catch(err){
+    console.error(err);
+    select.innerHTML = `<option value="">(failed to load — ${escapeHtml(String(err.message||err).slice(0,60))})</option>`;
+  }
+}
+
+// After creating the item, PRJ_ID is assigned by a SharePoint-side routine that runs once the
+// list itself picks up the new row — so the reliable way to collect it is the same "Refresh" that
+// reads the whole list back (not a repeated poll of the single new item, which may not reflect
+// the routine's output yet even if the item itself already exists).
+async function refreshAndGetPrjId(token, site, list, itemId){
+  await fetchSharePointList(); // full refresh — also updates PROGRESS/Load datalist for everyone
+  const fresh = await graphGet(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${itemId}?expand=fields`, token);
+  return (fresh.fields && fresh.fields.PRJ_ID) || null;
+}
+
+document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=>{
+  if(typeof msal === 'undefined'){
+    alert('The Microsoft sign-in library failed to load (no internet access?).');
+    return;
+  }
+  if(!msalInstance || !msalAccount){
+    alert('Sign in with Microsoft 365 first — use the link above, or the "Sign-in" button top-right.');
+    return;
+  }
+
+  const countrySel = document.getElementById('noCountry');
+  const countryId = countrySel.value;
+  const countryLabel = countryId ? countrySel.options[countrySel.selectedIndex].textContent : '';
+
+  const values = {
+    name: document.getElementById('noName').value.trim(),
+    customer: document.getElementById('noCustomer').value.trim(),
+    due: document.getElementById('noDue').value,
+    owner: document.getElementById('noOwner').value.trim(),
+    product: document.getElementById('noProduct').value,
+    battery: document.getElementById('noBattery').value,
+    batteryBrand: document.getElementById('noBatteryBrand').value.trim(),
+  };
+  const mapping = {
+    name: document.getElementById('mapName').value.trim(),
+    customer: document.getElementById('mapCustomer').value.trim(),
+    due: document.getElementById('mapDue').value.trim(),
+    owner: document.getElementById('mapOwner').value.trim(),
+    product: document.getElementById('mapProduct').value.trim(),
+    battery: document.getElementById('mapBattery').value.trim(),
+    batteryBrand: document.getElementById('mapBatteryBrand').value.trim(),
+  };
+
+  // Build the SharePoint fields payload — a blank mapping (Owner by default) means "deliberately
+  // skipped", not "send empty", since it's flagged as likely unwritable (system-managed field).
+  const fields = {};
+  Object.keys(mapping).forEach(key=>{
+    const col = mapping[key];
+    if(!col) return;
+    let val = values[key];
+    if(key === 'due' && val) val = new Date(val).toISOString(); // SharePoint DateTime wants ISO 8601
+    if(val) fields[col] = val;
+  });
+  // Country is a Lookup column — SharePoint/Graph expect the numeric ID of the matching row in
+  // the source list via a "<ColumnName>LookupId" field, not the plain text value.
+  if(countryId) fields['CountryLookupId'] = countryId;
+
+  try{
+    updateNewOfferStatus('Creating in SharePoint…', 'loading');
+    const token = await getGraphToken();
+    const {site, list} = await resolveSharePointList(token);
+    const created = await graphPost(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items`, token, {fields});
+    updateNewOfferStatus('Created — refreshing the list to pick up the assigned Project Reference…', 'loading');
+
+    const prjId = await refreshAndGetPrjId(token, site, list, created.id);
+
+    if(prjId){
+      updateNewOfferStatus(`Created as "${prjId}".`, 'loaded');
+    } else {
+      updateNewOfferStatus('Created in SharePoint, but the Project Reference wasn\'t assigned yet even after refreshing — click "Refresh" in the Sign-in panel again shortly, then "Load" it once it appears.', 'loaded');
+    }
+    // refreshAndGetPrjId already re-ran the full list refresh, which repopulates PROGRESS and the
+    // "Load" datalist for everyone — no separate manual PROGRESS.push() needed here.
+
+    // pre-fill Project Details locally so configuring can start right away. Project Reference is
+    // assigned by SharePoint, not typed here — once we have it, lock the field so it can't drift
+    // out of sync with the real record (Reset / Load / another Create still update it via JS).
+    if(prjId){
+      document.getElementById('prjRef').value = prjId;
+      document.getElementById('prjRef').readOnly = true;
+    }
+    document.getElementById('prjName').value = values.name;
+    document.getElementById('prjCustomer').value = values.customer;
+    document.getElementById('prjCountry').value = countryLabel;
+    document.getElementById('prjDue').value = values.due;
+    document.getElementById('prjOwner').value = values.owner;
+    if(values.product) document.getElementById('prjProduct').value = values.product;
+    if(values.battery) document.getElementById('prjBattery').value = values.battery;
+    document.getElementById('prjBatteryBrand').value = values.batteryBrand;
+
+    if(prjId) setTimeout(closeNewOffer, 1400);
+  }catch(err){
+    console.error(err);
+    updateNewOfferStatus(`Create failed: ${err.message || err} — check the field mapping above (a wrong internal column name is the most common cause).`, 'error');
+  }
+});
 
 const projectListInput = document.getElementById('projectListInput');
 document.getElementById('btnImportProjectList').addEventListener('click', ()=>{
@@ -1187,6 +1427,7 @@ function buildRow(prefill){
 
 function resetAll(){
   ['prjName','prjCountry','prjCustomer','prjDue','prjOwner','prjRef','prjBatteryBrand'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('prjRef').readOnly = false;
   document.getElementById('prjProduct').selectedIndex = 0;
   document.getElementById('prjBattery').selectedIndex = 0;
   cfgBody.innerHTML='';
@@ -1407,6 +1648,7 @@ function addBomRow(data, insertBeforeNode){
   if(data.groupOf) row.dataset.groupOf = data.groupOf;
   if(data.cfgPos) row.dataset.cfgPos = data.cfgPos;
   if(data.isServices) row.dataset.isServices = 'true';
+  if(data.isCustomSection) row.dataset.isCustomSection = 'true';
 
   if(kind === 'header'){
     row.dataset.rowId = 'r' + (++bomRowCounter);
@@ -1424,11 +1666,26 @@ function addBomRow(data, insertBeforeNode){
     if(data.isServices){
       accBtn.textContent = '+ Add Service';
       accBtn.addEventListener('click', ()=>openServiceModal(row));
+    } else if(data.isCustomSection){
+      accBtn.textContent = '+ Add Item';
+      accBtn.addEventListener('click', ()=>openTechIntegrationModal(row));
     } else {
       accBtn.textContent = '+ Accessory';
       accBtn.addEventListener('click', ()=>openAccessoryModal(row));
     }
     row.querySelector('.bom-actions').appendChild(accBtn);
+    if(data.isCustomSection){
+      const rmSectionBtn = document.createElement('button');
+      rmSectionBtn.type = 'button'; rmSectionBtn.className = 'row-remove'; rmSectionBtn.title = 'Remove this whole section';
+      rmSectionBtn.textContent = '×';
+      rmSectionBtn.addEventListener('click', ()=>{
+        const own = row.dataset.rowId;
+        bomBody.querySelectorAll(`tr[data-group-of="${own}"]`).forEach(r=>r.remove());
+        row.remove();
+        recalcProjectTotal();
+      });
+      row.querySelector('.bom-actions').appendChild(rmSectionBtn);
+    }
     return row;
   }
 
@@ -1442,26 +1699,32 @@ function addBomRow(data, insertBeforeNode){
       <td class="bom-actions"></td>
     `;
     if(insertBeforeNode){ bomBody.insertBefore(row, insertBeforeNode); } else { bomBody.appendChild(row); }
-    if(!data.isServices){
-      const battBtn = document.createElement('button');
-      battBtn.type = 'button'; battBtn.className = 'bom-batt-btn'; battBtn.textContent = '+ Battery Configuration';
-      battBtn.addEventListener('click', ()=>openBatteryModal(row));
-      row.querySelector('.bom-actions').appendChild(battBtn);
+    if(!data.isServices && !data.isCustomSection){
+      const techBtn = document.createElement('button');
+      techBtn.type = 'button'; techBtn.className = 'bom-batt-btn'; techBtn.textContent = '+ Battery / Technology Integration';
+      techBtn.addEventListener('click', ()=>openTechIntegrationModal(row));
+      row.querySelector('.bom-actions').appendChild(techBtn);
     }
     return row;
   }
 
   // 'line', 'accessory' and 'delivery' — priceable rows
   row.className = kind==='accessory' ? 'bom-acc-row' : 'bom-line-row';
+  if(data.extSupplier) row.dataset.extSupplier = 'true';
+  if(data.techCategory) row.dataset.techCategory = data.techCategory;
   const modelCell = data.model
     ? (kind==='accessory' ? `↳ ${escapeHtml(data.model)}` : `<span class="model-cell">${escapeHtml(data.model)}</span>`)
     : '';
+  // "Battery" is the implicit default (no badge, matching how Battery Configuration always
+  // looked); only "Technology Integration" gets its own badge to stand out from a battery line.
+  const catBadge = data.techCategory === 'tech' ? ' <span class="ext-supplier-badge tech-cat-badge">Technology Integration</span>' : '';
+  const extBadge = data.extSupplier ? ' <span class="ext-supplier-badge">Ext. Supplier</span>' : '';
   row.innerHTML = `
     <td>${escapeHtml(data.pos ?? '')}</td>
     <td><input type="number" class="in-qty" value="${Number(data.qty)||0}" min="0" step="1"></td>
     <td>${modelCell}</td>
     <td>${escapeHtml(data.code||'')}</td>
-    <td>${escapeHtml(data.desc||'')}</td>
+    <td><span class="desc-text">${escapeHtml(data.desc||'')}</span>${catBadge}${extBadge}</td>
     <td class="num"><input type="number" class="in-gross" value="${(Number(data.gross)||0).toFixed(2)}" step="0.01"></td>
     <td class="num"><input type="number" class="in-disc" value="${Number(data.disc)||0}" step="1"></td>
     <td class="num out-net">0</td>
@@ -1522,6 +1785,17 @@ function rowQty(row){
   return inp ? (Number(inp.value)||0) : (Number(row.cells[1].textContent)||0);
 }
 
+// Priceable rows wrap their pure description in a .desc-text span, keeping it separate from the
+// "Ext. Supplier" badge appended after it — reading cells[4].textContent directly would otherwise
+// pick up the badge text too. Falls back to the plain cell for row kinds without the span (headers).
+function rowDescText(row){
+  const el = row.querySelector('.desc-text');
+  return el ? el.textContent : row.cells[4].textContent;
+}
+function rowExtSupplier(row){
+  return row.dataset.extSupplier === 'true';
+}
+
 // The BOM (packing list) is the one place quantities ARE multiplied by Q.ty — it needs the true
 // total piece count to procure/ship, unlike the Offer Lines table which stays per-system.
 function bomLineQty(row){
@@ -1531,14 +1805,16 @@ function bomLineQty(row){
   return baseQty * (headerRow ? configQtyFor(headerRow) : 1);
 }
 
-// SERVICES (and its Delivery/manual lines) are commercial line items, not physical parts to ship
-// — they're excluded from the BOM packing-list exports entirely.
+// SERVICES and any custom project-level section (plus their manual lines) are commercial line
+// items, not physical parts to ship — excluded from the BOM packing-list exports entirely.
+// Solution-level Battery/Technology Integration items are NOT excluded (their groupOf points at a
+// regular position header, not a project-level section), since those are tied to a physical system.
 function isServicesRow(row){
-  if(row.dataset.isServices === 'true') return true;
+  if(row.dataset.isServices === 'true' || row.dataset.isCustomSection === 'true') return true;
   const owner = row.dataset.groupOf;
   if(!owner) return false;
   const h = bomBody.querySelector(`tr[data-kind="header"][data-row-id="${owner}"]`);
-  return !!(h && h.dataset.isServices === 'true');
+  return !!(h && (h.dataset.isServices === 'true' || h.dataset.isCustomSection === 'true'));
 }
 
 // Sum of net*qty for every priceable row (line + accessory + battery) in one position group,
@@ -1607,7 +1883,8 @@ function updateDeliveryRow(){
   if(!row) return;
   const systemsPrice = computeSystemsTotalPrice();
   const deliveryValue = systemsPrice * (DELIVERY_PERCENT/100);
-  row.cells[4].textContent = `Delivery`;
+  const descEl = row.querySelector('.desc-text');
+  if(descEl) descEl.textContent = 'Delivery'; else row.cells[4].textContent = 'Delivery';
   row.querySelector('.in-gross').value = deliveryValue.toFixed(2);
   row.querySelector('.in-cost').value = deliveryValue.toFixed(2);
   row.querySelector('.out-net').textContent = formatMoney(deliveryValue);
@@ -1725,85 +2002,112 @@ function openAccessoryModal(headerRow){
   }
 }
 
-// ---- Battery Configuration (manual, free-form line entry — Generate Offer never auto-adds
-// batteries, so these are always added by hand, one or many rows at a time) ----
-function openBatteryModal(totalRow){
-  const owner = totalRow.dataset.groupOf;
+// ---- Battery / Technology Integration (manual, free-form line entry) — one merged entry point
+// for both categories at solution level, via a single button on a position's Total row; also
+// reused (without the category picker, which wouldn't mean anything there) for any custom
+// project-level section added via "+ Add Project Section". Each line can be marked as coming from
+// an external/third-party supplier, which persists through Save/Load and shows on screen and in
+// exports; at solution level, each line can also be tagged Battery vs Technology Integration. ----
+function openTechIntegrationModal(triggerRow){
+  const owner = triggerRow.dataset.kind === 'header' ? triggerRow.dataset.rowId : triggerRow.dataset.groupOf;
+  const totalRow = bomBody.querySelector(`tr[data-kind="total"][data-group-of="${owner}"]`);
+  if(!totalRow) return;
   const headerRow = bomBody.querySelector(`tr[data-kind="header"][data-row-id="${owner}"]`);
-  if(!headerRow) return;
+  const showCategory = !(headerRow && headerRow.dataset.isCustomSection === 'true');
 
   const overlay = document.createElement('div');
   overlay.className = 'acc-modal-overlay';
   overlay.innerHTML = `
-    <div class="acc-modal" role="dialog" aria-modal="true" aria-label="Add battery configuration">
+    <div class="acc-modal" role="dialog" aria-modal="true" aria-label="Add battery or technology integration">
       <div class="acc-modal-header">
         <div>
-          <h3>Add Battery Configuration</h3>
-          <p class="acc-modal-sub">Enter battery line items by hand — add as many rows as you need.</p>
+          <h3>${showCategory ? 'Add Battery / Technology Integration' : 'Add Item'}</h3>
+          <p class="acc-modal-sub">Enter items by hand — tick "Ext. Supplier" for anything sourced from a third-party vendor rather than Riello.</p>
         </div>
         <button type="button" class="acc-modal-close" aria-label="Close">×</button>
       </div>
       <div class="acc-modal-body">
         <table class="batt-table">
-          <thead><tr><th style="width:60px">Qty</th><th>Model</th><th>Code</th><th>Description</th><th style="width:110px">Gross Price</th><th style="width:100px">Cost</th><th></th></tr></thead>
-          <tbody id="battRowsBody"></tbody>
+          <thead><tr><th style="width:60px">Qty</th><th>Model</th><th>Code</th><th>Description</th><th style="width:110px">Gross Price</th><th style="width:100px">Cost</th>${showCategory ? '<th style="width:130px">Category</th>' : ''}<th style="width:90px">Ext. Supplier</th><th></th></tr></thead>
+          <tbody id="techRowsBody"></tbody>
         </table>
-        <button type="button" class="btn-add" id="battAddRow" style="margin-top:10px;">+ Add Row</button>
+        <button type="button" class="btn-add" id="techAddRow" style="margin-top:10px;">+ Add Row</button>
       </div>
       <div class="acc-modal-footer">
-        <button type="button" class="btn-ghost act batt-cancel">Cancel</button>
-        <button type="button" class="act btn-primary batt-confirm">Add to Offer</button>
+        <button type="button" class="btn-ghost act tech-cancel">Cancel</button>
+        <button type="button" class="act btn-primary tech-confirm">Add to Offer</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
 
-  const rowsBody = overlay.querySelector('#battRowsBody');
+  const rowsBody = overlay.querySelector('#techRowsBody');
   function addFormRow(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="number" min="1" value="1" class="batt-qty"></td>
-      <td><input type="text" class="batt-model" placeholder="e.g. Battery Cabinet"></td>
-      <td><input type="text" class="batt-code" placeholder="Code"></td>
-      <td><input type="text" class="batt-desc" placeholder="Description"></td>
-      <td><input type="number" step="0.01" value="0" class="batt-gross"></td>
-      <td><input type="number" step="0.01" value="0" class="batt-cost"></td>
-      <td><button type="button" class="row-remove batt-row-remove" title="Remove row">×</button></td>
+      <td><input type="number" min="1" value="1" class="tech-qty"></td>
+      <td><input type="text" class="tech-model" placeholder="e.g. DCIM Integration"></td>
+      <td><input type="text" class="tech-code" placeholder="Code"></td>
+      <td><input type="text" class="tech-desc" placeholder="Description"></td>
+      <td><input type="number" step="0.01" value="0" class="tech-gross"></td>
+      <td><input type="number" step="0.01" value="0" class="tech-cost"></td>
+      ${showCategory ? '<td><select class="tech-category"><option value="battery">Battery</option><option value="tech">Technology Integration</option></select></td>' : ''}
+      <td style="text-align:center;"><input type="checkbox" class="tech-ext"></td>
+      <td><button type="button" class="row-remove tech-row-remove" title="Remove row">×</button></td>
     `;
     rowsBody.appendChild(tr);
-    tr.querySelector('.batt-row-remove').addEventListener('click', ()=>tr.remove());
+    tr.querySelector('.tech-row-remove').addEventListener('click', ()=>tr.remove());
   }
   addFormRow();
-  overlay.querySelector('#battAddRow').addEventListener('click', addFormRow);
+  overlay.querySelector('#techAddRow').addEventListener('click', addFormRow);
 
   const close = ()=>{ overlay.remove(); document.removeEventListener('keydown', onEsc); };
   function onEsc(e){ if(e.key==='Escape') close(); }
   document.addEventListener('keydown', onEsc);
   setupBackdropClose(overlay, close);
   overlay.querySelector('.acc-modal-close').addEventListener('click', close);
-  overlay.querySelector('.batt-cancel').addEventListener('click', close);
+  overlay.querySelector('.tech-cancel').addEventListener('click', close);
 
-  overlay.querySelector('.batt-confirm').addEventListener('click', ()=>{
-    const groupNum = (headerRow.dataset.pos||'').split('.')[0];
-    let nextIdx = nextSubIdxFor(headerRow);
+  overlay.querySelector('.tech-confirm').addEventListener('click', ()=>{
     [...rowsBody.querySelectorAll('tr')].forEach(tr=>{
-      const model = tr.querySelector('.batt-model').value.trim();
-      const desc = tr.querySelector('.batt-desc').value.trim();
+      const model = tr.querySelector('.tech-model').value.trim();
+      const desc = tr.querySelector('.tech-desc').value.trim();
       if(!model && !desc) return; // skip untouched blank rows
-      const qty = Number(tr.querySelector('.batt-qty').value)||1;
-      const code = tr.querySelector('.batt-code').value.trim();
-      const gross = Number(tr.querySelector('.batt-gross').value)||0;
-      const cost = Number(tr.querySelector('.batt-cost').value)||0;
+      const qty = Number(tr.querySelector('.tech-qty').value)||1;
+      const code = tr.querySelector('.tech-code').value.trim();
+      const gross = Number(tr.querySelector('.tech-gross').value)||0;
+      const cost = Number(tr.querySelector('.tech-cost').value)||0;
+      const extSupplier = tr.querySelector('.tech-ext').checked;
+      const categorySel = tr.querySelector('.tech-category');
+      const techCategory = categorySel ? categorySel.value : null; // 'battery' | 'tech' | null (custom sections)
       addBomRow({
-        pos: `${groupNum}.${nextIdx}`, qty, model, code, desc: desc || model,
-        gross, cost, kind:'accessory', groupOf:owner,
+        qty, model, code, desc: desc || model,
+        gross, cost, extSupplier, techCategory, kind:'accessory', groupOf:owner,
       }, totalRow);
-      nextIdx++;
     });
     recalcGroupTotal(owner);
     close();
   });
 }
+
+// ---- "+ Add Project Section" — lets the person create as many freely-named project-level
+// sections as they need (e.g. "Technology Integration", "Site Preparation", whatever fits the
+// project), instead of one fixed pre-named section. A section only exists once created this way,
+// and only survives a "Generate Offer" regenerate if it actually has at least one item in it. ----
+document.getElementById('btnAddProjectSection').addEventListener('click', ()=>{
+  if(!bomHasRows()){
+    alert('Generate the Offer first — there\'s nothing to attach a section to yet.');
+    return;
+  }
+  const name = prompt('Name this section (e.g. "Technology Integration", "Site Preparation"):');
+  if(name === null) return;
+  const trimmed = name.trim();
+  if(!trimmed) return;
+  const header = addBomRow({kind:'header', label:trimmed, isCustomSection:true});
+  addBomRow({kind:'total', groupOf:header.dataset.rowId, isCustomSection:true});
+  recalcGroupTotal(header.dataset.rowId);
+  openTechIntegrationModal(header);
+});
 
 // ---- Services (manual, free-form line entry — installation/commissioning/SAT/training/etc.,
 // always added at the very end of the offer; the auto Delivery line always stays last) ----
@@ -1903,11 +2207,13 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     savedAccessories[cfgPos] = accRows.map(r=>({
       model: r.cells[2].textContent.replace(/^↳\s*/,''),
       code: r.cells[3].textContent,
-      desc: r.cells[4].textContent,
+      desc: rowDescText(r),
       gross: r.querySelector('.in-gross').value,
       disc: r.querySelector('.in-disc').value,
       cost: r.querySelector('.in-cost').value,
       qty: rowQty(r),
+      extSupplier: rowExtSupplier(r),
+      techCategory: r.dataset.techCategory || null,
     }));
   });
 
@@ -1920,13 +2226,38 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     savedServiceLines = svcRows.map(r=>({
       model: r.cells[2].textContent.replace(/^↳\s*/,''),
       code: r.cells[3].textContent,
-      desc: r.cells[4].textContent,
+      desc: rowDescText(r),
       gross: r.querySelector('.in-gross').value,
       disc: r.querySelector('.in-disc').value,
       cost: r.querySelector('.in-cost').value,
       qty: rowQty(r),
+      extSupplier: rowExtSupplier(r),
     }));
   }
+
+  // Preserve any custom project-level sections the same way — there can be several now (each
+  // named by the user via "+ Add Project Section"), so capture all of them by name, not just one
+  // fixed section. Sections with zero items are deliberately dropped here (not carried forward),
+  // so an empty section doesn't linger and reappear after every regenerate.
+  let savedCustomSections = [];
+  const existingCustomHeaders = [...bomBody.querySelectorAll('tr[data-kind="header"][data-is-custom-section="true"]')];
+  existingCustomHeaders.forEach(h=>{
+    const rows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${h.dataset.rowId}"]`)];
+    if(!rows.length) return;
+    savedCustomSections.push({
+      name: h.cells[4].textContent,
+      items: rows.map(r=>({
+        model: r.cells[2].textContent.replace(/^↳\s*/,''),
+        code: r.cells[3].textContent,
+        desc: rowDescText(r),
+        gross: r.querySelector('.in-gross').value,
+        disc: r.querySelector('.in-disc').value,
+        cost: r.querySelector('.in-cost').value,
+        qty: rowQty(r),
+        extSupplier: rowExtSupplier(r),
+      })),
+    });
+  });
 
   const rows = [...cfgBody.querySelectorAll('tr')];
   bomBody.innerHTML = '';
@@ -2037,7 +2368,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       carried.forEach(item=>{
         addBomRow({
           pos: `${gruppo}.${nextIdx}`, qty: item.qty, model: item.model, code: item.code, desc: item.desc,
-          gross: item.gross, disc: item.disc, cost: item.cost, kind:'accessory', groupOf:owner,
+          gross: item.gross, disc: item.disc, cost: item.cost, extSupplier: item.extSupplier, techCategory: item.techCategory, kind:'accessory', groupOf:owner,
         }, totalRow);
         nextIdx++;
       });
@@ -2057,7 +2388,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     savedServiceLines.forEach(item=>{
       addBomRow({
         qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-        gross:item.gross, disc:item.disc, cost:item.cost, kind:'accessory', groupOf:servicesOwner,
+        gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:servicesOwner,
       });
     });
     addBomRow({
@@ -2067,6 +2398,24 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     addBomRow({kind:'total', groupOf:servicesOwner, isServices:true});
     recalcGroupTotal(servicesOwner);
     updateDeliveryRow();
+
+    // ---- Custom project-level sections — rebuilt only for sections that actually had at least
+    // one item (savedCustomSections already filtered that above), so an unused section doesn't
+    // linger. Solution-level Battery/Technology Integration items instead live inside each
+    // position's own group and are carried across regenerate together with that position's other
+    // accessories, above — this is only for sections added via "+ Add Project Section".
+    savedCustomSections.forEach(section=>{
+      const sectionHeader = addBomRow({kind:'header', label:section.name, isCustomSection:true});
+      const sectionOwner = sectionHeader.dataset.rowId;
+      section.items.forEach(item=>{
+        addBomRow({
+          qty:item.qty, model:item.model, code:item.code, desc:item.desc,
+          gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:sectionOwner,
+        });
+      });
+      addBomRow({kind:'total', groupOf:sectionOwner, isCustomSection:true});
+      recalcGroupTotal(sectionOwner);
+    });
   }
   updateBomHeaders();
 });
@@ -2162,6 +2511,9 @@ function buildConfigState(){
     if(r.dataset.baseModel) item.baseModel = r.dataset.baseModel;
     if(r.dataset.cfgPos) item.cfgPos = r.dataset.cfgPos;
     if(r.dataset.isServices) item.isServices = true;
+    if(r.dataset.isCustomSection) item.isCustomSection = true;
+    if(r.dataset.extSupplier) item.extSupplier = true;
+    if(r.dataset.techCategory) item.techCategory = r.dataset.techCategory;
     if(kind === 'header'){
       item.label = r.cells[4].textContent;
     } else if(kind === 'total'){
@@ -2172,7 +2524,7 @@ function buildConfigState(){
         ? (r.querySelector('.model-cell')?.textContent || '')
         : r.cells[2].textContent.replace(/^↳\s*/,'');
       item.code = r.cells[3].textContent;
-      item.desc = r.cells[4].textContent;
+      item.desc = rowDescText(r);
       item.gross = r.querySelector('.in-gross').value;
       item.disc = r.querySelector('.in-disc').value;
       item.cost = r.querySelector('.in-cost').value;
@@ -2422,7 +2774,7 @@ function buildBomPdfDoc(){
     const qty = bomLineQty(r);
     const model = kind==='line' ? (r.querySelector('.model-cell')?.textContent||'') : r.cells[2].textContent.replace(/^↳\s*/,'');
     const code = r.cells[3].textContent;
-    const desc = r.cells[4].textContent;
+    const desc = rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '');
     body.push([qty, model, code, desc]);
   });
 
@@ -2469,7 +2821,7 @@ function collectOfferRows(){
     const kind = r.dataset.kind;
     if(kind === 'header'){
       currentHeaderRow = r;
-      current = {label: r.cells[4].textContent, lines: [], subtotalPrice: 0, subtotalCost: 0, configQty: configQtyFor(r), isServices: r.dataset.isServices === 'true'};
+      current = {label: r.cells[4].textContent, lines: [], subtotalPrice: 0, subtotalCost: 0, configQty: configQtyFor(r), isServices: r.dataset.isServices === 'true', isCustomSection: r.dataset.isCustomSection === 'true'};
       groups.push(current);
       return;
     }
@@ -2477,7 +2829,7 @@ function collectOfferRows(){
     const qty = rowQty(r);
     const model = kind==='line' ? (r.querySelector('.model-cell')?.textContent||'') : r.cells[2].textContent.replace(/^↳\s*/,'');
     const code = r.cells[3].textContent;
-    const desc = r.cells[4].textContent;
+    const desc = rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '');
     const gross = Number(r.querySelector('.in-gross')?.value)||0;
     const disc = Number(r.querySelector('.in-disc')?.value)||0;
     const cost = Number(r.querySelector('.in-cost')?.value)||0;
@@ -2558,7 +2910,7 @@ function buildOfferPdfDoc(withMargin){
       body.push(row);
     });
 
-    if(!g.isServices){
+    if(!g.isServices && !g.isCustomSection){
       // per-unit subtotal (sum of this group's lines, before the Q.ty multiplication) — no
       // solution nomenclature here (that's already on the section header and the final total
       // bar below); this row is deliberately unlabeled, just the per-system subtotal figure
@@ -2570,7 +2922,7 @@ function buildOfferPdfDoc(withMargin){
       ]);
     }
 
-    const totalLabel = g.isServices ? 'Total for Services →' : `Total for ${g.configQty} ${g.label} →`;
+    const totalLabel = g.isServices ? 'Total for Services →' : g.isCustomSection ? `Total for ${g.label} →` : `Total for ${g.configQty} ${g.label} →`;
     // cells used: [combined text(labelSpan)] + [value(1)] (+ [cost(1)+margin(1)] if withMargin) = headCols.length
     const labelSpan = headCols.length - 1 - (withMargin ? 2 : 0);
     const totalRow = [
@@ -2685,7 +3037,7 @@ function buildBomHtmlDoc(){
     const qty = bomLineQty(r);
     const model = kind==='line' ? (r.querySelector('.model-cell')?.textContent||'') : r.cells[2].textContent.replace(/^↳\s*/,'');
     const code = r.cells[3].textContent;
-    const desc = r.cells[4].textContent;
+    const desc = rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '');
     rowsHtml.push(`<tr><td style="text-align:center;">${escapeHtml(qty)}</td><td>${escapeHtml(model)}</td><td>${escapeHtml(code)}</td><td>${escapeHtml(desc)}</td></tr>`);
   });
 
@@ -2745,7 +3097,7 @@ function buildOfferHtmlDoc(withMargin){
       bodyRows.push(`<tr>${cells}</tr>`);
     });
 
-    if(!g.isServices){
+    if(!g.isServices && !g.isCustomSection){
       // per-unit subtotal (sum of this group's lines, before the Q.ty multiplication) — no
       // solution nomenclature here (that's already on the section header and the final total
       // bar below); this row is deliberately unlabeled, just the per-system subtotal figure
@@ -2754,7 +3106,7 @@ function buildOfferHtmlDoc(withMargin){
     }
 
     const gMargin = g.groupTotalPrice>0 ? ((g.groupTotalPrice-g.groupTotalCost)/g.groupTotalPrice*100) : 0;
-    const totalLabel = g.isServices ? 'Total for Services →' : `Total for ${g.configQty} ${g.label} →`;
+    const totalLabel = g.isServices ? 'Total for Services →' : g.isCustomSection ? `Total for ${g.label} →` : `Total for ${g.configQty} ${g.label} →`;
     // cells used: text(labelSpan) + value(1) [+ cost(1) + margin(1) if withMargin] = colCount
     const labelSpan = colCount - 1 - (withMargin ? 2 : 0);
     let totalCells = `<td colspan="${labelSpan}" ${blueBarLeftTd}>${escapeHtml(totalLabel)}</td><td ${blueBarTd}>${formatMoney(g.groupTotalPrice)}</td>`;

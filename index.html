@@ -186,7 +186,7 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 .row-remove{
   width:26px; height:26px; border-radius:6px; border:1px solid var(--panel-border);
   background:#fff; color:var(--dim); font-size:13px; line-height:1;
-  display:flex; align-items:center; justify-content:center;
+  display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
 }
 .row-remove:hover{color:var(--red); border-color:var(--red);}
 .add-row-wrap{margin-top:14px;}
@@ -237,6 +237,8 @@ tr.bom-total-row td{color:var(--navy); background:var(--cream); font-weight:600;
 
 /* ---- BOM actions / accessories ---- */
 .bom-actions{text-align:right; white-space:nowrap;}
+.bom-actions button{margin-left:6px;}
+.bom-actions button:first-child{margin-left:0;}
 .bom-acc-btn{
   font-family:'Work Sans',sans-serif; font-weight:300; font-size:11.5px;
   background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.5);
@@ -1827,12 +1829,14 @@ function isServicesRow(row){
   return !!(h && (h.dataset.isServices === 'true' || h.dataset.isCustomSection === 'true'));
 }
 
-// Sum of net*qty for every priceable row (line + accessory + battery) in one position group,
-// multiplied by that position's Q.ty (System Configuration) — written into the group's Total
-// row, plus a live project-wide grand total underneath the table.
+// Sum of net*qty for every priceable row (line + accessory + delivery) in one group, multiplied
+// by that position's Q.ty (System Configuration) — written into the group's Total row, plus a
+// live project-wide grand total underneath the table. Must include 'delivery' kind rows too, or
+// the auto-computed Delivery line's own value silently never reaches the SERVICES total (or the
+// project total that sums every group) even though the row itself displays it correctly.
 function computeGroupTotal(headerRow){
   const owner = headerRow.dataset.rowId;
-  const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r=>r.dataset.kind==='line'||r.dataset.kind==='accessory');
+  const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r=>r.dataset.kind==='line'||r.dataset.kind==='accessory'||r.dataset.kind==='delivery');
   let lineSum = 0, lineCostSum = 0;
   rows.forEach(r=>{
     const gross = Number(r.querySelector('.in-gross')?.value)||0;
@@ -1873,12 +1877,14 @@ function recalcProjectTotal(){
   return grand;
 }
 
-// Sum of every non-Services group's NET PRICE (i.e. "TOTAL HW NET Price") — the base the
+// Sum of every UPS/solution group's NET PRICE (i.e. "TOTAL HW NET Price") — the base the
 // Delivery % is applied to, matching the reference offer's own formula (Delivery = 2% × HW price).
+// Excludes SERVICES (obviously) and any custom project-level section — those are commercial/
+// project-level line items, not part of the HW solution the Delivery % is meant to be based on.
 function computeSystemsTotalPrice(){
   let total = 0;
   [...bomBody.querySelectorAll('tr[data-kind="header"]')].forEach(h=>{
-    if(h.dataset.isServices === 'true') return;
+    if(h.dataset.isServices === 'true' || h.dataset.isCustomSection === 'true') return;
     total += computeGroupTotal(h).price;
   });
   return total;
@@ -2958,7 +2964,7 @@ function buildOfferPdfDoc(withMargin){
   const descColSpan = 4; // Qty, Model, Code, Description
 
   const body = [];
-  data.groups.forEach(g=>{
+  data.groups.forEach((g, gIdx)=>{
     body.push([{content:g.label, colSpan:headCols.length, styles:{...hdrStyle, halign:'left'}}]);
 
     g.lines.forEach(l=>{
@@ -2994,6 +3000,13 @@ function buildOfferPdfDoc(withMargin){
       );
     }
     body.push(totalRow);
+
+    // A custom project section can now sit anywhere — including between two UPS positions — so
+    // mark the boundary where it hands back off to whatever group follows it with a thin divider,
+    // making that transition clear on the printed page rather than reading as one continuous run.
+    if(g.isCustomSection && gIdx < data.groups.length - 1){
+      body.push([{content:'', colSpan:headCols.length, styles:{fillColor:[214,214,214], minCellHeight:3, cellPadding:0, lineWidth:0}}]);
+    }
   });
 
   doc.autoTable({
@@ -3133,7 +3146,7 @@ function buildOfferHtmlDoc(withMargin){
   const blueBarLeftTd = 'style="text-align:left;background:#4472C4;color:#FFFFFF;font-weight:bold;font-size:11pt;"';
 
   const bodyRows = [];
-  data.groups.forEach(g=>{
+  data.groups.forEach((g, gIdx)=>{
     bodyRows.push(`<tr><td colspan="${colCount}" ${hdrTd}>${escapeHtml(g.label)}</td></tr>`);
     g.lines.forEach(l=>{
       let cells = `
@@ -3171,6 +3184,13 @@ function buildOfferHtmlDoc(withMargin){
       totalCells += `<td ${blueBarTd}>${formatMoney(g.groupTotalCost)}</td><td ${blueBarTd}>${gMargin.toFixed(2)}%</td>`;
     }
     bodyRows.push(`<tr>${totalCells}</tr>`);
+
+    // A custom project section can now sit anywhere — including between two UPS positions — so
+    // mark the boundary where it hands back off to whatever group follows it with a thin divider,
+    // making that transition clear on the printed page rather than reading as one continuous run.
+    if(g.isCustomSection && gIdx < data.groups.length - 1){
+      bodyRows.push(`<tr><td colspan="${colCount}" style="border:none; border-top:2px solid #D6D6D6; padding:0; height:1px; line-height:1px;"></td></tr>`);
+    }
   });
 
   const discounted = data.grandTotal * (1 - PROJECT_DISCOUNT/100);

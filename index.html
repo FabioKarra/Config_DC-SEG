@@ -375,7 +375,6 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         <input type="file" id="projectListInput" accept=".xlsx,.xls,.csv" style="display:none">
         <button class="nav-btn" id="btnImportPriceList"><span class="icon">📑</span>Import Price List</button>
         <input type="file" id="priceListInput" accept=".xlsx,.xls" style="display:none">
-        <button class="nav-btn" id="btnNewOffer"><span class="icon">✨</span>Create New Offer</button>
         </div>
       </div>
       <div class="nav-group">
@@ -578,50 +577,6 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <p class="settings-note" style="margin:0 0 24px;">Sign in with Microsoft 365 to load the live Project List from SharePoint, or continue as a guest and use the built-in snapshot — you can still sign in later from the sidebar.</p>
       <button type="button" class="act btn-primary" id="btnWelcomeSignIn" style="width:100%; margin-bottom:10px;">🔐 Sign in with Microsoft 365</button>
       <button type="button" class="btn-ghost act" id="btnWelcomeGuest" style="width:100%;">Continue as Guest →</button>
-    </div>
-  </div>
-</div>
-
-<!-- CREATE NEW OFFER OVERLAY — writes a new item to the SharePoint "Progress tracker list" via
-     Microsoft Graph (Sites.ReadWrite.All), then starts a local project with the same details. -->
-<div class="settings-overlay" id="newOfferOverlay" style="display:none;">
-  <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Create new offer">
-    <div class="acc-modal-header">
-      <h3>Create New Offer</h3>
-      <button type="button" class="acc-modal-close" id="btnNewOfferClose">×</button>
-    </div>
-    <div class="settings-body">
-      <p class="settings-note">Creates a new row in the SharePoint "Progress tracker list" (via Microsoft Graph), then fills in Project Details here so you can start configuring right away. Needs to be <a href="#" id="lnkNewOfferSignIn" style="color:var(--accent);">signed in with MS 365</a> first, with write access granted. <b>Project Reference is assigned automatically by SharePoint after creation</b> — there's nothing to type for it here.</p>
-      <div class="field"><label>Project Name</label><input id="noName" placeholder="e.g. RFQ Datacenter — Customer X"></div>
-      <div class="field"><label>Customer</label><input id="noCustomer"></div>
-      <div class="field">
-        <label>Country</label>
-        <select id="noCountry"><option value="">Sign in first to load the list…</option></select>
-      </div>
-      <div class="field"><label>Due Date</label><input id="noDue" type="date"></div>
-      <div class="field"><label>Pre-Sales Owner</label><input id="noOwner"></div>
-      <div class="field"><label>Product</label><select id="noProduct"><option value="">—</option><option>MP2 - M2S</option><option>MHE</option></select></div>
-      <div class="field"><label>Battery</label><select id="noBattery"><option value="">—</option><option>VRLA</option><option>Lithium</option></select></div>
-      <div class="field"><label>Battery Brand</label><input id="noBatteryBrand"></div>
-
-      <button type="button" class="btn-ghost act" id="btnNewOfferMapping" style="margin-top:6px;">🔧 Advanced: SharePoint field mapping</button>
-      <div id="newOfferMappingFields" style="display:none;">
-        <p class="settings-note" style="margin-top:-2px;">Internal SharePoint column names each field above writes to (Country is handled separately above, via its own lookup list — not shown here). Defaults come from a real snapshot of this list's data. If "Create" fails below, the error usually names the wrong column directly — fix it here and try again, no need to reopen anything.</p>
-        <div class="field"><label>Project Name column</label><input id="mapName" value="Project Name"></div>
-        <div class="field"><label>Customer column</label><input id="mapCustomer" value="Customer"></div>
-        <div class="field"><label>Due Date column</label><input id="mapDue" value="Due date"></div>
-        <div class="field"><label>Owner column <span style="color:var(--red);">⚠ may be system-managed</span></label><input id="mapOwner" value=""></div>
-        <div class="field"><label>Product column</label><input id="mapProduct" value="Product"></div>
-        <div class="field"><label>Battery column</label><input id="mapBattery" value="Battery"></div>
-        <div class="field"><label>Battery Brand column</label><input id="mapBatteryBrand" value="Battery Brand"></div>
-        <p class="settings-note">Owner may correspond to the system "Created By" field, which Graph sets automatically to whoever is signed in and can't be overridden — left blank by default (skipped on create) for that reason. Fill it in only if you've confirmed a separate, writable "Owner" column exists.</p>
-      </div>
-
-      <p class="catalog-status" id="newOfferStatus" style="margin:10px 0 0;">Not submitted yet.</p>
-    </div>
-    <div class="acc-modal-footer">
-      <button type="button" class="btn-ghost act" id="btnNewOfferCancel">Cancel</button>
-      <button type="button" class="act btn-primary" id="btnNewOfferSubmit">✨ Create in SharePoint &amp; Start Offer</button>
     </div>
   </div>
 </div>
@@ -893,7 +848,7 @@ function processProjectList(rows, filename){
 
 // ---- Optional: live SharePoint connection via MSAL.js + Microsoft Graph ----
 // Real Microsoft sign-in popup only — this page never sees or handles the password. Requires an
-// Azure AD App Registration (Client ID) with delegated Graph permission Sites.ReadWrite.All, and this
+// Azure AD App Registration (Client ID) with delegated Graph permission Sites.Read.All, and this
 // page hosted at a URL registered as that app's Redirect URI. Uses the generic "common" endpoint
 // so any work/school account works without a tenant to configure.
 let msalInstance = null;
@@ -941,7 +896,7 @@ function buildMsalInstance(){
 }
 
 async function getGraphToken(){
-  const req = { scopes: ['Sites.ReadWrite.All'], account: msalAccount };
+  const req = { scopes: ['Sites.Read.All'], account: msalAccount };
   try{
     const resp = await msalInstance.acquireTokenSilent(req);
     return resp.accessToken;
@@ -960,21 +915,8 @@ async function graphGet(url, token){
   return resp.json();
 }
 
-async function graphPost(url, token, body){
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {Authorization:`Bearer ${token}`, 'Content-Type':'application/json'},
-    body: JSON.stringify(body),
-  });
-  if(!resp.ok){
-    const text = await resp.text().catch(()=> '');
-    throw new Error(`Graph API ${resp.status} — ${text.slice(0,300) || resp.statusText}`);
-  }
-  return resp.json();
-}
-
-// Shared by "Refresh" (read the whole list) and "Create New Offer" (write one new item) — resolves
-// the SharePoint site then the specific list, using whatever host/path/name are set in this panel.
+// Resolves the SharePoint site then the specific list, using whatever host/path/name are set in
+// this panel — used by "Refresh" to read the whole list.
 async function resolveSharePointList(token){
   const siteHost = document.getElementById('spSiteHost').value.trim() || 'rielloups.sharepoint.com';
   const sitePath = document.getElementById('spSitePath').value.trim() || '/sites/DCSales2';
@@ -1008,7 +950,7 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
     updateSpStatus('Opening the Microsoft sign-in popup…', 'loading');
     msalInstance = buildMsalInstance();
     await msalInstance.initialize();
-    const loginResp = await msalInstance.loginPopup({scopes:['Sites.ReadWrite.All']});
+    const loginResp = await msalInstance.loginPopup({scopes:['Sites.Read.All']});
     msalAccount = loginResp.account;
     updateSpStatus(`Signed in as ${msalAccount.username}. Loading the Project List…`, 'loaded');
     await fetchSharePointList();
@@ -1052,174 +994,6 @@ async function fetchSharePointList(){
     updateSpStatus(`Refresh failed: ${err.message || err}`, 'error');
   }
 }
-
-// ---- Create New Offer — writes a new item to the SharePoint "Progress tracker list" via Graph,
-// then pre-fills Project Details locally so the person can start configuring immediately.
-// Project Reference is assigned automatically by a SharePoint-side routine after creation (not
-// entered here) — after posting, we poll the new item briefly to pick it up once it appears.
-// Country is a Lookup column sourced from the separate "Country REF_Alpha2" list (its Code
-// column), so it's offered as a proper dropdown here rather than free text. ----
-const newOfferOverlay = document.getElementById('newOfferOverlay');
-let countryOptions = []; // [{id, code}] from the Country REF_Alpha2 list
-
-function closeNewOffer(){ newOfferOverlay.style.display = 'none'; }
-document.getElementById('btnNewOffer').addEventListener('click', ()=>{
-  newOfferOverlay.style.display = 'flex';
-  updateNewOfferStatus('Not submitted yet.');
-  if(msalInstance && msalAccount) loadCountryOptions();
-});
-document.getElementById('btnNewOfferClose').addEventListener('click', closeNewOffer);
-document.getElementById('btnNewOfferCancel').addEventListener('click', closeNewOffer);
-setupBackdropClose(newOfferOverlay, closeNewOffer);
-
-document.getElementById('btnNewOfferMapping').addEventListener('click', ()=>{
-  const el = document.getElementById('newOfferMappingFields');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-});
-
-document.getElementById('lnkNewOfferSignIn').addEventListener('click', (e)=>{
-  e.preventDefault();
-  closeNewOffer();
-  spLoginOverlay.style.display = 'flex';
-});
-
-function updateNewOfferStatus(msg, state){
-  const el = document.getElementById('newOfferStatus');
-  el.textContent = msg;
-  el.className = 'catalog-status' + (state==='loaded' ? ' loaded' : state==='error' ? ' error' : '');
-}
-
-async function loadCountryOptions(){
-  const select = document.getElementById('noCountry');
-  select.innerHTML = '<option value="">Loading…</option>';
-  try{
-    const token = await getGraphToken();
-    const siteHost = document.getElementById('spSiteHost').value.trim() || 'rielloups.sharepoint.com';
-    const sitePath = document.getElementById('spSitePath').value.trim() || '/sites/DCSales2';
-    const site = await graphGet(`https://graph.microsoft.com/v1.0/sites/${siteHost}:${sitePath}`, token);
-    const listsResp = await graphGet(
-      `https://graph.microsoft.com/v1.0/sites/${site.id}/lists?$filter=${encodeURIComponent(`displayName eq 'Country REF_Alpha2'`)}`,
-      token
-    );
-    const list = listsResp.value && listsResp.value[0];
-    if(!list) throw new Error('List "Country REF_Alpha2" not found on this site.');
-    let items = [];
-    let url = `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$top=200`;
-    while(url){
-      const page = await graphGet(url, token);
-      items = items.concat(page.value || []);
-      url = page['@odata.nextLink'] || null;
-    }
-    countryOptions = items.map(it=>({
-      id: it.id,
-      code: (it.fields && (it.fields.Code || it.fields.code)) || '?',
-      title: it.fields && it.fields.Title,
-    })).sort((a,b)=>a.code.localeCompare(b.code));
-    select.innerHTML = '<option value="">—</option>' + countryOptions.map(c=>
-      `<option value="${c.id}">${escapeHtml(c.code)}${c.title ? ' — '+escapeHtml(c.title) : ''}</option>`
-    ).join('');
-  }catch(err){
-    console.error(err);
-    select.innerHTML = `<option value="">(failed to load — ${escapeHtml(String(err.message||err).slice(0,60))})</option>`;
-  }
-}
-
-// After creating the item, PRJ_ID is assigned by a SharePoint-side routine that runs once the
-// list itself picks up the new row — so the reliable way to collect it is the same "Refresh" that
-// reads the whole list back (not a repeated poll of the single new item, which may not reflect
-// the routine's output yet even if the item itself already exists).
-async function refreshAndGetPrjId(token, site, list, itemId){
-  await fetchSharePointList(); // full refresh — also updates PROGRESS/Load datalist for everyone
-  const fresh = await graphGet(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${itemId}?expand=fields`, token);
-  return (fresh.fields && fresh.fields.PRJ_ID) || null;
-}
-
-document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=>{
-  if(typeof msal === 'undefined'){
-    alert('The Microsoft sign-in library failed to load (no internet access?).');
-    return;
-  }
-  if(!msalInstance || !msalAccount){
-    alert('Sign in with Microsoft 365 first — use the link above, or the "Sign-in" button top-right.');
-    return;
-  }
-
-  const countrySel = document.getElementById('noCountry');
-  const countryId = countrySel.value;
-  const countryLabel = countryId ? countrySel.options[countrySel.selectedIndex].textContent : '';
-
-  const values = {
-    name: document.getElementById('noName').value.trim(),
-    customer: document.getElementById('noCustomer').value.trim(),
-    due: document.getElementById('noDue').value,
-    owner: document.getElementById('noOwner').value.trim(),
-    product: document.getElementById('noProduct').value,
-    battery: document.getElementById('noBattery').value,
-    batteryBrand: document.getElementById('noBatteryBrand').value.trim(),
-  };
-  const mapping = {
-    name: document.getElementById('mapName').value.trim(),
-    customer: document.getElementById('mapCustomer').value.trim(),
-    due: document.getElementById('mapDue').value.trim(),
-    owner: document.getElementById('mapOwner').value.trim(),
-    product: document.getElementById('mapProduct').value.trim(),
-    battery: document.getElementById('mapBattery').value.trim(),
-    batteryBrand: document.getElementById('mapBatteryBrand').value.trim(),
-  };
-
-  // Build the SharePoint fields payload — a blank mapping (Owner by default) means "deliberately
-  // skipped", not "send empty", since it's flagged as likely unwritable (system-managed field).
-  const fields = {};
-  Object.keys(mapping).forEach(key=>{
-    const col = mapping[key];
-    if(!col) return;
-    let val = values[key];
-    if(key === 'due' && val) val = new Date(val).toISOString(); // SharePoint DateTime wants ISO 8601
-    if(val) fields[col] = val;
-  });
-  // Country is a Lookup column — SharePoint/Graph expect the numeric ID of the matching row in
-  // the source list via a "<ColumnName>LookupId" field, not the plain text value.
-  if(countryId) fields['CountryLookupId'] = countryId;
-
-  try{
-    updateNewOfferStatus('Creating in SharePoint…', 'loading');
-    const token = await getGraphToken();
-    const {site, list} = await resolveSharePointList(token);
-    const created = await graphPost(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items`, token, {fields});
-    updateNewOfferStatus('Created — refreshing the list to pick up the assigned Project Reference…', 'loading');
-
-    const prjId = await refreshAndGetPrjId(token, site, list, created.id);
-
-    if(prjId){
-      updateNewOfferStatus(`Created as "${prjId}".`, 'loaded');
-    } else {
-      updateNewOfferStatus('Created in SharePoint, but the Project Reference wasn\'t assigned yet even after refreshing — click "Refresh" in the Sign-in panel again shortly, then "Load" it once it appears.', 'loaded');
-    }
-    // refreshAndGetPrjId already re-ran the full list refresh, which repopulates PROGRESS and the
-    // "Load" datalist for everyone — no separate manual PROGRESS.push() needed here.
-
-    // pre-fill Project Details locally so configuring can start right away. Project Reference is
-    // assigned by SharePoint, not typed here — once we have it, lock the field so it can't drift
-    // out of sync with the real record (Reset / Load / another Create still update it via JS).
-    if(prjId){
-      document.getElementById('prjRef').value = prjId;
-      document.getElementById('prjRef').readOnly = true;
-    }
-    document.getElementById('prjName').value = values.name;
-    document.getElementById('prjCustomer').value = values.customer;
-    document.getElementById('prjCountry').value = countryLabel;
-    document.getElementById('prjDue').value = values.due;
-    document.getElementById('prjOwner').value = values.owner;
-    if(values.product) document.getElementById('prjProduct').value = values.product;
-    if(values.battery) document.getElementById('prjBattery').value = values.battery;
-    document.getElementById('prjBatteryBrand').value = values.batteryBrand;
-
-    if(prjId) setTimeout(closeNewOffer, 1400);
-  }catch(err){
-    console.error(err);
-    updateNewOfferStatus(`Create failed: ${err.message || err} — check the field mapping above (a wrong internal column name is the most common cause).`, 'error');
-  }
-});
 
 const projectListInput = document.getElementById('projectListInput');
 document.getElementById('btnImportProjectList').addEventListener('click', ()=>{

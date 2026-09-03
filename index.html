@@ -319,6 +319,13 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
 /* ---- settings panel ---- */
 .settings-body{padding:18px 20px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; flex:1;}
+.sp-success-check{
+  width:64px; height:64px; border-radius:50%; background:#2FAE60; margin:0 auto 14px;
+  display:flex; align-items:center; justify-content:center;
+  animation:sp-pop .32s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes sp-pop{0%{transform:scale(0.4); opacity:0;} 100%{transform:scale(1); opacity:1;}}
+.sp-success-label{font-size:15.5px; font-weight:600; color:var(--text); margin:0;}
 .settings-body .field{margin-bottom:0;}
 .settings-body hr{border:none; border-top:1px solid var(--panel-border); margin:2px 0;}
 .settings-note{font-size:11.5px; font-weight:300; color:var(--dim); line-height:1.6; margin:0;}
@@ -587,6 +594,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <button type="button" class="acc-modal-close" id="btnSpLoginClose">×</button>
     </div>
     <div class="settings-body">
+      <div id="spFormFields">
       <div id="spAdvancedFields" style="display:none;">
         <div class="field"><label>Application (Client) ID</label><input id="spClientId" value="43e401c3-5c50-4ab1-a4b1-f66ebcbbbfc4"></div>
         <div class="field"><label>Tenant ID or domain</label><input id="spTenantId" value="d8fd0d39-8b2f-4760-af9e-84aadb8587ef"></div>
@@ -596,6 +604,13 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <div class="field"><label>Site path</label><input id="spSitePath" value="/sites/DCSales2"></div>
       <div class="field"><label>List name</label><input id="spListName" value="Progress tracker list"></div>
       <p class="catalog-status" id="spStatus" style="margin:4px 0 0;">Not connected.</p>
+      </div>
+      <div id="spSuccessState" style="display:none; text-align:center; padding:26px 0 10px;">
+        <div class="sp-success-check">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+        <p class="sp-success-label">Connected</p>
+      </div>
     </div>
     <div class="acc-modal-footer">
       <button type="button" class="btn-ghost act" id="btnSpLoginCancel">Close</button>
@@ -862,6 +877,10 @@ function closeSpLogin(){
   // re-lock the debug fields every time the panel closes, so a fresh password entry is needed next time
   document.getElementById('spAdvancedFields').style.display = 'none';
   document.getElementById('btnUnlockDebug').style.display = 'block';
+  // reset back to the normal form view, so reopening the panel later (e.g. to hit "Refresh")
+  // doesn't show the success checkmark stuck on screen from a previous connection
+  document.getElementById('spFormFields').style.display = 'block';
+  document.getElementById('spSuccessState').style.display = 'none';
 }
 document.getElementById('btnSpLoginClose').addEventListener('click', closeSpLogin);
 document.getElementById('btnUnlockDebug').addEventListener('click', ()=>{
@@ -954,7 +973,12 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
     const loginResp = await msalInstance.loginPopup({scopes:['Sites.Read.All']});
     msalAccount = loginResp.account;
     updateSpStatus(`Signed in as ${msalAccount.username}. Loading the Project List…`, 'loaded');
-    await fetchSharePointList();
+    const ok = await fetchSharePointList();
+    if(ok){
+      document.getElementById('spFormFields').style.display = 'none';
+      document.getElementById('spSuccessState').style.display = 'block';
+      setTimeout(closeSpLogin, 1300);
+    }
   }catch(err){
     console.error(err);
     const msg = String(err.message || err);
@@ -990,9 +1014,11 @@ async function fetchSharePointList(){
     if(rows.length) console.log('First SharePoint item — raw field names for mapping/debugging:', rows[0]);
     processProjectList(rows, `SharePoint (live): ${list.displayName || 'Progress tracker list'}`);
     updateSpStatus(`Connected — ${rows.length} records loaded at ${new Date().toLocaleTimeString('en-GB')}. Note: Person/Lookup columns may come through as IDs — check the browser console (first item logged) if a field looks wrong.`, 'loaded');
+    return true;
   }catch(err){
     console.error(err);
     updateSpStatus(`Refresh failed: ${err.message || err}`, 'error');
+    return false;
   }
 }
 

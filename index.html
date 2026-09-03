@@ -326,6 +326,12 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 }
 @keyframes sp-pop{0%{transform:scale(0.4); opacity:0;} 100%{transform:scale(1); opacity:1;}}
 .sp-success-label{font-size:15.5px; font-weight:600; color:var(--text); margin:0;}
+.sp-error-check{
+  width:64px; height:64px; border-radius:50%; background:var(--red); margin:0 auto 14px;
+  display:flex; align-items:center; justify-content:center;
+  animation:sp-pop .32s cubic-bezier(.34,1.56,.64,1);
+}
+.sp-error-label{font-size:15.5px; font-weight:600; color:var(--text); margin:0;}
 .settings-body .field{margin-bottom:0;}
 .settings-body hr{border:none; border-top:1px solid var(--panel-border); margin:2px 0;}
 .settings-note{font-size:11.5px; font-weight:300; color:var(--dim); line-height:1.6; margin:0;}
@@ -604,12 +610,19 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <div class="field"><label>Site path</label><input id="spSitePath" value="/sites/DCSales2"></div>
       <div class="field"><label>List name</label><input id="spListName" value="Progress tracker list"></div>
       <p class="catalog-status" id="spStatus" style="margin:4px 0 0;">Not connected.</p>
+      <button type="button" class="btn-ghost act" id="btnSpSignOut" style="display:none; margin-top:4px; color:var(--red); border-color:#F0C6C6;">🚪 Sign Out</button>
       </div>
       <div id="spSuccessState" style="display:none; text-align:center; padding:26px 0 10px;">
         <div class="sp-success-check">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         <p class="sp-success-label">Connected</p>
+      </div>
+      <div id="spErrorState" style="display:none; text-align:center; padding:26px 0 10px;">
+        <div class="sp-error-check">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </div>
+        <p class="sp-error-label">Connection not available</p>
       </div>
     </div>
     <div class="acc-modal-footer">
@@ -871,16 +884,20 @@ let msalInstance = null;
 let msalAccount = null;
 
 const spLoginOverlay = document.getElementById('spLoginOverlay');
-document.getElementById('btnOpenSpLogin').addEventListener('click', ()=>{ spLoginOverlay.style.display = 'flex'; });
+document.getElementById('btnOpenSpLogin').addEventListener('click', ()=>{
+  spLoginOverlay.style.display = 'flex';
+  document.getElementById('btnSpSignOut').style.display = msalAccount ? 'block' : 'none';
+});
 function closeSpLogin(){
   spLoginOverlay.style.display = 'none';
   // re-lock the debug fields every time the panel closes, so a fresh password entry is needed next time
   document.getElementById('spAdvancedFields').style.display = 'none';
   document.getElementById('btnUnlockDebug').style.display = 'block';
   // reset back to the normal form view, so reopening the panel later (e.g. to hit "Refresh")
-  // doesn't show the success checkmark stuck on screen from a previous connection
+  // doesn't show the success/error state stuck on screen from a previous attempt
   document.getElementById('spFormFields').style.display = 'block';
   document.getElementById('spSuccessState').style.display = 'none';
+  document.getElementById('spErrorState').style.display = 'none';
 }
 document.getElementById('btnSpLoginClose').addEventListener('click', closeSpLogin);
 document.getElementById('btnUnlockDebug').addEventListener('click', ()=>{
@@ -975,9 +992,12 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
     updateSpStatus(`Signed in as ${msalAccount.username}. Loading the Project List…`, 'loaded');
     const ok = await fetchSharePointList();
     if(ok){
+      document.getElementById('btnSpSignOut').style.display = 'block';
       document.getElementById('spFormFields').style.display = 'none';
       document.getElementById('spSuccessState').style.display = 'block';
       setTimeout(closeSpLogin, 1300);
+    } else {
+      showSpConnectionError();
     }
   }catch(err){
     console.error(err);
@@ -986,7 +1006,37 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
       ? ' — this app is single-tenant: fill in the Tenant ID or domain field above (see the note for where to find it) and try again.'
       : '';
     updateSpStatus(`Sign-in failed: ${msg}${hint}`, 'error');
+    showSpConnectionError();
   }
+});
+
+// Brief red ✕ animation for any failed connection attempt (bad login, or a login that succeeded
+// but couldn't reach/read the list) — then returns to the form (panel stays open, unlike the
+// success case) so the detailed error text already set in #spStatus is still there to read/fix.
+function showSpConnectionError(){
+  document.getElementById('spFormFields').style.display = 'none';
+  document.getElementById('spErrorState').style.display = 'block';
+  setTimeout(()=>{
+    document.getElementById('spErrorState').style.display = 'none';
+    document.getElementById('spFormFields').style.display = 'block';
+  }, 1300);
+}
+
+document.getElementById('btnSpSignOut').addEventListener('click', async ()=>{
+  try{
+    if(msalInstance && msalAccount){
+      await msalInstance.logoutPopup({account: msalAccount});
+    }
+  }catch(err){
+    console.warn('MSAL logout popup failed or was closed — signing out locally anyway:', err);
+  }
+  msalAccount = null;
+  msalInstance = null;
+  PROGRESS = [];
+  refreshProjectDatalist();
+  document.getElementById('projectListStatus').textContent = 'No project data loaded yet — sign in with MS 365 (top-right) to load it.';
+  document.getElementById('btnSpSignOut').style.display = 'none';
+  updateSpStatus('Not connected.');
 });
 
 document.getElementById('btnSpRefresh').addEventListener('click', ()=>{

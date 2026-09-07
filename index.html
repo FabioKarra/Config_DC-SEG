@@ -100,12 +100,20 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 .sidebar-show-btn.visible{display:flex;}
 
 .signin-topright-btn{
-  position:fixed; top:18px; right:18px; z-index:80; display:flex; align-items:center; gap:7px;
+  position:fixed; top:18px; right:66px; z-index:80; display:flex; align-items:center; gap:7px;
   padding:10px 18px; border-radius:10px; border:1px solid var(--panel-border); background:#fff;
   color:var(--text); font-family:'Work Sans',sans-serif; font-weight:300; font-size:13.5px;
   box-shadow:0 6px 18px rgba(20,22,26,.14);
 }
 .signin-topright-btn:hover{border-color:var(--accent); color:var(--accent);}
+.signout-topright-btn{
+  display:none; position:fixed; top:18px; right:18px; z-index:80;
+  width:40px; height:40px; border-radius:50%; border:none; background:var(--red);
+  align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(20,22,26,.18);
+  cursor:pointer;
+}
+.signout-topright-btn.visible{display:flex;}
+.signout-topright-btn:hover{filter:brightness(1.08);}
 
 .main-content{flex:1; min-width:0; padding:28px 30px 60px;}
 .wrap{max-width:1320px; margin:0 auto;}
@@ -354,11 +362,12 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   .app-shell{display:block;}
   .main-content{width:100%; padding:20px 14px 50px;}
   .wrap{max-width:100%;}
-  .page-header{padding-right:52px; padding-left:44px;} /* keep title clear of both fixed buttons */
+  .page-header{padding-right:78px; padding-left:44px;} /* keep title clear of both fixed buttons */
   .brand-eyebrow{font-size:9.5px;}
   h1{font-size:22px;}
   .sidebar-show-btn{top:14px; left:14px; width:36px; height:36px;}
-  .signin-topright-btn{top:14px; right:14px; padding:8px 12px; font-size:12.5px;}
+  .signin-topright-btn{top:14px; right:56px; padding:8px 12px; font-size:12.5px;}
+  .signout-topright-btn{top:14px; right:14px; width:34px; height:34px;}
   .grid{grid-template-columns:1fr;}
   table.cfg, table.bom{min-width:920px;} /* keep columns usable; the wrapper scrolls horizontally */
   .cfg-wrap{-webkit-overflow-scrolling:touch;}
@@ -374,6 +383,9 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
   <button class="sidebar-show-btn" id="btnShowSidebar" title="Show menu">☰</button>
   <button type="button" class="signin-topright-btn" id="btnOpenSpLogin"><span>🔐</span>Sign-in</button>
+  <button type="button" class="signout-topright-btn" id="btnTopSignOut" title="Sign out">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  </button>
 
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -877,7 +889,7 @@ function processProjectList(rows, filename){
 
 // ---- Optional: live SharePoint connection via MSAL.js + Microsoft Graph ----
 // Real Microsoft sign-in popup only — this page never sees or handles the password. Requires an
-// Azure AD App Registration (Client ID) with delegated Graph permission Sites.Read.All, and this
+// Azure AD App Registration (Client ID) with delegated Graph permission Sites.Selected, and this
 // page hosted at a URL registered as that app's Redirect URI. Uses the generic "common" endpoint
 // so any work/school account works without a tenant to configure.
 let msalInstance = null;
@@ -933,7 +945,7 @@ function buildMsalInstance(){
 }
 
 async function getGraphToken(){
-  const req = { scopes: ['Sites.Read.All'], account: msalAccount };
+  const req = { scopes: ['Sites.Selected'], account: msalAccount };
   try{
     const resp = await msalInstance.acquireTokenSilent(req);
     return resp.accessToken;
@@ -987,12 +999,13 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
     updateSpStatus('Opening the Microsoft sign-in popup…', 'loading');
     msalInstance = buildMsalInstance();
     await msalInstance.initialize();
-    const loginResp = await msalInstance.loginPopup({scopes:['Sites.Read.All']});
+    const loginResp = await msalInstance.loginPopup({scopes:['Sites.Selected']});
     msalAccount = loginResp.account;
     updateSpStatus(`Signed in as ${msalAccount.username}. Loading the Project List…`, 'loaded');
     const ok = await fetchSharePointList();
     if(ok){
       document.getElementById('btnSpSignOut').style.display = 'block';
+      document.getElementById('btnTopSignOut').classList.add('visible');
       document.getElementById('spFormFields').style.display = 'none';
       document.getElementById('spSuccessState').style.display = 'block';
       setTimeout(closeSpLogin, 1300);
@@ -1011,18 +1024,16 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
 });
 
 // Brief red ✕ animation for any failed connection attempt (bad login, or a login that succeeded
-// but couldn't reach/read the list) — then returns to the form (panel stays open, unlike the
-// success case) so the detailed error text already set in #spStatus is still there to read/fix.
+// but couldn't reach/read the list) — then closes the panel, same as the success case. The
+// detailed error text is still set on #spStatus underneath, so reopening the panel (e.g. to try
+// again) shows it right away rather than a blank "Not connected." state.
 function showSpConnectionError(){
   document.getElementById('spFormFields').style.display = 'none';
   document.getElementById('spErrorState').style.display = 'block';
-  setTimeout(()=>{
-    document.getElementById('spErrorState').style.display = 'none';
-    document.getElementById('spFormFields').style.display = 'block';
-  }, 1300);
+  setTimeout(closeSpLogin, 1300);
 }
 
-document.getElementById('btnSpSignOut').addEventListener('click', async ()=>{
+async function performSignOut(){
   try{
     if(msalInstance && msalAccount){
       await msalInstance.logoutPopup({account: msalAccount});
@@ -1036,8 +1047,11 @@ document.getElementById('btnSpSignOut').addEventListener('click', async ()=>{
   refreshProjectDatalist();
   document.getElementById('projectListStatus').textContent = 'No project data loaded yet — sign in with MS 365 (top-right) to load it.';
   document.getElementById('btnSpSignOut').style.display = 'none';
+  document.getElementById('btnTopSignOut').classList.remove('visible');
   updateSpStatus('Not connected.');
-});
+}
+document.getElementById('btnSpSignOut').addEventListener('click', performSignOut);
+document.getElementById('btnTopSignOut').addEventListener('click', performSignOut);
 
 document.getElementById('btnSpRefresh').addEventListener('click', ()=>{
   if(!msalInstance || !msalAccount){

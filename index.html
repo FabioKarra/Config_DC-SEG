@@ -57,6 +57,16 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
   border-bottom:1px solid var(--panel-border); gap:10px;
 }
 .sidebar-logo{height:44px; display:block;}
+.lang-fixed{
+  position:fixed; top:18px; right:220px; z-index:80; display:flex; align-items:center; gap:6px;
+  background:#fff; border:1px solid var(--panel-border); border-radius:10px; padding:8px 10px;
+  box-shadow:0 6px 18px rgba(20,22,26,.14);
+}
+.lang-fixed select{
+  border:none; background:transparent; font-family:'Work Sans',sans-serif; font-weight:600;
+  font-size:12.5px; color:var(--text); cursor:pointer;
+}
+.lang-icon{font-size:14px; flex-shrink:0;}
 .sidebar-toggle{
   background:#fff; border:1px solid var(--panel-border); border-radius:8px; width:36px; height:36px;
   color:var(--dim); font-size:17px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
@@ -125,6 +135,11 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
   color:var(--accent); text-transform:uppercase; margin:0 0 6px;
 }
 h1{font-weight:600; font-size:27px; margin:0; letter-spacing:-.01em; color:var(--navy);}
+.version-badge{
+  display:inline-block; vertical-align:middle; font-family:'Work Sans',sans-serif; font-weight:600;
+  font-size:11px; letter-spacing:.02em; color:var(--accent-dark); background:#EAF0FB;
+  border:1px solid #D3E0F5; border-radius:6px; padding:3px 8px; margin-left:8px;
+}
 .subtitle{color:var(--dim); font-size:13.5px; font-weight:300; margin-top:6px; max-width:600px; line-height:1.5;}
 
 /* ---- generic action buttons (used inside main content, e.g. modals) ---- */
@@ -340,6 +355,14 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   animation:sp-pop .32s cubic-bezier(.34,1.56,.64,1);
 }
 .sp-error-label{font-size:15.5px; font-weight:600; color:var(--text); margin:0;}
+.sp-loading-spinner{
+  width:52px; height:52px; margin:0 auto 16px; border-radius:50%;
+  border:4px solid #E4EAF5; border-top-color:var(--accent);
+  animation:sp-spin .8s linear infinite;
+}
+@keyframes sp-spin{to{transform:rotate(360deg);}}
+.sp-waiting-label{font-size:15.5px; font-weight:600; color:var(--text); margin:0 0 6px;}
+.sp-waiting-sub{font-size:12px; font-weight:300; color:var(--dim); margin:0; max-width:340px; margin-left:auto; margin-right:auto; line-height:1.5;}
 .settings-body .field{margin-bottom:0;}
 .settings-body hr{border:none; border-top:1px solid var(--panel-border); margin:2px 0;}
 .settings-note{font-size:11.5px; font-weight:300; color:var(--dim); line-height:1.6; margin:0;}
@@ -362,12 +385,13 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   .app-shell{display:block;}
   .main-content{width:100%; padding:20px 14px 50px;}
   .wrap{max-width:100%;}
-  .page-header{padding-right:78px; padding-left:44px;} /* keep title clear of both fixed buttons */
+  .page-header{padding-right:78px; padding-left:110px;} /* keep title clear of both fixed corners */
   .brand-eyebrow{font-size:9.5px;}
   h1{font-size:22px;}
   .sidebar-show-btn{top:14px; left:14px; width:36px; height:36px;}
   .signin-topright-btn{top:14px; right:56px; padding:8px 12px; font-size:12.5px;}
   .signout-topright-btn{top:14px; right:14px; width:34px; height:34px;}
+  .lang-fixed{top:14px; left:56px; right:auto; padding:6px 8px;}
   .grid{grid-template-columns:1fr;}
   table.cfg, table.bom{min-width:920px;} /* keep columns usable; the wrapper scrolls horizontally */
   .cfg-wrap{-webkit-overflow-scrolling:touch;}
@@ -382,7 +406,17 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
   <button class="sidebar-show-btn" id="btnShowSidebar" title="Show menu">☰</button>
-  <button type="button" class="signin-topright-btn" id="btnOpenSpLogin"><span>🔐</span>Sign-in</button>
+  <div class="lang-fixed">
+    <span class="lang-icon">🌐</span>
+    <select id="langSelect">
+      <option value="en">EN</option>
+      <option value="it">IT</option>
+      <option value="de">DE</option>
+      <option value="fr">FR</option>
+      <option value="es">ES</option>
+    </select>
+  </div>
+  <button type="button" class="signin-topright-btn" id="btnOpenSpLogin"><span>🔐</span><span data-i18n="signIn">Sign-in</span></button>
   <button type="button" class="signout-topright-btn" id="btnTopSignOut" title="Sign out">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
   </button>
@@ -394,37 +428,38 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
     </div>
     <nav class="sidebar-nav">
       <div class="nav-group">
-        <button type="button" class="nav-group-header"><span class="nav-group-title">Data Sources</span><span class="nav-group-chevron">▾</span></button>
+        <button type="button" class="nav-group-header"><span class="nav-group-title" data-i18n="nav.dataSources">Data Sources</span><span class="nav-group-chevron">▾</span></button>
         <div class="nav-group-body">
-        <button class="nav-btn" id="btnImportPriceList"><span class="icon">📑</span>Import Price List</button>
+        <button class="nav-btn" id="btnImportPriceList"><span class="icon">📑</span><span data-i18n="nav.importPriceList">Import Price List</span></button>
         <input type="file" id="priceListInput" accept=".xlsx,.xls" style="display:none">
+        <button class="nav-btn" id="btnNewOffer"><span class="icon">✨</span><span data-i18n="nav.createNewOffer">Create New Offer</span></button>
         </div>
       </div>
       <div class="nav-group">
-        <button type="button" class="nav-group-header"><span class="nav-group-title">Documents</span><span class="nav-group-chevron">▾</span></button>
+        <button type="button" class="nav-group-header"><span class="nav-group-title" data-i18n="nav.documents">Documents</span><span class="nav-group-chevron">▾</span></button>
         <div class="nav-group-body">
-        <button class="nav-btn" id="btnPreviewBom"><span class="icon">👁</span>Preview BOM</button>
-        <button class="nav-btn" id="btnExportBomPdf"><span class="icon">📄</span>BOM — PDF</button>
-        <button class="nav-btn" id="btnExportBomXlsx"><span class="icon">📊</span>BOM — Excel</button>
-        <button class="nav-btn" id="btnPreviewOffer"><span class="icon">👁</span>Preview Offer</button>
-        <button class="nav-btn" id="btnExportOfferPdf"><span class="icon">📄</span>Offer — PDF</button>
-        <button class="nav-btn" id="btnExportOfferXlsx"><span class="icon">📊</span>Offer — Excel</button>
+        <button class="nav-btn" id="btnPreviewBom"><span class="icon">👁</span><span data-i18n="nav.previewBom">Preview BOM</span></button>
+        <button class="nav-btn" id="btnExportBomPdf"><span class="icon">📄</span><span data-i18n="nav.bomPdf">BOM — PDF</span></button>
+        <button class="nav-btn" id="btnExportBomXlsx"><span class="icon">📊</span><span data-i18n="nav.bomExcel">BOM — Excel</span></button>
+        <button class="nav-btn" id="btnPreviewOffer"><span class="icon">👁</span><span data-i18n="nav.previewOffer">Preview Offer</span></button>
+        <button class="nav-btn" id="btnExportOfferPdf"><span class="icon">📄</span><span data-i18n="nav.offerPdf">Offer — PDF</span></button>
+        <button class="nav-btn" id="btnExportOfferXlsx"><span class="icon">📊</span><span data-i18n="nav.offerExcel">Offer — Excel</span></button>
         </div>
       </div>
       <div class="nav-group">
-        <button type="button" class="nav-group-header"><span class="nav-group-title">Revision</span><span class="nav-group-chevron">▾</span></button>
+        <button type="button" class="nav-group-header"><span class="nav-group-title" data-i18n="nav.revision">Revision</span><span class="nav-group-chevron">▾</span></button>
         <div class="nav-group-body">
-        <button class="nav-btn" id="btnCloseOffer"><span class="icon">🔒</span>Close Offer</button>
-        <button class="nav-btn" id="btnSaveFile"><span class="icon">💾</span>Save Configuration</button>
-        <button class="nav-btn" id="btnLoadFile"><span class="icon">📂</span>Load Configuration</button>
+        <button class="nav-btn" id="btnCloseOffer"><span class="icon">🔒</span><span data-i18n="nav.closeOffer">Close Offer</span></button>
+        <button class="nav-btn" id="btnSaveFile"><span class="icon">💾</span><span data-i18n="nav.saveConfig">Save Configuration</span></button>
+        <button class="nav-btn" id="btnLoadFile"><span class="icon">📂</span><span data-i18n="nav.loadConfig">Load Configuration</span></button>
         <input type="file" id="fileInput" accept="application/json" style="display:none">
         </div>
       </div>
       <div class="nav-group">
-        <button type="button" class="nav-group-header"><span class="nav-group-title">Settings</span><span class="nav-group-chevron">▾</span></button>
+        <button type="button" class="nav-group-header"><span class="nav-group-title" data-i18n="nav.settings">Settings</span><span class="nav-group-chevron">▾</span></button>
         <div class="nav-group-body">
-        <button class="nav-btn" id="btnOpenSettings"><span class="icon">⚙️</span>Offer Settings</button>
-        <button class="nav-btn danger" id="btnReset"><span class="icon">↺</span>Reset Page</button>
+        <button class="nav-btn" id="btnOpenSettings"><span class="icon">⚙️</span><span data-i18n="nav.offerSettings">Offer Settings</span></button>
+        <button class="nav-btn danger" id="btnReset"><span class="icon">↺</span><span data-i18n="nav.resetPage">Reset Page</span></button>
         </div>
       </div>
     </nav>
@@ -435,14 +470,14 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
     <div class="wrap">
 
       <div class="page-header">
-        <p class="brand-eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator</h1>
-        <p class="subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
+        <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
+        <h1>UPS Configurator <span class="version-badge">beta_5.30</span></h1>
+        <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
       <div class="status-row">
-        <p class="catalog-status" id="projectListStatus">No project data loaded yet — sign in with MS 365 (top-right) to load it.</p>
-        <p class="catalog-status" id="catalogStatus">No price list imported — reference table + manual pricing.</p>
+        <p class="catalog-status" id="projectListStatus" data-i18n="status.noProjectData">No project data loaded yet — sign in with MS 365 (top-right) to load it.</p>
+        <p class="catalog-status" id="catalogStatus" data-i18n="status.noPriceList">No price list imported — reference table + manual pricing.</p>
         <div class="catalog-status" id="revisionStatus" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
           <span id="revisionStatusText">Revision: <b>R0</b> — open, editable.</span>
           <button type="button" id="btnNewRevision" class="btn-add" style="display:none; white-space:nowrap; padding:6px 10px; font-size:11.5px;">🔓 New Revision</button>
@@ -451,73 +486,74 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <!-- PROJECT DETAILS -->
       <section class="panel">
-        <p class="panel-title"><span class="panel-title-left"><span class="dot"></span>Project Details</span></p>
+        <p class="panel-title"><span class="panel-title-left"><span class="dot"></span><span data-i18n="pd.title">Project Details</span></span></p>
         <div class="grid">
           <div class="field">
-            <label for="prjRef">Project Reference</label>
+            <label for="prjRef" data-i18n="pd.projectRef">Project Reference</label>
             <div style="display:flex; gap:6px;">
-              <input list="prjList" id="prjRef" placeholder="e.g. 260005" style="flex:1; min-width:0;">
-              <button type="button" class="btn-ghost act" id="btnLoad" style="flex-shrink:0; padding:9px 12px; white-space:nowrap;" title="Look up this Project Reference and fill in the fields below">↑ Load</button>
+              <input list="prjList" id="prjRef" data-i18n-ph="pd.refPlaceholder" placeholder="e.g. 260005" style="flex:1; min-width:0;">
+              <button type="button" class="btn-ghost act" id="btnLoad" style="flex-shrink:0; padding:9px 12px; white-space:nowrap;" title="Look up this Project Reference and fill in the fields below"><span data-i18n="pd.load">↑ Load</span></button>
+              <button type="button" class="btn-ghost act" id="btnUploadFiles" style="flex-shrink:0; padding:9px 12px; white-space:nowrap; display:inline-flex; align-items:center; gap:6px;" title="Upload offer files to this project's SharePoint folder"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> <span data-i18n="pd.uploadFiles">Files</span></button>
             </div>
             <datalist id="prjList"></datalist>
           </div>
-          <div class="field auto"><label>Project Name</label><input id="prjName" readonly></div>
-          <div class="field auto"><label>Country</label><input id="prjCountry" readonly></div>
-          <div class="field auto"><label>Customer</label><input id="prjCustomer" readonly></div>
-          <div class="field auto"><label>Due Date</label><input id="prjDue" readonly></div>
-          <div class="field auto"><label>Pre-Sales Owner</label><input id="prjOwner" readonly></div>
+          <div class="field auto"><label data-i18n="pd.projectName">Project Name</label><input id="prjName" readonly></div>
+          <div class="field auto"><label data-i18n="pd.country">Country</label><input id="prjCountry" readonly></div>
+          <div class="field auto"><label data-i18n="pd.customer">Customer</label><input id="prjCustomer" readonly></div>
+          <div class="field auto"><label data-i18n="pd.dueDate">Due Date</label><input id="prjDue" readonly></div>
+          <div class="field auto"><label data-i18n="pd.owner">Pre-Sales Owner</label><input id="prjOwner" readonly></div>
           <div class="field">
-            <label>Product</label>
+            <label data-i18n="pd.product">Product</label>
             <select id="prjProduct"><option>MP2 - M2S</option><option>MHE</option></select>
           </div>
           <div class="field">
-            <label>Battery</label>
+            <label data-i18n="pd.battery">Battery</label>
             <select id="prjBattery"><option>VRLA</option><option>Lithium</option></select>
           </div>
           <div class="field">
-            <label>Battery Brand</label>
-            <input id="prjBatteryBrand" placeholder="e.g. Hoppecke">
+            <label data-i18n="pd.batteryBrand">Battery Brand</label>
+            <input id="prjBatteryBrand" data-i18n-ph="pd.batteryBrandPlaceholder" placeholder="e.g. Hoppecke">
           </div>
         </div>
       </section>
 
       <!-- SYSTEM CONFIGURATION -->
       <section class="panel">
-        <p class="panel-title"><span class="panel-title-left"><span class="dot"></span>System Configuration</span></p>
+        <p class="panel-title"><span class="panel-title-left"><span class="dot"></span><span data-i18n="sc.title">System Configuration</span></span></p>
         <div class="cfg-wrap">
           <table class="cfg">
             <thead><tr>
-              <th>Pos.</th><th>Qty</th><th>UPS/Sys</th><th>Loads Type</th><th>Pload (kW)</th>
-              <th>Redundancy</th><th>n.PM</th><th>Model</th><th>Connection</th><th>Configuration</th>
-              <th>Ventilation</th><th>Batteries</th><th>H.Eff</th><th></th>
+              <th data-i18n="sc.pos">Pos.</th><th data-i18n="sc.qty">Qty</th><th data-i18n="sc.upsSys">UPS/Sys</th><th data-i18n="sc.loadsType">Loads Type</th><th data-i18n="sc.pload">Pload (kW)</th>
+              <th data-i18n="sc.redundancy">Redundancy</th><th data-i18n="sc.nPM">n.PM</th><th data-i18n="sc.model">Model</th><th data-i18n="sc.connection">Connection</th><th data-i18n="sc.configuration">Configuration</th>
+              <th data-i18n="sc.ventilation">Ventilation</th><th data-i18n="sc.batteries">Batteries</th><th data-i18n="sc.hEff">H.Eff</th><th></th>
             </tr></thead>
             <tbody id="cfgBody"></tbody>
           </table>
         </div>
         <div class="add-row-wrap" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-          <button class="btn-add" id="btnAddRow">+ Add Position</button>
-          <button type="button" class="act btn-primary" id="btnGenerate"><span class="icon">⚡</span> Generate Offer</button>
+          <button class="btn-add" id="btnAddRow" data-i18n="sc.addPosition">+ Add Position</button>
+          <button type="button" class="act btn-primary" id="btnGenerate"><span class="icon">⚡</span> <span data-i18n="sc.generateOffer">Generate Offer</span></button>
         </div>
       </section>
 
       <!-- OFFER / BOM -->
       <section class="panel">
-        <p class="panel-title"><span class="panel-title-left"><span class="dot"></span>Offer Lines</span></p>
+        <p class="panel-title"><span class="panel-title-left"><span class="dot"></span><span data-i18n="ol.title">Offer Lines</span></span></p>
         <div class="cfg-wrap">
           <table class="bom">
             <thead><tr>
-              <th>Pos</th><th>Qty</th><th>Model</th><th>Code</th><th>Description</th>
-              <th class="num" id="thGross">Gross Price</th><th class="num">Discount %</th><th class="num">Net Price</th>
-              <th class="num" id="thCost">Unit Cost</th><th class="num">Total Cost</th><th class="num">Total Price</th><th class="num">Margin %</th><th></th>
+              <th data-i18n="ol.pos">Pos</th><th data-i18n="ol.qty">Qty</th><th data-i18n="ol.model">Model</th><th data-i18n="ol.code">Code</th><th data-i18n="ol.description">Description</th>
+              <th class="num" id="thGross" data-i18n="ol.grossPrice">Gross Price</th><th class="num" data-i18n="ol.discount">Discount %</th><th class="num" data-i18n="ol.netPrice">Net Price</th>
+              <th class="num" id="thCost" data-i18n="ol.unitCost">Unit Cost</th><th class="num" data-i18n="ol.totalCost">Total Cost</th><th class="num" data-i18n="ol.totalPrice">Total Price</th><th class="num" data-i18n="ol.margin">Margin %</th><th></th>
             </tr></thead>
             <tbody id="bomBody">
-              <tr><td colspan="13" class="empty-bom">No rows generated yet. Configure the positions above and click "Generate Offer".</td></tr>
+              <tr><td colspan="13" class="empty-bom" data-i18n="dyn.noRowsYet">No rows generated yet. Configure the positions above and click "Generate Offer".</td></tr>
             </tbody>
           </table>
         </div>
         <p id="offerGrandTotal" style="text-align:right; font-weight:600; color:var(--navy); font-size:14px; margin:14px 4px 0;">Project Total: €0.00</p>
         <div style="margin-top:10px;">
-          <button type="button" class="btn-add" id="btnAddProjectSection">+ Add Project Section</button>
+          <button type="button" class="btn-add" id="btnAddProjectSection" data-i18n="ol.addProjectSection">+ Add Project Section</button>
         </div>
       </section>
 
@@ -530,13 +566,13 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 <div class="settings-overlay" id="settingsOverlay" style="display:none">
   <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Offer settings">
     <div class="acc-modal-header">
-      <h3>Offer Settings</h3>
+      <h3 data-i18n="settings.title">Offer Settings</h3>
       <button type="button" class="acc-modal-close" id="btnSettingsClose">×</button>
     </div>
     <div class="settings-body">
       <p class="settings-note">EUR is always the base currency — Gross Price and Cost are always entered in EUR throughout the tool. Changing the currency here just converts the <b>displayed</b> totals at the rate below (2 decimals everywhere); the underlying EUR figures never change, so switching back and forth never drifts.</p>
       <div class="field">
-        <label>Display Currency</label>
+        <label data-i18n="settings.displayCurrency">Display Currency</label>
         <select id="settingsCurrencySelect">
           <option value="EUR">EUR — €</option>
           <option value="USD">USD — $</option>
@@ -545,7 +581,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         </select>
       </div>
       <div class="field" id="settingsCustomWrap" style="display:none">
-        <label>Custom symbol</label>
+        <label data-i18n="settings.customSymbol">Custom symbol</label>
         <input id="settingsCustomSymbol" maxlength="3" placeholder="e.g. CHF">
       </div>
       <div class="field">
@@ -554,18 +590,18 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       </div>
       <hr>
       <div class="field">
-        <label>Project Discount %</label>
+        <label data-i18n="settings.projectDiscount">Project Discount %</label>
         <input id="settingsProjectDiscount" type="number" step="0.1" min="0" max="100" value="0">
       </div>
       <div class="field">
-        <label>Delivery %</label>
+        <label data-i18n="settings.delivery">Delivery %</label>
         <input id="settingsDeliveryPercent" type="number" step="0.1" min="0" max="100" value="0">
       </div>
       <p class="settings-note">The Delivery line in the Offer's SERVICES section is computed automatically as this percentage of the total <b>HW net price</b> of all generated solutions (matching the reference offer's own formula) — it updates live as prices change.</p>
     </div>
     <div class="acc-modal-footer">
-      <button type="button" class="btn-ghost act" id="btnSettingsCancel">Cancel</button>
-      <button type="button" class="act btn-primary" id="btnSettingsApply">Apply</button>
+      <button type="button" class="btn-ghost act" id="btnSettingsCancel" data-i18n="settings.cancel">Cancel</button>
+      <button type="button" class="act btn-primary" id="btnSettingsApply" data-i18n="settings.apply">Apply</button>
     </div>
   </div>
 </div>
@@ -574,19 +610,19 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 <div class="settings-overlay" id="newRevOverlay" style="display:none">
   <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Start new revision">
     <div class="acc-modal-header">
-      <h3>Start New Revision</h3>
+      <h3 data-i18n="newRev.title">Start New Revision</h3>
       <button type="button" class="acc-modal-close" id="btnNewRevClose">×</button>
     </div>
     <div class="settings-body">
       <p class="settings-note" id="newRevNote">This unlocks editing as the next revision, based on the closed one you just opened.</p>
       <div class="field">
-        <label>Revision description</label>
-        <textarea id="newRevDesc" rows="3" placeholder="What changed in this revision?" style="width:100%; background:var(--field-bg); border:1px solid var(--field-border); color:var(--text); border-radius:7px; padding:9px 10px; font-size:13.5px; font-family:'Work Sans',sans-serif; resize:vertical;"></textarea>
+        <label data-i18n="newRev.description">Revision description</label>
+        <textarea id="newRevDesc" rows="3" placeholder="What changed in this revision?" data-i18n-ph="newRev.placeholder" style="width:100%; background:var(--field-bg); border:1px solid var(--field-border); color:var(--text); border-radius:7px; padding:9px 10px; font-size:13.5px; font-family:'Work Sans',sans-serif; resize:vertical;"></textarea>
       </div>
     </div>
     <div class="acc-modal-footer">
-      <button type="button" class="btn-ghost act" id="btnNewRevCancel">Cancel</button>
-      <button type="button" class="act btn-primary" id="btnNewRevConfirm">Start Revision</button>
+      <button type="button" class="btn-ghost act" id="btnNewRevCancel" data-i18n="settings.cancel">Cancel</button>
+      <button type="button" class="act btn-primary" id="btnNewRevConfirm" data-i18n="newRev.confirm">Start Revision</button>
     </div>
   </div>
 </div>
@@ -596,10 +632,86 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   <div class="settings-modal" style="max-width:400px; text-align:center;">
     <div style="padding:36px 30px 30px;">
       <img id="welcomeLogo" style="height:42px; margin-bottom:20px;">
-      <h3 style="margin:0 0 10px; font-size:16px; color:var(--text);">Welcome</h3>
-      <p class="settings-note" style="margin:0 0 24px;">Sign in with Microsoft 365 to load the live Project List from SharePoint, or continue as a guest — you can still sign in later from the sidebar.</p>
-      <button type="button" class="act btn-primary" id="btnWelcomeSignIn" style="width:100%; margin-bottom:10px;">🔐 Sign in with Microsoft 365</button>
-      <button type="button" class="btn-ghost act" id="btnWelcomeGuest" style="width:100%;">Continue as Guest →</button>
+      <h3 style="margin:0 0 10px; font-size:16px; color:var(--text);" data-i18n="welcome.title">Welcome</h3>
+      <p class="settings-note" style="margin:0 0 24px;" data-i18n="welcome.note">Sign in with Microsoft 365 to load the live Project List from SharePoint, or continue as a guest — you can still sign in later from the sidebar.</p>
+      <button type="button" class="act btn-primary" id="btnWelcomeSignIn" style="width:100%; margin-bottom:10px;" data-i18n="welcome.signIn">🔐 Sign in with Microsoft 365</button>
+      <button type="button" class="btn-ghost act" id="btnWelcomeGuest" style="width:100%;" data-i18n="welcome.guest">Continue as Guest →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE NEW OFFER OVERLAY — writes a new item to the SharePoint "Progress tracker list" via
+     Graph, then pre-fills Project Details locally so the person can start configuring immediately.
+     Project Reference is assigned by a Power Automate flow that runs once the new item lands in
+     the list — not entered here, and not necessarily instant, so the modal actively waits for it. -->
+<div class="settings-overlay" id="newOfferOverlay" style="display:none;">
+  <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Create new offer">
+    <div class="acc-modal-header">
+      <h3 data-i18n="newOffer.title">Create New Offer</h3>
+      <button type="button" class="acc-modal-close" id="btnNewOfferClose">×</button>
+    </div>
+    <div class="settings-body">
+      <div id="noFormFields">
+      <p class="settings-note">Creates a new row in the SharePoint "Progress tracker list" (via Microsoft Graph), then fills in Project Details here so you can start configuring right away. Needs to be <a href="#" id="lnkNewOfferSignIn" style="color:var(--accent);">signed in with MS 365</a> first, with write access granted. <b>Project Reference is assigned automatically by a Power Automate flow after creation</b> — there's nothing to type for it here; the popup will wait for it.</p>
+      <div class="field"><label data-i18n="newOffer.projectName">Project Name</label><input id="noName" placeholder="e.g. RFQ Datacenter — Customer X"></div>
+      <div class="field"><label data-i18n="newOffer.customer">Customer</label><input id="noCustomer"></div>
+      <div class="field">
+        <label data-i18n="newOffer.country">Country</label>
+        <select id="noCountry"><option value="">Sign in first to load the list…</option></select>
+      </div>
+      <div class="field"><label data-i18n="newOffer.dueDate">Due Date</label><input id="noDue" type="date"></div>
+      <div class="field"><label data-i18n="newOffer.owner">Pre-Sales Owner</label><input id="noOwner"></div>
+      <div class="field"><label data-i18n="newOffer.product">Product</label><select id="noProduct"><option value="">—</option><option>MP2 - M2S</option><option>MHE</option></select></div>
+      <div class="field"><label data-i18n="newOffer.battery">Battery</label><select id="noBattery"><option value="">—</option><option>VRLA</option><option>Lithium</option></select></div>
+      <div class="field"><label data-i18n="newOffer.batteryBrand">Battery Brand</label><input id="noBatteryBrand"></div>
+
+      <button type="button" class="btn-ghost act" id="btnNewOfferMapping" style="margin-top:6px;" data-i18n="newOffer.mappingToggle">🔧 Advanced: SharePoint field mapping</button>
+      <div id="newOfferMappingFields" style="display:none;">
+        <p class="settings-note" style="margin-top:-2px;">Internal SharePoint column names each field above writes to (Country is handled separately above, via its own lookup list — not shown here). Defaults come from a real snapshot of this list's data. If "Create" fails below, the error usually names the wrong column directly — fix it here and try again, no need to reopen anything.</p>
+        <div class="field"><label data-i18n="newOffer.mapProjectName">Project Name column</label><input id="mapName" value="Project Name"></div>
+        <div class="field"><label data-i18n="newOffer.mapCustomer">Customer column</label><input id="mapCustomer" value="Customer"></div>
+        <div class="field"><label data-i18n="newOffer.mapDueDate">Due Date column</label><input id="mapDue" value="Due date"></div>
+        <div class="field"><label>Owner column <span style="color:var(--red);">⚠ may be system-managed</span></label><input id="mapOwner" value=""></div>
+        <div class="field"><label data-i18n="newOffer.mapProduct">Product column</label><input id="mapProduct" value="Product"></div>
+        <div class="field"><label data-i18n="newOffer.mapBattery">Battery column</label><input id="mapBattery" value="Battery"></div>
+        <div class="field"><label data-i18n="newOffer.mapBatteryBrand">Battery Brand column</label><input id="mapBatteryBrand" value="Battery Brand"></div>
+        <p class="settings-note">Owner may correspond to the system "Created By" field, which Graph sets automatically to whoever is signed in and can't be overridden — left blank by default (skipped on create) for that reason. Fill it in only if you've confirmed a separate, writable "Owner" column exists.</p>
+      </div>
+
+      <p class="catalog-status" id="newOfferStatus" style="margin:10px 0 0;" data-i18n="newOffer.notSubmitted">Not submitted yet.</p>
+      </div>
+
+      <div id="noWaitingState" style="display:none; text-align:center; padding:34px 0 14px;">
+        <div class="sp-loading-spinner"></div>
+        <p class="sp-waiting-label" data-i18n="newOffer.creatingLabel">Creating project…</p>
+        <p class="sp-waiting-sub" id="noWaitingSub" data-i18n="newOffer.waitingSub">Waiting for SharePoint to assign the Project Reference — this runs a Power Automate flow, so it can take a little while.</p>
+      </div>
+
+      <div id="noSuccessState" style="display:none; text-align:center; padding:26px 0 10px;">
+        <div class="sp-success-check">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+        <p class="sp-success-label" id="noSuccessLabel" data-i18n="newOffer.newProjectCreated">New Project Created</p>
+      </div>
+      <div id="noUploadState" style="display:none;">
+        <p class="settings-note" data-i18n="newOffer.uploadIntro">Optional — add any offer files you already have. They'll be saved to this project's SharePoint folder, in a "01 RFQ" subfolder.</p>
+        <div class="field">
+          <input type="file" id="noFilesInput" multiple>
+        </div>
+        <ul id="noFilesList" style="list-style:none; padding:0; margin:8px 0 0; font-size:12.5px; color:var(--dim);"></ul>
+        <p class="catalog-status" id="noUploadStatus" style="margin:10px 0 0;"></p>
+      </div>
+    </div>
+    <div class="acc-modal-footer" id="noFormFooter">
+      <button type="button" class="btn-ghost act" id="btnNewOfferCancel" data-i18n="settings.cancel">Cancel</button>
+      <button type="button" class="act btn-primary" id="btnNewOfferSubmit" data-i18n="newOffer.submit">✨ Create in SharePoint &amp; Start Offer</button>
+    </div>
+    <div class="acc-modal-footer" id="noWaitingFooter" style="display:none;">
+      <button type="button" class="btn-ghost act" id="btnNewOfferCancelWait" data-i18n="newOffer.stopWaiting">Stop waiting</button>
+    </div>
+    <div class="acc-modal-footer" id="noUploadFooter" style="display:none;">
+      <button type="button" class="btn-ghost act" id="btnNewOfferSkipUpload" data-i18n="newOffer.skip">Skip</button>
+      <button type="button" class="act btn-primary" id="btnNewOfferUpload" style="display:inline-flex; align-items:center; gap:6px; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> <span data-i18n="newOffer.uploadFiles">Upload Files</span></button>
     </div>
   </div>
 </div>
@@ -608,39 +720,39 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 <div class="settings-overlay" id="spLoginOverlay" style="display:none">
   <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Sign in with Microsoft 365">
     <div class="acc-modal-header">
-      <h3>Sign in with MS 365</h3>
+      <h3 data-i18n="spLogin.title">Sign in with MS 365</h3>
       <button type="button" class="acc-modal-close" id="btnSpLoginClose">×</button>
     </div>
     <div class="settings-body">
       <div id="spFormFields">
       <div id="spAdvancedFields" style="display:none;">
-        <div class="field"><label>Application (Client) ID</label><input id="spClientId" value="43e401c3-5c50-4ab1-a4b1-f66ebcbbbfc4"></div>
-        <div class="field"><label>Tenant ID or domain</label><input id="spTenantId" value="d8fd0d39-8b2f-4760-af9e-84aadb8587ef"></div>
+        <div class="field"><label data-i18n="spLogin.clientId">Application (Client) ID</label><input id="spClientId" value="43e401c3-5c50-4ab1-a4b1-f66ebcbbbfc4"></div>
+        <div class="field"><label data-i18n="spLogin.tenantId">Tenant ID or domain</label><input id="spTenantId" value="d8fd0d39-8b2f-4760-af9e-84aadb8587ef"></div>
       </div>
-      <button type="button" class="btn-ghost act" id="btnUnlockDebug" style="margin-bottom:4px;">🔧 Advanced Settings</button>
-      <div class="field"><label>Site host</label><input id="spSiteHost" value="rielloups.sharepoint.com"></div>
-      <div class="field"><label>Site path</label><input id="spSitePath" value="/sites/DCSales2"></div>
-      <div class="field"><label>List name</label><input id="spListName" value="Progress tracker list"></div>
-      <p class="catalog-status" id="spStatus" style="margin:4px 0 0;">Not connected.</p>
-      <button type="button" class="btn-ghost act" id="btnSpSignOut" style="display:none; margin-top:4px; color:var(--red); border-color:#F0C6C6;">🚪 Sign Out</button>
+      <button type="button" class="btn-ghost act" id="btnUnlockDebug" style="margin-bottom:4px;" data-i18n="spLogin.advancedSettings">🔧 Advanced Settings</button>
+      <div class="field"><label data-i18n="spLogin.siteHost">Site host</label><input id="spSiteHost" value="rielloups.sharepoint.com"></div>
+      <div class="field"><label data-i18n="spLogin.sitePath">Site path</label><input id="spSitePath" value="/sites/DCSales2"></div>
+      <div class="field"><label data-i18n="spLogin.listName">List name</label><input id="spListName" value="Progress tracker list"></div>
+      <p class="catalog-status" id="spStatus" style="margin:4px 0 0;" data-i18n="spLogin.notConnected">Not connected.</p>
+      <button type="button" class="btn-ghost act" id="btnSpSignOut" style="display:none; margin-top:4px; color:var(--red); border-color:#F0C6C6;" data-i18n="spLogin.signOut">🚪 Sign Out</button>
       </div>
       <div id="spSuccessState" style="display:none; text-align:center; padding:26px 0 10px;">
         <div class="sp-success-check">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
-        <p class="sp-success-label">Connected</p>
+        <p class="sp-success-label" data-i18n="spLogin.connected">Connected</p>
       </div>
       <div id="spErrorState" style="display:none; text-align:center; padding:26px 0 10px;">
         <div class="sp-error-check">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </div>
-        <p class="sp-error-label">Connection not available</p>
+        <p class="sp-error-label" data-i18n="spLogin.notAvailable">Connection not available</p>
       </div>
     </div>
     <div class="acc-modal-footer">
-      <button type="button" class="btn-ghost act" id="btnSpLoginCancel">Close</button>
-      <button type="button" class="act btn-secondary" id="btnSpRefresh" style="background:#fff; color:var(--teal); border:1px solid var(--panel-border);">🔄 Refresh</button>
-      <button type="button" class="act btn-primary" id="btnSpConnect">🔐 Sign in with Microsoft</button>
+      <button type="button" class="btn-ghost act" id="btnSpLoginCancel" data-i18n="spLogin.close">Close</button>
+      <button type="button" class="act btn-secondary" id="btnSpRefresh" style="background:#fff; color:var(--teal); border:1px solid var(--panel-border);" data-i18n="spLogin.refresh">🔄 Refresh</button>
+      <button type="button" class="act btn-primary" id="btnSpConnect" data-i18n="spLogin.connect">🔐 Sign in with Microsoft</button>
     </div>
   </div>
 </div>
@@ -663,6 +775,35 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 </div>
 
 <script>
+const I18N = {
+  en: {"newOffer.uploadFilesTitle": "Upload Offer Files", "pd.uploadFiles": "Files", "newOffer.uploadIntro": "Optional — add any offer files you already have. They'll be saved to this project's SharePoint folder, in a \"01 RFQ\" subfolder.", "newOffer.skip": "Skip", "newOffer.uploadFiles": "Upload Files", "newOffer.createdPrefix": "New Project", "newOffer.createdSuffix": "Created", "newOffer.waitingSub": "Waiting for SharePoint to assign the Project Reference — this runs a Power Automate flow, so it can take a little while.", "newOffer.title": "Create New Offer", "newOffer.projectName": "Project Name", "newOffer.customer": "Customer", "newOffer.country": "Country", "newOffer.dueDate": "Due Date", "newOffer.owner": "Pre-Sales Owner", "newOffer.product": "Product", "newOffer.battery": "Battery", "newOffer.batteryBrand": "Battery Brand", "newOffer.mappingToggle": "🔧 Advanced: SharePoint field mapping", "newOffer.mapProjectName": "Project Name column", "newOffer.mapCustomer": "Customer column", "newOffer.mapDueDate": "Due Date column", "newOffer.mapOwner": "Owner column", "newOffer.mapProduct": "Product column", "newOffer.mapBattery": "Battery column", "newOffer.mapBatteryBrand": "Battery Brand column", "newOffer.notSubmitted": "Not submitted yet.", "newOffer.creatingLabel": "Creating project…", "newOffer.newProjectCreated": "New Project Created", "newOffer.stopWaiting": "Stop waiting", "newOffer.submit": "✨ Create in SharePoint & Start Offer", "newRev.title": "Start New Revision", "newRev.description": "Revision description", "newRev.placeholder": "What changed in this revision?", "newRev.confirm": "Start Revision", "spLogin.title": "Sign in with MS 365", "spLogin.clientId": "Application (Client) ID", "spLogin.tenantId": "Tenant ID or domain", "spLogin.advancedSettings": "🔧 Advanced Settings", "spLogin.siteHost": "Site host", "spLogin.sitePath": "Site path", "spLogin.listName": "List name", "spLogin.notConnected": "Not connected.", "spLogin.signOut": "🚪 Sign Out", "spLogin.connected": "Connected", "spLogin.notAvailable": "Connection not available", "spLogin.close": "Close", "spLogin.refresh": "🔄 Refresh", "spLogin.connect": "🔐 Sign in with Microsoft", "common.qty": "Qty", "common.cost": "Cost", "common.extSupplier": "Ext. Supplier", "common.category": "Category", "common.addRow": "+ Add Row", "common.addToOffer": "Add to Offer", "common.addAccessories": "Add accessories", "common.addSelected": "Add Selected", "common.addServiceItems": "Add Service Items", "common.addBatteryTech": "Add Battery / Technology Integration", "common.addItem": "Add Item", "dyn.noRowsYet": "No rows generated yet. Configure the positions above and click \"Generate Offer\".", "dyn.projectTotal": "Project Total", "settings.conversionRate": "Conversion rate", "signIn": "Sign-in", "nav.dataSources": "Data Sources", "nav.documents": "Documents", "nav.revision": "Revision", "nav.settings": "Settings", "nav.importPriceList": "Import Price List", "nav.createNewOffer": "Create New Offer", "nav.previewBom": "Preview BOM", "nav.bomPdf": "BOM — PDF", "nav.bomExcel": "BOM — Excel", "nav.previewOffer": "Preview Offer", "nav.offerPdf": "Offer — PDF", "nav.offerExcel": "Offer — Excel", "nav.closeOffer": "Close Offer", "nav.saveConfig": "Save Configuration", "nav.loadConfig": "Load Configuration", "nav.offerSettings": "Offer Settings", "nav.resetPage": "Reset Page", "nav.newRevision": "New Revision", "header.eyebrow": "Pre-Sales · Data Center Power", "header.subtitle": "Select the project, define the required load, and generate the UPS architecture with its offer.", "status.noProjectData": "No project data loaded yet — sign in with MS 365 (top-right) to load it.", "status.noPriceList": "No price list imported — reference table + manual pricing.", "pd.title": "Project Details", "pd.projectRef": "Project Reference", "pd.projectName": "Project Name", "pd.country": "Country", "pd.customer": "Customer", "pd.dueDate": "Due Date", "pd.owner": "Pre-Sales Owner", "pd.product": "Product", "pd.battery": "Battery", "pd.batteryBrand": "Battery Brand", "pd.load": "↑ Load", "pd.refPlaceholder": "e.g. 260005", "pd.batteryBrandPlaceholder": "e.g. Hoppecke", "sc.title": "System Configuration", "sc.pos": "Pos.", "sc.qty": "Qty", "sc.upsSys": "UPS/Sys", "sc.loadsType": "Loads Type", "sc.pload": "Pload (kW)", "sc.redundancy": "Redundancy", "sc.nPM": "n.PM", "sc.model": "Model", "sc.connection": "Connection", "sc.configuration": "Configuration", "sc.ventilation": "Ventilation", "sc.batteries": "Batteries", "sc.hEff": "H.Eff", "sc.addPosition": "+ Add Position", "sc.generateOffer": "Generate Offer", "ol.title": "Offer Lines", "ol.pos": "Pos", "ol.qty": "Qty", "ol.model": "Model", "ol.code": "Code", "ol.description": "Description", "ol.grossPrice": "Gross Price", "ol.discount": "Discount %", "ol.netPrice": "Net Price", "ol.unitCost": "Unit Cost", "ol.totalCost": "Total Cost", "ol.totalPrice": "Total Price", "ol.margin": "Margin %", "ol.addProjectSection": "+ Add Project Section", "settings.title": "Offer Settings", "settings.displayCurrency": "Display Currency", "settings.customSymbol": "Custom symbol", "settings.projectDiscount": "Project Discount %", "settings.delivery": "Delivery %", "settings.cancel": "Cancel", "settings.apply": "Apply", "welcome.title": "Welcome", "welcome.note": "Sign in with Microsoft 365 to load the live Project List from SharePoint, or continue as a guest — you can still sign in later from the sidebar.", "welcome.signIn": "🔐 Sign in with Microsoft 365", "welcome.guest": "Continue as Guest →"},
+  it: {"newOffer.uploadFilesTitle": "Carica File Offerta", "pd.uploadFiles": "File", "newOffer.uploadIntro": "Facoltativo — aggiungi eventuali file dell'offerta che hai già. Verranno salvati nella cartella SharePoint di questo progetto, in una sottocartella \"01 RFQ\".", "newOffer.skip": "Salta", "newOffer.uploadFiles": "Carica File", "newOffer.createdPrefix": "Nuovo Progetto", "newOffer.createdSuffix": "Creato", "newOffer.waitingSub": "In attesa che SharePoint assegni il Riferimento Progetto — questo avvia un flusso Power Automate, quindi può richiedere un po' di tempo.", "newOffer.title": "Crea Nuova Offerta", "newOffer.projectName": "Nome Progetto", "newOffer.customer": "Cliente", "newOffer.country": "Paese", "newOffer.dueDate": "Scadenza", "newOffer.owner": "Responsabile Pre-Vendita", "newOffer.product": "Prodotto", "newOffer.battery": "Batteria", "newOffer.batteryBrand": "Marca Batteria", "newOffer.mappingToggle": "🔧 Avanzate: mappatura campi SharePoint", "newOffer.mapProjectName": "Colonna Nome Progetto", "newOffer.mapCustomer": "Colonna Cliente", "newOffer.mapDueDate": "Colonna Scadenza", "newOffer.mapOwner": "Colonna Responsabile", "newOffer.mapProduct": "Colonna Prodotto", "newOffer.mapBattery": "Colonna Batteria", "newOffer.mapBatteryBrand": "Colonna Marca Batteria", "newOffer.notSubmitted": "Non ancora inviato.", "newOffer.creatingLabel": "Creazione progetto…", "newOffer.newProjectCreated": "Nuovo Progetto Creato", "newOffer.stopWaiting": "Interrompi attesa", "newOffer.submit": "✨ Crea su SharePoint e Avvia Offerta", "newRev.title": "Avvia Nuova Revisione", "newRev.description": "Descrizione revisione", "newRev.placeholder": "Cosa è cambiato in questa revisione?", "newRev.confirm": "Avvia Revisione", "spLogin.title": "Accedi con MS 365", "spLogin.clientId": "ID Applicazione (Client)", "spLogin.tenantId": "ID Tenant o dominio", "spLogin.advancedSettings": "🔧 Impostazioni Avanzate", "spLogin.siteHost": "Host del sito", "spLogin.sitePath": "Percorso del sito", "spLogin.listName": "Nome della lista", "spLogin.notConnected": "Non connesso.", "spLogin.signOut": "🚪 Esci", "spLogin.connected": "Connesso", "spLogin.notAvailable": "Connessione non disponibile", "spLogin.close": "Chiudi", "spLogin.refresh": "🔄 Aggiorna", "spLogin.connect": "🔐 Accedi con Microsoft", "common.qty": "Q.tà", "common.cost": "Costo", "common.extSupplier": "Fornitore Est.", "common.category": "Categoria", "common.addRow": "+ Aggiungi Riga", "common.addToOffer": "Aggiungi all'Offerta", "common.addAccessories": "Aggiungi Accessori", "common.addSelected": "Aggiungi Selezionati", "common.addServiceItems": "Aggiungi Voci di Servizio", "common.addBatteryTech": "Aggiungi Batteria / Technology Integration", "common.addItem": "Aggiungi Voce", "dyn.noRowsYet": "Nessuna riga generata ancora. Configura le posizioni sopra e clicca \"Genera Offerta\".", "dyn.projectTotal": "Totale Progetto", "settings.conversionRate": "Tasso di cambio", "signIn": "Accedi", "nav.dataSources": "Origine Dati", "nav.documents": "Documenti", "nav.revision": "Revisione", "nav.settings": "Impostazioni", "nav.importPriceList": "Importa Listino Prezzi", "nav.createNewOffer": "Crea Nuova Offerta", "nav.previewBom": "Anteprima Distinta Base", "nav.bomPdf": "Distinta Base — PDF", "nav.bomExcel": "Distinta Base — Excel", "nav.previewOffer": "Anteprima Offerta", "nav.offerPdf": "Offerta — PDF", "nav.offerExcel": "Offerta — Excel", "nav.closeOffer": "Chiudi Offerta", "nav.saveConfig": "Salva Configurazione", "nav.loadConfig": "Carica Configurazione", "nav.offerSettings": "Impostazioni Offerta", "nav.resetPage": "Reimposta Pagina", "nav.newRevision": "Nuova Revisione", "header.eyebrow": "Pre-Vendita · Data Center Power", "header.subtitle": "Seleziona il progetto, definisci il carico richiesto e genera l'architettura UPS con la relativa offerta.", "status.noProjectData": "Nessun dato progetto ancora caricato — accedi con MS 365 (in alto a destra) per caricarlo.", "status.noPriceList": "Nessun listino importato — tabella di riferimento + prezzi manuali.", "pd.title": "Dettagli Progetto", "pd.projectRef": "Riferimento Progetto", "pd.projectName": "Nome Progetto", "pd.country": "Paese", "pd.customer": "Cliente", "pd.dueDate": "Scadenza", "pd.owner": "Responsabile Pre-Vendita", "pd.product": "Prodotto", "pd.battery": "Batteria", "pd.batteryBrand": "Marca Batteria", "pd.load": "↑ Carica", "pd.refPlaceholder": "es. 260005", "pd.batteryBrandPlaceholder": "es. Hoppecke", "sc.title": "Configurazione Sistema", "sc.pos": "Pos.", "sc.qty": "Q.tà", "sc.upsSys": "UPS/Sist", "sc.loadsType": "Tipo Carico", "sc.pload": "P.Carico (kW)", "sc.redundancy": "Ridondanza", "sc.nPM": "n.PM", "sc.model": "Modello", "sc.connection": "Connessione", "sc.configuration": "Configurazione", "sc.ventilation": "Ventilazione", "sc.batteries": "Batterie", "sc.hEff": "H.Eff", "sc.addPosition": "+ Aggiungi Posizione", "sc.generateOffer": "Genera Offerta", "ol.title": "Righe Offerta", "ol.pos": "Pos", "ol.qty": "Q.tà", "ol.model": "Modello", "ol.code": "Codice", "ol.description": "Descrizione", "ol.grossPrice": "Prezzo Lordo", "ol.discount": "Sconto %", "ol.netPrice": "Prezzo Netto", "ol.unitCost": "Costo Unitario", "ol.totalCost": "Costo Totale", "ol.totalPrice": "Prezzo Totale", "ol.margin": "Margine %", "ol.addProjectSection": "+ Aggiungi Sezione Progetto", "settings.title": "Impostazioni Offerta", "settings.displayCurrency": "Valuta Visualizzata", "settings.customSymbol": "Simbolo personalizzato", "settings.projectDiscount": "Sconto Progetto %", "settings.delivery": "Trasporto %", "settings.cancel": "Annulla", "settings.apply": "Applica", "welcome.title": "Benvenuto", "welcome.note": "Accedi con Microsoft 365 per caricare la Lista Progetti in tempo reale da SharePoint, oppure continua come ospite — potrai comunque accedere più tardi dalla barra laterale.", "welcome.signIn": "🔐 Accedi con Microsoft 365", "welcome.guest": "Continua come Ospite →"},
+  de: {"newOffer.uploadFilesTitle": "Angebotsdateien hochladen", "pd.uploadFiles": "Dateien", "newOffer.uploadIntro": "Optional — fügen Sie vorhandene Angebotsdateien hinzu. Sie werden im SharePoint-Ordner dieses Projekts, in einem Unterordner \"01 RFQ\", gespeichert.", "newOffer.skip": "Überspringen", "newOffer.uploadFiles": "Dateien hochladen", "newOffer.createdPrefix": "Neues Projekt", "newOffer.createdSuffix": "erstellt", "newOffer.waitingSub": "Warten darauf, dass SharePoint die Projektreferenz zuweist — dies startet einen Power-Automate-Flow und kann daher etwas dauern.", "newOffer.title": "Neues Angebot erstellen", "newOffer.projectName": "Projektname", "newOffer.customer": "Kunde", "newOffer.country": "Land", "newOffer.dueDate": "Fälligkeitsdatum", "newOffer.owner": "Vertriebsverantwortlicher", "newOffer.product": "Produkt", "newOffer.battery": "Batterie", "newOffer.batteryBrand": "Batteriemarke", "newOffer.mappingToggle": "🔧 Erweitert: SharePoint-Feldzuordnung", "newOffer.mapProjectName": "Spalte Projektname", "newOffer.mapCustomer": "Spalte Kunde", "newOffer.mapDueDate": "Spalte Fälligkeitsdatum", "newOffer.mapOwner": "Spalte Verantwortlicher", "newOffer.mapProduct": "Spalte Produkt", "newOffer.mapBattery": "Spalte Batterie", "newOffer.mapBatteryBrand": "Spalte Batteriemarke", "newOffer.notSubmitted": "Noch nicht gesendet.", "newOffer.creatingLabel": "Projekt wird erstellt…", "newOffer.newProjectCreated": "Neues Projekt erstellt", "newOffer.stopWaiting": "Warten beenden", "newOffer.submit": "✨ In SharePoint erstellen & Angebot starten", "newRev.title": "Neue Revision starten", "newRev.description": "Revisionsbeschreibung", "newRev.placeholder": "Was hat sich in dieser Revision geändert?", "newRev.confirm": "Revision starten", "spLogin.title": "Mit MS 365 anmelden", "spLogin.clientId": "Anwendungs-ID (Client)", "spLogin.tenantId": "Mandanten-ID oder Domäne", "spLogin.advancedSettings": "🔧 Erweiterte Einstellungen", "spLogin.siteHost": "Site-Host", "spLogin.sitePath": "Site-Pfad", "spLogin.listName": "Listenname", "spLogin.notConnected": "Nicht verbunden.", "spLogin.signOut": "🚪 Abmelden", "spLogin.connected": "Verbunden", "spLogin.notAvailable": "Verbindung nicht verfügbar", "spLogin.close": "Schließen", "spLogin.refresh": "🔄 Aktualisieren", "spLogin.connect": "🔐 Mit Microsoft anmelden", "common.qty": "Menge", "common.cost": "Kosten", "common.extSupplier": "Externer Lieferant", "common.category": "Kategorie", "common.addRow": "+ Zeile hinzufügen", "common.addToOffer": "Zum Angebot hinzufügen", "common.addAccessories": "Zubehör hinzufügen", "common.addSelected": "Auswahl hinzufügen", "common.addServiceItems": "Serviceposten hinzufügen", "common.addBatteryTech": "Batterie/Technologieintegration hinzufügen", "common.addItem": "Element hinzufügen", "dyn.noRowsYet": "Noch keine Zeilen erstellt. Konfigurieren Sie oben die Positionen und klicken Sie auf \"Angebot erstellen\".", "dyn.projectTotal": "Projektgesamtsumme", "settings.conversionRate": "Wechselkurs", "signIn": "Anmelden", "nav.dataSources": "Datenquellen", "nav.documents": "Dokumente", "nav.revision": "Revision", "nav.settings": "Einstellungen", "nav.importPriceList": "Preisliste importieren", "nav.createNewOffer": "Neues Angebot erstellen", "nav.previewBom": "Stückliste – Vorschau", "nav.bomPdf": "Stückliste — PDF", "nav.bomExcel": "Stückliste — Excel", "nav.previewOffer": "Angebot – Vorschau", "nav.offerPdf": "Angebot — PDF", "nav.offerExcel": "Angebot — Excel", "nav.closeOffer": "Angebot abschließen", "nav.saveConfig": "Konfiguration speichern", "nav.loadConfig": "Konfiguration laden", "nav.offerSettings": "Angebotseinstellungen", "nav.resetPage": "Seite zurücksetzen", "nav.newRevision": "Neue Revision", "header.eyebrow": "Vertrieb · Data Center Power", "header.subtitle": "Wählen Sie das Projekt aus, definieren Sie die erforderliche Last und erstellen Sie die USV-Architektur mit dem zugehörigen Angebot.", "status.noProjectData": "Noch keine Projektdaten geladen — melden Sie sich mit MS 365 an (oben rechts), um sie zu laden.", "status.noPriceList": "Keine Preisliste importiert — Referenztabelle + manuelle Preisgestaltung.", "pd.title": "Projektdetails", "pd.projectRef": "Projektreferenz", "pd.projectName": "Projektname", "pd.country": "Land", "pd.customer": "Kunde", "pd.dueDate": "Fälligkeitsdatum", "pd.owner": "Vertriebsverantwortlicher", "pd.product": "Produkt", "pd.battery": "Batterie", "pd.batteryBrand": "Batteriemarke", "pd.load": "↑ Laden", "pd.refPlaceholder": "z.B. 260005", "pd.batteryBrandPlaceholder": "z.B. Hoppecke", "sc.title": "Systemkonfiguration", "sc.pos": "Pos.", "sc.qty": "Menge", "sc.upsSys": "USV/Sys", "sc.loadsType": "Lasttyp", "sc.pload": "P.Last (kW)", "sc.redundancy": "Redundanz", "sc.nPM": "n.PM", "sc.model": "Modell", "sc.connection": "Anschluss", "sc.configuration": "Konfiguration", "sc.ventilation": "Belüftung", "sc.batteries": "Batterien", "sc.hEff": "H.Eff", "sc.addPosition": "+ Position hinzufügen", "sc.generateOffer": "Angebot erstellen", "ol.title": "Angebotspositionen", "ol.pos": "Pos", "ol.qty": "Menge", "ol.model": "Modell", "ol.code": "Code", "ol.description": "Beschreibung", "ol.grossPrice": "Bruttopreis", "ol.discount": "Rabatt %", "ol.netPrice": "Nettopreis", "ol.unitCost": "Stückkosten", "ol.totalCost": "Gesamtkosten", "ol.totalPrice": "Gesamtpreis", "ol.margin": "Marge %", "ol.addProjectSection": "+ Projektabschnitt hinzufügen", "settings.title": "Angebotseinstellungen", "settings.displayCurrency": "Anzeigewährung", "settings.customSymbol": "Benutzerdefiniertes Symbol", "settings.projectDiscount": "Projektrabatt %", "settings.delivery": "Lieferung %", "settings.cancel": "Abbrechen", "settings.apply": "Anwenden", "welcome.title": "Willkommen", "welcome.note": "Melden Sie sich mit Microsoft 365 an, um die Live-Projektliste aus SharePoint zu laden, oder fahren Sie als Gast fort — Sie können sich später jederzeit über die Seitenleiste anmelden.", "welcome.signIn": "🔐 Mit Microsoft 365 anmelden", "welcome.guest": "Als Gast fortfahren →"},
+  fr: {"newOffer.uploadFilesTitle": "Téléverser les fichiers de l'offre", "pd.uploadFiles": "Fichiers", "newOffer.uploadIntro": "Facultatif — ajoutez les fichiers d'offre que vous avez déjà. Ils seront enregistrés dans le dossier SharePoint de ce projet, dans un sous-dossier \"01 RFQ\".", "newOffer.skip": "Ignorer", "newOffer.uploadFiles": "Téléverser les fichiers", "newOffer.createdPrefix": "Nouveau projet", "newOffer.createdSuffix": "créé", "newOffer.waitingSub": "En attente que SharePoint attribue la référence du projet — cela déclenche un flux Power Automate, ce qui peut prendre un peu de temps.", "newOffer.title": "Créer une nouvelle offre", "newOffer.projectName": "Nom du projet", "newOffer.customer": "Client", "newOffer.country": "Pays", "newOffer.dueDate": "Date d'échéance", "newOffer.owner": "Responsable avant-vente", "newOffer.product": "Produit", "newOffer.battery": "Batterie", "newOffer.batteryBrand": "Marque de batterie", "newOffer.mappingToggle": "🔧 Avancé : mappage des champs SharePoint", "newOffer.mapProjectName": "Colonne Nom du projet", "newOffer.mapCustomer": "Colonne Client", "newOffer.mapDueDate": "Colonne Date d'échéance", "newOffer.mapOwner": "Colonne Responsable", "newOffer.mapProduct": "Colonne Produit", "newOffer.mapBattery": "Colonne Batterie", "newOffer.mapBatteryBrand": "Colonne Marque de batterie", "newOffer.notSubmitted": "Pas encore envoyé.", "newOffer.creatingLabel": "Création du projet…", "newOffer.newProjectCreated": "Nouveau projet créé", "newOffer.stopWaiting": "Arrêter l'attente", "newOffer.submit": "✨ Créer dans SharePoint et démarrer l'offre", "newRev.title": "Démarrer une nouvelle révision", "newRev.description": "Description de la révision", "newRev.placeholder": "Qu'est-ce qui a changé dans cette révision ?", "newRev.confirm": "Démarrer la révision", "spLogin.title": "Se connecter avec MS 365", "spLogin.clientId": "ID de l'application (client)", "spLogin.tenantId": "ID du locataire ou domaine", "spLogin.advancedSettings": "🔧 Paramètres avancés", "spLogin.siteHost": "Hôte du site", "spLogin.sitePath": "Chemin du site", "spLogin.listName": "Nom de la liste", "spLogin.notConnected": "Non connecté.", "spLogin.signOut": "🚪 Déconnexion", "spLogin.connected": "Connecté", "spLogin.notAvailable": "Connexion non disponible", "spLogin.close": "Fermer", "spLogin.refresh": "🔄 Actualiser", "spLogin.connect": "🔐 Se connecter avec Microsoft", "common.qty": "Qté", "common.cost": "Coût", "common.extSupplier": "Fournisseur ext.", "common.category": "Catégorie", "common.addRow": "+ Ajouter une ligne", "common.addToOffer": "Ajouter à l'offre", "common.addAccessories": "Ajouter des accessoires", "common.addSelected": "Ajouter la sélection", "common.addServiceItems": "Ajouter des éléments de service", "common.addBatteryTech": "Ajouter batterie / intégration technologique", "common.addItem": "Ajouter un élément", "dyn.noRowsYet": "Aucune ligne générée pour l'instant. Configurez les positions ci-dessus et cliquez sur \"Générer l'offre\".", "dyn.projectTotal": "Total du projet", "settings.conversionRate": "Taux de conversion", "signIn": "Connexion", "nav.dataSources": "Sources de données", "nav.documents": "Documents", "nav.revision": "Révision", "nav.settings": "Paramètres", "nav.importPriceList": "Importer la liste de prix", "nav.createNewOffer": "Créer une nouvelle offre", "nav.previewBom": "Aperçu de la nomenclature", "nav.bomPdf": "Nomenclature — PDF", "nav.bomExcel": "Nomenclature — Excel", "nav.previewOffer": "Aperçu de l'offre", "nav.offerPdf": "Offre — PDF", "nav.offerExcel": "Offre — Excel", "nav.closeOffer": "Clôturer l'offre", "nav.saveConfig": "Enregistrer la configuration", "nav.loadConfig": "Charger la configuration", "nav.offerSettings": "Paramètres de l'offre", "nav.resetPage": "Réinitialiser la page", "nav.newRevision": "Nouvelle révision", "header.eyebrow": "Avant-vente · Data Center Power", "header.subtitle": "Sélectionnez le projet, définissez la charge requise et générez l'architecture UPS avec son offre.", "status.noProjectData": "Aucune donnée de projet chargée pour l'instant — connectez-vous avec MS 365 (en haut à droite) pour la charger.", "status.noPriceList": "Aucune liste de prix importée — tableau de référence + tarification manuelle.", "pd.title": "Détails du projet", "pd.projectRef": "Référence du projet", "pd.projectName": "Nom du projet", "pd.country": "Pays", "pd.customer": "Client", "pd.dueDate": "Date d'échéance", "pd.owner": "Responsable avant-vente", "pd.product": "Produit", "pd.battery": "Batterie", "pd.batteryBrand": "Marque de batterie", "pd.load": "↑ Charger", "pd.refPlaceholder": "ex. 260005", "pd.batteryBrandPlaceholder": "ex. Hoppecke", "sc.title": "Configuration du système", "sc.pos": "Pos.", "sc.qty": "Qté", "sc.upsSys": "UPS/Sys", "sc.loadsType": "Type de charge", "sc.pload": "P.Charge (kW)", "sc.redundancy": "Redondance", "sc.nPM": "n.PM", "sc.model": "Modèle", "sc.connection": "Connexion", "sc.configuration": "Configuration", "sc.ventilation": "Ventilation", "sc.batteries": "Batteries", "sc.hEff": "H.Eff", "sc.addPosition": "+ Ajouter une position", "sc.generateOffer": "Générer l'offre", "ol.title": "Lignes de l'offre", "ol.pos": "Pos", "ol.qty": "Qté", "ol.model": "Modèle", "ol.code": "Code", "ol.description": "Description", "ol.grossPrice": "Prix brut", "ol.discount": "Remise %", "ol.netPrice": "Prix net", "ol.unitCost": "Coût unitaire", "ol.totalCost": "Coût total", "ol.totalPrice": "Prix total", "ol.margin": "Marge %", "ol.addProjectSection": "+ Ajouter une section de projet", "settings.title": "Paramètres de l'offre", "settings.displayCurrency": "Devise d'affichage", "settings.customSymbol": "Symbole personnalisé", "settings.projectDiscount": "Remise projet %", "settings.delivery": "Livraison %", "settings.cancel": "Annuler", "settings.apply": "Appliquer", "welcome.title": "Bienvenue", "welcome.note": "Connectez-vous avec Microsoft 365 pour charger la liste de projets en direct depuis SharePoint, ou continuez en tant qu'invité — vous pourrez toujours vous connecter plus tard depuis la barre latérale.", "welcome.signIn": "🔐 Se connecter avec Microsoft 365", "welcome.guest": "Continuer en tant qu'invité →"},
+  es: {"newOffer.uploadFilesTitle": "Subir archivos de la oferta", "pd.uploadFiles": "Archivos", "newOffer.uploadIntro": "Opcional — añade los archivos de la oferta que ya tengas. Se guardarán en la carpeta de SharePoint de este proyecto, en una subcarpeta \"01 RFQ\".", "newOffer.skip": "Omitir", "newOffer.uploadFiles": "Subir archivos", "newOffer.createdPrefix": "Nuevo proyecto", "newOffer.createdSuffix": "creado", "newOffer.waitingSub": "Esperando a que SharePoint asigne la referencia del proyecto — esto ejecuta un flujo de Power Automate, por lo que puede tardar un poco.", "newOffer.title": "Crear nueva oferta", "newOffer.projectName": "Nombre del proyecto", "newOffer.customer": "Cliente", "newOffer.country": "País", "newOffer.dueDate": "Fecha límite", "newOffer.owner": "Responsable de preventa", "newOffer.product": "Producto", "newOffer.battery": "Batería", "newOffer.batteryBrand": "Marca de batería", "newOffer.mappingToggle": "🔧 Avanzado: mapeo de campos de SharePoint", "newOffer.mapProjectName": "Columna Nombre del proyecto", "newOffer.mapCustomer": "Columna Cliente", "newOffer.mapDueDate": "Columna Fecha límite", "newOffer.mapOwner": "Columna Responsable", "newOffer.mapProduct": "Columna Producto", "newOffer.mapBattery": "Columna Batería", "newOffer.mapBatteryBrand": "Columna Marca de batería", "newOffer.notSubmitted": "Aún no enviado.", "newOffer.creatingLabel": "Creando proyecto…", "newOffer.newProjectCreated": "Nuevo proyecto creado", "newOffer.stopWaiting": "Dejar de esperar", "newOffer.submit": "✨ Crear en SharePoint e iniciar oferta", "newRev.title": "Iniciar nueva revisión", "newRev.description": "Descripción de la revisión", "newRev.placeholder": "¿Qué cambió en esta revisión?", "newRev.confirm": "Iniciar revisión", "spLogin.title": "Iniciar sesión con MS 365", "spLogin.clientId": "ID de aplicación (cliente)", "spLogin.tenantId": "ID de inquilino o dominio", "spLogin.advancedSettings": "🔧 Configuración avanzada", "spLogin.siteHost": "Host del sitio", "spLogin.sitePath": "Ruta del sitio", "spLogin.listName": "Nombre de la lista", "spLogin.notConnected": "No conectado.", "spLogin.signOut": "🚪 Cerrar sesión", "spLogin.connected": "Conectado", "spLogin.notAvailable": "Conexión no disponible", "spLogin.close": "Cerrar", "spLogin.refresh": "🔄 Actualizar", "spLogin.connect": "🔐 Iniciar sesión con Microsoft", "common.qty": "Cant.", "common.cost": "Costo", "common.extSupplier": "Proveedor externo", "common.category": "Categoría", "common.addRow": "+ Añadir fila", "common.addToOffer": "Añadir a la oferta", "common.addAccessories": "Añadir accesorios", "common.addSelected": "Añadir seleccionados", "common.addServiceItems": "Añadir elementos de servicio", "common.addBatteryTech": "Añadir batería / integración tecnológica", "common.addItem": "Añadir elemento", "dyn.noRowsYet": "Aún no se han generado filas. Configure las posiciones anteriores y haga clic en \"Generar oferta\".", "dyn.projectTotal": "Total del proyecto", "settings.conversionRate": "Tipo de cambio", "signIn": "Iniciar sesión", "nav.dataSources": "Fuentes de datos", "nav.documents": "Documentos", "nav.revision": "Revisión", "nav.settings": "Configuración", "nav.importPriceList": "Importar lista de precios", "nav.createNewOffer": "Crear nueva oferta", "nav.previewBom": "Vista previa de lista de materiales", "nav.bomPdf": "Lista de materiales — PDF", "nav.bomExcel": "Lista de materiales — Excel", "nav.previewOffer": "Vista previa de la oferta", "nav.offerPdf": "Oferta — PDF", "nav.offerExcel": "Oferta — Excel", "nav.closeOffer": "Cerrar oferta", "nav.saveConfig": "Guardar configuración", "nav.loadConfig": "Cargar configuración", "nav.offerSettings": "Configuración de la oferta", "nav.resetPage": "Restablecer página", "nav.newRevision": "Nueva revisión", "header.eyebrow": "Preventa · Data Center Power", "header.subtitle": "Seleccione el proyecto, defina la carga requerida y genere la arquitectura UPS con su oferta.", "status.noProjectData": "Aún no se han cargado datos del proyecto — inicie sesión con MS 365 (arriba a la derecha) para cargarlos.", "status.noPriceList": "No se ha importado ninguna lista de precios — tabla de referencia + precios manuales.", "pd.title": "Detalles del proyecto", "pd.projectRef": "Referencia del proyecto", "pd.projectName": "Nombre del proyecto", "pd.country": "País", "pd.customer": "Cliente", "pd.dueDate": "Fecha límite", "pd.owner": "Responsable de preventa", "pd.product": "Producto", "pd.battery": "Batería", "pd.batteryBrand": "Marca de batería", "pd.load": "↑ Cargar", "pd.refPlaceholder": "ej. 260005", "pd.batteryBrandPlaceholder": "ej. Hoppecke", "sc.title": "Configuración del sistema", "sc.pos": "Pos.", "sc.qty": "Cant.", "sc.upsSys": "UPS/Sist", "sc.loadsType": "Tipo de carga", "sc.pload": "P.Carga (kW)", "sc.redundancy": "Redundancia", "sc.nPM": "n.PM", "sc.model": "Modelo", "sc.connection": "Conexión", "sc.configuration": "Configuración", "sc.ventilation": "Ventilación", "sc.batteries": "Baterías", "sc.hEff": "H.Eff", "sc.addPosition": "+ Añadir posición", "sc.generateOffer": "Generar oferta", "ol.title": "Líneas de la oferta", "ol.pos": "Pos", "ol.qty": "Cant.", "ol.model": "Modelo", "ol.code": "Código", "ol.description": "Descripción", "ol.grossPrice": "Precio bruto", "ol.discount": "Descuento %", "ol.netPrice": "Precio neto", "ol.unitCost": "Costo unitario", "ol.totalCost": "Costo total", "ol.totalPrice": "Precio total", "ol.margin": "Margen %", "ol.addProjectSection": "+ Añadir sección de proyecto", "settings.title": "Configuración de la oferta", "settings.displayCurrency": "Moneda de visualización", "settings.customSymbol": "Símbolo personalizado", "settings.projectDiscount": "Descuento del proyecto %", "settings.delivery": "Entrega %", "settings.cancel": "Cancelar", "settings.apply": "Aplicar", "welcome.title": "Bienvenido", "welcome.note": "Inicie sesión con Microsoft 365 para cargar la lista de proyectos en vivo desde SharePoint, o continúe como invitado — aún podrá iniciar sesión más tarde desde la barra lateral.", "welcome.signIn": "🔐 Iniciar sesión con Microsoft 365", "welcome.guest": "Continuar como invitado →"},
+};
+
+// ---- i18n — language dictionary + apply/switch logic. Covers the daily-use interface (sidebar,
+// Project Details, System Configuration, Offer Lines, Settings, Welcome screen) for now; deeper
+// modals (Create New Offer, New Revision, Sign-in panel, Accessory/Battery/Service pickers) and
+// the printed BOM/Offer exports are a planned next pass, not yet wired to this dictionary. ----
+let LANG = 'en';
+function t(key){
+  const dict = I18N[LANG] || I18N.en;
+  return (key in dict) ? dict[key] : (I18N.en[key] || key);
+}
+function applyLanguage(lang){
+  LANG = I18N[lang] ? lang : 'en';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    el.placeholder = t(el.dataset.i18nPh);
+  });
+  const sel = document.getElementById('langSelect');
+  if(sel && sel.value !== LANG) sel.value = LANG;
+}
+
 let PROGRESS = []; // starts empty — populated only by "Sign in with MS 365" → auto-refresh (or its "Refresh" button)
 const ARCH = [{"pmax": 335, "model": "MP2 300", "connection": "Cabled Version", "configuration": "PCM"}, {"pmax": 536, "model": "MP2 500", "connection": "Cabled Version", "configuration": "PCM"}, {"pmax": 603, "model": "MP2 600", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 603, "model": "MP2 600", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 603, "model": "MP2 600", "connection": "Cabled Version", "configuration": "CT4"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "CT0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "CT2"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "CT0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "CT1"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "CT2"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "CT0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "CT2"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Flanged Version", "configuration": "CT0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Flanged Version", "configuration": "CT1"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "CT0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "CT2"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Flanged Version", "configuration": "CT0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Flanged Version", "configuration": "CT1"}, {"pmax": 2010, "model": "M2S 2000", "connection": "Cabled Version", "configuration": "n.d."}, {"pmax": 2010, "model": "M2S 2000", "connection": "Flanged Version", "configuration": "PC0"}];
 const MODULE_KW = 67;
@@ -746,7 +887,7 @@ function updateRateFieldState(){
   const rateInput = document.getElementById('settingsCurrencyRate');
   const label = document.getElementById('settingsRateLabel');
   const code = sel === 'CUSTOM' ? (document.getElementById('settingsCustomSymbol').value.trim().toUpperCase() || 'CUSTOM') : sel;
-  label.textContent = `Conversion rate (1 EUR = ? ${code})`;
+  label.textContent = `${t('settings.conversionRate')} (1 EUR = ? ${code})`;
   if(sel === 'EUR'){
     rateInput.value = 1;
     rateInput.disabled = true;
@@ -889,9 +1030,12 @@ function processProjectList(rows, filename){
 
 // ---- Optional: live SharePoint connection via MSAL.js + Microsoft Graph ----
 // Real Microsoft sign-in popup only — this page never sees or handles the password. Requires an
-// Azure AD App Registration (Client ID) with delegated Graph permission Sites.Selected, and this
-// page hosted at a URL registered as that app's Redirect URI. Uses the generic "common" endpoint
-// so any work/school account works without a tenant to configure.
+// Azure AD App Registration (Client ID) with delegated Graph permission Sites.Selected — consented
+// as Delegated (not Application), and granted "write" role (or "read","write") on the specific
+// SharePoint site via a one-time Graph API call, so both reading the Project List and creating a
+// new item ("Create New Offer") work. This page must be hosted at a URL registered as that app's
+// Redirect URI. Uses the generic "common" endpoint so any work/school account works without a
+// tenant to configure.
 let msalInstance = null;
 let msalAccount = null;
 
@@ -964,8 +1108,34 @@ async function graphGet(url, token){
   return resp.json();
 }
 
+async function graphPost(url, token, body){
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {Authorization:`Bearer ${token}`, 'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  });
+  if(!resp.ok){
+    const text = await resp.text().catch(()=> '');
+    throw new Error(`Graph API ${resp.status} — ${text.slice(0,300) || resp.statusText}`);
+  }
+  return resp.json();
+}
+
+async function graphPatch(url, token, body){
+  const resp = await fetch(url, {
+    method: 'PATCH',
+    headers: {Authorization:`Bearer ${token}`, 'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  });
+  if(!resp.ok){
+    const text = await resp.text().catch(()=> '');
+    throw new Error(`Graph API ${resp.status} — ${text.slice(0,300) || resp.statusText}`);
+  }
+  return resp.status === 204 ? null : resp.json();
+}
+
 // Resolves the SharePoint site then the specific list, using whatever host/path/name are set in
-// this panel — used by "Refresh" to read the whole list.
+// this panel — used by "Refresh" to read the whole list, and by "Create New Offer" to write to it.
 async function resolveSharePointList(token){
   const siteHost = document.getElementById('spSiteHost').value.trim() || 'rielloups.sharepoint.com';
   const sitePath = document.getElementById('spSitePath').value.trim() || '/sites/DCSales2';
@@ -1085,6 +1255,415 @@ async function fetchSharePointList(){
     return false;
   }
 }
+
+// ---- Create New Offer — writes a new item to the SharePoint "Progress tracker list" via Graph,
+// then pre-fills Project Details locally so the person can start configuring immediately.
+// Project Reference is assigned by a Power Automate flow that runs once the item lands in the
+// list — not entered here. The popup actively waits (polling the new item) until it appears,
+// showing a persistent loading state with a "Stop waiting" escape hatch, rather than giving up
+// after a fixed short timeout. Country is a Lookup column sourced from the separate "Country
+// REF_Alpha2" list (its Code column), so it's offered as a proper dropdown here rather than free
+// text. ----
+const newOfferOverlay = document.getElementById('newOfferOverlay');
+let countryOptions = []; // [{id, code}] from the Country REF_Alpha2 list
+let noWaitCancelled = false;
+
+function closeNewOffer(){
+  newOfferOverlay.style.display = 'none';
+  noWaitCancelled = true; // stop any in-flight polling if the panel is closed mid-wait
+  newOfferSiteId = null;
+  newOfferRfqPath = null;
+  // the "Upload Files" flow overwrites this title directly (bypassing data-i18n, since it's a
+  // different sentence, not a translation of the same one) — restore the normal one on close so
+  // the next "Create New Offer" open isn't left showing "Upload Offer Files".
+  document.getElementById('newOfferOverlay').querySelector('h3').textContent = t('newOffer.title');
+}
+document.getElementById('btnNewOffer').addEventListener('click', ()=>{
+  newOfferOverlay.style.display = 'flex';
+  setNewOfferView('form');
+  updateNewOfferStatus('Not submitted yet.');
+  if(msalInstance && msalAccount) loadCountryOptions();
+});
+document.getElementById('btnNewOfferClose').addEventListener('click', closeNewOffer);
+document.getElementById('btnNewOfferCancel').addEventListener('click', closeNewOffer);
+document.getElementById('btnNewOfferCancelWait').addEventListener('click', ()=>{
+  noWaitCancelled = true;
+  updateNewOfferStatus('Stopped waiting — the project was created in SharePoint, but its Project Reference wasn\'t picked up here. Check the list directly, or use "Load" once you know it.', 'loaded');
+  setNewOfferView('form');
+});
+setupBackdropClose(newOfferOverlay, closeNewOffer);
+
+// Swaps which of the three panels (form / waiting / success) is visible, and which footer goes
+// with it, in one place — avoids repeating the same three toggles at every call site.
+function setNewOfferView(view){
+  document.getElementById('noFormFields').style.display = view === 'form' ? 'block' : 'none';
+  document.getElementById('noWaitingState').style.display = view === 'waiting' ? 'block' : 'none';
+  document.getElementById('noSuccessState').style.display = view === 'success' ? 'block' : 'none';
+  document.getElementById('noUploadState').style.display = view === 'upload' ? 'block' : 'none';
+  document.getElementById('noFormFooter').style.display = view === 'form' ? 'flex' : 'none';
+  document.getElementById('noWaitingFooter').style.display = view === 'waiting' ? 'flex' : 'none';
+  document.getElementById('noUploadFooter').style.display = view === 'upload' ? 'flex' : 'none';
+}
+
+document.getElementById('btnNewOfferMapping').addEventListener('click', ()=>{
+  const el = document.getElementById('newOfferMappingFields');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+});
+
+document.getElementById('lnkNewOfferSignIn').addEventListener('click', (e)=>{
+  e.preventDefault();
+  closeNewOffer();
+  noWaitCancelled = false; // closeNewOffer() sets this; undo it since we're not actually mid-wait
+  spLoginOverlay.style.display = 'flex';
+});
+
+function updateNewOfferStatus(msg, state){
+  const el = document.getElementById('newOfferStatus');
+  el.textContent = msg;
+  el.className = 'catalog-status' + (state==='loaded' ? ' loaded' : state==='error' ? ' error' : '');
+}
+
+async function loadCountryOptions(){
+  const select = document.getElementById('noCountry');
+  select.innerHTML = '<option value="">Loading…</option>';
+  try{
+    const token = await getGraphToken();
+    const siteHost = document.getElementById('spSiteHost').value.trim() || 'rielloups.sharepoint.com';
+    const sitePath = document.getElementById('spSitePath').value.trim() || '/sites/DCSales2';
+    const site = await graphGet(`https://graph.microsoft.com/v1.0/sites/${siteHost}:${sitePath}`, token);
+    const listsResp = await graphGet(
+      `https://graph.microsoft.com/v1.0/sites/${site.id}/lists?$filter=${encodeURIComponent(`displayName eq 'Country REF_Alpha2'`)}`,
+      token
+    );
+    const list = listsResp.value && listsResp.value[0];
+    if(!list) throw new Error('List "Country REF_Alpha2" not found on this site.');
+    let items = [];
+    let url = `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$top=200`;
+    while(url){
+      const page = await graphGet(url, token);
+      items = items.concat(page.value || []);
+      url = page['@odata.nextLink'] || null;
+    }
+    countryOptions = items.map(it=>({
+      id: it.id,
+      code: (it.fields && (it.fields.Code || it.fields.code)) || '?',
+      title: it.fields && it.fields.Title,
+    })).sort((a,b)=>a.code.localeCompare(b.code));
+    select.innerHTML = '<option value="">—</option>' + countryOptions.map(c=>
+      `<option value="${c.id}">${escapeHtml(c.code)}${c.title ? ' — '+escapeHtml(c.title) : ''}</option>`
+    ).join('');
+  }catch(err){
+    console.error(err);
+    select.innerHTML = `<option value="">(failed to load — ${escapeHtml(String(err.message||err).slice(0,60))})</option>`;
+  }
+}
+
+// Polls the newly created item every 2s until BOTH PRJ_ID and FolderLink appear (the Power
+// Automate flow sets both once it finishes with the new item) or the person clicks "Stop
+// waiting". No fixed timeout — keeps trying as long as the popup stays open and isn't
+// cancelled, updating the sub-label so the wait doesn't feel stuck. Waiting for FolderLink too
+// (not just PRJ_ID) matters here specifically because the file upload step that follows needs
+// it — uploading before the automation has linked the folder would have nowhere reliable to go.
+async function waitForPrjIdAndFolder(token, site, list, itemId){
+  let elapsed = 0;
+  while(!noWaitCancelled){
+    await new Promise(r=>setTimeout(r, 2000));
+    elapsed += 2;
+    if(noWaitCancelled) return null;
+    try{
+      const item = await graphGet(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${itemId}?expand=fields`, token);
+      const prjId = item.fields && item.fields.PRJ_ID;
+      const folderLink = item.fields && item.fields.FolderLink0;
+      if(prjId && folderLink) return {prjId, folderLink};
+    }catch(err){
+      console.warn('Still waiting for the Project Reference/folder — retrying:', err);
+    }
+    const sub = document.getElementById('noWaitingSub');
+    if(sub) sub.textContent = `${t('newOffer.waitingSub')} (${elapsed}s elapsed)`;
+  }
+  return null;
+}
+
+// FolderLink0's real shape is a SharePoint folder-view URL: .../Forms/AllItems.aspx?id=<server-
+// relative path to the folder, URL-encoded>&viewid=...&... — the actual target folder lives in
+// that "id" query parameter, not in the URL's own path (which just points at the library's
+// AllItems.aspx view page). That id already resolves all the way down to the specific "01 RFQ"
+// folder for this project (fixed "01_DTBS Offer" root → year subfolder, from the project
+// reference's first two digits → project folder → "01 RFQ"), so once parsed there's nothing left
+// to append — the caller only adds "01 RFQ" itself as a fallback, for the other shapes below that
+// might stop short of it. Also tolerates three other shapes defensively: a server-relative path
+// (starting with "/sites/..."), a plain folder name with no URL at all, and the older SharePoint
+// "Hyperlink" column object {Url, Description}.
+function parseFolderLinkToPath(folderLink, libraryName){
+  let raw = (folderLink && typeof folderLink === 'object') ? folderLink.Url : folderLink;
+  if(!raw) return null;
+  raw = String(raw).trim();
+  if(!raw) return null;
+
+  // Non è un URL — è già il nome/percorso relativo della cartella così com'è.
+  if(!/^https?:\/\//i.test(raw) && !raw.startsWith('/')){
+    return raw.replace(/\/+$/, '');
+  }
+
+  let path;
+  try{
+    if(raw.startsWith('/')){
+      path = decodeURIComponent(raw);
+    } else {
+      const url = new URL(raw);
+      // Formato reale: .../Forms/AllItems.aspx?id=<percorso codificato> — il vero target è lì
+      // dentro, non nel pathname dell'URL (che punta solo alla pagina di vista della libreria).
+      const idParam = url.searchParams.get('id');
+      path = idParam ? decodeURIComponent(idParam) : decodeURIComponent(url.pathname);
+    }
+  }catch(e){
+    return null;
+  }
+
+  const marker = `/${libraryName}/`;
+  const idx = path.indexOf(marker);
+  if(idx === -1) return null;
+  return path.slice(idx + marker.length).replace(/\/+$/, '');
+}
+
+function encodeGraphPath(path){
+  return path.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+}
+
+function escapeRegExp(s){
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// FolderLink0's real value always resolves down to the project's "01 RFQ" folder specifically —
+// so to target any OTHER named subfolder (e.g. "02 OFFER", a sibling of "01 RFQ" under the same
+// project folder), the trailing "01 RFQ" segment has to be stripped first and replaced with the
+// one actually wanted, not appended on top of it (which would nest one inside the other). If the
+// resolved path already ends with the wanted subfolder name as-is (covers "01 RFQ" itself, and
+// any of the more defensive fallback shapes parseFolderLinkToPath() tolerates), it's used as-is.
+function resolveProjectSubfolderPath(folderLinkValue, subfolderName){
+  const resolvedPath = parseFolderLinkToPath(folderLinkValue, 'Shared Documents');
+  if(!resolvedPath) return null;
+  const projectPath = /(^|\/)01 rfq$/i.test(resolvedPath)
+    ? resolvedPath.slice(0, resolvedPath.length - '01 RFQ'.length).replace(/\/+$/, '')
+    : resolvedPath;
+  const alreadyThere = new RegExp(`(^|/)${escapeRegExp(subfolderName)}$`, 'i').test(projectPath);
+  return alreadyThere ? projectPath : `${projectPath}/${subfolderName}`;
+}
+
+// Creates the named subfolder if it doesn't already exist — ignores the "already exists" conflict
+// (that's the desired outcome, not an error), but re-throws anything else (e.g. the parent path
+// itself wasn't found, which usually means FolderLink0 didn't parse correctly).
+async function ensureProjectSubfolder(token, siteId, parentPath, subfolderName){
+  try{
+    await graphPost(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${encodeGraphPath(parentPath)}:/children`, token, {
+      name: subfolderName, folder: {},
+    });
+  }catch(err){
+    const msg = String(err.message || err);
+    if(!msg.includes('409') && !/exist/i.test(msg)) throw err;
+  }
+}
+
+// Shared by both "Create New Offer" (right after creating the item) and the standalone "Upload
+// Files" button (for an already-existing project): resolves FolderLink0 into the "01 RFQ" target
+// path, makes sure that subfolder exists, and sets the two module-level variables the upload
+// button itself reads (newOfferSiteId/newOfferRfqPath) — leaving newOfferRfqPath null (with a
+// status message) if anything about the folder couldn't be resolved or reached, so the file
+// picker still opens but "Upload" fails clearly instead of silently going nowhere.
+async function prepareRfqUploadTarget(token, siteId, folderLinkValue){
+  const uploadStatusEl = document.getElementById('noUploadStatus');
+  uploadStatusEl.textContent = '';
+  uploadStatusEl.className = 'catalog-status';
+
+  const rfqTargetPath = resolveProjectSubfolderPath(folderLinkValue, '01 RFQ');
+
+  if(!rfqTargetPath){
+    newOfferRfqPath = null;
+    console.warn('FolderLink did not parse into a usable path:', folderLinkValue);
+    uploadStatusEl.textContent = 'Could not determine the project folder from FolderLink0 — you can still add files to it manually in SharePoint.';
+    uploadStatusEl.className = 'catalog-status error';
+    return;
+  }
+  try{
+    const rfqParent = rfqTargetPath.slice(0, rfqTargetPath.length - '01 RFQ'.length).replace(/\/+$/, '');
+    await ensureProjectSubfolder(token, siteId, rfqParent, '01 RFQ');
+    newOfferRfqPath = rfqTargetPath;
+  }catch(err){
+    console.warn('Could not prepare the "01 RFQ" folder:', err);
+    newOfferRfqPath = null;
+    uploadStatusEl.textContent = 'Could not reach the project folder — you can still add files to it manually in SharePoint.';
+    uploadStatusEl.className = 'catalog-status error';
+  }
+}
+
+// Best-effort, silent sync: after any BOM/Offer export downloads normally, also drop a copy in
+// the project's "02 OFFER" folder — so the SharePoint folder stays up to date without an extra
+// manual step. Fire-and-forget, same spirit as the revision-status sync: if the person isn't
+// signed in, there's no Project Reference yet, the item/folder can't be found, or the write
+// fails, it fails quietly and never blocks or delays the normal download.
+async function syncExportToSharePoint(blob, filename){
+  if(!msalInstance || !msalAccount) return;
+  const ref = document.getElementById('prjRef').value.trim();
+  if(!ref) return;
+  try{
+    const token = await getGraphToken();
+    const {site, list} = await resolveSharePointList(token);
+    const item = await findSharePointItemByRef(token, site, list, ref);
+    if(!item){ console.warn('Export → SharePoint sync: no list item found for', ref); return; }
+    const folderLinkValue = item.fields && item.fields.FolderLink0;
+    const targetPath = resolveProjectSubfolderPath(folderLinkValue, '02 OFFER');
+    if(!targetPath){ console.warn('Export → SharePoint sync: FolderLink0 did not parse into a usable path.'); return; }
+    const parentPath = targetPath.slice(0, targetPath.length - '02 OFFER'.length).replace(/\/+$/, '');
+    await ensureProjectSubfolder(token, site.id, parentPath, '02 OFFER');
+    await uploadOneFile(token, site.id, targetPath, new File([blob], filename));
+    console.log(`Also saved "${filename}" to the "02 OFFER" folder for ${ref}.`);
+  }catch(err){
+    console.warn('Export → SharePoint sync failed (non-blocking — the download itself still went through):', err);
+  }
+}
+
+async function uploadOneFile(token, siteId, rfqPath, file){
+  const target = `${encodeGraphPath(rfqPath)}/${encodeURIComponent(file.name)}`;
+  const buffer = await file.arrayBuffer();
+  const resp = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${target}:/content`, {
+    method: 'PUT',
+    headers: {Authorization:`Bearer ${token}`, 'Content-Type': file.type || 'application/octet-stream'},
+    body: buffer,
+  });
+  if(!resp.ok){
+    const text = await resp.text().catch(()=> '');
+    throw new Error(`Graph API ${resp.status} — ${text.slice(0,200) || resp.statusText}`);
+  }
+  return resp.json();
+}
+
+let newOfferSiteId = null;
+let newOfferRfqPath = null;
+
+document.getElementById('noFilesInput').addEventListener('change', ()=>{
+  const files = [...document.getElementById('noFilesInput').files];
+  document.getElementById('noFilesList').innerHTML = files.map(f=>`<li>📄 ${escapeHtml(f.name)}</li>`).join('');
+});
+
+document.getElementById('btnNewOfferSkipUpload').addEventListener('click', closeNewOffer);
+
+document.getElementById('btnNewOfferUpload').addEventListener('click', async ()=>{
+  const files = [...document.getElementById('noFilesInput').files];
+  const statusEl = document.getElementById('noUploadStatus');
+  if(!files.length){ closeNewOffer(); return; }
+  if(!newOfferSiteId || !newOfferRfqPath){
+    statusEl.textContent = 'Could not determine the target folder — the files were not uploaded. You can add them manually in SharePoint.';
+    statusEl.className = 'catalog-status error';
+    return;
+  }
+  try{
+    const token = await getGraphToken();
+    for(let i=0; i<files.length; i++){
+      statusEl.textContent = `Uploading ${i+1} of ${files.length}: ${files[i].name}…`;
+      statusEl.className = 'catalog-status loaded';
+      await uploadOneFile(token, newOfferSiteId, newOfferRfqPath, files[i]);
+    }
+    statusEl.textContent = `Uploaded ${files.length} file(s) to "01 RFQ".`;
+    setTimeout(closeNewOffer, 1200);
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = `Upload failed: ${err.message || err}`;
+    statusEl.className = 'catalog-status error';
+  }
+});
+
+document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=>{
+  if(typeof msal === 'undefined'){
+    alert('The Microsoft sign-in library failed to load (no internet access?).');
+    return;
+  }
+  if(!msalInstance || !msalAccount){
+    alert('Sign in with Microsoft 365 first — use the link above, or the "Sign-in" button top-right.');
+    return;
+  }
+
+  const countrySel = document.getElementById('noCountry');
+  const countryId = countrySel.value;
+  const countryLabel = countryId ? countrySel.options[countrySel.selectedIndex].textContent : '';
+
+  const values = {
+    name: document.getElementById('noName').value.trim(),
+    customer: document.getElementById('noCustomer').value.trim(),
+    due: document.getElementById('noDue').value,
+    owner: document.getElementById('noOwner').value.trim(),
+    product: document.getElementById('noProduct').value,
+    battery: document.getElementById('noBattery').value,
+    batteryBrand: document.getElementById('noBatteryBrand').value.trim(),
+  };
+  const mapping = {
+    name: document.getElementById('mapName').value.trim(),
+    customer: document.getElementById('mapCustomer').value.trim(),
+    due: document.getElementById('mapDue').value.trim(),
+    owner: document.getElementById('mapOwner').value.trim(),
+    product: document.getElementById('mapProduct').value.trim(),
+    battery: document.getElementById('mapBattery').value.trim(),
+    batteryBrand: document.getElementById('mapBatteryBrand').value.trim(),
+  };
+
+  // Build the SharePoint fields payload — a blank mapping (Owner by default) means "deliberately
+  // skipped", not "send empty", since it's flagged as likely unwritable (system-managed field).
+  const fields = {};
+  Object.keys(mapping).forEach(key=>{
+    const col = mapping[key];
+    if(!col) return;
+    let val = values[key];
+    if(key === 'due' && val) val = new Date(val).toISOString(); // SharePoint DateTime wants ISO 8601
+    if(val) fields[col] = val;
+  });
+  // Country is a Lookup column — SharePoint/Graph expect the numeric ID of the matching row in
+  // the source list via a "<ColumnName>LookupId" field, not the plain text value.
+  if(countryId) fields['CountryLookupId'] = countryId;
+
+  try{
+    updateNewOfferStatus('Creating in SharePoint…', 'loading');
+    const token = await getGraphToken();
+    const {site, list} = await resolveSharePointList(token);
+    const created = await graphPost(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items`, token, {fields});
+
+    noWaitCancelled = false;
+    setNewOfferView('waiting');
+    document.getElementById('noWaitingSub').textContent = t('newOffer.waitingSub');
+
+    const result = await waitForPrjIdAndFolder(token, site, list, created.id);
+    if(noWaitCancelled || !result) return; // "Stop waiting" already showed its own message and view
+    const {prjId, folderLink} = result;
+
+    await fetchSharePointList(); // one full refresh once we know it's ready — syncs PROGRESS/Load for everyone
+
+    document.getElementById('noSuccessLabel').textContent = `${t('newOffer.createdPrefix')} "${prjId}" ${t('newOffer.createdSuffix')}`;
+    setNewOfferView('success');
+
+    // pre-fill Project Details locally so configuring can start right away
+    document.getElementById('prjRef').value = prjId;
+    document.getElementById('prjRef').readOnly = true;
+    document.getElementById('prjName').value = values.name;
+    document.getElementById('prjCustomer').value = values.customer;
+    document.getElementById('prjCountry').value = countryLabel;
+    document.getElementById('prjDue').value = values.due;
+    document.getElementById('prjOwner').value = values.owner;
+    if(values.product) document.getElementById('prjProduct').value = values.product;
+    if(values.battery) document.getElementById('prjBattery').value = values.battery;
+    document.getElementById('prjBatteryBrand').value = values.batteryBrand;
+
+    // Resolve the SharePoint folder now that Power Automate has linked it, and get the "01 RFQ"
+    // subfolder ready — then offer the optional file upload step instead of closing outright.
+    newOfferSiteId = site.id;
+    document.getElementById('noFilesInput').value = '';
+    document.getElementById('noFilesList').innerHTML = '';
+    await prepareRfqUploadTarget(token, site.id, folderLink);
+
+    setTimeout(()=>setNewOfferView('upload'), 1400);
+  }catch(err){
+    console.error(err);
+    setNewOfferView('form');
+    updateNewOfferStatus(`Create failed: ${err.message || err} — check the field mapping above (a wrong internal column name is the most common cause).`, 'error');
+  }
+});
 
 document.getElementById('btnLoad').addEventListener('click', ()=>{
   const ref = document.getElementById('prjRef').value.trim();
@@ -1704,7 +2283,7 @@ function recalcProjectTotal(){
     grand += computeGroupTotal(h).price;
   });
   const el = document.getElementById('offerGrandTotal');
-  if(el) el.textContent = `Project Total: ${formatMoney(grand)}`;
+  if(el) el.textContent = `${t('dyn.projectTotal')}: ${formatMoney(grand)}`;
   if(!_updatingDelivery){
     _updatingDelivery = true;
     updateDeliveryRow();
@@ -2078,7 +2657,7 @@ function openServiceModal(headerRow){
 }
 
 function clearBom(){
-  bomBody.innerHTML = '<tr><td colspan="13" class="empty-bom">No rows generated yet. Configure the positions above and click "Generate Offer".</td></tr>';
+  bomBody.innerHTML = `<tr><td colspan="13" class="empty-bom">${t('dyn.noRowsYet')}</td></tr>`;
 }
 
 // ---- Generate Offer — faithful port of Modulo1.Generate_BOM (VBA), extended with High Efficiency ----
@@ -2369,12 +2948,93 @@ document.getElementById('btnNewRevision').addEventListener('click', ()=>{
 document.getElementById('btnNewRevClose').addEventListener('click', closeNewRevModal);
 document.getElementById('btnNewRevCancel').addEventListener('click', closeNewRevModal);
 setupBackdropClose(document.getElementById('newRevOverlay'), closeNewRevModal);
+// Shared lookup: finds the SharePoint list item matching a given Project Reference — used both
+// by the revision-status sync and by "Upload Files" for an already-existing project.
+async function findSharePointItemByRef(token, site, list, ref){
+  const found = await graphGet(
+    `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$filter=${encodeURIComponent(`fields/PRJ_ID eq '${ref.replace(/'/g,"''")}'`)}`,
+    token
+  );
+  return found.value && found.value[0];
+}
+
+// Best-effort SharePoint sync: reopening a closed offer for a new revision flags it as "In
+// Review" back on the source list, so anyone looking at the Progress tracker list sees it's
+// being worked on again — without needing to open this tool to find out. Fire-and-forget: if
+// the person isn't signed in, the item can't be found, or the write fails (e.g. only "read"
+// role was granted on the site, or "In Review" isn't one of the Status column's choices), it
+// fails quietly and never blocks or delays the local revision unlock.
+async function syncSharePointStatusInReview(){
+  if(!msalInstance || !msalAccount) return;
+  const ref = document.getElementById('prjRef').value.trim();
+  if(!ref) return;
+  try{
+    const token = await getGraphToken();
+    const {site, list} = await resolveSharePointList(token);
+    const item = await findSharePointItemByRef(token, site, list, ref);
+    if(!item){ console.warn('SharePoint status sync: no list item found for', ref); return; }
+    await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, {Status: 'In Review'});
+    console.log(`SharePoint Status set to "In Review" for ${ref}.`);
+  }catch(err){
+    console.warn('SharePoint status sync failed (non-blocking — the local revision still started normally):', err);
+  }
+}
+
+// "📎 Files" in Project Details — lets the person upload offer files to the CURRENT project's
+// "01 RFQ" folder at any time, not just right after creating a brand new project. Reuses the same
+// modal/upload view "Create New Offer" ends on, jumping straight there instead of going through
+// the create-a-new-item form.
+document.getElementById('btnUploadFiles').addEventListener('click', async ()=>{
+  if(typeof msal === 'undefined'){
+    alert('The Microsoft sign-in library failed to load (no internet access?).');
+    return;
+  }
+  if(!msalInstance || !msalAccount){
+    alert('Sign in with Microsoft 365 first — use the "Sign-in" button top-right.');
+    return;
+  }
+  const ref = document.getElementById('prjRef').value.trim();
+  if(!ref){
+    alert('Enter or load a Project Reference first — files are uploaded to that project\'s own folder.');
+    return;
+  }
+
+  newOfferOverlay.style.display = 'flex';
+  document.getElementById('newOfferOverlay').querySelector('h3').textContent = t('newOffer.uploadFilesTitle');
+  noWaitCancelled = false;
+  setNewOfferView('waiting');
+  document.getElementById('noWaitingSub').textContent = `Looking up project ${ref}…`;
+
+  try{
+    const token = await getGraphToken();
+    const {site, list} = await resolveSharePointList(token);
+    const item = await findSharePointItemByRef(token, site, list, ref);
+    if(noWaitCancelled) return;
+    if(!item){
+      updateNewOfferStatus(`No SharePoint item found for Project Reference "${ref}".`, 'error');
+      setNewOfferView('form');
+      return;
+    }
+    const folderLinkValue = item.fields && item.fields.FolderLink0;
+    newOfferSiteId = site.id;
+    document.getElementById('noFilesInput').value = '';
+    document.getElementById('noFilesList').innerHTML = '';
+    await prepareRfqUploadTarget(token, site.id, folderLinkValue);
+    setNewOfferView('upload');
+  }catch(err){
+    console.error(err);
+    updateNewOfferStatus(`Could not look up this project: ${err.message || err}`, 'error');
+    setNewOfferView('form');
+  }
+});
+
 document.getElementById('btnNewRevConfirm').addEventListener('click', ()=>{
   REVISION_DESCRIPTION = document.getElementById('newRevDesc').value.trim();
   REVISION++;
   REVISION_CLOSED = false;
   setReadOnly(false);
   closeNewRevModal();
+  syncSharePointStatusInReview();
 });
 
 function buildConfigState(){
@@ -2695,7 +3355,9 @@ async function exportBomPdf(){
   if(typeof window.jspdf === 'undefined'){ alert('The PDF library failed to load (no internet access?).'); return; }
   if(!bomHasRows()){ alert('Generate the Offer first — there are no lines to export.'); return; }
   const {doc, filename} = buildBomPdfDoc();
-  await saveBlob(doc.output('blob'), filename);
+  const blob = doc.output('blob');
+  await saveBlob(blob, filename);
+  syncExportToSharePoint(blob, filename);
 }
 
 function previewBomPdf(){
@@ -2915,6 +3577,9 @@ async function exportOfferPdf(){
     ],
     `${safeRef}_Offer_R${REVISION}.zip`
   );
+  // Only the standard (customer-facing) file goes to SharePoint — never the "with_margin" one,
+  // which carries internal cost/margin figures that shouldn't land in a project folder by default.
+  syncExportToSharePoint(stdBlob, std.filename);
 }
 
 function previewOfferPdf(){
@@ -3077,7 +3742,10 @@ async function exportBomXlsx(){
   const info = getProjectInfo();
   const safeRef = (info.ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
   const html = buildBomHtmlDoc();
-  await saveBlob(new Blob(['\ufeff', html], {type:'application/vnd.ms-excel'}), `${safeRef}_BOM_R${REVISION}.xls`);
+  const filename = `${safeRef}_BOM_R${REVISION}.xls`;
+  const blob = new Blob(['\ufeff', html], {type:'application/vnd.ms-excel'});
+  await saveBlob(blob, filename);
+  syncExportToSharePoint(blob, filename);
 }
 
 async function exportOfferXlsx(){
@@ -3097,6 +3765,9 @@ async function exportOfferXlsx(){
     ],
     `${safeRef}_Offer_R${REVISION}.zip`
   );
+  // Only the standard (customer-facing) file goes to SharePoint — never the "with_margin" one,
+  // which carries internal cost/margin figures that shouldn't land in a project folder by default.
+  syncExportToSharePoint(stdBlob, stdFilename);
 }
 
 document.getElementById('btnPreviewBom').addEventListener('click', previewBomPdf);
@@ -3110,6 +3781,12 @@ document.getElementById('btnExportOfferXlsx').addEventListener('click', exportOf
 document.getElementById('welcomeLogo').src = LOGO_B64;
 const welcomeOverlay = document.getElementById('welcomeOverlay');
 welcomeOverlay.style.display = 'flex';
+
+// ---- Language switcher — defaults to English; picking a language re-applies every [data-i18n]
+// / [data-i18n-ph] tagged element immediately, no reload needed ----
+document.getElementById('langSelect').addEventListener('change', (e)=>applyLanguage(e.target.value));
+applyLanguage('en');
+
 document.getElementById('btnWelcomeGuest').addEventListener('click', ()=>{
   welcomeOverlay.style.display = 'none';
 });

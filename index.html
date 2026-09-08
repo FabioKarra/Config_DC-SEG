@@ -180,7 +180,6 @@ button.act:active{transform:translateY(1px);}
 }
 .field input:focus, .field select:focus{outline:none; border-color:var(--accent);}
 .field input[readonly]{color:var(--teal); background:#F2FBFA; cursor:default; font-weight:300;}
-.field.auto label::after{content:" · auto"; color:var(--accent); font-weight:300; text-transform:none; letter-spacing:0;}
 
 /* ---- config table ---- */
 .cfg-wrap{overflow-x:auto;}
@@ -498,11 +497,11 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
             </div>
             <datalist id="prjList"></datalist>
           </div>
-          <div class="field auto"><label data-i18n="pd.projectName">Project Name</label><input id="prjName" readonly></div>
-          <div class="field auto"><label data-i18n="pd.country">Country</label><input id="prjCountry" readonly></div>
-          <div class="field auto"><label data-i18n="pd.customer">Customer</label><input id="prjCustomer" readonly></div>
-          <div class="field auto"><label data-i18n="pd.dueDate">Due Date</label><input id="prjDue" readonly></div>
-          <div class="field auto"><label data-i18n="pd.owner">Pre-Sales Owner</label><input id="prjOwner" readonly></div>
+          <div class="field"><label data-i18n="pd.projectName">Project Name</label><input id="prjName" readonly></div>
+          <div class="field"><label data-i18n="pd.country">Country</label><input id="prjCountry" readonly></div>
+          <div class="field"><label data-i18n="pd.customer">Customer</label><input id="prjCustomer" readonly></div>
+          <div class="field"><label data-i18n="pd.dueDate">Due Date</label><input id="prjDue" readonly></div>
+          <div class="field"><label data-i18n="pd.owner">Pre-Sales Owner</label><input id="prjOwner" readonly></div>
           <div class="field">
             <label data-i18n="pd.product">Product</label>
             <select id="prjProduct"><option>MP2 - M2S</option><option>MHE</option></select>

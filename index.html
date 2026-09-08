@@ -3222,6 +3222,51 @@ async function downloadJson(state, filename){
   return await saveBlob(blob, filename);
 }
 
+// Sums, straight from System Configuration's own inputs, the two project-wide totals written
+// back to SharePoint on Close Offer — deliberately NOT derived from the generated BOM's line
+// items (which would mean pattern-matching model names that can vary once a price list is
+// imported). Mirrors the exact same math Generate Offer itself uses per position (qty × UPS/Sys
+// for cabinets; qty × UPS/Sys × computeNPM(pload, red) for 67kW-class power modules, using
+// whichever module size — standard or High Efficiency — that position actually resolved to), so
+// this always agrees with what the BOM would show, without depending on it having been generated.
+function computeProjectTotals(){
+  let totalCabinets = 0, totalPowerModules = 0;
+  [...cfgBody.querySelectorAll('tr')].forEach(tr=>{
+    const qtyRaw = tr.querySelector('.f-qty').value;
+    if(qtyRaw === '' || Number(qtyRaw) === 0) return; // matches Generate Offer's own "SkipRow"
+    const qty = Number(qtyRaw);
+    const upsPerSys = Number(tr.querySelector('.f-upssys').value) || 0;
+    totalCabinets += qty * upsPerSys;
+    const nPMraw = computeNPM(tr.querySelector('.f-pload').value, tr.querySelector('.f-red').value);
+    const nPM = nPMraw === '' ? 0 : Number(nPMraw);
+    totalPowerModules += qty * upsPerSys * nPM;
+  });
+  return {totalCabinets, totalPowerModules};
+}
+
+// Best-effort, silent sync: writes the two totals above to the project's SharePoint record when
+// an offer is closed — same fire-and-forget spirit as the other background syncs (revision status,
+// export-to-"02 OFFER"). Never blocks or delays the local close/download if it fails.
+async function syncCloseOfferTotalsToSharePoint(){
+  if(!msalInstance || !msalAccount) return;
+  const ref = document.getElementById('prjRef').value.trim();
+  if(!ref) return;
+  try{
+    const {totalCabinets, totalPowerModules} = computeProjectTotals();
+    const token = await getGraphToken();
+    const {site, list} = await resolveSharePointList(token);
+    const item = await findSharePointItemByRef(token, site, list, ref);
+    if(!item){ console.warn('Close Offer → SharePoint totals sync: no list item found for', ref); return; }
+    await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, {
+      N_x002e_PowerModules: totalPowerModules,
+      N_x002e_Cabinet: totalCabinets,
+    });
+    console.log(`SharePoint totals updated for ${ref}: ${totalPowerModules} power modules, ${totalCabinets} cabinets.`);
+  }catch(err){
+    console.warn('Close Offer → SharePoint totals sync failed (non-blocking — the offer still closed normally):', err);
+  }
+}
+
 document.getElementById('btnCloseOffer').addEventListener('click', async ()=>{
   if(REVISION_CLOSED) REVISION++;   // already closed once and kept working since → this is a new revision
   const ref = (document.getElementById('prjRef').value.trim() || 'draft').replace(/[^a-z0-9_-]/gi,'_');
@@ -3232,6 +3277,7 @@ document.getElementById('btnCloseOffer').addEventListener('click', async ()=>{
   const savedDirect = await downloadJson(state, filename);
   REVISION_CLOSED = true;
   updateRevisionStatus();
+  syncCloseOfferTotalsToSharePoint();
   alert(savedDirect
     ? `Offer closed and saved as "${ref}/${filename}" in your chosen folder.\nKeep editing and click "Close Offer" again to issue R${REVISION+1}, or load this file back in later to resume as a new revision.`
     : `Offer closed and downloaded as ${filename}.\nKeep editing and click "Close Offer" again to issue R${REVISION+1}, or load this file back in later to resume as a new revision.`);

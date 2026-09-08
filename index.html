@@ -653,7 +653,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
     </div>
     <div class="settings-body">
       <div id="noFormFields">
-      <p class="settings-note">Creates a new row in the SharePoint "Progress tracker list" (via Microsoft Graph), then fills in Project Details here so you can start configuring right away. Needs to be <a href="#" id="lnkNewOfferSignIn" style="color:var(--accent);">signed in with MS 365</a> first, with write access granted. <b>Project Reference is assigned automatically by a Power Automate flow after creation</b> — there's nothing to type for it here; the popup will wait for it.</p>
+      <p class="settings-note">Creates a new row in the SharePoint "Progress tracker list" (via Microsoft Graph), then fills in Project Details here so you can start configuring right away. Needs to be <a href="#" id="lnkNewOfferSignIn" style="color:var(--accent);">signed in with MS 365</a> first, with write access granted. <b>Project Reference is assigned automatically by a Power Automate flow after creation</b> — there's nothing to type for it here; the popup will wait for it. <b>Pre-Sales Owner is set automatically</b> too, to whoever is signed in and creating this offer — it stays editable afterwards in Project Details, same as any other field, while the revision is open.</p>
       <div class="field"><label data-i18n="newOffer.projectName">Project Name</label><input id="noName" placeholder="e.g. RFQ Datacenter — Customer X"></div>
       <div class="field"><label data-i18n="newOffer.customer">Customer</label><input id="noCustomer"></div>
       <div class="field">
@@ -661,22 +661,19 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         <select id="noCountry"><option value="">Sign in first to load the list…</option></select>
       </div>
       <div class="field"><label data-i18n="newOffer.dueDate">Due Date</label><input id="noDue" type="date"></div>
-      <div class="field"><label data-i18n="newOffer.owner">Pre-Sales Owner</label><input id="noOwner"></div>
       <div class="field"><label data-i18n="newOffer.product">Product</label><select id="noProduct"><option value="">—</option><option>MP2 - M2S</option><option>MHE</option></select></div>
       <div class="field"><label data-i18n="newOffer.battery">Battery</label><select id="noBattery"><option value="">—</option><option>VRLA</option><option>Lithium</option></select></div>
       <div class="field"><label data-i18n="newOffer.batteryBrand">Battery Brand</label><input id="noBatteryBrand"></div>
 
       <button type="button" class="btn-ghost act" id="btnNewOfferMapping" style="margin-top:6px;" data-i18n="newOffer.mappingToggle">🔧 Advanced: SharePoint field mapping</button>
       <div id="newOfferMappingFields" style="display:none;">
-        <p class="settings-note" style="margin-top:-2px;">Internal SharePoint column names each field above writes to (Country is handled separately above, via its own lookup list — not shown here). Defaults come from a real snapshot of this list's data. If "Create" fails below, the error usually names the wrong column directly — fix it here and try again, no need to reopen anything.</p>
-        <div class="field"><label data-i18n="newOffer.mapProjectName">Project Name column</label><input id="mapName" value="Project Name"></div>
-        <div class="field"><label data-i18n="newOffer.mapCustomer">Customer column</label><input id="mapCustomer" value="Customer"></div>
-        <div class="field"><label data-i18n="newOffer.mapDueDate">Due Date column</label><input id="mapDue" value="Due date"></div>
-        <div class="field"><label>Owner column <span style="color:var(--red);">⚠ may be system-managed</span></label><input id="mapOwner" value=""></div>
-        <div class="field"><label data-i18n="newOffer.mapProduct">Product column</label><input id="mapProduct" value="Product"></div>
+        <p class="settings-note" style="margin-top:-2px;">Internal SharePoint column names each field above writes to (Country is handled separately above, via its own lookup list; Owner isn't listed here since it's set automatically — not shown below). Defaults come from a real, confirmed mapping of this list's actual columns. If "Create" fails below, the error usually names the wrong column directly — fix it here and try again, no need to reopen anything.</p>
+        <div class="field"><label data-i18n="newOffer.mapProjectName">Project Name column</label><input id="mapName" value="ProjectName"></div>
+        <div class="field"><label data-i18n="newOffer.mapCustomer">Customer column</label><input id="mapCustomer" value="Title"></div>
+        <div class="field"><label data-i18n="newOffer.mapDueDate">Due Date column</label><input id="mapDue" value="DueDate"></div>
+        <div class="field"><label data-i18n="newOffer.mapProduct">Product column</label><input id="mapProduct" value="Progress"></div>
         <div class="field"><label data-i18n="newOffer.mapBattery">Battery column</label><input id="mapBattery" value="Battery"></div>
-        <div class="field"><label data-i18n="newOffer.mapBatteryBrand">Battery Brand column</label><input id="mapBatteryBrand" value="Battery Brand"></div>
-        <p class="settings-note">Owner may correspond to the system "Created By" field, which Graph sets automatically to whoever is signed in and can't be overridden — left blank by default (skipped on create) for that reason. Fill it in only if you've confirmed a separate, writable "Owner" column exists.</p>
+        <div class="field"><label data-i18n="newOffer.mapBatteryBrand">Battery Brand column</label><input id="mapBatteryBrand" value="BatteryBrand"></div>
       </div>
 
       <p class="catalog-status" id="newOfferStatus" style="margin:10px 0 0;" data-i18n="newOffer.notSubmitted">Not submitted yet.</p>
@@ -960,18 +957,18 @@ function fmtDate(iso){
 // whatever raw field names Graph actually returns for this list. ----
 const PROGRESS_FIELD_ALIASES = {
   PRJ_ID: ['PRJ_ID','PRJ ID','Project ID','ProjectID','Prj Id','ID'],
-  'Rev.': ['Rev.','Rev','Revision'],
-  Category: ['Category'],
+  'Rev.': ['Rev_x002e_','Rev.','Rev','Revision'],
+  Category: ['Category0','Category'],
   Status: ['Status'],
-  Customer: ['Customer','Client'],
-  'Country.lookupValue': ['Country.lookupValue','Country','Country Region','Country/Region'],
-  'Project Name': ['Project Name','ProjectName','Title','Name'],
-  Product: ['Product'],
-  'Due date': ['Due date','Due Date','DueDate'],
+  Customer: ['Title','Customer','Client'],
+  'Country.lookupValue': ['Country0','Country.lookupValue','Country','Country Region','Country/Region'],
+  'Project Name': ['ProjectName','Project Name','Name'],
+  Product: ['Progress','Product'],
+  'Due date': ['DueDate','Due date','Due Date'],
   Notes: ['Notes','Note','Comments'],
-  'Created By.title': ['Created By.title','Created By','Author','CreatedBy','Pre-Sales Owner','Owner'],
+  'Created By.title': ['Author','Created By.title','Created By','CreatedBy','Pre-Sales Owner','Owner'],
   Battery: ['Battery'],
-  'Battery Brand': ['Battery Brand','BatteryBrand'],
+  'Battery Brand': ['BatteryBrand','Battery Brand'],
 };
 function normalizeKey(s){
   return String(s||'').toLowerCase().replace(/[\s_./]+/g,' ').trim();
@@ -1003,6 +1000,14 @@ function normalizeDateValue(v){
   return isNaN(parsed) ? s : parsed.toISOString();
 }
 
+function pickRawField(row, fieldIndex, candidates){
+  for(const c of candidates){
+    const actualKey = fieldIndex[normalizeKey(c)];
+    if(actualKey !== undefined && row[actualKey] !== undefined && row[actualKey] !== null) return row[actualKey];
+  }
+  return undefined;
+}
+
 function processProjectList(rows, filename){
   if(!rows.length){
     alert('The selected sheet appears to be empty.');
@@ -1027,6 +1032,11 @@ function processProjectList(rows, filename){
       if(field === 'Due date') v = normalizeDateValue(v);
       rec[field] = v;
     });
+    // Country's raw Lookup value (before extractDisplayValue collapses it to plain text) carries
+    // a LookupId too — kept alongside so "↑ Load" can cross-reference the Country REF_Alpha2 list
+    // and show "Code-Name" instead of just the resolved title.
+    const rawCountry = pickRawField(r, fieldIndex, PROGRESS_FIELD_ALIASES['Country.lookupValue']);
+    rec._countryLookupId = (rawCountry && typeof rawCountry === 'object') ? rawCountry.LookupId : undefined;
     return rec;
   }).filter(rec => String(rec.PRJ_ID||'').trim() !== '');
 
@@ -1333,10 +1343,23 @@ function updateNewOfferStatus(msg, state){
   el.className = 'catalog-status' + (state==='loaded' ? ' loaded' : state==='error' ? ' error' : '');
 }
 
-async function loadCountryOptions(){
-  const select = document.getElementById('noCountry');
-  select.innerHTML = '<option value="">Loading…</option>';
-  try{
+let countryOptionsLoaded = false;
+let countryOptionsLoadingPromise = null;
+
+// Formats a country as "Code-Name" (e.g. "IT-Italy") — falls back gracefully if only one half
+// is known.
+function formatCountryLabel(code, title){
+  if(code && title) return `${code}-${title}`;
+  return title || code || '';
+}
+
+// Fetches and caches the "Country REF_Alpha2" list (id, code, title per row) — shared by the
+// Country dropdown in "Create New Offer" and by "↑ Load"'s Code-Name Country display, so it's
+// only fetched once per session regardless of which one triggers it first.
+async function ensureCountryOptionsLoaded(){
+  if(countryOptionsLoaded) return countryOptions;
+  if(countryOptionsLoadingPromise) return countryOptionsLoadingPromise;
+  countryOptionsLoadingPromise = (async ()=>{
     const token = await getGraphToken();
     const siteHost = document.getElementById('spSiteHost').value.trim() || 'rielloups.sharepoint.com';
     const sitePath = document.getElementById('spSitePath').value.trim() || '/sites/DCSales2';
@@ -1359,8 +1382,23 @@ async function loadCountryOptions(){
       code: (it.fields && (it.fields.Code || it.fields.code)) || '?',
       title: it.fields && it.fields.Title,
     })).sort((a,b)=>a.code.localeCompare(b.code));
+    countryOptionsLoaded = true;
+    return countryOptions;
+  })();
+  try{
+    return await countryOptionsLoadingPromise;
+  } finally {
+    countryOptionsLoadingPromise = null;
+  }
+}
+
+async function loadCountryOptions(){
+  const select = document.getElementById('noCountry');
+  select.innerHTML = '<option value="">Loading…</option>';
+  try{
+    await ensureCountryOptionsLoaded();
     select.innerHTML = '<option value="">—</option>' + countryOptions.map(c=>
-      `<option value="${c.id}">${escapeHtml(c.code)}${c.title ? ' — '+escapeHtml(c.title) : ''}</option>`
+      `<option value="${c.id}">${escapeHtml(formatCountryLabel(c.code, c.title))}</option>`
     ).join('');
   }catch(err){
     console.error(err);
@@ -1595,12 +1633,16 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
   const countrySel = document.getElementById('noCountry');
   const countryId = countrySel.value;
   const countryLabel = countryId ? countrySel.options[countrySel.selectedIndex].textContent : '';
+  // Pre-Sales Owner is no longer typed in — it's whoever is signed in and creating this offer.
+  // "Author" (Created By) is a system-managed SharePoint field: it's set automatically to the
+  // identity behind the Graph call that creates the item, so there's nothing to write explicitly
+  // here either. The signed-in account's own name is what goes into Project Details locally.
+  const ownerName = msalAccount.name || msalAccount.username || '';
 
   const values = {
     name: document.getElementById('noName').value.trim(),
     customer: document.getElementById('noCustomer').value.trim(),
     due: document.getElementById('noDue').value,
-    owner: document.getElementById('noOwner').value.trim(),
     product: document.getElementById('noProduct').value,
     battery: document.getElementById('noBattery').value,
     batteryBrand: document.getElementById('noBatteryBrand').value.trim(),
@@ -1609,14 +1651,11 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
     name: document.getElementById('mapName').value.trim(),
     customer: document.getElementById('mapCustomer').value.trim(),
     due: document.getElementById('mapDue').value.trim(),
-    owner: document.getElementById('mapOwner').value.trim(),
     product: document.getElementById('mapProduct').value.trim(),
     battery: document.getElementById('mapBattery').value.trim(),
     batteryBrand: document.getElementById('mapBatteryBrand').value.trim(),
   };
 
-  // Build the SharePoint fields payload — a blank mapping (Owner by default) means "deliberately
-  // skipped", not "send empty", since it's flagged as likely unwritable (system-managed field).
   const fields = {};
   Object.keys(mapping).forEach(key=>{
     const col = mapping[key];
@@ -1626,8 +1665,9 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
     if(val) fields[col] = val;
   });
   // Country is a Lookup column — SharePoint/Graph expect the numeric ID of the matching row in
-  // the source list via a "<ColumnName>LookupId" field, not the plain text value.
-  if(countryId) fields['CountryLookupId'] = countryId;
+  // the source list via a "<internal column name>LookupId" field. The internal name here is
+  // "Country0" (confirmed against the real list), not the display name "Country".
+  if(countryId) fields['Country0LookupId'] = countryId;
 
   try{
     updateNewOfferStatus('Creating in SharePoint…', 'loading');
@@ -1655,7 +1695,7 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
     document.getElementById('prjCustomer').value = values.customer;
     document.getElementById('prjCountry').value = countryLabel;
     document.getElementById('prjDue').value = values.due;
-    document.getElementById('prjOwner').value = values.owner;
+    document.getElementById('prjOwner').value = ownerName;
     if(values.product) document.getElementById('prjProduct').value = values.product;
     if(values.battery) document.getElementById('prjBattery').value = values.battery;
     document.getElementById('prjBatteryBrand').value = values.batteryBrand;
@@ -1675,7 +1715,7 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
   }
 });
 
-document.getElementById('btnLoad').addEventListener('click', ()=>{
+document.getElementById('btnLoad').addEventListener('click', async ()=>{
   const ref = document.getElementById('prjRef').value.trim();
   const rec = PROGRESS.find(p=>String(p.PRJ_ID)===ref);
   if(!rec){
@@ -1683,7 +1723,20 @@ document.getElementById('btnLoad').addEventListener('click', ()=>{
     return;
   }
   document.getElementById('prjName').value = rec['Project Name']||'';
-  document.getElementById('prjCountry').value = rec['Country.lookupValue']||'';
+  // Shows "Code-Name" (e.g. "IT-Italy") by cross-referencing the Country REF_Alpha2 list via the
+  // Lookup's ID — falls back to just the resolved title alone if that lookup isn't available
+  // (not signed in, or the cross-reference list couldn't be reached), rather than leaving it blank.
+  let countryLabel = rec['Country.lookupValue']||'';
+  if(rec._countryLookupId){
+    try{
+      await ensureCountryOptionsLoaded();
+      const match = countryOptions.find(c=>String(c.id)===String(rec._countryLookupId));
+      if(match) countryLabel = formatCountryLabel(match.code, match.title);
+    }catch(err){
+      console.warn('Could not cross-reference Country REF_Alpha2 for "Code-Name" display — showing the plain value instead:', err);
+    }
+  }
+  document.getElementById('prjCountry').value = countryLabel;
   document.getElementById('prjCustomer').value = rec['Customer']||'';
   document.getElementById('prjDue').value = fmtDate(rec['Due date']);
   document.getElementById('prjOwner').value = rec['Created By.title']||'';

@@ -1842,9 +1842,9 @@ function buildRow(prefill){
     <td><div class="pos-badge">${String(posCounter).padStart(2,'0')}</div></td>
     <td><input type="number" min="0" class="f-qty" value="1" style="width:52px"></td>
     <td><input type="number" min="0" class="f-upssys" value="1" style="width:60px"></td>
-    <td><select class="f-loadtype">
-      <option>IT Loads</option><option>MECH Loads</option><option>HOUSE Loads</option><option>OTHER Loads</option>
-    </select></td>
+    <td><select class="f-loadtype" style="width:110px;">
+      <option>IT Loads</option><option>MECH Loads</option><option>HOUSE Loads</option><option>...</option>
+    </select><input type="text" class="f-loadtype-other" placeholder="Label…" style="display:none; width:110px; margin-top:4px;"></td>
     <td><input type="number" min="0" class="f-pload" placeholder="kW" style="width:68px"></td>
     <td><select class="f-red"><option>N</option><option selected>N+1</option><option>N+2</option></select></td>
     <td><div class="npm-cell"><span class="npm-num f-npm">–</span></div></td>
@@ -1882,6 +1882,14 @@ function buildRow(prefill){
     const n = computeNPM(pload, red);
     $('.f-npm').textContent = n===''? '–' : n;
   }
+  // "..." needs an actual label — showing three dots in the generated
+  // offer header wouldn't mean anything to whoever reads it — so a small text field appears only
+  // for that choice, letting the person type what the load actually is (e.g. "UPS Loads").
+  function syncLoadTypeOther(){
+    const otherField = $('.f-loadtype-other');
+    otherField.style.display = $('.f-loadtype').value === '...' ? 'block' : 'none';
+  }
+  $('.f-loadtype').addEventListener('change', syncLoadTypeOther);
   // filters the Model dropdown to only the models whose PMAX covers the entered Pload
   function applyPmaxFilter(){
     const ploadField = $('.f-pload');
@@ -1934,6 +1942,8 @@ function buildRow(prefill){
     $('.f-qty').value = prefill.qty ?? 1;
     $('.f-upssys').value = prefill.upssys ?? 1;
     if(prefill.loadtype) $('.f-loadtype').value = prefill.loadtype;
+    if(prefill.loadtypeOther) $('.f-loadtype-other').value = prefill.loadtypeOther;
+    syncLoadTypeOther();
     $('.f-pload').value = prefill.pload ?? '';
     if(prefill.red) $('.f-red').value = prefill.red;
     const pl = Number(prefill.pload)||0;
@@ -3039,6 +3049,8 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     const upsPerSys = Number($('.f-upssys').value) || 0;           // VBA: "ups"
     const qtyUnit = upsPerSys;                                      // VBA: qtyUnit = (qty*ups)/qty = ups — per-system count, unchanged from VBA; Q.ty is applied only at the Total row (below)
     const loadType = $('.f-loadtype').value;
+    const loadTypeOther = $('.f-loadtype-other').value.trim();
+    const loadTypeLabel = (loadType === '...' && loadTypeOther) ? loadTypeOther : loadType;
     const pload = $('.f-pload').value;
     const red = $('.f-red').value;
     const nPMraw = computeNPM(pload, red);
@@ -3053,7 +3065,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     gruppo++;
     let subIdx = 0;
 
-    const headerLabel = `${loadType} ${pload} kW`.replace(/\s+/g,' ').trim();
+    const headerLabel = `${loadTypeLabel} ${pload} kW`.replace(/\s+/g,' ').trim();
     const headerRow = addBomRow({kind:'header', pos:`${gruppo}.0`, label:headerLabel, baseModel:model, cfgPos: tr.dataset.pos});
     const owner = headerRow.dataset.rowId;
 
@@ -3367,6 +3379,7 @@ function buildConfigState(){
     qty: tr.querySelector('.f-qty').value,
     upssys: tr.querySelector('.f-upssys').value,
     loadtype: tr.querySelector('.f-loadtype').value,
+    loadtypeOther: tr.querySelector('.f-loadtype-other').value,
     pload: tr.querySelector('.f-pload').value,
     red: tr.querySelector('.f-red').value,
     model: tr.querySelector('.f-model').value,

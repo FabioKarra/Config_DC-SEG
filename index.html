@@ -356,7 +356,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   display:flex; justify-content:flex-end; gap:10px;
 }
 /* Multiline descriptions entered manually in the free-form dialogs. */
-.bom .desc-text{white-space:pre-line;}
+.bom .desc-text{white-space:pre-line; display:block; line-height:1.35; min-height:1.35em;}
 .multiline-desc-editor{
   max-width:820px;
 }
@@ -397,6 +397,12 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 .settings-body .field{margin-bottom:0;}
 .settings-body hr{border:none; border-top:1px solid var(--panel-border); margin:2px 0;}
 .settings-note{font-size:11.5px; font-weight:300; color:var(--dim); line-height:1.6; margin:0;}
+
+@media print{
+  .bom .desc-text{white-space:pre-line !important; display:block !important; line-height:1.35 !important;}
+  .bom td{vertical-align:top;}
+  .bom-actions{display:none !important;}
+}
 
 @media (max-width:900px){
   .grid{grid-template-columns:1fr 1fr;}
@@ -3878,7 +3884,7 @@ function buildBomPdfDoc(){
     const qty = bomLineQty(r);
     const model = kind==='line' ? (r.querySelector('.model-cell')?.textContent||'') : r.cells[2].textContent.replace(/^↳\s*/,'');
     const code = r.cells[3].textContent;
-    const desc = rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '');
+    const desc = String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
     body.push([qty, model, code, desc]);
   });
 
@@ -3935,7 +3941,7 @@ function collectOfferRows(){
     const qty = rowQty(r);
     const model = kind==='line' ? (r.querySelector('.model-cell')?.textContent||'') : r.cells[2].textContent.replace(/^↳\s*/,'');
     const code = r.cells[3].textContent;
-    const desc = rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '');
+    const desc = String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
     const gross = Number(r.querySelector('.in-gross')?.value)||0;
     const disc = Number(r.querySelector('.in-disc')?.value)||0;
     const cost = Number(r.querySelector('.in-cost')?.value)||0;
@@ -4057,7 +4063,7 @@ function buildOfferPdfDoc(withMargin){
     head: [headCols],
     body,
     margin:{left:margin, right:margin},
-    styles:{font:'WorkSans', fontSize: withMargin?6.8:7.4, cellPadding:3.2, lineColor:[225,225,225], lineWidth:0.5, overflow:'visible'},
+    styles:{font:'WorkSans', fontSize: withMargin?6.8:7.4, cellPadding:3.2, lineColor:[225,225,225], lineWidth:0.5, overflow:'linebreak', valign:'top'},
     headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize: withMargin?7:7.6},
     columnStyles: withMargin ? {
       0:{cellWidth:20, halign:'center'}, 1:{cellWidth:74}, 2:{cellWidth:74}, 3:{overflow:'linebreak', cellWidth:'auto'},
@@ -4153,8 +4159,9 @@ function buildBomHtmlDoc(){
     const qty = bomLineQty(r);
     const model = kind==='line' ? (r.querySelector('.model-cell')?.textContent||'') : r.cells[2].textContent.replace(/^↳\s*/,'');
     const code = r.cells[3].textContent;
-    const desc = rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '');
-    rowsHtml.push(`<tr><td style="text-align:center;">${escapeHtml(qty)}</td><td>${escapeHtml(model)}</td><td>${escapeHtml(code)}</td><td>${escapeHtml(desc)}</td></tr>`);
+    const desc = String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
+    const descHtml = escapeHtml(desc).replace(/\n/g, '<br>');
+    rowsHtml.push(`<tr><td style="text-align:center;">${escapeHtml(qty)}</td><td>${escapeHtml(model)}</td><td>${escapeHtml(code)}</td><td style="white-space:pre-line;">${descHtml}</td></tr>`);
   });
 
   return `<!DOCTYPE html>
@@ -4195,12 +4202,13 @@ function buildOfferHtmlDoc(withMargin){
   data.groups.forEach((g, gIdx)=>{
     bodyRows.push(`<tr><td colspan="${colCount}" ${hdrTd}>${escapeHtml(g.label)}</td></tr>`);
     g.lines.forEach(l=>{
+      const descHtml = escapeHtml(String(l.desc || '').replace(/\r\n?/g, '\n')).replace(/\n/g, '<br>');
       let cells = `
         <td style="text-align:center;">${l.qty}</td>
         <td>${escapeHtml(l.model)}</td>
         <td>${escapeHtml(l.code)}</td>
-        <td>${escapeHtml(l.desc)}</td>
-        <td style="text-align:right;">${formatMoney(l.gross)}</td>
+        <td style="white-space:pre-line;">${descHtml}</td>
+        <td style="text-align:right;">${formatMoney(l.gross)}</td>`
         <td style="text-align:right;">${l.disc.toFixed(2)}%</td>
         <td style="text-align:right;">${formatMoney(l.net)}</td>
         <td style="text-align:right;">${formatMoney(l.totalPrice)}</td>`;

@@ -1057,11 +1057,21 @@ function processProjectList(rows, filename){
       if(field === 'Due date') v = normalizeDateValue(v);
       rec[field] = v;
     });
-    // Country's raw Lookup value (before extractDisplayValue collapses it to plain text) carries
-    // a LookupId too — kept alongside so "↑ Load" can cross-reference the Country REF_Alpha2 list
-    // and show "Code-Name" instead of just the resolved title.
+    // Country is a SharePoint Lookup. Depending on the Graph response, the field can arrive
+    // either as the resolved value/object (Country0) or as the numeric lookup id
+    // (Country0LookupId). Preserve both forms so the UI can resolve Code-Name reliably.
     const rawCountry = pickRawField(r, fieldIndex, PROGRESS_FIELD_ALIASES['Country.lookupValue']);
-    rec._countryLookupId = (rawCountry && typeof rawCountry === 'object') ? rawCountry.LookupId : undefined;
+    const explicitCountryId = r.Country0LookupId ?? r.CountryLookupId;
+    rec._countryLookupId =
+      explicitCountryId !== undefined && explicitCountryId !== null && String(explicitCountryId).trim() !== ''
+        ? explicitCountryId
+        : ((rawCountry && typeof rawCountry === 'object') ? rawCountry.LookupId : undefined);
+
+    // Person field fallback: Graph may not expose Author as a field display value.
+    // The list item's createdBy metadata is the reliable display-name source.
+    if(!rec['Created By.title'] && r.__graphCreatedByName){
+      rec['Created By.title'] = r.__graphCreatedByName;
+    }
     return rec;
   }).filter(rec => String(rec.PRJ_ID||'').trim() !== '');
 
@@ -1289,7 +1299,17 @@ async function fetchSharePointList(){
       items = items.concat(page.value || []);
       url = page['@odata.nextLink'] || null;
     }
-    const rows = items.map(it=>it.fields || {});
+    // Keep the Graph list-item metadata alongside the fields. Person columns such as
+    // Author/Created By are not always returned as a display value inside `fields`;
+    // Graph exposes the creator reliably as item.createdBy.user.displayName.
+    const rows = items.map(it=>{
+      const fields = {...(it.fields || {})};
+      fields.__graphCreatedByName =
+        (it.createdBy && it.createdBy.user && (it.createdBy.user.displayName || it.createdBy.user.email)) ||
+        (it.createdBy && it.createdBy.application && it.createdBy.application.displayName) ||
+        '';
+      return fields;
+    });
     if(rows.length) console.log('First SharePoint item — raw field names for mapping/debugging:', rows[0]);
     processProjectList(rows, `SharePoint (live): ${list.displayName || 'Progress tracker list'}`);
     updateSpStatus(`Connected — ${rows.length} records loaded at ${new Date().toLocaleTimeString('en-GB')}. Note: Person/Lookup columns may come through as IDs — check the browser console (first item logged) if a field looks wrong.`, 'loaded');

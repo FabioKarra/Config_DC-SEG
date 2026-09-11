@@ -803,7 +803,7 @@ function applyLanguage(lang){
 }
 
 let PROGRESS = []; // starts empty — populated only by "Sign in with MS 365" → auto-refresh (or its "Refresh" button)
-const ARCH = [{"pmax": 335, "model": "MP2 300", "connection": "Cabled Version", "configuration": "PCM"}, {"pmax": 536, "model": "MP2 500", "connection": "Cabled Version", "configuration": "PCM"}, {"pmax": 603, "model": "MP2 600", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 603, "model": "MP2 600", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 603, "model": "MP2 600", "connection": "Cabled Version", "configuration": "CT4"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "CT0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "CT2"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "CT0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "CT1"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "CT2"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "CT0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "CT2"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Flanged Version", "configuration": "CT0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Flanged Version", "configuration": "CT1"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "CT0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "CT2"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Flanged Version", "configuration": "CT0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Flanged Version", "configuration": "CT1"}, {"pmax": 2010, "model": "M2S 2000", "connection": "Cabled Version", "configuration": "n.d."}, {"pmax": 2010, "model": "M2S 2000", "connection": "Flanged Version", "configuration": "PC0"}];
+const ARCH = [{"pmax": 335, "model": "MP2 300", "connection": "Cabled Version", "configuration": "PCM"}, {"pmax": 536, "model": "MP2 500", "connection": "Cabled Version", "configuration": "PCM"}, {"pmax": 603, "model": "MP2 600", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 603, "model": "MP2 600", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 603, "model": "MP2 600", "connection": "Cabled Version", "configuration": "CT4"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "CT0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Cabled Version", "configuration": "CT2"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "CT0"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "CT1"}, {"pmax": 1005, "model": "M2S 1000", "connection": "Flanged Version", "configuration": "CT2"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "CT0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Cabled Version", "configuration": "CT2"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Flanged Version", "configuration": "CT0"}, {"pmax": 1273, "model": "M2S 1250", "connection": "Flanged Version", "configuration": "CT1"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "PC0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "CT0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Cabled Version", "configuration": "CT2"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Flanged Version", "configuration": "CT0"}, {"pmax": 1608, "model": "M2S 1600", "connection": "Flanged Version", "configuration": "CT1"}, {"pmax": 2010, "model": "M2S 2000", "connection": "Cabled Version", "configuration": "n.d."}, {"pmax": 2010, "model": "M2S 2000", "connection": "Flanged Version", "configuration": "PC0"}, {"pmax": 120, "model": "M2X 120 - 30", "connection": "Cabled Version", "configuration": "PCS"}, {"pmax": 120, "model": "M2X 120 - 15", "connection": "Cabled Version", "configuration": "PCS"}];
 const MODULE_KW = 67;
 let posCounter = 0;
 let bomRowCounter = 0;
@@ -1817,13 +1817,24 @@ function connectionsForModel(model){
 function configsFor(model, connection){
   return ARCH_ACTIVE.filter(a=>a.model===model && a.connection===connection).map(a=>a.configuration);
 }
-function computeNPM(pload, red){
+// moduleKw defaults to the active MP2/M2S module size (67kW standard, or the High-Efficiency
+// size when toggled) — M2X uses a fixed 30kW or 15kW module instead, entirely independent of
+// that MP2/M2S High-Efficiency toggle, so the two M2X variants pass their own size explicitly.
+function computeNPM(pload, red, moduleKw){
   if(!pload || pload==='' || isNaN(pload)) return '';
-  const base = Math.ceil(Number(pload)/MODULE_KW_ACTIVE);
+  const kw = moduleKw || MODULE_KW_ACTIVE;
+  const base = Math.ceil(Number(pload)/kw);
   if(red==='N') return base;
   if(red==='N+1') return base+1;
   if(red==='N+2') return base+2;
   return '';
+}
+// Returns the per-module kW for whichever model is selected — 30/15 for the two M2X variants,
+// or null for everything else (MP2/M2S keep using the standard MODULE_KW_ACTIVE toggle).
+function moduleKwForModel(model){
+  if(model === 'M2X 120 - 30') return 30;
+  if(model === 'M2X 120 - 15') return 15;
+  return null;
 }
 
 function renumberRows(){
@@ -1879,7 +1890,7 @@ function buildRow(prefill){
   function refreshNPM(){
     const pload = $('.f-pload').value;
     const red = $('.f-red').value;
-    const n = computeNPM(pload, red);
+    const n = computeNPM(pload, red, moduleKwForModel(modelSel.value));
     $('.f-npm').textContent = n===''? '–' : n;
   }
   // "..." needs an actual label — showing three dots in the generated
@@ -1890,6 +1901,20 @@ function buildRow(prefill){
     otherField.style.display = $('.f-loadtype').value === '...' ? 'block' : 'none';
   }
   $('.f-loadtype').addEventListener('change', syncLoadTypeOther);
+  // M2X 120-30 only ever uses the BLUE (high-efficiency) 30kW module — there's no standard variant
+  // for that cabinet — so H.Eff is forced on and locked whenever that model is selected. Every
+  // other model keeps H.Eff as a normal, freely-togglable choice.
+  function syncHighEffLock(){
+    const heff = $('.f-higheff');
+    if(modelSel.value === 'M2X 120 - 30'){
+      heff.checked = true;
+      heff.disabled = true;
+    } else {
+      heff.disabled = false;
+    }
+  }
+  modelSel.addEventListener('change', syncHighEffLock);
+  modelSel.addEventListener('change', refreshNPM);
   // filters the Model dropdown to only the models whose PMAX covers the entered Pload
   function applyPmaxFilter(){
     const ploadField = $('.f-pload');
@@ -1944,6 +1969,7 @@ function buildRow(prefill){
     if(prefill.loadtype) $('.f-loadtype').value = prefill.loadtype;
     if(prefill.loadtypeOther) $('.f-loadtype-other').value = prefill.loadtypeOther;
     syncLoadTypeOther();
+    syncHighEffLock();
     $('.f-pload').value = prefill.pload ?? '';
     if(prefill.red) $('.f-red').value = prefill.red;
     const pl = Number(prefill.pload)||0;
@@ -2146,12 +2172,19 @@ function resolveCabinetEntry(model, codiceStr){
   };
 }
 
-// highEff true -> "MP2 67 PM BLUE" module; false/undefined -> standard "MP2 67 PM"
-function lookupPM(highEff){
+// highEff selects the BLUE (high-efficiency) variant of whichever module family this cabinet
+// uses — "MP2 67" for MP2/M2S cabinets, "M2X 30" or "M2X 15" for the two M2X variants — so a
+// price list containing more than one module family never picks the wrong one just because it's
+// the first BLUE/non-BLUE match found.
+function lookupPM(highEff, familyHint){
   if(!CATALOG_LOADED || !CATALOG_PM.length) return null;
   const isBlue = r => /blue/i.test(r.description) || /blue/i.test(r.model);
-  const match = highEff ? CATALOG_PM.find(isBlue) : CATALOG_PM.find(r=>!isBlue(r));
-  return match || CATALOG_PM[0];
+  const pool = familyHint
+    ? CATALOG_PM.filter(r => (r.description+' '+r.model).toLowerCase().includes(familyHint.toLowerCase()))
+    : CATALOG_PM;
+  const searchIn = pool.length ? pool : CATALOG_PM; // fall back to the full list if nothing matched the family
+  const match = highEff ? searchIn.find(isBlue) : searchIn.find(r=>!isBlue(r));
+  return match || searchIn[0];
 }
 function lookupAuxByKeyword(baseModel, keywordRegex, sizeHint){
   if(!CATALOG_LOADED) return null;
@@ -3053,9 +3086,9 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     const loadTypeLabel = (loadType === '...' && loadTypeOther) ? loadTypeOther : loadType;
     const pload = $('.f-pload').value;
     const red = $('.f-red').value;
-    const nPMraw = computeNPM(pload, red);
-    const nPM = nPMraw === '' ? 0 : Number(nPMraw);
     const model = $('.f-model').value;
+    const nPMraw = computeNPM(pload, red, moduleKwForModel(model));
+    const nPM = nPMraw === '' ? 0 : Number(nPMraw);
     const conn = $('.f-conn').value;
     const config = $('.f-config').value;
     const vent = $('.f-vent').value;
@@ -3105,12 +3138,20 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       });
     }
 
-    // power modules — High Efficiency picks the BLUE variant
+    // power modules — High Efficiency picks the BLUE variant. M2X 120-30 always uses its BLUE
+    // 30kW module (H.Eff is forced/locked for that model — see syncHighEffLock); M2X 120-15 uses
+    // its own 15kW module, BLUE or standard depending on H.Eff same as MP2/M2S; everything else
+    // keeps the original MP2 67 family lookup unchanged.
     subIdx++;
-    const pm = lookupPM(highEff);
+    const isM2X30 = model === 'M2X 120 - 30';
+    const isM2X15 = model === 'M2X 120 - 15';
+    const pmFamily = isM2X30 ? 'M2X 30' : isM2X15 ? 'M2X 15' : 'MP2 67';
+    const pmForceBlue = isM2X30 ? true : highEff;
+    const pm = lookupPM(pmForceBlue, pmFamily);
+    const pmFallbackName = `${pmFamily} PM${pmForceBlue ? ' BLUE' : ''}`;
     addBomRow({
       kind:'line', pos:`${gruppo}.${subIdx}`, qty: qtyUnit * nPM, groupOf:owner, baseModel:model,
-      model: pm ? pm.model : (highEff ? 'MP2 67 PM BLUE' : 'MP2 67 PM'), code: pm ? pm.code : '', desc: pm ? pm.description : (highEff ? 'PM 67 BLUE' : 'PM 67'),
+      model: pm ? pm.model : pmFallbackName, code: pm ? pm.code : '', desc: pm ? pm.description : pmFallbackName,
       gross: pm ? pm.price : 0, cost: pm ? pm.cost : 0,
     });
 
@@ -3476,6 +3517,11 @@ function computeProjectTotals(){
   [...cfgBody.querySelectorAll('tr')].forEach(tr=>{
     const qtyRaw = tr.querySelector('.f-qty').value;
     if(qtyRaw === '' || Number(qtyRaw) === 0) return; // matches Generate Offer's own "SkipRow"
+    const model = tr.querySelector('.f-model').value;
+    // These two totals were specifically defined around MP2/M2S and their 67kW "MP2 67 PM"
+    // module — M2X is a different cabinet and a different (30kW/15kW) module entirely, so it's
+    // excluded here rather than assumed to belong in the same running total.
+    if(moduleKwForModel(model)) return;
     const qty = Number(qtyRaw);
     const upsPerSys = Number(tr.querySelector('.f-upssys').value) || 0;
     totalCabinets += qty * upsPerSys;

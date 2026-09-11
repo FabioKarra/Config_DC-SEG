@@ -211,6 +211,29 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
   display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
 }
 .row-remove:hover{color:var(--red); border-color:var(--red);}
+.row-kebab-wrap{position:relative; display:inline-block;}
+.row-kebab{
+  width:26px; height:26px; border-radius:6px; border:1px solid var(--panel-border);
+  background:#fff; color:var(--dim); font-size:14px; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
+}
+.row-kebab:hover{color:var(--accent); border-color:var(--accent);}
+.row-kebab-menu{
+  position:absolute; top:100%; right:0; margin-top:4px; z-index:20; min-width:110px;
+  background:#fff; border:1px solid var(--panel-border); border-radius:8px;
+  box-shadow:0 8px 24px rgba(20,22,26,0.16); overflow:hidden;
+}
+.row-kebab-item{
+  display:block; width:100%; text-align:left; padding:8px 12px; font-size:12.5px;
+  font-family:'Work Sans',sans-serif; font-weight:300; color:var(--text); background:#fff; border:none;
+}
+.row-kebab-item:hover{background:var(--field-bg);}
+.row-kebab-item.row-kebab-delete{color:var(--red);}
+table.bom textarea.in-model, table.bom textarea.desc-text.manual-desc-input, table.bom input.in-model, table.bom input.in-code{
+  width:100%; background:var(--field-bg); border:1px solid var(--field-border); color:var(--text);
+  border-radius:6px; padding:6px 7px; font-size:12.5px; font-family:'Work Sans',sans-serif; box-sizing:border-box;
+}
+table.bom textarea.desc-text.manual-desc-input{resize:vertical; min-height:34px; line-height:1.35;}
 .add-row-wrap{margin-top:14px;}
 .btn-add{
   font-family:'Work Sans',sans-serif; font-weight:300; font-size:12.5px;
@@ -350,6 +373,11 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 .batt-table input{
   width:100%; background:var(--field-bg); border:1px solid var(--field-border); color:var(--text);
   border-radius:6px; padding:7px 8px; font-size:12.5px; font-family:'Work Sans',sans-serif;
+}
+.batt-table textarea.manual-desc-input{
+  width:100%; background:var(--field-bg); border:1px solid var(--field-border); color:var(--text);
+  border-radius:6px; padding:7px 8px; font-size:12.5px; font-family:'Work Sans',sans-serif;
+  resize:none; overflow:hidden; height:34px; line-height:1.3;
 }
 .acc-modal-footer{
   padding:14px 20px; border-top:1px solid var(--panel-border);
@@ -2368,6 +2396,7 @@ function addBomRow(data, insertBeforeNode){
   row.className = kind==='accessory' ? 'bom-acc-row' : 'bom-line-row';
   if(data.extSupplier) row.dataset.extSupplier = 'true';
   if(data.techCategory) row.dataset.techCategory = data.techCategory;
+  if(data.manualEntry) row.dataset.manualEntry = 'true';
   const modelCell = data.model
     ? (kind==='accessory' ? `↳ ${escapeHtml(data.model)}` : `<span class="model-cell">${escapeHtml(data.model)}</span>`)
     : '';
@@ -2393,10 +2422,38 @@ function addBomRow(data, insertBeforeNode){
   if(insertBeforeNode){ bomBody.insertBefore(row, insertBeforeNode); } else { bomBody.appendChild(row); }
 
   if(kind==='accessory'){
-    const rmBtn = document.createElement('button');
-    rmBtn.type = 'button'; rmBtn.className = 'row-remove'; rmBtn.title = 'Remove accessory'; rmBtn.textContent = '×';
-    rmBtn.addEventListener('click', ()=>{ const g=row.dataset.groupOf; row.remove(); if(g) recalcGroupTotal(g); });
-    row.querySelector('.bom-actions').appendChild(rmBtn);
+    if(data.manualEntry){
+      const menuWrap = document.createElement('div');
+      menuWrap.className = 'row-kebab-wrap';
+      menuWrap.innerHTML = `
+        <button type="button" class="row-kebab" title="More options">⋯</button>
+        <div class="row-kebab-menu" style="display:none;">
+          <button type="button" class="row-kebab-item row-kebab-edit">Edit</button>
+          <button type="button" class="row-kebab-item row-kebab-delete">Delete</button>
+        </div>
+      `;
+      row.querySelector('.bom-actions').appendChild(menuWrap);
+      const menu = menuWrap.querySelector('.row-kebab-menu');
+      menuWrap.querySelector('.row-kebab').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const isOpen = menu.style.display !== 'none';
+        document.querySelectorAll('.row-kebab-menu').forEach(m=>m.style.display='none');
+        menu.style.display = isOpen ? 'none' : 'block';
+      });
+      menuWrap.querySelector('.row-kebab-edit').addEventListener('click', ()=>{
+        menu.style.display = 'none';
+        enterRowEditMode(row);
+      });
+      menuWrap.querySelector('.row-kebab-delete').addEventListener('click', ()=>{
+        menu.style.display = 'none';
+        const g = row.dataset.groupOf; row.remove(); if(g) recalcGroupTotal(g);
+      });
+    } else {
+      const rmBtn = document.createElement('button');
+      rmBtn.type = 'button'; rmBtn.className = 'row-remove'; rmBtn.title = 'Remove accessory'; rmBtn.textContent = '×';
+      rmBtn.addEventListener('click', ()=>{ const g=row.dataset.groupOf; row.remove(); if(g) recalcGroupTotal(g); });
+      row.querySelector('.bom-actions').appendChild(rmBtn);
+    }
   }
   if(kind==='delivery'){
     // auto-computed by updateDeliveryRow() — not directly user-editable
@@ -2424,6 +2481,9 @@ function addBomRow(data, insertBeforeNode){
   recalc();
   return row;
 }
+document.addEventListener('click', ()=>{
+  document.querySelectorAll('.row-kebab-menu').forEach(m=>m.style.display='none');
+});
 
 // The Offer Lines themselves stay per-system (unchanged from VBA) — the Q.ty multiplication is
 // applied only once, here, to produce each system's Total and the project-wide grand total.
@@ -2451,12 +2511,53 @@ function rowQty(row){
   return inp ? (Number(inp.value)||0) : (Number(row.cells[1].textContent)||0);
 }
 
-// Priceable rows wrap their pure description in a .desc-text span, keeping it separate from the
-// "Ext. Supplier" badge appended after it — reading cells[4].textContent directly would otherwise
-// pick up the badge text too. Falls back to the plain cell for row kinds without the span (headers).
+// Priceable rows wrap their pure description in a .desc-text element, keeping it separate from
+// the "Ext. Supplier" badge appended after it — reading cells[4].textContent directly would
+// otherwise pick up the badge text too. Normally a <span> (textContent reflects it directly); once
+// a manually-entered row has been through "Edit", it becomes a <textarea> instead — .textContent
+// on a textarea only ever reflects its ORIGINAL content, not live edits, so .value is read there.
+// Falls back to the plain cell for row kinds without the span (headers).
 function rowDescText(row){
   const el = row.querySelector('.desc-text');
-  return el ? el.textContent : row.cells[4].textContent;
+  if(!el) return row.cells[4].textContent;
+  return el.tagName === 'TEXTAREA' ? el.value : el.textContent;
+}
+// Same reasoning as rowDescText, for the Model and Code cells — both stay plain text (and the
+// existing "↳ " prefix on accessory rows) until "Edit" turns a manually-entered row's cell into a
+// live <input>, at which point .textContent on that cell no longer reflects typed changes.
+function rowModelText(row){
+  const inp = row.querySelector('.in-model');
+  if(inp) return inp.value;
+  const span = row.querySelector('.model-cell');
+  if(span) return span.textContent;
+  return row.cells[2].textContent.replace(/^↳\s*/,'');
+}
+function rowCodeText(row){
+  const inp = row.querySelector('.in-code');
+  return inp ? inp.value : row.cells[3].textContent;
+}
+// Turns a manually-entered row's Model, Code and Description from static display text into live
+// editable fields — Qty/Gross/Discount/Cost are already always-editable inputs, so this brings
+// the remaining three in line with that, rather than opening a separate edit dialog. One-way:
+// once edited, the row stays in this editable state (same as those other columns always are).
+// The Description field reuses the exact same Alt+Enter multiline editor as the entry forms.
+function enterRowEditMode(row){
+  const currentModel = rowModelText(row);
+  row.cells[2].innerHTML = `<input type="text" class="in-model" value="${escapeHtml(currentModel)}">`;
+
+  const currentCode = rowCodeText(row);
+  row.cells[3].innerHTML = `<input type="text" class="in-code" value="${escapeHtml(currentCode)}">`;
+
+  const descEl = row.querySelector('.desc-text');
+  if(descEl && descEl.tagName !== 'TEXTAREA'){
+    const currentDesc = rowDescText(row);
+    const ta = document.createElement('textarea');
+    ta.className = 'desc-text manual-desc-input';
+    ta.rows = 1;
+    ta.value = currentDesc;
+    descEl.replaceWith(ta);
+    attachMultilineDescriptionEditor(ta);
+  }
 }
 function rowExtSupplier(row){
   return row.dataset.extSupplier === 'true';
@@ -2598,7 +2699,7 @@ function openAccessoryModal(headerRow){
   const alreadyAdded = new Set(
     [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)]
       .filter(r => r.dataset.kind === 'accessory' || r.dataset.kind === 'line')
-      .map(r => (r.cells[3]?.textContent || '').trim() || rowDescText(r).trim())
+      .map(r => (rowCodeText(r) || '').trim() || rowDescText(r).trim())
       .filter(Boolean)
   );
   const options = CATALOG_AUX
@@ -2774,7 +2875,7 @@ function openBatteryModal(triggerRow){
   const alreadyAdded = new Set(
     [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)]
       .filter(r => r.dataset.kind === 'accessory' || r.dataset.kind === 'line')
-      .map(r => (r.cells[3]?.textContent || '').trim() || rowDescText(r).trim())
+      .map(r => (rowCodeText(r) || '').trim() || rowDescText(r).trim())
       .filter(Boolean)
   );
   function optionsForFamily(fam){
@@ -2850,7 +2951,7 @@ function openBatteryModal(triggerRow){
         <td><input type="number" min="1" value="1" class="batt-qty"></td>
         <td><input type="text" class="batt-model" placeholder="e.g. Battery cabinet"></td>
         <td><input type="text" class="batt-code" placeholder="Code"></td>
-        <td><input type="text" class="batt-desc manual-desc-input" placeholder="Description"></td>
+        <td><textarea rows="1" class="batt-desc manual-desc-input" placeholder="Description"></textarea></td>
         <td><input type="number" step="0.01" value="0" class="batt-gross"></td>
         <td><input type="number" step="0.01" value="0" class="batt-cost"></td>
         <td style="text-align:center;"><input type="checkbox" class="batt-ext"></td>
@@ -2895,7 +2996,7 @@ function openBatteryModal(triggerRow){
         const cost = Number(tr.querySelector('.batt-cost').value)||0;
         addBomRow({
           qty, model, code, desc: desc || model,
-          gross, cost, extSupplier, techCategory:'battery', kind:'accessory', groupOf:owner,
+          gross, cost, extSupplier, techCategory:'battery', kind:'accessory', groupOf:owner, manualEntry:true,
         }, totalRow);
       }
     });
@@ -2950,7 +3051,7 @@ function openTechIntegrationModal(triggerRow){
       <td><input type="number" min="1" value="1" class="tech-qty"></td>
       <td><input type="text" class="tech-model" placeholder="e.g. DCIM Integration"></td>
       <td><input type="text" class="tech-code" placeholder="Code"></td>
-      <td><input type="text" class="tech-desc manual-desc-input" placeholder="Description"></td>
+      <td><textarea rows="1" class="tech-desc manual-desc-input" placeholder="Description"></textarea></td>
       <td><input type="number" step="0.01" value="0" class="tech-gross"></td>
       <td><input type="number" step="0.01" value="0" class="tech-cost"></td>
       <td style="text-align:center;"><input type="checkbox" class="tech-ext"></td>
@@ -2982,7 +3083,7 @@ function openTechIntegrationModal(triggerRow){
       const extSupplier = tr.querySelector('.tech-ext').checked;
       addBomRow({
         qty, model, code, desc: desc || model,
-        gross, cost, extSupplier, techCategory, kind:'accessory', groupOf:owner,
+        gross, cost, extSupplier, techCategory, kind:'accessory', groupOf:owner, manualEntry:true,
       }, totalRow);
     });
     recalcGroupTotal(owner);
@@ -3084,7 +3185,7 @@ function openServiceModal(headerRow){
       <td><input type="number" min="1" value="1" class="svc-qty"></td>
       <td><input type="text" class="svc-model" placeholder="e.g. L2 - INSTALLATION"></td>
       <td><input type="text" class="svc-code" placeholder="Code"></td>
-      <td><input type="text" class="svc-desc manual-desc-input" placeholder="Description"></td>
+      <td><textarea rows="1" class="svc-desc manual-desc-input" placeholder="Description"></textarea></td>
       <td><input type="number" step="0.01" value="0" class="svc-gross"></td>
       <td><input type="number" step="0.01" value="0" class="svc-cost"></td>
       <td><button type="button" class="row-remove svc-row-remove" title="Remove row">×</button></td>
@@ -3118,7 +3219,7 @@ function openServiceModal(headerRow){
       const cost = Number(tr.querySelector('.svc-cost').value)||0;
       addBomRow({
         qty, model, code, desc: desc || model,
-        gross, cost, kind:'accessory', groupOf:owner,
+        gross, cost, kind:'accessory', groupOf:owner, manualEntry:true,
       }, anchor);
     });
     recalcGroupTotal(owner);
@@ -3143,8 +3244,8 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     const accRows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${h.dataset.rowId}"]`)];
     if(!accRows.length) return;
     savedAccessories[cfgPos] = accRows.map(r=>({
-      model: r.cells[2].textContent.replace(/^↳\s*/,''),
-      code: r.cells[3].textContent,
+      model: rowModelText(r),
+      code: rowCodeText(r),
       desc: rowDescText(r),
       gross: r.querySelector('.in-gross').value,
       disc: r.querySelector('.in-disc').value,
@@ -3162,8 +3263,8 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
   if(existingServicesHeader){
     const svcRows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${existingServicesHeader.dataset.rowId}"]`)];
     savedServiceLines = svcRows.map(r=>({
-      model: r.cells[2].textContent.replace(/^↳\s*/,''),
-      code: r.cells[3].textContent,
+      model: rowModelText(r),
+      code: rowCodeText(r),
       desc: rowDescText(r),
       gross: r.querySelector('.in-gross').value,
       disc: r.querySelector('.in-disc').value,
@@ -3189,8 +3290,8 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       name: h.cells[4].textContent,
       orderIndex: allHeadersAtCapture.indexOf(h),
       items: rows.map(r=>({
-        model: r.cells[2].textContent.replace(/^↳\s*/,''),
-        code: r.cells[3].textContent,
+        model: rowModelText(r),
+        code: rowCodeText(r),
         desc: rowDescText(r),
         gross: r.querySelector('.in-gross').value,
         disc: r.querySelector('.in-disc').value,
@@ -3339,7 +3440,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       carried.forEach(item=>{
         addBomRow({
           pos: `${gruppo}.${nextIdx}`, qty: item.qty, model: item.model, code: item.code, desc: item.desc,
-          gross: item.gross, disc: item.disc, cost: item.cost, extSupplier: item.extSupplier, techCategory: item.techCategory, kind:'accessory', groupOf:owner,
+          gross: item.gross, disc: item.disc, cost: item.cost, extSupplier: item.extSupplier, techCategory: item.techCategory, kind:'accessory', groupOf:owner, manualEntry: item.manualEntry,
         }, totalRow);
         nextIdx++;
       });
@@ -3573,6 +3674,7 @@ function buildConfigState(){
     if(r.dataset.isCustomSection) item.isCustomSection = true;
     if(r.dataset.extSupplier) item.extSupplier = true;
     if(r.dataset.techCategory) item.techCategory = r.dataset.techCategory;
+    if(r.dataset.manualEntry) item.manualEntry = true;
     if(kind === 'header'){
       item.label = r.cells[4].textContent;
     } else if(kind === 'total'){
@@ -3581,8 +3683,8 @@ function buildConfigState(){
       item.qty = rowQty(r);
       item.model = kind==='line'
         ? (r.querySelector('.model-cell')?.textContent || '')
-        : r.cells[2].textContent.replace(/^↳\s*/,'');
-      item.code = r.cells[3].textContent;
+        : rowModelText(r);
+      item.code = rowCodeText(r);
       item.desc = rowDescText(r);
       item.gross = r.querySelector('.in-gross').value;
       item.disc = r.querySelector('.in-disc').value;
@@ -3882,8 +3984,8 @@ function buildBomPdfDoc(){
       return;
     }
     const qty = bomLineQty(r);
-    const model = kind==='line' ? (r.querySelector('.model-cell')?.textContent||'') : r.cells[2].textContent.replace(/^↳\s*/,'');
-    const code = r.cells[3].textContent;
+    const model = rowModelText(r);
+    const code = rowCodeText(r);
     const desc = String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
     body.push([qty, model, code, desc]);
   });
@@ -3939,8 +4041,8 @@ function collectOfferRows(){
     }
     if(kind === 'total' || !current) return;
     const qty = rowQty(r);
-    const model = kind==='line' ? (r.querySelector('.model-cell')?.textContent||'') : r.cells[2].textContent.replace(/^↳\s*/,'');
-    const code = r.cells[3].textContent;
+    const model = rowModelText(r);
+    const code = rowCodeText(r);
     const desc = String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
     const gross = Number(r.querySelector('.in-gross')?.value)||0;
     const disc = Number(r.querySelector('.in-disc')?.value)||0;
@@ -4157,8 +4259,8 @@ function buildBomHtmlDoc(){
       return;
     }
     const qty = bomLineQty(r);
-    const model = kind==='line' ? (r.querySelector('.model-cell')?.textContent||'') : r.cells[2].textContent.replace(/^↳\s*/,'');
-    const code = r.cells[3].textContent;
+    const model = rowModelText(r);
+    const code = rowCodeText(r);
     const desc = String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
     const descHtml = escapeHtml(desc).replace(/\n/g, '<br>');
     rowsHtml.push(`<tr><td style="text-align:center;">${escapeHtml(qty)}</td><td>${escapeHtml(model)}</td><td>${escapeHtml(code)}</td><td style="white-space:pre-line;">${descHtml}</td></tr>`);

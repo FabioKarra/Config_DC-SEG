@@ -126,7 +126,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 .signout-topright-btn:hover{filter:brightness(1.08);}
 
 .main-content{flex:1; min-width:0; padding:28px 30px 60px;}
-.wrap{max-width:1320px; margin:0 auto;}
+.wrap{width:100%; max-width:none; margin:0 auto;}
 
 /* ---- page header ---- */
 .page-header{border-bottom:1px solid var(--panel-border); padding-bottom:16px; margin-bottom:22px;}
@@ -220,7 +220,22 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 .btn-add:hover{background:var(--accent-soft);}
 
 /* ---- BOM / Offer table ---- */
-table.bom{width:100%; border-collapse:collapse; min-width:1040px;}
+table.bom{width:100%; border-collapse:collapse; min-width:1040px; table-layout:fixed;}
+/* Offer Lines: use the full available page width; Description gets the largest share. */
+table.bom th:nth-child(1),table.bom td:nth-child(1){width:4%;}
+table.bom th:nth-child(2),table.bom td:nth-child(2){width:5%;}
+table.bom th:nth-child(3),table.bom td:nth-child(3){width:9%;}
+table.bom th:nth-child(4),table.bom td:nth-child(4){width:8%;}
+table.bom th:nth-child(5),table.bom td:nth-child(5){width:28%;}
+table.bom th:nth-child(6),table.bom td:nth-child(6){width:7%;}
+table.bom th:nth-child(7),table.bom td:nth-child(7){width:6%;}
+table.bom th:nth-child(8),table.bom td:nth-child(8){width:7%;}
+table.bom th:nth-child(9),table.bom td:nth-child(9){width:7%;}
+table.bom th:nth-child(10),table.bom td:nth-child(10){width:6%;}
+table.bom th:nth-child(11),table.bom td:nth-child(11){width:6%;}
+table.bom th:nth-child(12),table.bom td:nth-child(12){width:4%;}
+table.bom th:nth-child(13),table.bom td:nth-child(13){width:3%;}
+table.bom td:nth-child(5),table.bom th:nth-child(5){white-space:normal; overflow-wrap:anywhere; word-break:break-word;}
 table.bom th{
   font-size:10.5px; font-weight:600; text-transform:uppercase;
   letter-spacing:.05em; color:var(--dim); text-align:left; padding:0 8px 10px;
@@ -2139,6 +2154,10 @@ function processCatalog(rows, filename){
 
 function accessoryFamMatches(fam, baseModel){
   fam = (fam||'').trim();
+  const famNorm = fam.toUpperCase().replace(/\s+/g,'');
+  // BAT_P accessories are universal: they are valid for every MP2, M2S and M2X UPS.
+  // Do not require the FAM to match the selected UPS model.
+  if(famNorm === 'BAT_P' || famNorm === 'BATP') return /^(MP2|M2S|M2X)\b/i.test(String(baseModel||'').trim());
   if(fam.toUpperCase()==='ALL') return true;
   if(fam === baseModel) return true;
   if(fam === 'MP2 500/600' && (baseModel==='MP2 500' || baseModel==='MP2 600')) return true;

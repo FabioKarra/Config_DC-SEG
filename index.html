@@ -3850,8 +3850,8 @@ document.getElementById('btnUploadFiles').addEventListener('click', async ()=>{
     setNewOfferView('upload');
   }catch(err){
     console.error(err);
-    updateNewOfferStatus(`Could not look up this project: ${err.message || err}`, 'error');
-    setNewOfferView('form');
+    closeNewOffer();
+    alert(`Could not look up this project's folder: ${err.message || err}`);
   }
 });
 
@@ -4028,6 +4028,7 @@ document.getElementById('btnCloseOffer').addEventListener('click', async ()=>{
   REVISION_CLOSED = true;
   updateRevisionStatus();
   syncCloseOfferTotalsToSharePoint();
+  syncExportToSharePoint(new Blob([JSON.stringify(state, null, 2)], {type:'application/json'}), filename);
   alert(savedDirect
     ? `Offer closed and saved as "${ref}/${filename}" in your chosen folder.\nKeep editing and click "Close Offer" again to issue R${REVISION+1}, or load this file back in later to resume as a new revision.`
     : `Offer closed and downloaded as ${filename}.\nKeep editing and click "Close Offer" again to issue R${REVISION+1}, or load this file back in later to resume as a new revision.`);
@@ -4037,7 +4038,9 @@ document.getElementById('btnCloseOffer').addEventListener('click', async ()=>{
 document.getElementById('btnSaveFile').addEventListener('click', async ()=>{
   const state = buildConfigState();
   const ref = (state.project.ref || 'draft').replace(/[^a-z0-9_-]/gi,'_');
-  await downloadJson(state, `ups-config-${ref}-${new Date().toISOString().slice(0,10)}.json`);
+  const filename = `ups-config-${ref}-${new Date().toISOString().slice(0,10)}.json`;
+  await downloadJson(state, filename);
+  syncExportToSharePoint(new Blob([JSON.stringify(state, null, 2)], {type:'application/json'}), filename);
 });
 
 // ---- Load configuration from a local .json file ----

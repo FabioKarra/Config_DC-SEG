@@ -1591,6 +1591,14 @@ async function loadCountryOptions(){
 // cancelled, updating the sub-label so the wait doesn't feel stuck. Waiting for FolderLink too
 // (not just PRJ_ID) matters here specifically because the file upload step that follows needs
 // it — uploading before the automation has linked the folder would have nowhere reliable to go.
+// Waits not just for PRJ_ID/FolderLink0 to be non-empty, but for FolderLink0 to actually resolve
+// to a usable path — Power Automate can set it through more than one step (an initial or
+// placeholder value first, the real one once the folder structure exists), and that intermediate
+// value can itself persist across several polls, so simply confirming "the same value twice"
+// isn't enough on its own (it can lock onto a consistently-wrong value before the real one ever
+// appears). Leaning on parseFolderLinkToPath's own validation (it now correctly returns null for
+// an unparseable link rather than falling back to something misleading) means a value that isn't
+// resolvable yet is treated as "not ready", not as a final answer to act on.
 async function waitForPrjIdAndFolder(token, site, list, itemId){
   let elapsed = 0;
   while(!noWaitCancelled){
@@ -1601,7 +1609,9 @@ async function waitForPrjIdAndFolder(token, site, list, itemId){
       const item = await graphGet(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${itemId}?expand=fields`, token);
       const prjId = item.fields && item.fields.PRJ_ID;
       const folderLink = item.fields && item.fields.FolderLink0;
-      if(prjId && folderLink) return {prjId, folderLink};
+      if(prjId && folderLink && parseFolderLinkToPath(folderLink, 'Shared Documents')){
+        return {prjId, folderLink};
+      }
     }catch(err){
       console.warn('Still waiting for the Project Reference/folder — retrying:', err);
     }
@@ -1640,8 +1650,14 @@ function parseFolderLinkToPath(folderLink, libraryName){
       const url = new URL(raw);
       // Formato reale: .../Forms/AllItems.aspx?id=<percorso codificato> — il vero target è lì
       // dentro, non nel pathname dell'URL (che punta solo alla pagina di vista della libreria).
+      // Senza "id" non c'è NESSUN percorso reale da estrarre — il pathname da solo punta solo alla
+      // pagina generica "AllItems.aspx" della libreria, non a una cartella specifica. Un caso reale
+      // con questo identico URL (nessun "id") ha fatto sì che venisse usato "Forms/AllItems.aspx"
+      // come se fosse un percorso valido, creando la cartella nel posto sbagliato — quindi qui si
+      // fallisce esplicitamente invece di ripiegare su un pathname che non significa nulla.
       const idParam = url.searchParams.get('id');
-      path = idParam ? decodeURIComponent(idParam) : decodeURIComponent(url.pathname);
+      if(!idParam) return null;
+      path = decodeURIComponent(idParam);
     }
   }catch(e){
     return null;
@@ -1680,7 +1696,16 @@ function resolveProjectSubfolderPath(folderLinkValue, subfolderName){
 // Creates the named subfolder if it doesn't already exist — ignores the "already exists" conflict
 // (that's the desired outcome, not an error), but re-throws anything else (e.g. the parent path
 // itself wasn't found, which usually means FolderLink0 didn't parse correctly).
+// Confirms the parent folder genuinely exists before creating anything under it — a defensive
+// check added after a real case where the resolved parent path was wrong, and Graph silently
+// created the "01 RFQ" folder at the document library's root instead of erroring out (an empty or
+// malformed path segment in the :/children URL resolves to the root rather than failing). An
+// empty parentPath specifically is refused outright — that's never a valid target, root included.
 async function ensureProjectSubfolder(token, siteId, parentPath, subfolderName){
+  if(!parentPath || !parentPath.trim()){
+    throw new Error('The resolved project folder path was empty — refusing to create "'+subfolderName+'" at the document library root.');
+  }
+  await graphGet(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${encodeGraphPath(parentPath)}`, token);
   try{
     await graphPost(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${encodeGraphPath(parentPath)}:/children`, token, {
       name: subfolderName, folder: {},

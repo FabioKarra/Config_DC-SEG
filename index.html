@@ -564,7 +564,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.31</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.32</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3425,10 +3425,11 @@ function openTechIntegrationModal(triggerRow){
 // then let the person freely reposition it — including between two specific UPS positions — and
 // that position is remembered across a regenerate too. ----
 document.getElementById('btnAddProjectSection').addEventListener('click', ()=>{
-  if(!bomHasRows()){
-    alert('Generate the Offer first — there\'s nothing to attach a section to yet.');
-    return;
-  }
+  // No longer requires "Generate Offer" first — a project can be entirely custom sections with
+  // no MP2/M2S/M2X positions at all (e.g. a Power Center-only quote). Services/Delivery still
+  // only ever come from Generate Offer itself, since they're calculated from position data that
+  // simply doesn't exist here — so a project with only custom sections correctly ends up with
+  // no Services/Delivery part, not a broken one.
   const name = prompt('Name this section (e.g. "Technology Integration", "Site Preparation"):');
   if(name === null) return;
   const trimmed = name.trim();
@@ -4814,8 +4815,16 @@ buildRow();
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.31';
+const CURRENT_VERSION = 'beta_5.32';
 const CHANGELOG = [
+  {version:'beta_5.32', date:'2026-09-16', notes:[
+    '"+ Add Project Section" non richiede più di aver generato l\'offerta prima — utile per progetti fatti solo di voci custom, senza posizioni UPS (es. un preventivo di soli Power Center); Services/Delivery restano legati solo a Generate Offer, quindi in questo caso semplicemente non vengono creati',
+    'La barra "New Offer" / "Reset Offer" ora resta davvero ferma durante lo scroll (era "sticky", ora si comporta come Sign-in)',
+    'La BOM ora include anche le Project Section personalizzate — prima venivano escluse insieme a Services per un controllo condiviso sbagliato',
+    'Corretto un bug per cui "Upload Files" chiudeva tutto il popup se cliccato senza aver ancora scelto nessun file — ora mostra un messaggio chiaro',
+    '"Stop waiting" durante la creazione di una nuova offerta ora lascia proseguire il controllo in background (la funzione esisteva già per la semplice chiusura del popup, ma "Stop waiting" la bypassava)',
+    'Password Admin aggiornata',
+  ]},
   {version:'beta_5.31', date:'2026-09-16', notes:[
     'Aggiunto questo pannello Admin (log versioni + esportazione CSV)',
     'La visualizzazione "Codice-Nome" del Paese ora prova diversi possibili nomi di colonna SharePoint, con ripiego pulito sul solo nome invece di mostrare "?"',

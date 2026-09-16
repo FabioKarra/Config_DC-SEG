@@ -828,16 +828,16 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 <div class="acc-modal-overlay" id="adminLoginOverlay" style="display:none;">
   <div class="acc-modal" role="dialog" aria-modal="true" aria-label="Admin login" style="max-width:360px;">
     <div class="acc-modal-header">
-      <div><h3>Admin</h3><p class="acc-modal-sub">Enter the admin password to view the version log.</p></div>
+      <div><h3>Admin</h3><p class="acc-modal-sub">Inserisci la password admin per vedere il log delle versioni.</p></div>
       <button type="button" class="acc-modal-close" id="btnAdminLoginClose" aria-label="Close">×</button>
     </div>
     <div class="acc-modal-body">
       <div class="field"><label>Password</label><input type="password" id="adminPasswordInput"></div>
-      <p class="catalog-status error" id="adminLoginError" style="display:none;">Incorrect password.</p>
+      <p class="catalog-status error" id="adminLoginError" style="display:none;">Password errata.</p>
     </div>
     <div class="acc-modal-footer">
-      <button type="button" class="btn-ghost act" id="btnAdminLoginCancel">Cancel</button>
-      <button type="button" class="act btn-primary" id="btnAdminLoginSubmit">Enter</button>
+      <button type="button" class="btn-ghost act" id="btnAdminLoginCancel">Annulla</button>
+      <button type="button" class="act btn-primary" id="btnAdminLoginSubmit">Entra</button>
     </div>
   </div>
 </div>
@@ -845,17 +845,18 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 <div class="acc-modal-overlay" id="adminPanelOverlay" style="display:none;">
   <div class="acc-modal acc-modal-wide" role="dialog" aria-modal="true" aria-label="Version log">
     <div class="acc-modal-header">
-      <div><h3>Version Log</h3><p class="acc-modal-sub">Current version: <b id="adminCurrentVersion"></b></p></div>
+      <div><h3>Log Versioni</h3><p class="acc-modal-sub">Versione corrente: <b id="adminCurrentVersion"></b></p></div>
       <button type="button" class="acc-modal-close" id="btnAdminPanelClose" aria-label="Close">×</button>
     </div>
     <div class="acc-modal-body">
       <table class="batt-table" id="adminChangelogTable">
-        <thead><tr><th style="width:110px;">Version</th><th style="width:110px;">Date</th><th>Changes</th></tr></thead>
+        <thead><tr><th style="width:110px;">Versione</th><th style="width:110px;">Data</th><th>Modifiche</th></tr></thead>
         <tbody id="adminChangelogBody"></tbody>
       </table>
     </div>
     <div class="acc-modal-footer">
-      <button type="button" class="btn-ghost act" id="btnAdminPanelClose2">Close</button>
+      <button type="button" class="btn-ghost act" id="btnAdminPanelClose2">Chiudi</button>
+      <button type="button" class="act btn-primary" id="btnAdminDownloadCsv">⬇ Scarica CSV</button>
     </div>
   </div>
 </div>
@@ -1551,9 +1552,11 @@ document.getElementById('btnNewOffer').addEventListener('click', ()=>{
 document.getElementById('btnNewOfferClose').addEventListener('click', closeNewOffer);
 document.getElementById('btnNewOfferCancel').addEventListener('click', closeNewOffer);
 document.getElementById('btnNewOfferCancelWait').addEventListener('click', ()=>{
-  noWaitCancelled = true;
-  updateNewOfferStatus('Stopped waiting — the project was created in SharePoint, but its Project Reference wasn\'t picked up here. Check the list directly, or use "Load" once you know it.', 'loaded');
-  setNewOfferView('form');
+  // "Stop waiting" means "stop watching it happen, not stop it happening" — same as closing the
+  // popup any other way (X, backdrop, Escape) while it's mid-wait: closeNewOffer() already leaves
+  // the background poll running in that case and lets the browser notification (once permission is
+  // granted) pick up the result, rather than genuinely abandoning the wait.
+  closeNewOffer();
 });
 setupBackdropClose(newOfferOverlay, closeNewOffer);
 
@@ -1950,7 +1953,11 @@ document.getElementById('btnNewOfferSkipUpload').addEventListener('click', close
 document.getElementById('btnNewOfferUpload').addEventListener('click', async ()=>{
   const files = [...document.getElementById('noFilesInput').files];
   const statusEl = document.getElementById('noUploadStatus');
-  if(!files.length){ closeNewOffer(); return; }
+  if(!files.length){
+    statusEl.textContent = 'Choose one or more files first — use "Scegli file" above — or click "Skip" if you don\'t want to upload anything right now.';
+    statusEl.className = 'catalog-status error';
+    return;
+  }
   if(!newOfferSiteId || !newOfferRfqPath){
     statusEl.textContent = 'Could not determine the target folder — the files were not uploaded. You can add them manually in SharePoint.';
     statusEl.className = 'catalog-status error';
@@ -2889,12 +2896,16 @@ function bomLineQty(row){
 // items, not physical parts to ship — excluded from the BOM packing-list exports entirely.
 // Solution-level Battery/Technology Integration items are NOT excluded (their groupOf points at a
 // regular position header, not a project-level section), since those are tied to a physical system.
+// Used only by the BOM exports (PDF/Excel) to exclude Services/Delivery rows — those are
+// commercial line items, not physical parts to ship. Project Sections ("+ Add Project Section")
+// stay IN the BOM: they're physical items too (e.g. a Power Center package), just organized
+// outside the auto-generated positions.
 function isServicesRow(row){
-  if(row.dataset.isServices === 'true' || row.dataset.isCustomSection === 'true') return true;
+  if(row.dataset.isServices === 'true') return true;
   const owner = row.dataset.groupOf;
   if(!owner) return false;
   const h = bomBody.querySelector(`tr[data-kind="header"][data-row-id="${owner}"]`);
-  return !!(h && (h.dataset.isServices === 'true' || h.dataset.isCustomSection === 'true'));
+  return !!(h && h.dataset.isServices === 'true');
 }
 
 // Sum of net*qty for every priceable row (line + accessory + delivery) in one group, multiplied
@@ -4803,14 +4814,41 @@ buildRow();
 const ADMIN_PASSWORD = 'debug@007';
 const CURRENT_VERSION = 'beta_5.31';
 const CHANGELOG = [
-  {version:'beta_5.31', date:'2026-09-16', notes:'Added this Admin/version-log panel. Country "Code-Name" display now tries several possible SharePoint column names instead of one guess, and falls back to a clean name-only label instead of showing "?" when none match. Fixed the "📎 Files" lookup failing with a Graph "field not indexed" error on PRJ_ID. Restored M2X models disappearing after a real price-list import (parser only recognized MP2/M2S names; imported lists now also keep any built-in model they don\'t cover, instead of replacing the whole list). Added a Priority lookup field to "Create New Offer". Moved "New Offer" to a sticky bar above Project Details, with a confirmation prompt before it clears everything.'},
-  {version:'beta_5.30 and earlier', date:'2026-09 (various)', notes:'Accumulated development across many earlier sessions: SharePoint/MS365 sign-in and project sync, Create New Offer + automatic folder/file upload, M2X model family (30kW/15kW modules, PCS-only configuration), Battery catalog picker for Lithium positions, Clone, revision tracking, multi-language UI, and the underlying BOM/Offer generation engine itself. Not itemised turn-by-turn here — this log starts tracking changes in detail from beta_5.31 onward.'},
+  {version:'beta_5.31', date:'2026-09-16', notes:[
+    'Aggiunto questo pannello Admin (log versioni + esportazione CSV)',
+    'La visualizzazione "Codice-Nome" del Paese ora prova diversi possibili nomi di colonna SharePoint, con ripiego pulito sul solo nome invece di mostrare "?"',
+    'Corretto il pulsante Files che falliva con un errore Graph "campo non indicizzato" su PRJ_ID',
+    'Ripristinati i modelli M2X che sparivano dopo l\'importazione di un listino reale — il parser riconosceva solo i nomi MP2/M2S, e un\'importazione non sostituisce più i modelli integrati che non copre',
+    'Aggiunto il campo lookup Priority in "Create New Offer"',
+    'Spostato "New Offer" in una barra fissa sopra Project Details, con richiesta di conferma',
+    'Aggiunto "Reset Offer" accanto a "New Offer" — cancella solo System Configuration e Offer Lines, mantiene Project Details',
+    'Admin è ora un vero pulsante, non più un link testuale',
+  ]},
+  {version:'beta_5.30 e precedenti', date:'2026-09 (varie)', notes:[
+    'Accesso e sincronizzazione progetti con SharePoint/MS365',
+    'Create New Offer, con creazione automatica della cartella e caricamento file',
+    'Famiglia di modelli M2X — moduli da 30kW/15kW, configurazione solo PCS',
+    'Catalogo Batteria selezionabile per posizioni Lithio',
+    'Clone, tracciamento revisioni, interfaccia multilingua',
+    'Il motore di generazione BOM/Offerta stesso',
+    'Non elencato riga per riga qui — il tracciamento dettagliato parte da beta_5.31 in poi',
+  ]},
 ];
+
+function downloadChangelogCsv(){
+  const escapeCsv = s => `"${String(s).replace(/"/g,'""')}"`;
+  const rows = [['Versione','Data','Modifiche']];
+  CHANGELOG.forEach(c=>{
+    rows.push([c.version, c.date, c.notes.map(n=>`• ${n}`).join('\n')]);
+  });
+  const csv = '\ufeff' + rows.map(r=>r.map(escapeCsv).join(',')).join('\r\n');
+  saveBlob(new Blob([csv], {type:'text/csv'}), `ups-configurator-version-log-${CURRENT_VERSION}.csv`);
+}
 
 function renderAdminChangelog(){
   document.getElementById('adminCurrentVersion').textContent = CURRENT_VERSION;
   document.getElementById('adminChangelogBody').innerHTML = CHANGELOG.map(c=>`
-    <tr><td style="font-weight:600; vertical-align:top;">${escapeHtml(c.version)}</td><td style="color:var(--dim); vertical-align:top; white-space:nowrap;">${escapeHtml(c.date)}</td><td>${escapeHtml(c.notes)}</td></tr>
+    <tr><td style="font-weight:600; vertical-align:top;">${escapeHtml(c.version)}</td><td style="color:var(--dim); vertical-align:top; white-space:nowrap;">${escapeHtml(c.date)}</td><td><ul style="margin:0; padding-left:16px;">${c.notes.map(n=>`<li style="margin-bottom:4px;">${escapeHtml(n)}</li>`).join('')}</ul></td></tr>
   `).join('');
 }
 
@@ -4840,6 +4878,7 @@ document.getElementById('adminPasswordInput').addEventListener('keydown', (e)=>{
 function closeAdminPanel(){ adminPanelOverlay.style.display = 'none'; }
 document.getElementById('btnAdminPanelClose').addEventListener('click', closeAdminPanel);
 document.getElementById('btnAdminPanelClose2').addEventListener('click', closeAdminPanel);
+document.getElementById('btnAdminDownloadCsv').addEventListener('click', downloadChangelogCsv);
 </script>
 </body>
 </html>

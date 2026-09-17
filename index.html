@@ -564,7 +564,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.32</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.34</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -599,7 +599,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
           <div class="field"><label data-i18n="pd.country">Country</label><input id="prjCountry" readonly></div>
           <div class="field"><label data-i18n="pd.customer">Customer</label><input id="prjCustomer" readonly></div>
           <div class="field"><label data-i18n="pd.dueDate">Due Date</label><input id="prjDue" readonly></div>
-          <div class="field"><label data-i18n="pd.owner">Pre-Sales Owner</label><input id="prjOwner" readonly></div>
+          <div class="field"><label data-i18n="pd.owner">Pre-Sales Owner</label><input id="prjOwner"></div>
           <div class="field">
             <label data-i18n="pd.product">Product</label>
             <select id="prjProduct"><option>MP2 - M2S</option><option>MHE</option></select>
@@ -781,8 +781,6 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         <div class="field"><label data-i18n="newOffer.mapBattery">Battery column</label><input id="mapBattery" value="Battery"></div>
         <div class="field"><label data-i18n="newOffer.mapBatteryBrand">Battery Brand column</label><input id="mapBatteryBrand" value="BatteryBrand"></div>
         <div class="field"><label data-i18n="newOffer.mapOfferType">Offer Type column</label><input id="mapOfferType" value="Category0"></div>
-        <div class="field"><label data-i18n="newOffer.mapPriorityList">Priority list name</label><input id="mapPriorityList" value="Priority"></div>
-        <div class="field"><label data-i18n="newOffer.mapPriorityCol">Priority lookup column <span style="color:var(--red);">⚠ unconfirmed — guess</span></label><input id="mapPriorityCol" value="Priority"></div>
       </div>
 
       <p class="catalog-status" id="newOfferStatus" style="margin:10px 0 0;" data-i18n="newOffer.notSubmitted">Not submitted yet.</p>
@@ -1140,7 +1138,7 @@ const PROGRESS_FIELD_ALIASES = {
   Product: ['Progress','Product'],
   'Due date': ['DueDate','Due date','Due Date'],
   Notes: ['Notes','Note','Comments'],
-  'Created By.title': ['Author','Created By.title','Created By','CreatedBy','Pre-Sales Owner','Owner'],
+  'Created By.title': ['AssignedTo0','Author','Created By.title','Created By','CreatedBy','Pre-Sales Owner','Owner'],
   Battery: ['Battery'],
   'Battery Brand': ['BatteryBrand','Battery Brand'],
 };
@@ -1662,49 +1660,32 @@ async function loadCountryOptions(){
   }
 }
 
-// ---- Priority — same shape as Country: a genuine SharePoint Lookup column, resolved against its
-// own reference list. UNLIKE Country, neither the list name nor the write-time "...LookupId"
-// column name have been confirmed against the real site yet (Country's own names turned out
-// different from the obvious guess — "Country0", not "Country" — so this is deliberately NOT
-// hardcoded the same way). Both are editable in "Advanced: SharePoint field mapping" so a wrong
-// guess is a one-field fix, not a new file. ----
-let priorityOptions = [];
-let priorityOptionsLoaded = false;
-let priorityOptionsLoadingPromise = null;
+// ---- Priority — a Choice column directly on the Progress tracker list itself (not a separate
+// Lookup list, as first assumed) — its valid values are read straight off the column's own
+// definition via Graph, and the selected value is written back as that same plain string, no
+// LookupId involved. ----
+let priorityChoices = [];
+let priorityChoicesLoaded = false;
+let priorityChoicesLoadingPromise = null;
 
-async function ensurePriorityOptionsLoaded(){
-  if(priorityOptionsLoaded) return priorityOptions;
-  if(priorityOptionsLoadingPromise) return priorityOptionsLoadingPromise;
-  priorityOptionsLoadingPromise = (async ()=>{
+async function ensurePriorityChoicesLoaded(){
+  if(priorityChoicesLoaded) return priorityChoices;
+  if(priorityChoicesLoadingPromise) return priorityChoicesLoadingPromise;
+  priorityChoicesLoadingPromise = (async ()=>{
     const token = await getGraphToken();
-    const siteHost = document.getElementById('spSiteHost').value.trim() || 'rielloups.sharepoint.com';
-    const sitePath = document.getElementById('spSitePath').value.trim() || '/sites/DCSales2';
-    const listName = document.getElementById('mapPriorityList').value.trim() || 'Priority';
-    const site = await graphGet(`https://graph.microsoft.com/v1.0/sites/${siteHost}:${sitePath}`, token);
-    const listsResp = await graphGet(
-      `https://graph.microsoft.com/v1.0/sites/${site.id}/lists?$filter=${encodeURIComponent(`displayName eq '${listName}'`)}`,
-      token
-    );
-    const list = listsResp.value && listsResp.value[0];
-    if(!list) throw new Error(`List "${listName}" not found on this site — check the list name under "Advanced: SharePoint field mapping".`);
-    let items = [];
-    let url = `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$top=200`;
-    while(url){
-      const page = await graphGet(url, token);
-      items = items.concat(page.value || []);
-      url = page['@odata.nextLink'] || null;
-    }
-    priorityOptions = items.map(it=>({
-      id: it.id,
-      title: (it.fields && (it.fields.Title || it.fields.Priority)) || `#${it.id}`,
-    }));
-    priorityOptionsLoaded = true;
-    return priorityOptions;
+    const {site, list} = await resolveSharePointList(token);
+    const columnsResp = await graphGet(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/columns`, token);
+    const col = (columnsResp.value || []).find(c => (c.name||'').toLowerCase() === 'priority' || (c.displayName||'').toLowerCase() === 'priority');
+    if(!col) throw new Error('No "Priority" column found on the Progress tracker list.');
+    priorityChoices = (col.choice && col.choice.choices) || [];
+    if(!priorityChoices.length) throw new Error('The "Priority" column was found but has no choices defined.');
+    priorityChoicesLoaded = true;
+    return priorityChoices;
   })();
   try{
-    return await priorityOptionsLoadingPromise;
+    return await priorityChoicesLoadingPromise;
   } finally {
-    priorityOptionsLoadingPromise = null;
+    priorityChoicesLoadingPromise = null;
   }
 }
 
@@ -1712,9 +1693,9 @@ async function loadPriorityOptions(){
   const select = document.getElementById('noPriority');
   select.innerHTML = '<option value="">Loading…</option>';
   try{
-    await ensurePriorityOptionsLoaded();
-    select.innerHTML = '<option value="">—</option>' + priorityOptions.map(p=>
-      `<option value="${p.id}">${escapeHtml(p.title)}</option>`
+    await ensurePriorityChoicesLoaded();
+    select.innerHTML = '<option value="">—</option>' + priorityChoices.map(p=>
+      `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`
     ).join('');
   }catch(err){
     console.error(err);
@@ -2031,14 +2012,17 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
   // the source list via a "<internal column name>LookupId" field. The internal name here is
   // "Country0" (confirmed against the real list), not the display name "Country".
   if(countryId) fields['Country0LookupId'] = countryId;
-  // Priority — same Lookup mechanism as Country, but neither the list name nor this internal
-  // column name are confirmed yet (both editable above, under "Advanced: SharePoint field
-  // mapping" — Country's own internal name turned out to be "Country0", not the obvious "Country",
-  // so this is deliberately left as a guess rather than assumed correct).
-  const prioritySel = document.getElementById('noPriority');
-  const priorityId = prioritySel.value;
-  const priorityCol = document.getElementById('mapPriorityCol').value.trim();
-  if(priorityId && priorityCol) fields[`${priorityCol}LookupId`] = priorityId;
+  // Priority — a plain Choice column, confirmed against the real list: just the selected string,
+  // no LookupId involved (unlike Country, which really is a Lookup).
+  const priorityValue = document.getElementById('noPriority').value;
+  if(priorityValue) fields['Priority'] = priorityValue;
+  // Automatic follow-up reminder — asked at creation time rather than exposed as a form field,
+  // since it's a one-off yes/no rather than project data. "ToFollow?" (internal name
+  // "Tofollow_x003f_", SharePoint's escaping for the "?") only gets set when the answer is yes;
+  // left out entirely otherwise, rather than writing an explicit "off" value.
+  if(confirm('Enable an automatic follow-up reminder for this offer?')){
+    fields['Tofollow_x003f_'] = 'On';
+  }
 
   try{
     updateNewOfferStatus('Creating in SharePoint…', 'loading');
@@ -3360,7 +3344,10 @@ function openTechIntegrationModal(triggerRow){
           <thead><tr><th style="width:60px">Qty</th><th>Model</th><th>Code</th><th>Description</th><th style="width:110px">Gross Price</th><th style="width:100px">Cost</th><th style="width:90px">Ext. Supplier</th><th></th></tr></thead>
           <tbody id="techRowsBody"></tbody>
         </table>
-        <button type="button" class="btn-add" id="techAddRow" style="margin-top:10px;">+ Add Row</button>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button type="button" class="btn-add" id="techAddRow">+ Add Row</button>
+          ${isCustomSection && CATALOG_LOADED ? '<button type="button" class="btn-add" id="techPickCatalog">+ Pick from Catalog</button>' : ''}
+        </div>
       </div>
       <div class="acc-modal-footer">
         <button type="button" class="btn-ghost act tech-cancel">Cancel</button>
@@ -3389,6 +3376,91 @@ function openTechIntegrationModal(triggerRow){
   }
   addFormRow();
   overlay.querySelector('#techAddRow').addEventListener('click', addFormRow);
+
+  // "+ Pick from Catalog" (Project Sections only) — a nested search+table over the FULL catalog
+  // (power modules + accessories together, no baseModel filter, since a custom section isn't tied
+  // to any one cabinet model). Selecting rows here pre-fills new rows in the manual table above,
+  // rather than adding straight to the BOM, so quantities can still be reviewed/adjusted before
+  // the final "Add to Offer".
+  const pickCatalogBtn = overlay.querySelector('#techPickCatalog');
+  if(pickCatalogBtn){
+    pickCatalogBtn.addEventListener('click', ()=>{
+      const allItems = [...CATALOG_PM, ...CATALOG_AUX];
+      const catOverlay = document.createElement('div');
+      catOverlay.className = 'acc-modal-overlay';
+      catOverlay.style.zIndex = '1010';
+      catOverlay.innerHTML = `
+        <div class="acc-modal" role="dialog" aria-modal="true" aria-label="Pick from catalog">
+          <div class="acc-modal-header">
+            <div><h3>Pick from Catalog</h3><p class="acc-modal-sub">Search the full price list — click a row to select, then confirm.</p></div>
+            <button type="button" class="acc-modal-close" id="catPickClose" aria-label="Close">×</button>
+          </div>
+          <div class="acc-modal-body">
+            <input type="text" id="catPickSearch" placeholder="Search by model, code or description…" style="width:100%; margin-bottom:12px;">
+            <table class="acc-table">
+              <thead><tr><th style="width:26px;"></th><th>Description</th><th>Code</th><th class="acc-th-num">Price</th><th class="acc-th-qty">Qty</th></tr></thead>
+              <tbody id="catPickBody"></tbody>
+            </table>
+            <p class="acc-modal-empty" id="catPickEmpty" style="display:none;">No matches.</p>
+          </div>
+          <div class="acc-modal-footer">
+            <button type="button" class="btn-ghost act" id="catPickCancel">Cancel</button>
+            <button type="button" class="act btn-primary" id="catPickConfirm">Add Selected</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(catOverlay);
+
+      const catBody = catOverlay.querySelector('#catPickBody');
+      const catEmpty = catOverlay.querySelector('#catPickEmpty');
+      function renderCatRows(query){
+        const q = (query||'').trim().toLowerCase();
+        const matches = !q ? allItems : allItems.filter(it=>
+          `${it.model||''} ${it.code||''} ${it.description||''}`.toLowerCase().includes(q)
+        );
+        catEmpty.style.display = matches.length ? 'none' : 'block';
+        catBody.innerHTML = matches.slice(0, 200).map((it,i)=>`
+          <tr class="acc-row" data-idx="${allItems.indexOf(it)}" tabindex="0">
+            <td><div class="acc-row-check">✓</div></td>
+            <td><div class="acc-row-desc"><span>${escapeHtml(it.description || it.model)}</span></div></td>
+            <td class="acc-row-code">${escapeHtml(it.code||'')}</td>
+            <td class="acc-row-price">€${Number(it.price||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+            <td class="acc-row-qty"><input type="number" min="1" value="1" class="acc-row-qty-input" onclick="event.stopPropagation()"></td>
+          </tr>
+        `).join('');
+        catBody.querySelectorAll('.acc-row').forEach(row=>{
+          row.addEventListener('click', ()=>row.classList.toggle('selected'));
+          row.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); row.classList.toggle('selected'); } });
+        });
+      }
+      renderCatRows('');
+      const searchInput = catOverlay.querySelector('#catPickSearch');
+      searchInput.addEventListener('input', ()=>renderCatRows(searchInput.value));
+      searchInput.focus();
+
+      const closeCat = ()=>{ catOverlay.remove(); document.removeEventListener('keydown', onCatEsc); };
+      function onCatEsc(e){ if(e.key==='Escape') closeCat(); }
+      document.addEventListener('keydown', onCatEsc);
+      setupBackdropClose(catOverlay, closeCat);
+      catOverlay.querySelector('#catPickClose').addEventListener('click', closeCat);
+      catOverlay.querySelector('#catPickCancel').addEventListener('click', closeCat);
+      catOverlay.querySelector('#catPickConfirm').addEventListener('click', ()=>{
+        catOverlay.querySelectorAll('.acc-row.selected').forEach(row=>{
+          const item = allItems[Number(row.dataset.idx)];
+          const qty = Number(row.querySelector('.acc-row-qty-input').value)||1;
+          addFormRow();
+          const newRow = rowsBody.lastElementChild;
+          newRow.querySelector('.tech-qty').value = qty;
+          newRow.querySelector('.tech-model').value = item.model||'';
+          newRow.querySelector('.tech-code').value = item.code||'';
+          newRow.querySelector('.tech-desc').value = item.description||'';
+          newRow.querySelector('.tech-gross').value = (item.price||0).toFixed(2);
+          newRow.querySelector('.tech-cost').value = (item.cost||0).toFixed(2);
+        });
+        closeCat();
+      });
+    });
+  }
 
   const close = ()=>{ overlay.remove(); document.removeEventListener('keydown', onEsc); };
   function onEsc(e){ if(e.key==='Escape') close(); }
@@ -4120,6 +4192,10 @@ function computeProjectTotals(){
 // Best-effort, silent sync: writes the two totals above to the project's SharePoint record when
 // an offer is closed — same fire-and-forget spirit as the other background syncs (revision status,
 // export-to-"02 OFFER"). Never blocks or delays the local close/download if it fails.
+// Best-effort, silent sync: writes the two totals above, and sets Status to "Offer Review", on
+// the project's SharePoint record when an offer is closed — same fire-and-forget spirit as the
+// other background syncs (revision status, export-to-"02 OFFER"). Never blocks or delays the
+// local close/download if it fails.
 async function syncCloseOfferTotalsToSharePoint(){
   if(!msalInstance || !msalAccount) return;
   const ref = document.getElementById('prjRef').value.trim();
@@ -4129,14 +4205,15 @@ async function syncCloseOfferTotalsToSharePoint(){
     const token = await getGraphToken();
     const {site, list} = await resolveSharePointList(token);
     const item = await findSharePointItemByRef(token, site, list, ref);
-    if(!item){ console.warn('Close Offer → SharePoint totals sync: no list item found for', ref); return; }
+    if(!item){ console.warn('Close Offer → SharePoint sync: no list item found for', ref); return; }
     await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, {
       N_x002e_PowerModules: totalPowerModules,
       N_x002e_Cabinet: totalCabinets,
+      Status: 'Offer Review',
     });
-    console.log(`SharePoint totals updated for ${ref}: ${totalPowerModules} power modules, ${totalCabinets} cabinets.`);
+    console.log(`SharePoint updated for ${ref}: Status "Offer Review", ${totalPowerModules} power modules, ${totalCabinets} cabinets.`);
   }catch(err){
-    console.warn('Close Offer → SharePoint totals sync failed (non-blocking — the offer still closed normally):', err);
+    console.warn('Close Offer → SharePoint sync failed (non-blocking — the offer still closed normally):', err);
   }
 }
 
@@ -4815,8 +4892,17 @@ buildRow();
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.32';
+const CURRENT_VERSION = 'beta_5.34';
 const CHANGELOG = [
+  {version:'beta_5.34', date:'2026-09-16', notes:[
+    'Priority in "Create New Offer" corretto: è una colonna Choice diretta sulla lista, non una lookup verso una lista separata come ipotizzato prima — ora legge le opzioni vere dalla colonna e scrive il valore come testo semplice',
+    'Alla creazione di una nuova offerta, ora chiede se attivare un reminder di follow-up automatico (Sì/No) — se confermato, imposta il campo "ToFollow?" su "On"',
+    'Alla chiusura dell\'offerta (Close Offer), ora scrive anche Status = "Offer Review" sul record SharePoint, insieme ai totali già sincronizzati',
+  ]},
+  {version:'beta_5.33', date:'2026-09-16', notes:[
+    'Aggiunto "+ Pick from Catalog" nelle Project Section — ricerca sull\'intero listino (moduli potenza + accessori insieme), selezione per riga, le voci scelte precompilano righe nella tabella libera già esistente prima della conferma finale',
+    'Il campo Pre-Sales Owner ora è modificabile a mano, e in lettura viene preso dalla colonna AssignedTo0 invece che da Author',
+  ]},
   {version:'beta_5.32', date:'2026-09-16', notes:[
     '"+ Add Project Section" non richiede più di aver generato l\'offerta prima — utile per progetti fatti solo di voci custom, senza posizioni UPS (es. un preventivo di soli Power Center); Services/Delivery restano legati solo a Generate Offer, quindi in questo caso semplicemente non vengono creati',
     'La barra "New Offer" / "Reset Offer" ora resta davvero ferma durante lo scroll (era "sticky", ora si comporta come Sign-in)',

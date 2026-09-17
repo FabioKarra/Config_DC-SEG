@@ -1126,6 +1126,18 @@ function fmtDate(iso){
   return d.toLocaleDateString('en-GB',{year:'numeric',month:'2-digit',day:'2-digit'});
 }
 
+// Reverses fmtDate() — #prjDue displays "DD/MM/YYYY" (en-GB), which new Date(...) alone can't be
+// trusted to parse correctly (it tries MM/DD/YYYY first, so e.g. "30/11/2025" — day 30 read as a
+// month — becomes an Invalid Date, and toISOString() on that throws "Invalid time value").
+// Returns null if the string isn't in this exact shape, rather than guessing.
+function parseDDMMYYYYToISO(str){
+  const m = String(str||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  const [, dd, mm, yyyy] = m;
+  const d = new Date(Date.UTC(Number(yyyy), Number(mm)-1, Number(dd)));
+  return isNaN(d) ? null : d.toISOString();
+}
+
 // ---- Project Reference lookup — populated from SharePoint (Sign in with MS 365 → auto-refresh,
 // or the "Refresh" button in that panel). Field mapping stays flexible/alias-based since it was
 // originally built to also accept file imports, and the same tolerance is still useful for
@@ -4265,7 +4277,8 @@ document.getElementById('btnSaveProjectDetails').addEventListener('click', async
       AssignedTo0: document.getElementById('prjOwner').value.trim(),
     };
     const dueVal = document.getElementById('prjDue').value;
-    if(dueVal) fields.DueDate = new Date(dueVal).toISOString(); // omitted (not blanked) if empty — SharePoint DateTime rejects an empty string
+    const dueISO = parseDDMMYYYYToISO(dueVal);
+    if(dueISO) fields.DueDate = dueISO; // omitted (not blanked) if empty/unparseable — SharePoint DateTime rejects an empty string
     const countryId = document.getElementById('prjCountry').dataset.countryId;
     if(countryId) fields.Country0LookupId = countryId;
     await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, fields);
@@ -4959,7 +4972,8 @@ const CURRENT_VERSION = 'beta_5.35';
 const CHANGELOG = [
   {version:'beta_5.35', date:'2026-09-16', notes:[
     'Il campo Pre-Sales Owner ora si compila automaticamente con il nome di chi ha effettuato l\'accesso MS365, ma solo se il campo è vuoto — non sovrascrive mai un valore già caricato da un progetto esistente',
-    'Nuovo pulsante "💾 Save Project Details to SharePoint" in fondo alla sezione Project Details — scrive tutti i dati attualmente nei campi (Nome, Cliente, Paese, Scadenza, Responsabile, Prodotto, Batteria, Marca Batteria, Tipo Offerta) sul record SharePoint esistente del progetto caricato',
+    'Nuovo pulsante "Save Project Data" in fondo alla sezione Project Details — scrive tutti i dati attualmente nei campi (Nome, Cliente, Paese, Scadenza, Responsabile, Prodotto, Batteria, Marca Batteria, Tipo Offerta) sul record SharePoint esistente del progetto caricato',
+    'Corretto un bug di "Save Project Data": la Scadenza (mostrata come GG/MM/AAAA, es. "30/11/2025") veniva interpretata male nella conversione per SharePoint, dando errore "Invalid time value" su qualunque giorno oltre il 12 del mese',
   ]},
   {version:'beta_5.34', date:'2026-09-16', notes:[
     'Priority in "Create New Offer" corretto: è una colonna Choice diretta sulla lista, non una lookup verso una lista separata come ipotizzato prima — ora legge le opzioni vere dalla colonna e scrive il valore come testo semplice',

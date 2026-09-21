@@ -1954,13 +1954,14 @@ async function ensureProjectSubfolder(token, siteId, parentPath, subfolderName){
 
 const PRJ_ID_CLAIM_MAX_ATTEMPTS = 6;
 
-// Fetches every non-empty PRJ_ID currently on the list, field-scoped ($expand=fields(select=...))
+// Fetches every non-empty PRJ_ID currently on the list, field-scoped ($expand=fields($select=...) —
+// the nested option needs its own "$" too: "fields(select=…)" is rejected by Graph with a 400)
 // so the payload stays small. Deliberately doesn't use $filter here — PRJ_ID isn't an indexed
 // column, and filtering client-side after fetching is exactly as correct and never fails the way a
 // non-indexed $filter can.
 async function fetchAllPrjIds(token, site, list){
   let ids = [];
-  let url = `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?$expand=fields(select=PRJ_ID)&$top=500`;
+  let url = `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?$expand=fields($select=PRJ_ID)&$top=200`;
   while(url){
     const page = await graphGet(url, token);
     for(const it of (page.value||[])){
@@ -5650,6 +5651,7 @@ const ADMIN_PASSWORD = 'debug@007';
 const CURRENT_VERSION = 'beta_5.38';
 const CHANGELOG = [
   {version:'beta_5.38', date:'2026-09-21', notes:[
+    'Corretto "Create New Offer" che falliva con "Graph API 400 — Parsing OData Select and Expand failed": la lettura dei PRJ_ID esistenti usava una sintassi di query non valida per Graph. L\'errore avveniva prima della creazione, quindi non ha lasciato item incompleti su SharePoint',
     'Close Offer: la domanda sul follow-up ora ha i pulsanti Sì / No (tradotti nelle 5 lingue) al posto di OK/Annulla, e non blocca più nulla — prima era una finestra del browser che fermava la pagina finché non si rispondeva. La chiusura (salvataggio, Status "Offer Review", totali) è già completata quando compare la domanda; rispondendo Sì, "ToFollow?" viene impostato su "On" subito dopo, e l\'esito compare sotto Project Details. Anche il messaggio "offerta chiusa" è ora nello stesso popup invece di un avviso separato',
     'La domanda "Enable an automatic follow-up reminder?" non viene più fatta alla creazione dell\'offerta ma alla chiusura (Close Offer), quando l\'offerta è davvero uscita: se si risponde sì, "ToFollow?" viene impostato su "On" insieme allo Status "Offer Review" e ai totali. Viene chiesta solo se la chiusura va a buon fine e se si è collegati con un Project Reference',
     'Selezionando un progetto con "↑ Load", se nella sua cartella "02 OFFER" su SharePoint c\'è un JSON d\'offerta, il più recente viene caricato automaticamente (configurazione, righe d\'offerta, revisione). I dati di progetto restano quelli della lista SharePoint, che è la fonte aggiornata',

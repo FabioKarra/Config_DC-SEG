@@ -572,7 +572,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.39</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.40</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -2238,7 +2238,7 @@ async function syncExportToSharePoint(blob, filename){
   if(!msalInstance || !msalAccount) return;
   if(!document.getElementById('prjRef').value.trim()) return;
   try{
-    const path = await uploadToProjectOfferFolder(blob, filename);
+    const path = await uploadToProjectOfferFolder(blob, filename, `R${REVISION}`);
     console.log(`Also saved "${filename}" to "${path}".`);
   }catch(err){
     console.warn('Export → SharePoint sync failed (non-blocking — the download itself still went through):', err);
@@ -2262,14 +2262,86 @@ async function resolveProjectOfferFolder(ref){
 // missing) and returns the path it landed in. Unlike syncExportToSharePoint this THROWS on
 // failure — it's what Save Configuration / Close Offer use as their primary destination, so the
 // caller needs to know whether to fall back to a local download.
-async function uploadToProjectOfferFolder(blob, filename){
+// subfolder (optional): a folder inside "02 OFFER" — e.g. "R2" for a revision's documents — also
+// created if missing.
+async function uploadToProjectOfferFolder(blob, filename, subfolder){
   const ref = document.getElementById('prjRef').value.trim();
   if(!ref) throw new Error('no Project Reference');
   const {token, site, targetPath} = await resolveProjectOfferFolder(ref);
   const parentPath = targetPath.slice(0, targetPath.length - '02 OFFER'.length).replace(/\/+$/, '');
   await ensureProjectSubfolder(token, site.id, parentPath, '02 OFFER');
-  await uploadOneFile(token, site.id, targetPath, new File([blob], filename));
-  return `${targetPath}/${filename}`;
+  let dest = targetPath;
+  if(subfolder){
+    await ensureProjectSubfolder(token, site.id, targetPath, subfolder);
+    dest = `${targetPath}/${subfolder}`;
+  }
+  await uploadOneFile(token, site.id, dest, new File([blob], filename, {type: blob.type || ''}));
+  return `${dest}/${filename}`;
+}
+
+// Every offer document for the current revision — BOM (PDF + Excel) and the commercial offer both
+// without and with margins (PDF + Excel) — built with exactly the same functions as the Export
+// buttons, so the files are identical to a manual export. Each document is built on its own, so one
+// that fails is reported without losing the others.
+function buildOfferDocumentSet(){
+  const files = [], problems = [];
+  if(!bomHasRows()) return {files, problems, noOffer: true};
+  const safeRef = (getProjectInfo().ref || 'draft').replace(/[^a-z0-9_-]/gi,'_');
+  const xls = html => new Blob(['\ufeff', html], {type:'application/vnd.ms-excel'});
+  const add = (label, fn) => { try{ files.push(fn()); }catch(e){ console.warn(label, 'not built:', e); problems.push(`${label}: ${e.message || e}`); } };
+  if(typeof window.jspdf !== 'undefined'){
+    add('BOM PDF', ()=>{ const {doc, filename} = buildBomPdfDoc(); return {filename, blob: doc.output('blob')}; });
+    add('Offer PDF', ()=>{ const {doc, filename} = buildOfferPdfDoc(false); return {filename, blob: doc.output('blob')}; });
+    add('Offer PDF with margin', ()=>{ const {doc, filename} = buildOfferPdfDoc(true); return {filename, blob: doc.output('blob')}; });
+  } else {
+    problems.push('PDF files: the PDF library did not load');
+  }
+  add('BOM Excel', ()=>({filename: `${safeRef}_BOM_R${REVISION}.xls`, blob: xls(buildBomHtmlDoc())}));
+  add('Offer Excel', ()=>({filename: `${safeRef}_Offer_R${REVISION}.xls`, blob: xls(buildOfferHtmlDoc(false))}));
+  add('Offer Excel with margin', ()=>({filename: `${safeRef}_Offer_R${REVISION}_with_margin.xls`, blob: xls(buildOfferHtmlDoc(true))}));
+  return {files, problems, noOffer: false};
+}
+
+// Save Configuration / Close Offer, once the JSON is in "02 OFFER": puts every offer document of
+// this revision into "02 OFFER/R<revision>" (created if missing; re-saving the same revision just
+// refreshes its files). Never throws — returns what happened, for the confirmation message.
+async function saveOfferDocumentsToRevisionFolder(){
+  const revFolder = `R${REVISION}`;
+  try{
+    const {files, problems, noOffer} = buildOfferDocumentSet();
+    if(noOffer) return {revFolder, noOffer: true, uploaded: [], failed: [], problems};
+    const ref = document.getElementById('prjRef').value.trim();
+    const {token, site, targetPath} = await resolveProjectOfferFolder(ref);
+    await ensureProjectSubfolder(token, site.id, targetPath, revFolder);
+    const revPath = `${targetPath}/${revFolder}`;
+    const uploaded = [], failed = [];
+    for(const f of files){
+      try{
+        await uploadOneFile(token, site.id, revPath, new File([f.blob], f.filename, {type: f.blob.type || ''}));
+        uploaded.push(f.filename);
+      }catch(e){
+        console.warn('Could not upload', f.filename, e);
+        failed.push(`${f.filename}: ${e.message || e}`);
+      }
+    }
+    return {revFolder, revPath, uploaded, failed, problems};
+  }catch(err){
+    console.warn('Offer documents not saved:', err);
+    return {revFolder, error: err.message || String(err), uploaded: [], failed: [], problems: []};
+  }
+}
+
+// The paragraph about the documents in the Save / Close Offer confirmation.
+function describeOfferDocumentsResult(r){
+  if(!r) return '';
+  if(r.noOffer) return `Offer documents: none saved — generate the offer first (Generate Offer), then save again.`;
+  if(r.error) return `Offer documents NOT saved to "${r.revFolder}": ${r.error}`;
+  let msg = r.uploaded.length
+    ? `Offer documents (${r.uploaded.length}) saved to:\n${r.revPath}\n` + r.uploaded.map(n=>'  • ' + n).join('\n')
+    : `Offer documents: none could be saved to "${r.revFolder}".`;
+  const issues = [...r.failed, ...r.problems];
+  if(issues.length) msg += `\n\nNot saved:\n` + issues.map(n=>'  • ' + n).join('\n');
+  return msg;
 }
 
 // Save Configuration / Close Offer: when signed in and the project has a reference, the JSON goes
@@ -4902,8 +4974,15 @@ document.getElementById('btnCloseOffer').addEventListener('click', async ()=>{
   const closedRef = document.getElementById('prjRef').value.trim();
   const canWriteSharePoint = !!(msalInstance && msalAccount && closedRef);
   const next = `Keep editing and click "Close Offer" again to issue R${REVISION+1}, or load this file back in later to resume as a new revision.`;
+  let docsText = '';
+  if(saved.where === 'sharepoint'){
+    setPrjAutoLoadStatus(`Saving the offer documents to SharePoint (R${REVISION})…`);
+    const docs = await saveOfferDocumentsToRevisionFolder();
+    setPrjAutoLoadStatus(docs.uploaded.length ? `Offer closed — configuration + ${docs.uploaded.length} offer document(s) saved in R${REVISION}.` : 'Offer closed and saved to SharePoint.', 'loaded');
+    docsText = describeOfferDocumentsResult(docs) + '\n\n';
+  }
   const message = saved.where === 'sharepoint'
-    ? `Saved to SharePoint:\n${saved.path}\n\n${next}`
+    ? `Saved to SharePoint:\n${saved.path}\n\n${docsText}${next}`
     : `Downloaded to this computer as ${saved.name} (${saved.reason}).\n\n${next}`;
   const title = `${t('closeOffer.title')} — R${REVISION}`;
   if(canWriteSharePoint){
@@ -4922,8 +5001,14 @@ document.getElementById('btnSaveFile').addEventListener('click', async ()=>{
   const ref = (state.project.ref || 'draft').replace(/[^a-z0-9_-]/gi,'_');
   const filename = `ups-config-${ref}-${new Date().toISOString().slice(0,10)}.json`;
   const saved = await saveConfigurationSmart(state, filename);
-  if(saved.where === 'sharepoint') alert(`Configuration saved to SharePoint:\n${saved.path}`);
-  else if(saved.where === 'local' && msalInstance && msalAccount) alert(`Saved to this computer as ${saved.name} (${saved.reason}).`);
+  if(saved.where === 'sharepoint'){
+    setPrjAutoLoadStatus(`Saving the offer documents to SharePoint (R${REVISION})…`);
+    const docs = await saveOfferDocumentsToRevisionFolder();
+    setPrjAutoLoadStatus(docs.uploaded.length ? `Saved to SharePoint — configuration + ${docs.uploaded.length} offer document(s) in R${REVISION}.` : 'Configuration saved to SharePoint.', 'loaded');
+    openAppDialog({title: 'Saved to SharePoint', message: `Configuration:\n${saved.path}\n\n${describeOfferDocumentsResult(docs)}`});
+  } else if(saved.where === 'local' && msalInstance && msalAccount){
+    openAppDialog({title: 'Saved to this computer', message: `Saved as ${saved.name} (${saved.reason}).`});
+  }
 });
 
 // ---- Load configuration from a local .json file ----
@@ -5586,8 +5671,8 @@ async function exportOfferPdf(){
     ],
     `${safeRef}_Offer_R${REVISION}.zip`
   );
-  // Only the standard (customer-facing) file goes to SharePoint — never the "with_margin" one,
-  // which carries internal cost/margin figures that shouldn't land in a project folder by default.
+  // A manual export syncs only the standard (customer-facing) file; the complete set, "with_margin"
+  // included, is saved to "02 OFFER/R<revision>" by Save Configuration / Close Offer.
   syncExportToSharePoint(stdBlob, std.filename);
 }
 
@@ -5776,8 +5861,8 @@ async function exportOfferXlsx(){
     ],
     `${safeRef}_Offer_R${REVISION}.zip`
   );
-  // Only the standard (customer-facing) file goes to SharePoint — never the "with_margin" one,
-  // which carries internal cost/margin figures that shouldn't land in a project folder by default.
+  // A manual export syncs only the standard (customer-facing) file; the complete set, "with_margin"
+  // included, is saved to "02 OFFER/R<revision>" by Save Configuration / Close Offer.
   syncExportToSharePoint(stdBlob, stdFilename);
 }
 
@@ -5821,8 +5906,14 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.39';
+const CURRENT_VERSION = 'beta_5.40';
 const CHANGELOG = [
+  {version:'beta_5.40', date:'2026-09-21', notes:[
+    '"Save Configuration" e "Close Offer", quando il progetto ha la cartella SharePoint, salvano ora anche i documenti d\'offerta della revisione in una sottocartella "02 OFFER/R<n>" (creata se manca): BOM PDF ed Excel, Offerta commerciale PDF ed Excel senza margini e con margini. Il file JSON resta nella "02 OFFER" generica. Risalvando la stessa revisione i documenti vengono aggiornati',
+    'I documenti sono generati con le stesse funzioni dei pulsanti Export (identici a un export manuale); se l\'offerta non è ancora stata generata, lo segnala invece di salvare documenti vuoti',
+    'Anche la copia automatica su SharePoint degli export manuali (BOM/Offerta) va ora nella cartella della revisione "02 OFFER/R<n>"',
+    'L\'esito del salvataggio (percorso del JSON, elenco dei documenti salvati ed eventuali errori) compare nel popup dell\'app invece che in un avviso del browser',
+  ]},
   {version:'beta_5.39', date:'2026-09-21', notes:[
     'Corretto: il menu ⋯ (Edit/Delete) delle righe inserite a mano spariva (1) rigenerando l\'offerta con "Generate Offer" — per le righe nelle posizioni, nei SERVICES e nelle sezioni personalizzate — e (2) caricando file salvati prima che venisse registrato quali righe erano manuali. Per quei file le righe manuali vengono ora riconosciute dal contenuto (SERVICES, sezioni personalizzate, Battery/Technology Integration non da catalogo)',
     'Menu ⋯ delle righe inserite a mano: dopo "Edit" lo stesso menu offre "Save" (conferma le modifiche e riporta la riga alla visualizzazione normale) e "Cancel" (ripristina i valori precedenti). Mentre la riga è in modifica il pulsante ⋯ resta evidenziato; Invio nei campi Modello/Codice salva, Esc annulla. Prima i campi restavano aperti senza un modo per confermare',

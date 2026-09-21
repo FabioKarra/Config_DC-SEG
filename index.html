@@ -1934,8 +1934,11 @@ async function ensureProjectSubfolder(token, siteId, parentPath, subfolderName){
       name: subfolderName, folder: {},
     });
   }catch(err){
+    // Only a genuine "already exists" (HTTP 409 / nameAlreadyExists) is the desired outcome. The old
+    // check — any message containing "409" or "exist" — also swallowed unrelated failures (a
+    // "does not exist", or a request id that happened to contain "409").
     const msg = String(err.message || err);
-    if(!msg.includes('409') && !/exist/i.test(msg)) throw err;
+    if(!/^Graph API 409\b/.test(msg) && !/nameAlreadyExists/.test(msg)) throw err;
   }
 }
 
@@ -2118,6 +2121,51 @@ async function waitForDriveItem(token, siteId, path, timeoutMs){
 // away. Returns {prjId, folderLink, itemId} once PRJ_ID is claimed,
 // FolderLink0 is written, the project folder exists and its "01 RFQ" template copy has landed (or a
 // short timeout passed) — the other template copies keep running on SharePoint's side in parallel.
+// Creates <01_DTBS Offer>/<year>/<folder name> and copies the template subfolders into it — used
+// right after "Create New Offer", and again by "📎 Files" to repair a project whose folder is
+// missing. Each step names itself in any error (and in the console), so a failure says exactly
+// where it stopped and with which Graph error, instead of a generic message.
+async function createProjectFolderStructure(token, site, prjId, folderName, onProgress){
+  const year4 = '20' + String(prjId).slice(0, 2); // same year as the PRJ_ID, by construction
+  const projectPath = `01_DTBS Offer/${year4}/${folderName}`;
+  const step = async (label, fn) => {
+    console.info(`[Project folder ${prjId}] ${label}…`);
+    try{ return await fn(); }
+    catch(err){ throw new Error(`${label} failed — ${err.message || err}`); }
+  };
+  onProgress && onProgress('Creating the SharePoint project folder…');
+  await step(`Checking the "01_DTBS Offer" folder`, ()=>graphGet(
+    `https://graph.microsoft.com/v1.0/sites/${site.id}/drive/root:/${encodeGraphPath('01_DTBS Offer')}`, token));
+  await step(`Creating the year folder "01_DTBS Offer/${year4}"`, ()=>ensureProjectSubfolder(token, site.id, '01_DTBS Offer', year4));
+  await step(`Creating the project folder "${projectPath}"`, ()=>ensureProjectSubfolder(token, site.id, `01_DTBS Offer/${year4}`, folderName));
+  const projectFolder = await step(`Reading back "${projectPath}"`, ()=>graphGet(
+    `https://graph.microsoft.com/v1.0/sites/${site.id}/drive/root:/${encodeGraphPath(projectPath)}`, token));
+  console.info(`[Project folder ${prjId}] created: ${projectPath}`);
+
+  onProgress && onProgress('Copying the template subfolders…');
+  const destDriveId = projectFolder.parentReference && projectFolder.parentReference.driveId;
+  let rfqCopyStarted = false;
+  const failedTemplates = [];
+  await Promise.all(OFFER_TEMPLATE_ITEMS.map(sourcePath =>
+    graphCopyAsync(token, site.id, sourcePath, destDriveId, projectFolder.id).then(()=>{
+      if(/\/01 RFQ$/.test(sourcePath)) rfqCopyStarted = true;
+    }).catch(err=>{
+      // Best-effort, same as the old flow's independent parallel branches — one template item
+      // failing to copy (e.g. renamed on the source side) doesn't undo the project folder.
+      console.warn(`Template copy failed for "${sourcePath}":`, err);
+      failedTemplates.push(sourcePath.split('/').pop());
+    })
+  ));
+  if(failedTemplates.length) console.warn(`[Project folder ${prjId}] template items not copied: ${failedTemplates.join(', ')}`);
+
+  if(rfqCopyStarted){
+    onProgress && onProgress('Waiting for the "01 RFQ" folder…');
+    const rfqReady = await waitForDriveItem(token, site.id, `${projectPath}/01 RFQ`, 30000);
+    if(!rfqReady) console.warn('"01 RFQ" template copy did not appear within 30s — the upload step will create the folder itself if needed.');
+  }
+  return {projectPath, failedTemplates};
+}
+
 async function createProjectDirectly(token, site, list, baseFields, {customer, projectName, countryCode, stdSpecial}, onProgress){
   onProgress && onProgress('Assigning the Project Reference…');
   const {itemId, prjId, folderLink: folderName} = await createItemWithUniquePrjId(
@@ -2125,35 +2173,15 @@ async function createProjectDirectly(token, site, list, baseFields, {customer, p
     candidate => buildFolderName(candidate, customer, projectName, countryCode, stdSpecial)
   );
 
-  onProgress && onProgress('Creating the SharePoint project folder…');
-  const currentYear4 = '20' + prjId.slice(0, 2); // same year as the PRJ_ID, by construction
-  await ensureProjectSubfolder(token, site.id, '01_DTBS Offer', currentYear4);
-  await ensureProjectSubfolder(token, site.id, `01_DTBS Offer/${currentYear4}`, folderName);
-  const projectFolder = await graphGet(
-    `https://graph.microsoft.com/v1.0/sites/${site.id}/drive/root:/${encodeGraphPath('01_DTBS Offer/'+currentYear4+'/'+folderName)}`,
-    token
-  );
-
-  onProgress && onProgress('Copying the template subfolders…');
-  const destDriveId = projectFolder.parentReference && projectFolder.parentReference.driveId;
-  let rfqCopyStarted = false;
-  await Promise.all(OFFER_TEMPLATE_ITEMS.map(sourcePath =>
-    graphCopyAsync(token, site.id, sourcePath, destDriveId, projectFolder.id).then(()=>{
-      if(/\/01 RFQ$/.test(sourcePath)) rfqCopyStarted = true;
-    }).catch(err=>{
-      // Best-effort, same as the old flow's independent parallel branches — one template item
-      // failing to copy (e.g. renamed on the source side) shouldn't block the project from being
-      // usable; the fallback above still kicks in later if "01 RFQ" specifically ends up missing.
-      console.warn(`Template copy failed for "${sourcePath}":`, err);
-    })
-  ));
-
-  // Only worth waiting for if its copy was actually accepted — if it was refused outright, it will
-  // never appear, and the upload step's own fallback creates an empty "01 RFQ" instead.
-  if(rfqCopyStarted){
-    onProgress && onProgress('Waiting for the "01 RFQ" folder…');
-    const rfqReady = await waitForDriveItem(token, site.id, `01_DTBS Offer/${currentYear4}/${folderName}/01 RFQ`, 30000);
-    if(!rfqReady) console.warn('"01 RFQ" template copy did not appear within 30s — the upload step will create the folder itself if needed.');
+  try{
+    await createProjectFolderStructure(token, site, prjId, folderName, onProgress);
+  }catch(err){
+    // The list item already exists (with its Project Reference) at this point — say THAT, rather
+    // than a plain "Create failed" that invites creating the same offer a second time.
+    err.itemCreated = true;
+    err.prjId = prjId;
+    err.folderLink = folderName;
+    throw err;
   }
 
   return {prjId, folderLink: folderName, itemId};
@@ -2413,6 +2441,50 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
 
     // pre-fill Project Details locally so configuring can start right away — worth doing even if
     // the popup was closed mid-wait and the person hasn't come back to it yet.
+    fillCreatedProjectDetails(prjId);
+
+    if(newOfferOverlay.style.display === 'none'){
+      // Popup was closed while this ran in the background — nothing on screen to update, so
+      // announce it instead. The click handler resolves the "01 RFQ" folder itself when needed.
+      notifyOfferReady(prjId, folderLink, site.id);
+      return;
+    }
+
+    document.getElementById('noSuccessLabel').textContent = `${t('newOffer.createdPrefix')} "${prjId}" ${t('newOffer.createdSuffix')}`;
+    setNewOfferView('success');
+
+    // The project folder now exists — get its "01 RFQ"
+    // subfolder ready — then offer the optional file upload step instead of closing outright.
+    newOfferSiteId = site.id;
+    document.getElementById('noFilesInput').value = '';
+    document.getElementById('noFilesList').innerHTML = '';
+    await prepareRfqUploadTarget(token, site.id, folderLink);
+
+    setTimeout(()=>setNewOfferView('upload'), 1400);
+  }catch(err){
+    console.error(err);
+    waitingForNewOfferCreation = false;
+    if(err.itemCreated){
+      // The project IS in the list (numbered) — only its folder step failed. Fill Project Details
+      // as for a success, close the form (so it can't be submitted a second time by mistake) and say
+      // precisely what failed and how to finish it, without creating the offer again.
+      try{ await fetchSharePointList(); }catch(e){ /* refresh is a nicety here */ }
+      fillCreatedProjectDetails(err.prjId);
+      newOfferOverlay.style.display = 'none';
+      setNewOfferView('form');
+      updateNewOfferStatus('Not submitted yet.');
+      setPrjAutoLoadStatus(`Project ${escapeHtml(err.prjId)} created — its SharePoint folder is still missing (use 📎 Files to create it).`, 'error');
+      openAppDialog({
+        title: `Project ${err.prjId} created — folder missing`,
+        message: `The project was added to the list as ${err.prjId}, but its SharePoint folder could not be created:\n\n${err.message || err}\n\nDon't create the offer again. Once the cause is fixed, click "📎 Files" on this project: it offers to create the folder (with the template subfolders).`,
+      });
+      return;
+    }
+    setNewOfferView('form');
+    updateNewOfferStatus(`Create failed — nothing was created in SharePoint: ${err.message || err} (if it names a column, check the field mapping above).`, 'error');
+  }
+
+  function fillCreatedProjectDetails(prjId){
     document.getElementById('prjRef').value = prjId;
     document.getElementById('prjRef').readOnly = true;
     document.getElementById('prjName').value = values.name;
@@ -2426,30 +2498,6 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
     document.getElementById('prjBatteryBrand').value = values.batteryBrand;
     document.getElementById('prjOfferType').value = values.offerType;
     document.getElementById('prjStdSpecial').value = values.stdSpecial;
-
-    if(newOfferOverlay.style.display === 'none'){
-      // Popup was closed while this ran in the background — nothing on screen to update, so
-      // announce it instead. The click handler resolves the "01 RFQ" folder itself when needed.
-      notifyOfferReady(prjId, folderLink, site.id);
-      return;
-    }
-
-    document.getElementById('noSuccessLabel').textContent = `${t('newOffer.createdPrefix')} "${prjId}" ${t('newOffer.createdSuffix')}`;
-    setNewOfferView('success');
-
-    // Resolve the SharePoint folder now that Power Automate has linked it, and get the "01 RFQ"
-    // subfolder ready — then offer the optional file upload step instead of closing outright.
-    newOfferSiteId = site.id;
-    document.getElementById('noFilesInput').value = '';
-    document.getElementById('noFilesList').innerHTML = '';
-    await prepareRfqUploadTarget(token, site.id, folderLink);
-
-    setTimeout(()=>setNewOfferView('upload'), 1400);
-  }catch(err){
-    console.error(err);
-    waitingForNewOfferCreation = false;
-    setNewOfferView('form');
-    updateNewOfferStatus(`Create failed: ${err.message || err} — check the field mapping above (a wrong internal column name is the most common cause).`, 'error');
   }
 });
 
@@ -4386,6 +4434,33 @@ async function syncSharePointStatusInReview(){
   }
 }
 
+// Returns 'exists' (nothing to do), 'created', 'declined', or 'unknown' (FolderLink0 isn't the
+// usual bare "260063_…" name, so the folder can't be rebuilt reliably from it — left alone).
+async function offerToCreateMissingProjectFolder(token, site, ref, folderLinkValue){
+  const path = parseFolderLinkToPath(folderLinkValue, 'Shared Documents');
+  const m = path && path.match(/^01_DTBS Offer\/(\d{4})\/([^/]+)$/);
+  if(!m) return 'unknown';
+  try{
+    await graphGet(`https://graph.microsoft.com/v1.0/sites/${site.id}/drive/root:/${encodeGraphPath(path)}`, token);
+    return 'exists';
+  }catch(err){
+    if(!/^Graph API 404\b/.test(String(err.message || err))) throw err;
+  }
+  const yes = await openAppDialog({
+    title: `Project ${ref} — folder missing`,
+    message: `This project's SharePoint folder doesn't exist:\n${path}`,
+    question: 'Create it now, with the template subfolders?',
+    buttons: [{label: t('dlg.no'), value: false}, {label: t('dlg.yes'), value: true, primary: true}],
+  });
+  if(yes !== true) return 'declined';
+  const sub = document.getElementById('noWaitingSub');
+  const {failedTemplates} = await createProjectFolderStructure(token, site, ref, m[2], msg=>{ if(sub) sub.textContent = msg; });
+  setPrjAutoLoadStatus(`SharePoint folder created for ${escapeHtml(ref)}` +
+    (failedTemplates.length ? ` — template items not copied: ${escapeHtml(failedTemplates.join(', '))}` : '') + '.',
+    failedTemplates.length ? 'error' : 'loaded');
+  return 'created';
+}
+
 // "📎 Files" in Project Details — lets the person upload offer files to the CURRENT project's
 // "01 RFQ" folder at any time, not just right after creating a brand new project. Reuses the same
 // modal/upload view "Create New Offer" ends on, jumping straight there instead of going through
@@ -4422,6 +4497,11 @@ document.getElementById('btnUploadFiles').addEventListener('click', async ()=>{
       return;
     }
     const folderLinkValue = item.fields && item.fields.FolderLink0;
+    // Project folder missing (e.g. its creation failed earlier)? Offer to create it now — same
+    // structure as "Create New Offer" builds — instead of only reporting "could not reach".
+    const repaired = await offerToCreateMissingProjectFolder(token, site, ref, folderLinkValue);
+    if(repaired === 'declined'){ closeNewOffer(); return; }
+    if(noWaitCancelled) return;
     newOfferSiteId = site.id;
     document.getElementById('noFilesInput').value = '';
     document.getElementById('noFilesList').innerHTML = '';
@@ -5651,6 +5731,9 @@ const ADMIN_PASSWORD = 'debug@007';
 const CURRENT_VERSION = 'beta_5.38';
 const CHANGELOG = [
   {version:'beta_5.38', date:'2026-09-21', notes:[
+    'Creazione cartella su SharePoint resa diagnosticabile: se la cartella non si riesce a creare, il messaggio dice ora a quale passo si è fermata (cartella "01_DTBS Offer", cartella dell\'anno, cartella del progetto) e con quale errore Graph. Dato che a quel punto il progetto è già nella lista con il suo numero, non compare più un fuorviante "Create failed": Project Details viene compilato e viene spiegato come completare senza creare di nuovo l\'offerta',
+    '"📎 Files" su un progetto la cui cartella SharePoint non esiste propone di crearla subito (Sì/No), con le stesse sottocartelle template di "Create New Offer"',
+    'Corretto un controllo troppo largo nella creazione delle cartelle: qualunque errore contenente "exist" o "409" (anche "does not exist", o un ID richiesta con quelle cifre) veniva scambiato per "cartella già esistente" e ignorato',
     'Corretto "Create New Offer" che falliva con "Graph API 400 — Parsing OData Select and Expand failed": la lettura dei PRJ_ID esistenti usava una sintassi di query non valida per Graph. L\'errore avveniva prima della creazione, quindi non ha lasciato item incompleti su SharePoint',
     'Close Offer: la domanda sul follow-up ora ha i pulsanti Sì / No (tradotti nelle 5 lingue) al posto di OK/Annulla, e non blocca più nulla — prima era una finestra del browser che fermava la pagina finché non si rispondeva. La chiusura (salvataggio, Status "Offer Review", totali) è già completata quando compare la domanda; rispondendo Sì, "ToFollow?" viene impostato su "On" subito dopo, e l\'esito compare sotto Project Details. Anche il messaggio "offerta chiusa" è ora nello stesso popup invece di un avviso separato',
     'La domanda "Enable an automatic follow-up reminder?" non viene più fatta alla creazione dell\'offerta ma alla chiusura (Close Offer), quando l\'offerta è davvero uscita: se si risponde sì, "ToFollow?" viene impostato su "On" insieme allo Status "Offer Review" e ai totali. Viene chiesta solo se la chiusura va a buon fine e se si è collegati con un Project Reference',

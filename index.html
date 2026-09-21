@@ -570,7 +570,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.38</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.39</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -1295,6 +1295,7 @@ function processProjectList(rows, filename){
   refreshProjectDatalist();
 
   const statusEl = document.getElementById('projectListStatus');
+  statusEl.removeAttribute('data-i18n'); // real content now — a language switch must not reset it
   statusEl.className = 'catalog-status loaded';
   statusEl.innerHTML = `Project data loaded: <b>${escapeHtml(filename)}</b> — ${PROGRESS.length} records.`
     + (unmapped.length ? ` Columns not found (left blank): ${unmapped.map(escapeHtml).join(', ')}.` : ' All columns matched.');
@@ -1343,6 +1344,7 @@ setupBackdropClose(spLoginOverlay, closeSpLogin);
 
 function updateSpStatus(msg, state){
   const el = document.getElementById('spStatus');
+  el.removeAttribute('data-i18n'); // real content now — a language switch must not reset it to "Not connected.
   el.textContent = msg;
   el.className = 'catalog-status' + (state==='loaded' ? ' loaded' : state==='error' ? ' error' : '');
 }
@@ -1492,10 +1494,14 @@ async function performSignOut(){
   msalInstance = null;
   PROGRESS = [];
   refreshProjectDatalist();
-  document.getElementById('projectListStatus').textContent = 'No project data loaded yet — sign in with MS 365 (top-right) to load it.';
+  const plStatus = document.getElementById('projectListStatus');
+  plStatus.className = 'catalog-status';
+  plStatus.setAttribute('data-i18n', 'status.noProjectData'); // back to the default text — translatable again
+  plStatus.textContent = t('status.noProjectData');
   document.getElementById('btnSpSignOut').style.display = 'none';
   document.getElementById('btnTopSignOut').classList.remove('visible');
-  updateSpStatus('Not connected.');
+  updateSpStatus(t('spLogin.notConnected'));
+  document.getElementById('spStatus').setAttribute('data-i18n', 'spLogin.notConnected');
 }
 document.getElementById('btnSpSignOut').addEventListener('click', performSignOut);
 document.getElementById('btnTopSignOut').addEventListener('click', performSignOut);
@@ -2832,6 +2838,7 @@ priceListInput.addEventListener('change', (e)=>{
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
     processCatalog(rows, file.name);
+    if(CATALOG_LOADED) saveCatalogForSession(rows, file.name);
     priceListInput.value = '';
   };
   reader.readAsArrayBuffer(file);
@@ -2936,6 +2943,7 @@ function processCatalog(rows, filename){
   [...cfgBody.querySelectorAll('tr')].forEach(tr=>tr.__refreshCatalog && tr.__refreshCatalog());
 
   const statusEl = document.getElementById('catalogStatus');
+  statusEl.removeAttribute('data-i18n'); // real content now — a language switch must not reset it to "No price list imported"
   statusEl.className = 'catalog-status loaded';
   statusEl.innerHTML = `Price list: <b>${escapeHtml(filename)}</b> — ${newArch.length} models · ${CATALOG_PM.length} module row(s) · ${CATALOG_AUX.length} accessories · ${moduleKw}&nbsp;kW module.`;
 }
@@ -4230,8 +4238,8 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       });
     }
 
-    // DC coupling, M2S + Lithium only — confirmed against real part numbers: M2S 1600 always
-    // takes YM2SE27A, every other M2S size (1000, 1250) always takes YM2SE26A. Looked up by exact
+    // DC coupling, M2S + Lithium only — confirmed against real part numbers: M2S 1600 and M2S 2000
+    // take YM2SE27A, the smaller sizes (1000, 1250) take YM2SE26A. Looked up by exact
     // code first — safer than the old size-hint substring search, which could pick the wrong one
     // if both kits' descriptions happen to share a size mention. Falls back to the fuzzy search
     // only if the exact code isn't in the imported price list, and finally to the correct code
@@ -4239,8 +4247,9 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     // wrong even when the price can't be resolved.
     if(model.includes('M2S') && batt.toUpperCase()==='LITHIUM'){
       subIdx++;
-      const dccCode = model==='M2S 1600' ? 'YM2SE27A' : 'YM2SE26A';
-      const sizeHint = model==='M2S 1600' ? '1600' : '1250';
+      const largeKit = ['M2S 1600', 'M2S 2000'].includes(model);
+      const dccCode = largeKit ? 'YM2SE27A' : 'YM2SE26A';
+      const sizeHint = largeKit ? '1600' : '1250';
       const dcc = lookupAuxByExactCode(dccCode) || lookupAuxByKeyword(model, /dc\s*coupling/i, sizeHint);
       addBomRow({
         kind:'line', pos:`${gruppo}.${subIdx}`, qty:qtyUnit, groupOf:owner, baseModel:model,
@@ -5709,9 +5718,11 @@ applyLanguage('en');
 
 document.getElementById('btnWelcomeGuest').addEventListener('click', ()=>{
   welcomeOverlay.style.display = 'none';
+  sessionSet(SESSION_KEYS.welcomeDone, 'guest');
 });
 document.getElementById('btnWelcomeSignIn').addEventListener('click', ()=>{
   welcomeOverlay.style.display = 'none';
+  sessionSet(SESSION_KEYS.welcomeDone, 'signin');
   spLoginOverlay.style.display = 'flex';
   document.getElementById('btnSpConnect').click();
 });
@@ -5728,8 +5739,15 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.38';
+const CURRENT_VERSION = 'beta_5.39';
 const CHANGELOG = [
+  {version:'beta_5.39', date:'2026-09-21', notes:[
+    'Corretto il kit DC Coupling per M2S 2000 con batterie al litio: ora è YM2SE27A (come per M2S 1600) invece di YM2SE26A (kit 1250)',
+    'Corretto: cambiando lingua dopo aver importato un listino, la riga di stato tornava a dire "No price list imported" anche con il listino caricato (lo stesso per l\'elenco progetti e lo stato della connessione MS365)',
+    'Ricaricando la pagina (F5) non si perde più il lavoro: configurazione, righe d\'offerta, revisione, impostazioni (valuta, sconto, trasporto), Project Details, lingua e listino importato vengono ripristinati. Sotto Project Details compare "Page reloaded — your work in progress was restored"',
+    'Anche l\'accesso MS365 sopravvive a F5: se la sessione è ancora valida si riconnette da solo, senza popup e senza schermata di benvenuto; lo stesso vale per chi aveva scelto "Continue as Guest"',
+    'Il ripristino è per singola scheda del browser: due offerte aperte in due schede non si sovrascrivono, e chiudendo la scheda la sessione termina (la copia duratura resta il JSON salvato su SharePoint). "New Offer" azzera anche la sessione salvata',
+  ]},
   {version:'beta_5.38', date:'2026-09-21', notes:[
     'Creazione cartella su SharePoint resa diagnosticabile: se la cartella non si riesce a creare, il messaggio dice ora a quale passo si è fermata (cartella "01_DTBS Offer", cartella dell\'anno, cartella del progetto) e con quale errore Graph. Dato che a quel punto il progetto è già nella lista con il suo numero, non compare più un fuorviante "Create failed": Project Details viene compilato e viene spiegato come completare senza creare di nuovo l\'offerta',
     '"📎 Files" su un progetto la cui cartella SharePoint non esiste propone di crearla subito (Sì/No), con le stesse sottocartelle template di "Create New Offer"',
@@ -5846,6 +5864,121 @@ function closeAdminPanel(){ adminPanelOverlay.style.display = 'none'; }
 document.getElementById('btnAdminPanelClose').addEventListener('click', closeAdminPanel);
 document.getElementById('btnAdminPanelClose2').addEventListener('click', closeAdminPanel);
 document.getElementById('btnAdminDownloadCsv').addEventListener('click', downloadChangelogCsv);
+
+// ---- Survive a page reload (F5) ----
+// Nothing here is a tenant setting: the page simply kept everything in memory, and a reload starts it
+// from scratch. The work in progress is now kept in this TAB's sessionStorage and put back on
+// reload: System Configuration, Offer Lines, revision state, settings (currency, discount…),
+// Project Details, language, an imported price list, and whether the welcome screen was answered.
+// sessionStorage (not localStorage) on purpose: it survives F5 but is private to the tab, so two
+// offers open in two tabs never overwrite each other, and closing the tab ends it (the saved
+// JSON on SharePoint is the durable copy). Every access is guarded — storage can be unavailable.
+const SESSION_KEYS = {
+  work: 'upsConfigurator.session.work.v1',
+  catalog: 'upsConfigurator.session.catalog.v1',
+  welcomeDone: 'upsConfigurator.session.welcomeDone.v1',
+};
+function sessionGet(key){ try{ return sessionStorage.getItem(key); }catch(e){ return null; } }
+function sessionSet(key, value){
+  try{ sessionStorage.setItem(key, value); return true; }
+  catch(e){ console.warn('Could not keep', key, 'for this tab (storage full or unavailable):', e); return false; }
+}
+function sessionRemove(key){ try{ sessionStorage.removeItem(key); }catch(e){} }
+
+function saveCatalogForSession(rows, filename){
+  // only the columns processCatalog actually reads — keeps it well inside the storage quota
+  const slim = rows.map(r=>({FAM:r.FAM, TYPE:r.TYPE, Model:r.Model, Code:r.Code, Description:r.Description, Price:r.Price, Cost:r.Cost}));
+  sessionSet(SESSION_KEYS.catalog, JSON.stringify({filename, rows: slim}));
+}
+
+let sessionRestoreDone = false;
+let lastSessionSig = null;
+
+function currentWorkSnapshot(){
+  const state = buildConfigState();
+  const extra = {
+    countryId: document.getElementById('prjCountry').dataset.countryId || '',
+    refLocked: document.getElementById('prjRef').readOnly,
+    lang: LANG,
+  };
+  return {state, extra};
+}
+
+function saveWorkForSession(){
+  if(!sessionRestoreDone) return; // never overwrite what's about to be restored
+  let snap;
+  try{ snap = currentWorkSnapshot(); }catch(e){ return; }
+  const {savedAt, ...stateNoTime} = snap.state;
+  const sig = JSON.stringify({stateNoTime, extra: snap.extra});
+  if(sig === lastSessionSig) return;
+  lastSessionSig = sig;
+  // A page with nothing on it (fresh, or just cleared with "New Offer") has nothing to bring back.
+  const empty = configurationIsPristine() && !snap.state.project.ref && !snap.state.project.name && !snap.state.project.customer;
+  if(empty && snap.extra.lang === 'en'){ sessionRemove(SESSION_KEYS.work); return; }
+  sessionSet(SESSION_KEYS.work, JSON.stringify({savedAt: new Date().toISOString(), ...snap}));
+}
+
+function restoreWorkFromSession(){
+  let saved = null;
+  try{ saved = JSON.parse(sessionGet(SESSION_KEYS.work) || 'null'); }catch(e){ saved = null; }
+  if(saved && saved.extra && saved.extra.lang) applyLanguage(saved.extra.lang);
+  try{
+    const cat = JSON.parse(sessionGet(SESSION_KEYS.catalog) || 'null');
+    if(cat && Array.isArray(cat.rows) && cat.rows.length) processCatalog(cat.rows, cat.filename || 'price list');
+  }catch(e){ console.warn('Could not restore the imported price list:', e); }
+
+  if(saved && saved.state && Array.isArray(saved.state.positions)){
+    try{
+      applyLoadedState(saved.state);
+      document.getElementById('prjCountry').dataset.countryId = (saved.extra && saved.extra.countryId) || '';
+      if(saved.extra && saved.extra.refLocked) document.getElementById('prjRef').readOnly = true;
+      const when = saved.savedAt ? new Date(saved.savedAt).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '';
+      const hasWork = !configurationIsPristine() || saved.state.project.ref;
+      if(hasWork) setPrjAutoLoadStatus(`Page reloaded — your work in progress was restored${when ? ' (last change ' + when + ')' : ''}.`, 'loaded');
+    }catch(e){
+      console.warn('Could not restore the work in progress — starting clean:', e);
+    }
+  }
+  sessionRestoreDone = true;
+  lastSessionSig = null;
+  saveWorkForSession();
+}
+
+// Sign-in survives the reload too: the Microsoft library already keeps the session in this tab's
+// sessionStorage, so the account is picked up silently — no popup, no welcome screen — whenever a
+// token can still be obtained without asking. Otherwise the welcome screen stays as before.
+async function restoreSignInSilently(){
+  if(typeof msal === 'undefined') return false;
+  try{
+    const instance = buildMsalInstance();
+    await instance.initialize();
+    const accounts = instance.getAllAccounts();
+    if(!accounts.length) return false;
+    await instance.acquireTokenSilent({scopes: ['Sites.Selected'], account: accounts[0]});
+    if(msalInstance && msalAccount) return true; // signed in by hand meanwhile — leave that alone
+    msalInstance = instance;
+    msalAccount = accounts[0];
+    welcomeOverlay.style.display = 'none';
+    document.getElementById('btnSpSignOut').style.display = 'block';
+    document.getElementById('btnTopSignOut').classList.add('visible');
+    updateSpStatus(`Signed in as ${msalAccount.username}.`, 'loaded');
+    await fetchSharePointList();
+    return true;
+  }catch(err){
+    console.info('No silent sign-in after reload — the welcome screen stays:', err && (err.errorCode || err.message) || err);
+    return false;
+  }
+}
+
+restoreWorkFromSession();
+// A guest isn't asked again after a reload. Someone who had signed in is only spared the welcome
+// screen if the silent sign-in below succeeds — if their Microsoft session has lapsed, they see it
+// again rather than silently continuing without SharePoint.
+if(sessionGet(SESSION_KEYS.welcomeDone) === 'guest') welcomeOverlay.style.display = 'none';
+restoreSignInSilently();
+setInterval(saveWorkForSession, 2000);
+window.addEventListener('pagehide', saveWorkForSession);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') saveWorkForSession(); });
 </script>
 </body>
 </html>

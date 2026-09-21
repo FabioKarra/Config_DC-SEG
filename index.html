@@ -2996,8 +2996,11 @@ function resolveCabinetEntry(model, codiceStr){
   const base = lookupCabinet(codiceNoVE);
   if(!base) return null;
 
-  const sizeHint = model === 'M2S 1600' ? '1600' : '1000-1250';
-  const veAcc = lookupAuxByKeyword(model, /top\s*ventilation/i, sizeHint);
+  // M2S 2000 takes the same Top Ventilation option as the M2S 1600 (confirmed) — looked up AS the 1600,
+  // so a price-list row whose FAM names "M2S 1600" specifically is still found for the 2000.
+  const largeVe = ['M2S 1600', 'M2S 2000'].includes(model);
+  const sizeHint = largeVe ? '1600' : '1000-1250';
+  const veAcc = lookupAuxByKeyword(largeVe ? 'M2S 1600' : model, /top\s*ventilation/i, sizeHint);
   if(!veAcc) return base; // no matching option in the price list — show the base cabinet, no VE premium
 
   const c = base.code || '';
@@ -4147,6 +4150,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       qty: rowQty(r),
       extSupplier: rowExtSupplier(r),
       techCategory: r.dataset.techCategory || null,
+      manualEntry: r.dataset.manualEntry === 'true',
     }));
   });
 
@@ -4165,6 +4169,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       cost: r.querySelector('.in-cost').value,
       qty: rowQty(r),
       extSupplier: rowExtSupplier(r),
+      manualEntry: r.dataset.manualEntry === 'true',
     }));
   }
 
@@ -4192,6 +4197,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         cost: r.querySelector('.in-cost').value,
         qty: rowQty(r),
         extSupplier: rowExtSupplier(r),
+        manualEntry: r.dataset.manualEntry === 'true',
       })),
     });
   });
@@ -4305,7 +4311,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       const largeKit = ['M2S 1600', 'M2S 2000'].includes(model);
       const dccCode = largeKit ? 'YM2SE27A' : 'YM2SE26A';
       const sizeHint = largeKit ? '1600' : '1250';
-      const dcc = lookupAuxByExactCode(dccCode) || lookupAuxByKeyword(model, /dc\s*coupling/i, sizeHint);
+      const dcc = lookupAuxByExactCode(dccCode) || lookupAuxByKeyword(largeKit ? 'M2S 1600' : model, /dc\s*coupling/i, sizeHint);
       addBomRow({
         kind:'line', pos:`${gruppo}.${subIdx}`, qty:qtyUnit, groupOf:owner, baseModel:model,
         model: dcc ? dcc.model : model, code: dcc ? dcc.code : dccCode, desc: dcc ? dcc.description : 'DC Coupling',
@@ -4355,7 +4361,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     savedServiceLines.forEach(item=>{
       addBomRow({
         qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-        gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:servicesOwner,
+        gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:servicesOwner, manualEntry:item.manualEntry,
       });
     });
     addBomRow({
@@ -4383,7 +4389,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         section.items.forEach(item=>{
           addBomRow({
             qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-            gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:sectionOwner,
+            gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:sectionOwner, manualEntry:item.manualEntry,
           }, insertBeforeHeader);
         });
         addBomRow({kind:'total', groupOf:sectionOwner, isCustomSection:true}, insertBeforeHeader);
@@ -5162,6 +5168,22 @@ function loadConfigurationFromText(text){
   return true;
 }
 
+// Files saved before "manualEntry" was written don't say which lines were typed in by hand (the
+// ones that get the ⋯ Edit/Delete menu). Recognised from what's there instead:
+//  - every line in SERVICES or in a custom project section — those can only be added by hand;
+//  - in a position, Battery / Technology Integration lines (they carry a category), except genuine
+//    picks from the fixed battery catalog — recognised by carrying BOTH the catalog's code and its
+//    model name (a line typed by hand with the real part number, e.g. model "AMPACE" + a catalog
+//    code, is still a manual line).
+// Price-list accessories ("+ Accessory") carry no category, so they stay non-manual (× button).
+function inferLegacyManualEntry(item, header){
+  if(header && (header.isServices || header.isCustomSection)) return true;
+  if(!item.techCategory) return false;
+  const code = String(item.code || '').trim();
+  const model = String(item.model || '').trim();
+  return !BATTERY_CATALOG.some(b => code !== '' && (b.code || '').trim() === code && (b.model || '').trim() === model);
+}
+
 function applyLoadedState(state){
     setPrjAutoLoadStatus(''); // the auto-load sets its own message right after, when it's the caller
     const p = state.project || {};
@@ -5194,8 +5216,13 @@ function applyLoadedState(state){
     bomRowCounter = 0;
     if(state.bom && state.bom.length){
       const idMap = {};
+      const headerById = {};
+      state.bom.forEach(item=>{ if(item.kind === 'header' && item.rowId) headerById[item.rowId] = item; });
       state.bom.forEach(item=>{
         const remapped = {...item};
+        if(remapped.kind === 'accessory' && remapped.manualEntry === undefined){
+          remapped.manualEntry = inferLegacyManualEntry(item, headerById[item.groupOf]);
+        }
         if(item.groupOf) remapped.groupOf = idMap[item.groupOf] || item.groupOf;
         const row = addBomRow(remapped);
         if(item.kind === 'header' && item.rowId) idMap[item.rowId] = row.dataset.rowId;
@@ -5797,8 +5824,10 @@ const ADMIN_PASSWORD = 'debug@007';
 const CURRENT_VERSION = 'beta_5.39';
 const CHANGELOG = [
   {version:'beta_5.39', date:'2026-09-21', notes:[
+    'Corretto: il menu ⋯ (Edit/Delete) delle righe inserite a mano spariva (1) rigenerando l\'offerta con "Generate Offer" — per le righe nelle posizioni, nei SERVICES e nelle sezioni personalizzate — e (2) caricando file salvati prima che venisse registrato quali righe erano manuali. Per quei file le righe manuali vengono ora riconosciute dal contenuto (SERVICES, sezioni personalizzate, Battery/Technology Integration non da catalogo)',
     'Menu ⋯ delle righe inserite a mano: dopo "Edit" lo stesso menu offre "Save" (conferma le modifiche e riporta la riga alla visualizzazione normale) e "Cancel" (ripristina i valori precedenti). Mentre la riga è in modifica il pulsante ⋯ resta evidenziato; Invio nei campi Modello/Codice salva, Esc annulla. Prima i campi restavano aperti senza un modo per confermare',
     'Corretto il kit DC Coupling per M2S 2000 con batterie al litio: ora è YM2SE27A (come per M2S 1600) invece di YM2SE26A (kit 1250)',
+    'Corretta la Top Ventilation per M2S 2000 ("Front to Top"): ora aggiunge al cabinet l\'opzione del listino "Top Ventilation (1600 kVA)", come per M2S 1600, invece di quella "1000-1250 kVA"',
     'Corretto: cambiando lingua dopo aver importato un listino, la riga di stato tornava a dire "No price list imported" anche con il listino caricato (lo stesso per l\'elenco progetti e lo stato della connessione MS365)',
     'Ricaricando la pagina (F5) non si perde più il lavoro: configurazione, righe d\'offerta, revisione, impostazioni (valuta, sconto, trasporto), Project Details, lingua e listino importato vengono ripristinati. Sotto Project Details compare "Page reloaded — your work in progress was restored"',
     'Anche l\'accesso MS365 sopravvive a F5: se la sessione è ancora valida si riconnette da solo, senza popup e senza schermata di benvenuto; lo stesso vale per chi aveva scelto "Continue as Guest"',

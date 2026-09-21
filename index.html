@@ -246,6 +246,8 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 }
 .row-kebab-item:hover{background:var(--field-bg);}
 .row-kebab-item.row-kebab-delete{color:var(--red);}
+.row-kebab-item.row-kebab-save{color:var(--accent); font-weight:600;}
+.row-kebab.is-editing{color:#fff; background:var(--accent); border-color:var(--accent);}
 table.bom textarea.in-model, table.bom textarea.desc-text.manual-desc-input, table.bom input.in-model, table.bom input.in-code{
   width:100%; background:var(--field-bg); border:1px solid var(--field-border); color:var(--text);
   border-radius:6px; padding:6px 7px; font-size:12.5px; font-family:'Work Sans',sans-serif; box-sizing:border-box;
@@ -3175,11 +3177,29 @@ function addBomRow(data, insertBeforeNode){
         <button type="button" class="row-kebab" title="More options">⋯</button>
         <div class="row-kebab-menu" style="display:none;">
           <button type="button" class="row-kebab-item row-kebab-edit">Edit</button>
+          <button type="button" class="row-kebab-item row-kebab-save" style="display:none;">Save</button>
+          <button type="button" class="row-kebab-item row-kebab-cancel" style="display:none;">Cancel</button>
           <button type="button" class="row-kebab-item row-kebab-delete">Delete</button>
         </div>
       `;
       row.querySelector('.bom-actions').appendChild(menuWrap);
       const menu = menuWrap.querySelector('.row-kebab-menu');
+      const kebabBtn = menuWrap.querySelector('.row-kebab');
+      // While the row is being edited, the same ⋯ menu offers Save / Cancel instead of Edit, and
+      // the ⋯ button stays highlighted so an unsaved edit is visible at a glance.
+      const setEditingMenu = (editing)=>{
+        menuWrap.querySelector('.row-kebab-edit').style.display = editing ? 'none' : '';
+        menuWrap.querySelector('.row-kebab-save').style.display = editing ? '' : 'none';
+        menuWrap.querySelector('.row-kebab-cancel').style.display = editing ? '' : 'none';
+        kebabBtn.classList.toggle('is-editing', editing);
+        kebabBtn.title = editing ? 'Editing — open this menu to Save or Cancel' : 'More options';
+      };
+      const saveEdit = ()=>{ menu.style.display = 'none'; exitRowEditMode(row, true); setEditingMenu(false); };
+      const cancelEdit = ()=>{ menu.style.display = 'none'; exitRowEditMode(row, false); setEditingMenu(false); };
+      menuWrap.querySelector('.row-kebab-save').addEventListener('click', saveEdit);
+      menuWrap.querySelector('.row-kebab-cancel').addEventListener('click', cancelEdit);
+      row._saveEdit = saveEdit;
+      row._cancelEdit = cancelEdit;
       menuWrap.querySelector('.row-kebab').addEventListener('click', (e)=>{
         e.stopPropagation();
         const isOpen = menu.style.display !== 'none';
@@ -3189,6 +3209,7 @@ function addBomRow(data, insertBeforeNode){
       menuWrap.querySelector('.row-kebab-edit').addEventListener('click', ()=>{
         menu.style.display = 'none';
         enterRowEditMode(row);
+        setEditingMenu(true);
       });
       menuWrap.querySelector('.row-kebab-delete').addEventListener('click', ()=>{
         menu.style.display = 'none';
@@ -3284,10 +3305,13 @@ function rowCodeText(row){
 }
 // Turns a manually-entered row's Model, Code and Description from static display text into live
 // editable fields — Qty/Gross/Discount/Cost are already always-editable inputs, so this brings
-// the remaining three in line with that, rather than opening a separate edit dialog. One-way:
-// once edited, the row stays in this editable state (same as those other columns always are).
+// the remaining three in line with that, rather than opening a separate edit dialog. The row's ⋯
+// menu then offers Save (keep the changes, back to normal display) or Cancel (put back the values
+// from before Edit) — see exitRowEditMode. Enter in Model/Code saves, Escape cancels.
 // The Description field reuses the exact same Alt+Enter multiline editor as the entry forms.
 function enterRowEditMode(row){
+  if(row.querySelector('.in-model')) return; // already editing
+  row._editOriginal = {model: rowModelText(row), code: rowCodeText(row), desc: rowDescText(row)};
   const currentModel = rowModelText(row);
   row.cells[2].innerHTML = `<input type="text" class="in-model" value="${escapeHtml(currentModel)}">`;
 
@@ -3304,6 +3328,37 @@ function enterRowEditMode(row){
     descEl.replaceWith(ta);
     attachMultilineDescriptionEditor(ta);
   }
+  row.querySelectorAll('.in-model, .in-code').forEach(inp=>{
+    inp.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ e.preventDefault(); row._saveEdit && row._saveEdit(); }
+      else if(e.key === 'Escape'){ e.preventDefault(); row._cancelEdit && row._cancelEdit(); }
+    });
+  });
+  const modelInput = row.querySelector('.in-model');
+  if(modelInput){ modelInput.focus(); modelInput.select(); }
+}
+
+// Leaves edit mode: keep = true keeps what was typed (Save), false restores the values from before
+// Edit (Cancel). Either way the three cells go back to normal static display, exactly as the row
+// was drawn originally (accessory "↳ model", plain code, pre-wrapped description with its badges).
+function exitRowEditMode(row, keep){
+  if(!row.querySelector('.in-model')) return;
+  const orig = row._editOriginal || {model:'', code:'', desc:''};
+  const vals = keep
+    ? {model: rowModelText(row).trim(), code: rowCodeText(row).trim(), desc: rowDescText(row)}
+    : orig;
+  row.cells[2].innerHTML = vals.model
+    ? (row.dataset.kind === 'accessory' ? `↳ ${escapeHtml(vals.model)}` : `<span class="model-cell">${escapeHtml(vals.model)}</span>`)
+    : '';
+  row.cells[3].textContent = vals.code;
+  const ta = row.querySelector('textarea.desc-text');
+  if(ta){
+    const span = document.createElement('span');
+    span.className = 'desc-text';
+    span.textContent = vals.desc;
+    ta.replaceWith(span);
+  }
+  delete row._editOriginal;
 }
 function rowExtSupplier(row){
   return row.dataset.extSupplier === 'true';
@@ -5742,6 +5797,7 @@ const ADMIN_PASSWORD = 'debug@007';
 const CURRENT_VERSION = 'beta_5.39';
 const CHANGELOG = [
   {version:'beta_5.39', date:'2026-09-21', notes:[
+    'Menu ⋯ delle righe inserite a mano: dopo "Edit" lo stesso menu offre "Save" (conferma le modifiche e riporta la riga alla visualizzazione normale) e "Cancel" (ripristina i valori precedenti). Mentre la riga è in modifica il pulsante ⋯ resta evidenziato; Invio nei campi Modello/Codice salva, Esc annulla. Prima i campi restavano aperti senza un modo per confermare',
     'Corretto il kit DC Coupling per M2S 2000 con batterie al litio: ora è YM2SE27A (come per M2S 1600) invece di YM2SE26A (kit 1250)',
     'Corretto: cambiando lingua dopo aver importato un listino, la riga di stato tornava a dire "No price list imported" anche con il listino caricato (lo stesso per l\'elenco progetti e lo stato della connessione MS365)',
     'Ricaricando la pagina (F5) non si perde più il lavoro: configurazione, righe d\'offerta, revisione, impostazioni (valuta, sconto, trasporto), Project Details, lingua e listino importato vengono ripristinati. Sotto Project Details compare "Page reloaded — your work in progress was restored"',

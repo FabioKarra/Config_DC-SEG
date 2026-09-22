@@ -197,6 +197,15 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 .rp-item.on{background:#EAF0FB;} .rp-item.off .rp-title, .rp-item.off .rp-num{color:#B0B6C0; text-decoration:line-through;}
 .rp-num{color:var(--accent-dark); min-width:34px; font-weight:500;} .rp-title{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .rp-badge{font-size:10px; padding:1px 6px; border-radius:10px;} .rp-badge.e{background:#FFF4E0; color:#B26A00;} .rp-badge.c{background:#E8F5E9; color:#2E7D32;} .rp-badge.o{background:#FDE7EB; color:#C00030;}
+.rp-drag{cursor:grab; color:#9AA3AF; font-size:14px; line-height:1; padding:2px 3px; border-radius:4px; user-select:none; touch-action:none; position:relative; flex-shrink:0;}
+.rp-drag:hover{background:#E6EBF3; color:var(--navy);}
+.rp-drag::after{content:''; position:absolute; left:2px; bottom:-1px; height:2px; width:0; background:var(--accent-dark);}
+.rp-drag.holding::after{width:calc(100% - 4px); transition:width .2s linear;}
+.rp-item.rp-src{opacity:.35;} body.rp-dragging, body.rp-dragging *{cursor:grabbing !important; user-select:none;}
+.rp-drop-line{position:absolute; left:6px; right:6px; height:3px; background:var(--accent-dark); border-radius:2px; pointer-events:none; z-index:5;}
+.rp-ghost{position:fixed; z-index:2000; pointer-events:none; background:#fff; border:1px solid #C9D3E3; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.18); opacity:.9; font-size:12.8px; padding:6px 10px; max-width:340px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.rp-rm{border:none; background:transparent; color:#B0B6C0; font-size:13px; padding:0 4px; border-radius:4px; cursor:pointer; visibility:hidden; flex-shrink:0;}
+.rp-item:hover .rp-rm, .rp-item.on .rp-rm{visibility:visible;} .rp-rm:hover{background:#FDE7EB; color:#C00030;}
 .rp-list-actions{display:flex; gap:6px; padding:8px; margin-top:auto; border-top:1px solid var(--panel-border); background:#FAFBFC; position:sticky; bottom:0;}
 .rp-editor{flex:1; min-width:0; display:flex; flex-direction:column;}
 .rp-editor textarea{flex:1; min-height:300px; width:100%; font-family:Consolas,'Courier New',monospace; font-size:12.5px; line-height:1.5; padding:10px 12px; border:1px solid var(--field-border); border-radius:8px; resize:vertical;}
@@ -381,7 +390,7 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 #bomBody.read-only .bom-drag-handle{display:none;}
 td.bom-pos-cell{white-space:nowrap;}
 .bom-drag-handle::after{content:''; position:absolute; left:2px; bottom:1px; height:2px; width:0; background:var(--accent); border-radius:2px; transition:none;}
-.bom-drag-handle.holding::after{width:calc(100% - 4px); transition:width .5s linear;}
+.bom-drag-handle.holding::after{width:calc(100% - 4px); transition:width .2s linear;}
 body.bom-dragging, body.bom-dragging *{cursor:grabbing !important; user-select:none !important; -webkit-user-select:none !important;}
 tr.bom-drag-source{opacity:.3;}
 table.bom-drag-ghost{position:fixed; z-index:1200; pointer-events:none; opacity:.72; background:#fff; border-collapse:collapse; table-layout:fixed;
@@ -741,7 +750,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.52</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.53</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3609,16 +3618,7 @@ function addBomRow(data, insertBeforeNode){
     }
     row.querySelector('.bom-actions').appendChild(accBtn);
     if(data.isCustomSection){
-      const upBtn = document.createElement('button');
-      upBtn.type = 'button'; upBtn.className = 'row-remove'; upBtn.title = 'Move section up';
-      upBtn.textContent = '↑';
-      upBtn.addEventListener('click', ()=>moveSectionUp(row));
-      row.querySelector('.bom-actions').appendChild(upBtn);
-      const downBtn = document.createElement('button');
-      downBtn.type = 'button'; downBtn.className = 'row-remove'; downBtn.title = 'Move section down';
-      downBtn.textContent = '↓';
-      downBtn.addEventListener('click', ()=>moveSectionDown(row));
-      row.querySelector('.bom-actions').appendChild(downBtn);
+      // (moving a section: drag its ⠿ handle — the old ↑/↓ buttons were removed in beta_5.53)
       const rmSectionBtn = document.createElement('button');
       rmSectionBtn.type = 'button'; rmSectionBtn.className = 'row-remove'; rmSectionBtn.title = 'Remove this whole section';
       rmSectionBtn.textContent = '×';
@@ -4560,7 +4560,7 @@ function moveSectionDown(headerRow){
 }
 
 // ---- Drag & drop in Offer Lines ----
-// Hold the ⠿ handle at the right of a chapter or line for half a second (a bar under it fills up), then
+// Hold the ⠿ handle at the left of a chapter or line for 0.2 s (a bar under it fills up), then
 // drag: the chapter (header + its lines + its total) or the single line lifts off semi-transparent
 // and follows the pointer (closed hand), a line shows where it will land, Escape cancels.
 //  - A chapter moves as a whole, between other chapters.
@@ -4569,7 +4569,7 @@ function moveSectionDown(headerRow){
 //    would otherwise bring them back in the original chapter as well (a duplicate).
 //  - The auto Delivery line always stays last in SERVICES; totals and Delivery are recalculated,
 //    and numbered lines (1.1, 1.2…) are renumbered in their new order.
-const BOM_DRAG_HOLD_MS = 500;
+const BOM_DRAG_HOLD_MS = 200;
 let bomDrag = null;
 
 function attachBomDragHandle(row){
@@ -4577,8 +4577,8 @@ function attachBomDragHandle(row){
   handle.className = 'bom-drag-handle';
   handle.textContent = '⠿';
   handle.title = row.dataset.kind === 'header'
-    ? 'Hold ½ second, then drag to move the whole chapter'
-    : 'Hold ½ second, then drag to move this line';
+    ? 'Hold briefly (0.2 s), then drag to move the whole chapter'
+    : 'Hold briefly (0.2 s), then drag to move this line';
   handle.addEventListener('pointerdown', e => bomDragLongPress(e, row, handle));
   // Left side, right before the position number: the number moves into its own span so
   // renumbering (bomRenumberChapter) only rewrites the number, never the handle.
@@ -7981,8 +7981,9 @@ function rebuildReport(){
     else if(d) out.push(s.edited ? {...s, libKeys: s.libKeys || d.libKeys} : {...d, include: s.include, libKeys: s.libKeys && d.libKeys ? s.libKeys : d.libKeys, body: s.libKeys && d.libKeys && JSON.stringify(s.libKeys) !== JSON.stringify(d.libKeys) ? recomposeWithKeys(s, ctx) : d.body});
     else if(s.edited) out.push({...s, orphan: true});
   });
+  const removed = new Set(base.removed || []);
   defs.forEach((d, i) => {
-    if(out.some(x => x.id === d.id)) return;
+    if(out.some(x => x.id === d.id) || removed.has(d.id)) return;
     let at = out.length;
     for(let j = i - 1; j >= 0; j--){ const k = out.findIndex(x => x.id === defs[j].id); if(k >= 0){ at = k + 1; break; } }
     if(i === 0) at = 0;
@@ -8684,11 +8685,22 @@ function mountWordEditor(host, s, onChange){
 
 // ---- "Initialize Report" window ----
 let reportSel = 0, reportTab = 'data';
+let reportSnapshot = null, reportBaseline = '';
+function reportSig(){ if(!REPORT) return ''; const {updatedAt, ...rest} = REPORT; return JSON.stringify(rest); }
+// A section with its sub-sections: index i and every following one with a deeper level.
+function reportBlockRange(sections, i){
+  let j = i + 1;
+  while(j < sections.length && sections[j].level > sections[i].level) j++;
+  return [i, j];
+}
 function reportPersistApprover(v){ try{ localStorage.setItem('upsConfigurator.reportApprover', v); }catch(e){} }
 async function openReportWindow(){
   if(!bomHasRows()){ alert('Generate the Offer first — the report is built from its positions and lines.'); return; }
   await loadReportLibraryFromSharePoint();
+  // what the report was before opening: "Exit without saving" puts it back exactly like this
+  reportSnapshot = REPORT ? JSON.stringify(REPORT) : null;
   rebuildReport();
+  reportBaseline = reportSig();
   let ov = document.getElementById('reportOverlay');
   if(ov) ov.remove();
   ov = document.createElement('div');
@@ -8698,18 +8710,34 @@ async function openReportWindow(){
   const st = buildConfigState().project || {};
   ov.innerHTML = `<div class="settings-modal report-modal" role="dialog" aria-modal="true">
     <div class="acc-modal-header"><h3>Initialize Report — Technical Solution Description</h3>
-      <span class="rp-sub">${escapeHtml(st.ref || '')} · ${escapeHtml(st.name || '')} · R${REVISION}</span><button type="button" class="acc-modal-close" data-close>×</button></div>
+      <span class="rp-sub">${escapeHtml(st.ref || '')} · ${escapeHtml(st.name || '')} · R${REVISION}</span><button type="button" class="acc-modal-close" data-x title="Close">×</button></div>
     <div class="rp-tabs"><button type="button" data-tab="data">1 · Data &amp; revisions</button><button type="button" data-tab="sections">2 · Sections</button></div>
     <div class="rp-body" id="reportBody"></div>
     <div class="acc-modal-footer rp-foot"><span class="rp-src" id="reportSrc"></span>
       <button type="button" class="btn-ghost act" data-rebuild title="Regenerate from the offer every section not edited by hand">↻ Rebuild from offer</button>
+      <button type="button" class="btn-ghost act" data-discard title="Close and throw away every change made since the window was opened">✕ Exit without saving</button>
       <button type="button" class="btn-ghost act" data-close>Save &amp; close</button>
       <button type="button" class="act btn-primary" data-generate>📘 Generate Word</button></div></div>`;
   document.body.appendChild(ov);
-  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => { REPORT.updatedAt = new Date().toISOString(); ov.remove(); }));
+  const saveClose = () => { REPORT.updatedAt = new Date().toISOString(); reportSnapshot = null; ov.remove(); };
+  const discard = () => { REPORT = reportSnapshot ? JSON.parse(reportSnapshot) : null; reportSnapshot = null; ov.remove(); };
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', saveClose));
+  ov.querySelector('[data-discard]').addEventListener('click', async () => {
+    if(reportSig() !== reportBaseline){
+      const ok = await openAppDialog({title: 'Exit without saving?', message: 'The changes made since the window was opened will be lost.', buttons: [{label: 'Cancel', value: false}, {label: 'Exit without saving', value: true, primary: true}]});
+      if(!ok) return;
+    }
+    discard();
+  });
+  ov.querySelector('[data-x]').addEventListener('click', async () => {
+    if(reportSig() === reportBaseline){ saveClose(); return; }
+    const v = await openAppDialog({title: 'Save the changes?', message: 'The report was changed since the window was opened.', buttons: [{label: 'Cancel', value: 'cancel'}, {label: 'Exit without saving', value: 'discard'}, {label: 'Save & close', value: 'save', primary: true}]});
+    if(v === 'save') saveClose(); else if(v === 'discard') discard();
+  });
   ov.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { reportTab = b.dataset.tab; renderReportWindow(); }));
   ov.querySelector('[data-rebuild]').addEventListener('click', () => { rebuildReport(); renderReportWindow(); });
-  ov.querySelector('[data-generate]').addEventListener('click', () => generateTechNote());
+  // generating the Word counts as saving: what's in the file is what stays
+  ov.querySelector('[data-generate]').addEventListener('click', async () => { await generateTechNote(); if(REPORT){ reportSnapshot = JSON.stringify(REPORT); reportBaseline = reportSig(); } });
   renderReportWindow();
 }
 function renderReportWindow(){
@@ -8757,6 +8785,72 @@ function renderReportData(body){
     rebuildReport();
   }));
 }
+// ---- Drag & drop in the report's section list (same gesture as Offer Lines: hold ⠿ 0.2 s) ----
+// A section moves with its sub-sections. It can land in front of any section of its own level or
+// higher (or at the end), so a chapter never ends up inside another chapter's sub-sections.
+const REPORT_DRAG_HOLD_MS = 200;
+function reportDragLongPress(e, handle, body){
+  if(e.button !== 0) return;
+  e.preventDefault(); e.stopPropagation();
+  const sx = e.clientX, sy = e.clientY; let lx = sx, ly = sy;
+  handle.classList.add('holding');
+  const cleanup = () => { clearTimeout(timer); handle.classList.remove('holding'); window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', cleanup); window.removeEventListener('pointercancel', cleanup); };
+  const onMove = ev => { lx = ev.clientX; ly = ev.clientY; if(Math.hypot(lx - sx, ly - sy) > 8) cleanup(); };
+  const timer = setTimeout(() => { cleanup(); reportDragBegin(Number(handle.dataset.drag), lx, ly, body); }, REPORT_DRAG_HOLD_MS);
+  window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', cleanup); window.addEventListener('pointercancel', cleanup);
+}
+function reportDragBegin(i, x, y, body){
+  const R = REPORT, list = body.querySelector('.rp-list');
+  const [a, b] = reportBlockRange(R.sections, i);
+  const level = R.sections[i].level;
+  const items = [...list.querySelectorAll('.rp-item')];
+  items.slice(a, b).forEach(el => el.classList.add('rp-src'));
+  const ghost = document.createElement('div');
+  ghost.className = 'rp-ghost';
+  ghost.textContent = '⠿ ' + items[i].querySelector('.rp-num').textContent + ' ' + (R.sections[i].title || '') + (b - a > 1 ? `  (+${b - a - 1})` : '');
+  document.body.appendChild(ghost);
+  const line = document.createElement('div'); line.className = 'rp-drop-line'; line.style.display = 'none';
+  list.style.position = 'relative'; list.appendChild(line);
+  document.body.classList.add('rp-dragging');
+  // allowed drop points: before item k (k outside the block, level <= dragged level) or at the end
+  const slots = [];
+  items.forEach((el, k) => { if((k < a || k >= b) && R.sections[k].level <= level) slots.push(k); });
+  slots.push(items.length);
+  let target = null, lastY = y, scroller = null;
+  const place = (px, py) => {
+    ghost.style.left = (px + 12) + 'px'; ghost.style.top = (py - 14) + 'px';
+    let best = null, bestD = Infinity;
+    const lr = list.getBoundingClientRect();
+    slots.forEach(k => {
+      const yy = k < items.length ? items[k].getBoundingClientRect().top : items[items.length - 1].getBoundingClientRect().bottom;
+      const d = Math.abs(py - yy);
+      if(d < bestD){ bestD = d; best = {k, yy}; }
+    });
+    target = best && best.k !== a && best.k !== b ? best.k : null;
+    if(target === null){ line.style.display = 'none'; return; }
+    line.style.display = 'block';
+    line.style.top = (best.yy - lr.top + list.scrollTop - 1) + 'px';
+  };
+  const onMove = ev => { lastY = ev.clientY; place(ev.clientX, ev.clientY); };
+  const end = commit => {
+    clearInterval(scroller);
+    window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onCancel); window.removeEventListener('keydown', onKey);
+    ghost.remove(); line.remove(); document.body.classList.remove('rp-dragging');
+    items.forEach(el => el.classList.remove('rp-src'));
+    if(commit && target !== null){
+      const sel = R.sections[reportSel];
+      const block = R.sections.splice(a, b - a);
+      const at = target > a ? target - block.length : target;
+      R.sections.splice(at, 0, ...block);
+      reportSel = Math.max(0, R.sections.indexOf(sel));
+      renderReportSections(body);
+    }
+  };
+  const onUp = () => end(true), onCancel = () => end(false), onKey = ev => { if(ev.key === 'Escape') end(false); };
+  window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onCancel); window.addEventListener('keydown', onKey);
+  scroller = setInterval(() => { const r = list.getBoundingClientRect(); const dy = lastY < r.top + 40 ? -8 : lastY > r.bottom - 40 ? 8 : 0; if(dy){ list.scrollTop += dy; } }, 30);
+  place(x, y);
+}
 function renderReportSections(body){
   const R = REPORT;
   const list = numberedSections(R.sections);
@@ -8766,11 +8860,13 @@ function renderReportSections(body){
     ? `<label>${kind === 'product' ? 'Product description' : kind === 'config' ? 'Configuration table' : 'Battery description'} (library)<select data-lib="${kind}">${libraryKeys(prefix).map(k => `<option value="${escapeHtml(k)}"${k === s.libKeys[kind] ? ' selected' : ''}>${escapeHtml(k.slice(prefix.length) === '*' ? 'Generic (any model)' : k.slice(prefix.length))}</option>`).join('')}</select></label>` : '';
   body.innerHTML = `<div class="rp-sections">
     <div class="rp-list">${list.map((x, i) => `<div class="rp-item${i === reportSel ? ' on' : ''}${x.include ? '' : ' off'}" data-sel="${i}" style="padding-left:${8 + (x.level - 1) * 16}px">
+        <span class="rp-drag" data-drag="${i}" title="Hold briefly (0.2 s), then drag to move${x.level < 3 ? ' (with its sub-sections)' : ''}">⠿</span>
         <input type="checkbox" data-inc="${i}"${x.include ? ' checked' : ''} title="Include in the report">
         <span class="rp-num">${escapeHtml(x.num)}</span><span class="rp-title">${escapeHtml(x.title || '(untitled)')}</span>
         ${x.custom ? '<span class="rp-badge c">added</span>' : x.edited ? '<span class="rp-badge e">edited</span>' : ''}${x.orphan ? '<span class="rp-badge o">not in offer</span>' : ''}
+        <button type="button" class="rp-rm" data-rm="${i}" title="Delete this section${x.level < 3 ? ' and its sub-sections' : ''}">✕</button>
       </div>`).join('')}
-      <div class="rp-list-actions"><button type="button" class="dl-a" data-add>+ Add section</button><button type="button" class="dl-a" data-up title="Move up">▲</button><button type="button" class="dl-a" data-down title="Move down">▼</button><button type="button" class="dl-a" data-del title="Delete section">✕</button></div>
+      <div class="rp-list-actions"><button type="button" class="dl-a" data-add>+ Add section</button>${(R.removed || []).length ? `<button type="button" class="dl-a" data-restore title="Bring back the offer sections deleted from this report">↺ Restore deleted (${R.removed.length})</button>` : ''}</div>
     </div>
     <div class="rp-editor">${s ? `
       <div class="rp-row"><label class="grow">Title<input type="text" data-e="title" value="${escapeHtml(s.title)}"></label>
@@ -8781,23 +8877,26 @@ function renderReportSections(body){
     </div></div>`;
   body.querySelectorAll('[data-sel]').forEach(el => el.addEventListener('click', e => { if(e.target.matches('input')) return; reportSel = Number(el.dataset.sel); renderReportSections(body); }));
   body.querySelectorAll('[data-inc]').forEach(cb => cb.addEventListener('change', () => { R.sections[Number(cb.dataset.inc)].include = cb.checked; renderReportSections(body); }));
-  const move = d => { const j = reportSel + d; if(j < 0 || j >= R.sections.length) return; [R.sections[reportSel], R.sections[j]] = [R.sections[j], R.sections[reportSel]]; reportSel = j; renderReportSections(body); };
-  body.querySelector('[data-up]').addEventListener('click', () => move(-1));
-  body.querySelector('[data-down]').addEventListener('click', () => move(1));
+  body.querySelectorAll('[data-drag]').forEach(h => h.addEventListener('pointerdown', e => reportDragLongPress(e, h, body)));
+  body.querySelectorAll('[data-rm]').forEach(btn => btn.addEventListener('click', async e => {
+    e.stopPropagation();
+    const i = Number(btn.dataset.rm);
+    const [a, b] = reportBlockRange(R.sections, i);
+    const n = b - a - 1;
+    const ok = await openAppDialog({title: 'Delete section', message: `Delete "${R.sections[i].title || '(untitled)'}"${n ? ` and its ${n} sub-section${n > 1 ? 's' : ''}` : ''}?` + (R.sections.slice(a, b).some(x => !x.custom) ? '\n\nSections that come from the offer can be brought back with "↺ Restore deleted".' : ''), buttons: [{label: 'Cancel', value: false}, {label: 'Delete', value: true, primary: true}]});
+    if(!ok) return;
+    const gone = R.sections.splice(a, b - a);
+    R.removed = [...new Set([...(R.removed || []), ...gone.filter(x => !x.custom).map(x => x.id)])];
+    if(reportSel >= b) reportSel -= (b - a); else if(reportSel >= a) reportSel = Math.max(0, a - 1);
+    renderReportSections(body);
+  }));
+  const restore = body.querySelector('[data-restore]');
+  if(restore) restore.addEventListener('click', () => { R.removed = []; rebuildReport(); renderReportSections(body); });
   body.querySelector('[data-add]').addEventListener('click', () => {
     const cur = R.sections[reportSel];
     const ns = {id: `custom-${Date.now().toString(36)}`, key: 'custom', level: cur ? Math.max(cur.level, 1) : 1, title: 'New section', body: '', include: true, edited: true, custom: true};
     R.sections.splice(reportSel + 1, 0, ns); reportSel++; renderReportSections(body);
     setTimeout(() => { const t = body.querySelector('[data-e="title"]'); if(t){ t.focus(); t.select(); } }, 0);
-  });
-  body.querySelector('[data-del]').addEventListener('click', async () => {
-    const cur = R.sections[reportSel];
-    if(!cur) return;
-    const ok = await openAppDialog({title: 'Delete section', message: cur.custom ? `Delete "${cur.title}"?` : `"${cur.title}" comes from the offer: deleting it only hides it (it can be included again with its checkbox, or it comes back with "Rebuild from offer").`, buttons: [{label: 'Cancel', value: false}, {label: 'Delete', value: true, primary: true}]});
-    if(!ok) return;
-    if(cur.custom) R.sections.splice(reportSel, 1); else cur.include = false;
-    reportSel = Math.max(0, reportSel - (cur.custom ? 1 : 0));
-    renderReportSections(body);
   });
   if(!s) return;
   const title = body.querySelector('[data-e="title"]');
@@ -9052,10 +9151,12 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.52';
+const CURRENT_VERSION = 'beta_5.53';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
+    'Initialize Report: pulsante "✕ Exit without saving" (annulla tutte le modifiche fatte da quando la finestra è stata aperta); la × in alto chiede se salvare quando ci sono modifiche; Generate Word vale come salvataggio',
+    'Sezioni: si spostano trascinando la maniglia ⠿ (0,2 s, come nelle Offer Lines) insieme ai loro sotto-capitoli; ✕ su ogni riga elimina il capitolo (e i suoi sotto-capitoli). Le sezioni dell\'offerta eliminate non ricompaiono con "Rebuild from offer"; "↺ Restore deleted" le riporta',
     'Impaginazione della Technical Note: titoli, frasi introduttive, immagini con didascalia e tabelle restano insieme (mai un titolo o una frase isolata in fondo pagina, mai una tabella spezzata); un capitolo che cadrebbe nell\'ultimo 30% della pagina parte dalla pagina successiva; dove resta molto spazio libero (oltre ~22% della pagina) compare la nota "This space has been intentionally left blank."',
     'Indice creato automaticamente con voci, puntini e numeri di pagina (collegamenti ai capitoli), in Work Sans Light; gli stili dell\'indice del modello sono impostati a Work Sans Light, quindi anche l\'aggiornamento fatto da Word mantiene il carattere',
     'Technical Note: se il modello non è su SharePoint non si apre più direttamente la finestra di scelta file — un messaggio spiega perché, poi si sceglie il modello; da collegati si può salvarlo su SharePoint (Template_Offer_Folder) così non viene più chiesto. Un Word che non è il modello viene rifiutato con un messaggio',
@@ -9077,6 +9178,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_5.53', date:'2026-09-22', notes:[
+    'Offer Lines: tolte le frecce ↑/↓ delle sezioni (si spostano trascinando la maniglia ⠿); l\'attesa prima del trascinamento scende a 0,2 secondi',
+  ]},
   {version:'beta_5.52', date:'2026-09-22', notes:[
     'Export PDF / Excel / Word / scheda tecnica: se sei loggato e il progetto ha un riferimento, i file vengono salvati SOLO nella cartella 02 OFFER/R<n> su SharePoint (nessuna copia in Download); un avviso in basso conferma dove sono stati salvati. Il download sul computer resta solo come ripiego (ospite, senza riferimento o SharePoint non raggiungibile)',
   ]},

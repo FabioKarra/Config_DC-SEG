@@ -621,7 +621,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.48</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.49</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -652,7 +652,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
           <div class="field"><label data-i18n="pd.country">Country</label><input id="prjCountry" readonly></div>
           <div class="field"><label data-i18n="pd.customer">Customer</label><input id="prjCustomer" readonly></div>
           <div class="field"><label data-i18n="pd.dueDate">Due Date</label><input id="prjDue" readonly></div>
-          <div class="field"><label data-i18n="pd.owner">Pre-Sales Owner</label><input id="prjOwner"></div>
+          <div class="field"><label data-i18n="pd.owner">Pre-Sales Owner</label><input id="prjOwner" list="ownerPeopleList" autocomplete="off" placeholder="Pick a person of the SharePoint site"><datalist id="ownerPeopleList"></datalist></div>
           <div class="field">
             <label data-i18n="pd.product">Product</label>
             <select id="prjProduct"><option>MP2 - M2S</option><option>MHE</option></select>
@@ -1257,7 +1257,7 @@ const PROGRESS_FIELD_ALIASES = {
   Product: ['Progress','Product'],
   'Due date': ['DueDate','Due date','Due Date'],
   Notes: ['Notes','Note','Comments'],
-  'Created By.title': ['AssignedTo0','Author','Created By.title','Created By','CreatedBy','Pre-Sales Owner','Owner'],
+  'Created By.title': ['__assignedToName','AssignedTo0','Author','Created By.title','Created By','CreatedBy','Pre-Sales Owner','Owner'],
   Battery: ['Battery'],
   'Battery Brand': ['BatteryBrand','Battery Brand'],
   'STD/SPECIAL': ['STD_x002f_SPECIAL','STD/SPECIAL','STD SPECIAL'],
@@ -1629,6 +1629,60 @@ document.getElementById('btnSpRefresh').addEventListener('click', ()=>{
   fetchSharePointList();
 });
 
+// ---- "Assigned to" (AssignedTo0) is a SharePoint Person column: Graph neither returns nor accepts
+// a plain name for it, only "AssignedTo0LookupId" — the person's id in the site's hidden "User
+// Information List" (everyone who has access to / has been used on the site). That list is read
+// once per refresh so ids can be shown as names, the Pre-Sales Owner field can offer the people
+// as suggestions, and a chosen name can be written back as its id. ----
+const OWNER_PERSON_FIELD = 'AssignedTo0';
+let SITE_USERS = [];            // [{id, name, email}]
+let siteUsersError = '';
+async function loadSiteUsers(token, siteId){
+  try{
+    let users = [];
+    let url = `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${encodeURIComponent('User Information List')}/items?expand=fields&$top=500`;
+    while(url){
+      const page = await graphGet(url, token);
+      users = users.concat(page.value || []);
+      url = page['@odata.nextLink'] || null;
+    }
+    SITE_USERS = users.map(it => {
+      const f = it.fields || {};
+      const email = String(f.EMail || f.Email || '').trim();
+      const login = String(f.UserName || f.Name || '').trim();
+      return {id: String(it.id || f.id || ''), name: String(f.Title || '').trim(), email: email || (login.includes('@') ? login.replace(/^.*\|/, '') : ''),
+              person: (f.ContentType || '') !== 'SharePointGroup' && !f.Deleted};
+    }).filter(u => u.id && u.name && u.person && (u.email || !/^(system account|sharepoint app|everyone)/i.test(u.name)));
+    siteUsersError = '';
+  }catch(err){
+    console.warn('Could not read the site\'s User Information List — Pre-Sales Owner stays display-only:', err);
+    siteUsersError = err.message || String(err);
+  }
+  refreshOwnerDatalist();
+  return SITE_USERS;
+}
+function siteUserById(id){ return SITE_USERS.find(u => u.id === String(id)); }
+// Matches what's typed/selected in Pre-Sales Owner ("Name", "Name <email>", or an email) to a site user.
+function findSiteUser(text){
+  const v = String(text || '').trim().toLowerCase();
+  if(!v) return null;
+  const email = (v.match(/<([^>]+)>/) || [])[1] || (v.includes('@') ? v : '');
+  const name = v.replace(/<[^>]*>/, '').trim();
+  return SITE_USERS.find(u => email && u.email.toLowerCase() === email) ||
+         SITE_USERS.find(u => u.name.toLowerCase() === name) || null;
+}
+function findSiteUserForAccount(acc){
+  if(!acc) return null;
+  const up = String(acc.username || '').toLowerCase();
+  return SITE_USERS.find(u => up && u.email.toLowerCase() === up) || findSiteUser(acc.name);
+}
+function refreshOwnerDatalist(){
+  const dl = document.getElementById('ownerPeopleList');
+  if(!dl) return;
+  dl.innerHTML = [...SITE_USERS].sort((a, b) => a.name.localeCompare(b.name))
+    .map(u => `<option value="${escapeHtml(u.name)}">${escapeHtml(u.email)}</option>`).join('');
+}
+
 async function fetchSharePointList(){
   try{
     const token = await getGraphToken();
@@ -1645,8 +1699,13 @@ async function fetchSharePointList(){
     // Keep the Graph list-item metadata alongside the fields. Person columns such as
     // Author/Created By are not always returned as a display value inside `fields`;
     // Graph exposes the creator reliably as item.createdBy.user.displayName.
+    await loadSiteUsers(token, site.id);
     const rows = items.map(it=>{
       const fields = {...(it.fields || {})};
+      // Person column → name via the site's users (key always present so the field mapping sees it)
+      const ownerId = fields[OWNER_PERSON_FIELD + 'LookupId'];
+      const owner = ownerId != null && ownerId !== '' ? siteUserById(ownerId) : null;
+      fields.__assignedToName = owner ? owner.name : '';
       fields.__graphCreatedByName =
         (it.createdBy && it.createdBy.user && (it.createdBy.user.displayName || it.createdBy.user.email)) ||
         (it.createdBy && it.createdBy.application && it.createdBy.application.displayName) ||
@@ -2685,6 +2744,7 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
   // no LookupId involved (unlike Country, which really is a Lookup).
   const priorityValue = document.getElementById('noPriority').value;
   if(priorityValue) fields['Priority'] = priorityValue;
+
   // (The automatic follow-up reminder is no longer asked here — it's asked when the offer is
   // CLOSED, i.e. once there is actually an offer out to follow up on. See btnCloseOffer.)
 
@@ -2692,6 +2752,10 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
     updateNewOfferStatus('Creating in SharePoint…', 'loading');
     const token = await getGraphToken();
     const {site, list} = await resolveSharePointList(token);
+    // "Assigned to" (Person column) = whoever creates the offer, as their site user id
+    if(!SITE_USERS.length) await loadSiteUsers(token, site.id);
+    const me = findSiteUserForAccount(msalAccount);
+    if(me) fields[OWNER_PERSON_FIELD + 'LookupId'] = me.id;
 
     noWaitCancelled = false;
     waitingForNewOfferCreation = true;
@@ -5368,8 +5432,23 @@ document.getElementById('btnSaveProjectDetails').addEventListener('click', async
       Battery: document.getElementById('prjBattery').value,
       BatteryBrand: document.getElementById('prjBatteryBrand').value.trim(),
       Category0: document.getElementById('prjOfferType').value.trim(),
-      AssignedTo0: document.getElementById('prjOwner').value.trim(),
     };
+    // Pre-Sales Owner → "Assigned to" (Person column): written as the chosen person's site id.
+    // Left unchanged on SharePoint when empty or when the name isn't one of the site's users.
+    const ownerText = document.getElementById('prjOwner').value.trim();
+    let ownerNote = '';
+    if(ownerText){
+      if(!SITE_USERS.length) await loadSiteUsers(token, site.id);
+      const person = findSiteUser(ownerText);
+      if(person){
+        fields[OWNER_PERSON_FIELD + 'LookupId'] = person.id;
+        document.getElementById('prjOwner').value = person.name;
+      } else {
+        ownerNote = SITE_USERS.length
+          ? `Pre-Sales Owner NOT updated: "${ownerText}" is not one of the people of the SharePoint site — pick a name from the suggestions.`
+          : `Pre-Sales Owner NOT updated: the site's people list could not be read${siteUsersError ? ` (${siteUsersError})` : ''}.`;
+      }
+    }
     if(stdSpecialVal) fields.STD_x002f_SPECIAL = stdSpecialVal; // omitted (not blanked) when empty, like DueDate/Country
     const dueVal = document.getElementById('prjDue').value;
     const dueISO = parseDDMMYYYYToISO(dueVal);
@@ -5379,6 +5458,7 @@ document.getElementById('btnSaveProjectDetails').addEventListener('click', async
     await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, fields);
     btn.textContent = '✓ Saved';
     setTimeout(()=>{ btn.textContent = originalLabel; }, 2000);
+    if(ownerNote) openAppDialog({title: 'Saved to SharePoint', message: `Project data saved.\n\n${ownerNote}`});
   }catch(err){
     console.error(err);
     alert(`Could not save to SharePoint: ${err.message || err}`);
@@ -6762,8 +6842,13 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.48';
+const CURRENT_VERSION = 'beta_5.49';
 const CHANGELOG = [
+  {version:'beta_5.49', date:'2026-09-22', notes:[
+    'Pre-Sales Owner ↔ colonna "Assigned to" (AssignedTo0), che su SharePoint è di tipo Persona: il nome viene ora letto dall\'id della persona (tramite l\'elenco utenti del sito) invece di ripiegare sull\'autore del record',
+    'Il campo Pre-Sales Owner propone le persone del sito SharePoint mentre si scrive; "Save Project Data" scrive la persona scelta come vera Persona (prima tentava di scrivere un testo, che una colonna Persona non accetta). Se il nome non è tra le persone del sito, i dati vengono salvati ma l\'owner no, e un messaggio lo spiega',
+    '"Create New Offer" compila già "Assigned to" con chi crea l\'offerta',
+  ]},
   {version:'beta_5.48', date:'2026-09-22', notes:[
     'Barra in alto: da collegati a MS 365 il pulsante Sign-in sparisce e resta solo la ✕ rossa (Sign out); dopo il sign-out torna Sign-in e sparisce la ✕',
   ]},

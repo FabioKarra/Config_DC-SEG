@@ -202,6 +202,44 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 .rp-editor textarea{flex:1; min-height:300px; width:100%; font-family:Consolas,'Courier New',monospace; font-size:12.5px; line-height:1.5; padding:10px 12px; border:1px solid var(--field-border); border-radius:8px; resize:vertical;}
 .rp-help{font-size:11px; color:var(--dim); margin:6px 0; line-height:1.9;} .rp-help code{background:#F1F3F6; padding:1px 5px; border-radius:4px; font-size:10.5px;}
 
+/* ---- Word-style editor (report sections) ---- */
+.rp-wx{flex:1; min-height:0; display:flex;}
+.wx{flex:1; min-height:0; display:flex; flex-direction:column; border:1px solid var(--field-border); border-radius:8px; overflow:hidden; background:#E9ECF1;}
+.wx-bar{display:flex; flex-wrap:wrap; align-items:center; gap:3px; padding:6px 8px; background:#F7F8FA; border-bottom:1px solid var(--panel-border);}
+.wx-bar button, .wx-bar select{height:28px; border:1px solid transparent; background:transparent; border-radius:5px; padding:0 8px; font-size:12.5px; color:var(--text); font-family:'Work Sans',sans-serif;}
+.wx-bar button:hover{background:#E6EBF3; border-color:#D5DCE7;} .wx-bar select{border-color:var(--field-border); background:#fff; padding:0 4px;}
+.wx-bar .wx-style{width:150px;} .wx-bar .wx-mode.on{background:var(--navy); color:#fff;}
+.wx-bar.raw > :not(.wx-mode):not(span){opacity:.35; pointer-events:none;}
+.wx-sep{width:1px; height:20px; background:var(--panel-border); margin:0 4px;}
+.wx-tblops{display:inline-flex; gap:2px; padding:0 4px; border-left:1px solid var(--panel-border); border-right:1px solid var(--panel-border);}
+.wx-page{flex:1; min-height:0; overflow:auto; padding:18px 0;}
+.wx-sheet{box-sizing:border-box; width:min(760px, calc(100% - 32px)); margin:0 auto; min-height:100%; background:#fff; box-shadow:0 1px 4px rgba(20,22,26,.18); padding:30px 46px 46px; display:flex; flex-direction:column;}
+.wx-h{font-family:'Work Sans',sans-serif; color:#FF0000; font-size:16px; font-weight:400; margin-bottom:12px;} .wx-h[data-level="1"]{font-size:19px; font-weight:600;}
+.wx-ed, .wx-raw{display:block; box-sizing:border-box; width:100%; flex:1; min-height:300px; outline:none;}
+.wx-ed{font-family:'Work Sans Light','Work Sans',Calibri,sans-serif; font-weight:300; font-size:13.5px; line-height:1.45; color:#111; text-align:justify;}
+.wx-raw{font-family:Consolas,'Courier New',monospace; font-size:12.5px; line-height:1.5; border:none; resize:none;}
+.wx-ed p{margin:0 0 2px; min-height:1.45em;}
+.wx-ed b, .wx-ed strong{font-weight:600;}
+.wx-ed p.wx-li{position:relative; padding-left:34px;}
+.wx-ed p.wx-li::before{position:absolute; left:14px;}
+.wx-ed p.wx-li[data-b="dot"]::before, .wx-ed p.wx-li[data-b="bold"]::before{content:'•';}
+.wx-ed p.wx-li[data-b="bold"]{font-weight:600;}
+.wx-ed p.wx-li[data-b="sub"]{padding-left:62px;} .wx-ed p.wx-li[data-b="sub"]::before{content:'o'; left:44px; font-size:11px;}
+.wx-ed p.wx-li[data-b="dash"]::before{content:'-';}
+.wx-ed p.wx-cap{text-align:center; color:#FF0000; font-family:'Work Sans',sans-serif; font-weight:400; font-size:12px; margin:2px 0 10px;}
+.wx-ed p.wx-cap::before{content:'Figure # – '; opacity:.75;}
+.wx-ed table.wx-tbl{width:100%; border-collapse:collapse; margin:6px 0 10px; font-size:12.5px;}
+.wx-ed table.wx-tbl td{border-bottom:1px solid #000; border-top:1px solid #000; padding:2px 6px; vertical-align:top; text-align:left;}
+.wx-ed table.wx-tbl td:first-child{width:35%;}
+.wx-obj{position:relative; margin:8px 0; text-align:center; user-select:none;}
+.wx-obj:hover{outline:2px dashed #9DB3DD; outline-offset:2px;}
+.wx-img img{display:inline-block;}
+.wx-ph{display:inline-flex; align-items:center; justify-content:center; max-width:100%; background:repeating-linear-gradient(45deg,#F4F6F9,#F4F6F9 8px,#ECEFF4 8px,#ECEFF4 16px); border:1px solid #DDE2EA; color:var(--dim); font-size:12px;}
+.wx-rt table{width:100%; border-collapse:collapse; font-size:10.5px;} .wx-rt th{background:#0070C0; color:#fff; font-weight:600; border:1px solid #000; padding:3px;} .wx-rt td{background:#F2F2F2; border:1px solid #000; padding:3px;}
+.wx-pb{border-top:2px dashed #B0B6C0; color:#9AA1AC; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; padding-top:2px;}
+.wx-x{position:absolute; top:-8px; right:-8px; width:22px; height:22px; border-radius:50%; border:none; background:var(--red); color:#fff; font-size:14px; line-height:1; display:none; cursor:pointer;}
+.wx-obj:hover .wx-x{display:block;}
+
 /* ---- beta functions: visible only after the Admin login ---- */
 .beta-fn{display:none !important;}
 body.beta-unlocked .beta-fn{display:flex !important;}
@@ -8098,6 +8136,289 @@ async function prepareTechNoteFile({allowPick = false} = {}){
   return {filename: techNoteFilename(), blob: await buildTechNoteBlob(buf)};
 }
 
+// ---- Word-style editor for the report sections ------------------------------------------------
+// What you see is what the Technical Note gets: same fonts, justified text, bullet styles, red
+// captions, tables and pictures of the template. Stored as the same simple markup as before (so
+// the Word generation, the JSON and the library texts don't change); "Markup" shows the raw text.
+let reportImagePreview = null;          // {name: objectURL} from the template's media, once loaded
+let reportImagePreviewLoading = null;
+async function loadReportImagePreviews(){
+  if(reportImagePreview) return reportImagePreview;
+  if(reportImagePreviewLoading) return reportImagePreviewLoading;
+  reportImagePreviewLoading = (async () => {
+    const buf = techNoteTemplateCache || await getTechNoteTemplate({allowPick: false}).catch(() => null);
+    if(!buf || typeof JSZip === 'undefined') return null;
+    const zip = await JSZip.loadAsync(buf);
+    const rels = await zip.file('word/_rels/document.xml.rels').async('string');
+    const byRid = {};
+    rels.replace(/<Relationship\b[^>]*>/g, tag => { const id = (tag.match(/Id="([^"]+)"/) || [])[1]; const tg = (tag.match(/Target="(media\/[^"]+)"/) || [])[1]; if(id && tg) byRid[id] = tg; return tag; });
+    const out = {};
+    for(const [name, im] of Object.entries(REPORT_IMAGES)){
+      const path = !im.diagram && byRid[im.rid];
+      const f = path && zip.file('word/' + path);
+      if(!f) continue;
+      const ext = path.split('.').pop().toLowerCase();
+      if(!/^(png|jpe?g|gif)$/.test(ext)) continue;
+      out[name] = URL.createObjectURL(new Blob([await f.async('uint8array')], {type: ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg'}));
+    }
+    reportImagePreview = out;
+    return out;
+  })().finally(() => { reportImagePreviewLoading = null; });
+  return reportImagePreviewLoading;
+}
+function wxInline(text){
+  return String(text).split(/(\*\*[^*]+?\*\*|__[^_]+?__|\/\/.+?\/\/)/).filter(x => x !== '').map(t => {
+    if(/^\*\*.+\*\*$/.test(t)) return `<b>${escapeHtml(t.slice(2, -2))}</b>`;
+    if(/^__.+__$/.test(t)) return `<u>${escapeHtml(t.slice(2, -2))}</u>`;
+    if(/^\/\/.+\/\/$/.test(t)) return `<i>${escapeHtml(t.slice(2, -2))}</i>`;
+    return escapeHtml(t);
+  }).join('');
+}
+function wxImageHtml(name){
+  const im = REPORT_IMAGES[name];
+  const url = reportImagePreview && reportImagePreview[name];
+  const w = im ? Math.round(im.cx / 9525 * 0.72) : 300, h = im ? Math.round(im.cy / 9525 * 0.72) : 160;
+  const inner = url ? `<img src="${url}" alt="" style="width:${w}px; max-width:100%;">`
+    : `<span class="wx-ph" style="width:${w}px; height:${h}px;">🖼 ${escapeHtml(name)}${im ? '' : ' — not in the template'}</span>`;
+  return `<div class="wx-obj wx-img" contenteditable="false" data-img="${escapeHtml(name)}">${inner}<button type="button" class="wx-x" title="Remove picture">×</button></div>`;
+}
+function wxRuntimeHtml(pos){
+  const d = (REPORT.positions || {})[pos] || {};
+  const p = reportContext().positions.find(x => x.cfgPos === String(pos)) || {};
+  const head = ['UPS Rating (kVA)', 'Required Backup Time', '3-Wire Topology', 'Module Quantity per Rack', 'Rack Quantity', 'Measured Backup Time at EOL', 'Measured Backup Time (BOL)'];
+  const vals = [p.pload || '', d.backup ? `${d.backup} min (EOL)` : '', d.threeWire || '', d.modules || '', d.cabinets || '', d.eol || '', d.bol || ''];
+  return `<div class="wx-obj wx-rt" contenteditable="false" data-runtime="${escapeHtml(pos)}" title="Run-time table of position ${escapeHtml(pos)} — values from tab 1"><table><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr><tr>${vals.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr></table><button type="button" class="wx-x" title="Remove table">×</button></div>`;
+}
+function markupToWxHtml(markup){
+  const lines = String(markup || '').replace(/\r\n?/g, '\n').split('\n');
+  const out = [];
+  let table = null, m;
+  const flushTable = () => { if(table){ out.push(`<table class="wx-tbl">${table.map(r => `<tr>${r.map(c => `<td>${wxInline(c) || '<br>'}</td>`).join('')}</tr>`).join('')}</table>`); table = null; } };
+  for(const raw of lines){
+    const line = raw.replace(/\s+$/, ''), t = line.trim();
+    if(table){ if(/^\[\/table\]$/i.test(t)) flushTable(); else if(t) table.push(line.split('|').map(x => x.trim())); continue; }
+    if(!t){ out.push('<p class="wx-p"><br></p>'); continue; }
+    if(/^\[table\]$/i.test(t)){ table = []; continue; }
+    if(/^\[pagebreak\]$/i.test(t)){ out.push('<div class="wx-obj wx-pb" contenteditable="false" data-pb="1">page break<button type="button" class="wx-x" title="Remove">×</button></div>'); continue; }
+    if((m = /^\[image:(.+)\]$/i.exec(t))){ out.push(wxImageHtml(m[1].trim())); continue; }
+    if((m = /^\[runtime:(.+)\]$/i.exec(t))){ out.push(wxRuntimeHtml(m[1].trim())); continue; }
+    if((m = /^\[caption\]\s*(.*)$/i.exec(t))){ out.push(`<p class="wx-cap">${wxInline(m[1]) || '<br>'}</p>`); continue; }
+    if(t.startsWith('-- ')){ out.push(`<p class="wx-li" data-b="sub">${wxInline(t.slice(3)) || '<br>'}</p>`); continue; }
+    if(t.startsWith('- ')){ out.push(`<p class="wx-li" data-b="dot">${wxInline(t.slice(2)) || '<br>'}</p>`); continue; }
+    if(t.startsWith('* ')){ out.push(`<p class="wx-li" data-b="bold">${wxInline(t.slice(2)) || '<br>'}</p>`); continue; }
+    if(t.startsWith('~ ')){ out.push(`<p class="wx-li" data-b="dash">${wxInline(t.slice(2)) || '<br>'}</p>`); continue; }
+    out.push(`<p class="wx-p">${wxInline(t)}</p>`);
+  }
+  flushTable();
+  if(!out.length || /class="wx-obj|<table/.test(out[out.length - 1])) out.push('<p class="wx-p"><br></p>');
+  return out.join('');
+}
+function wxInlineToMarkup(node){
+  let s = '';
+  node.childNodes.forEach(n => {
+    if(n.nodeType === 3){ s += n.nodeValue.replace(/ /g, ' '); return; }
+    if(n.nodeType !== 1) return;
+    const tag = n.tagName;
+    if(tag === 'BR') return;
+    if(n.classList && n.classList.contains('wx-x')) return;
+    const inner = wxInlineToMarkup(n);
+    if(!inner.trim()){ s += inner; return; }
+    const st = n.style || {};
+    const bold = tag === 'B' || tag === 'STRONG' || /^(bold|[6-9]00)$/.test(st.fontWeight || '');
+    const ital = tag === 'I' || tag === 'EM' || st.fontStyle === 'italic';
+    const und = tag === 'U' || /underline/.test(st.textDecoration || st.textDecorationLine || '');
+    let v = inner;
+    // keep the spaces outside the markers so "**bold** text" stays valid
+    const lead = v.match(/^\s*/)[0], trail = v.match(/\s*$/)[0]; v = v.trim();
+    if(und) v = `__${v}__`;
+    if(ital) v = `//${v}//`;
+    if(bold) v = `**${v}**`;
+    s += lead + v + trail;
+  });
+  return s;
+}
+function wxToMarkup(root){
+  const lines = [];
+  const block = el => {
+    if(el.nodeType === 3){ const t = el.nodeValue.trim(); if(t) lines.push(t); return; }
+    if(el.nodeType !== 1) return;
+    if(el.matches('.wx-img')){ lines.push(`[image:${el.dataset.img}]`); return; }
+    if(el.matches('.wx-rt')){ lines.push(`[runtime:${el.dataset.runtime}]`); return; }
+    if(el.matches('.wx-pb')){ lines.push('[pagebreak]'); return; }
+    if(el.tagName === 'TABLE'){
+      lines.push('[table]');
+      el.querySelectorAll('tr').forEach(tr => lines.push([...tr.children].map(td => wxInlineToMarkup(td).replace(/\|/g, '/').replace(/\s+/g, ' ').trim()).join(' | ')));
+      lines.push('[/table]');
+      return;
+    }
+    if(el.tagName === 'UL' || el.tagName === 'OL'){ el.querySelectorAll(':scope > li').forEach(li => { const t = wxInlineToMarkup(li).trim(); lines.push(`- ${t}`); }); return; }
+    // a block that holds other blocks (e.g. pasted <div><p>…</p></div>)
+    if([...el.children].some(c => /^(P|DIV|TABLE|UL|OL)$/.test(c.tagName) && !c.classList.contains('wx-x'))){ [...el.childNodes].forEach(block); return; }
+    const txt = wxInlineToMarkup(el).replace(/\s+/g, ' ').trim();
+    if(el.classList.contains('wx-li')){
+      const k = el.dataset.b || 'dot';
+      const plain = k === 'bold' ? txt.replace(/^\*\*(.*)\*\*$/, '$1') : txt;
+      lines.push(({dot: '- ', bold: '* ', sub: '-- ', dash: '~ '})[k] + plain);
+    } else if(el.classList.contains('wx-cap')) lines.push(`[caption] ${txt}`);
+    else lines.push(txt);
+  };
+  [...root.childNodes].forEach(block);
+  while(lines.length && lines[lines.length - 1] === '') lines.pop();
+  return lines.join('\n');
+}
+// the block (direct child of the editor) holding the caret
+function wxCurrentBlocks(ed){
+  const sel = window.getSelection();
+  if(!sel.rangeCount || !ed.contains(sel.anchorNode)) return [];
+  const top = n => { while(n && n.parentNode !== ed) n = n.parentNode; return n; };
+  const a = top(sel.anchorNode), b = top(sel.focusNode);
+  if(!a) return [];
+  const kids = [...ed.children];
+  const i = kids.indexOf(a), j = kids.indexOf(b);
+  return kids.slice(Math.min(i, j < 0 ? i : j), Math.max(i, j) + 1).filter(x => x && /^(P|DIV)$/.test(x.tagName) && !x.classList.contains('wx-obj'));
+}
+function wxCurrentCell(ed){
+  const sel = window.getSelection();
+  if(!sel.rangeCount) return null;
+  let n = sel.anchorNode;
+  while(n && n !== ed){ if(n.tagName === 'TD' || n.tagName === 'TH') return n; n = n.parentNode; }
+  return null;
+}
+function wxInsertAfterCaret(ed, html){
+  const blocks = wxCurrentBlocks(ed);
+  const cell = wxCurrentCell(ed);
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  const anchor = cell ? cell.closest('table') : (blocks[blocks.length - 1] || null);
+  const nodes = [...tmp.childNodes];
+  let ref = anchor ? anchor.nextSibling : null;
+  nodes.forEach(n => ed.insertBefore(n, ref));
+  const last = nodes[nodes.length - 1];
+  if(!last.nextSibling || last.nextSibling.classList && last.nextSibling.classList.contains('wx-obj')){
+    const p = document.createElement('p'); p.className = 'wx-p'; p.innerHTML = '<br>'; ed.insertBefore(p, last.nextSibling);
+  }
+  return nodes;
+}
+function wxPlaceCaret(el){
+  if(!el) return;
+  const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+  const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+}
+function wxSetBlockStyle(ed, style){
+  const blocks = wxCurrentBlocks(ed);
+  blocks.forEach(b => {
+    let el = b;
+    if(el.tagName !== 'P'){ const p = document.createElement('p'); p.innerHTML = el.innerHTML; ed.replaceChild(p, el); el = p; }
+    el.removeAttribute('data-b'); el.className = '';
+    if(style === 'p') el.className = 'wx-p';
+    else if(style === 'cap') el.className = 'wx-cap';
+    else { el.className = 'wx-li'; el.dataset.b = style; }
+  });
+  if(blocks.length) wxPlaceCaret(blocks[blocks.length - 1]);
+}
+function wxIndent(ed, dir){
+  wxCurrentBlocks(ed).forEach(b => {
+    if(!b.classList.contains('wx-li')){ if(dir > 0){ b.className = 'wx-li'; b.dataset.b = 'dot'; } return; }
+    const k = b.dataset.b;
+    if(dir > 0) b.dataset.b = 'sub';
+    else if(k === 'sub') b.dataset.b = 'dot';
+    else { b.className = 'wx-p'; b.removeAttribute('data-b'); }
+  });
+}
+function wxBlockStyleOf(ed){
+  const b = wxCurrentBlocks(ed)[0];
+  if(!b) return '';
+  if(b.classList.contains('wx-li')) return b.dataset.b || 'dot';
+  if(b.classList.contains('wx-cap')) return 'cap';
+  return 'p';
+}
+function mountWordEditor(host, s, onChange){
+  const positions = reportContext().positions;
+  host.innerHTML = `<div class="wx">
+    <div class="wx-bar">
+      <select class="wx-style" title="Paragraph style"><option value="p">Normal text</option><option value="dot">• Bullet</option><option value="bold">• Bold bullet</option><option value="sub">◦ Sub-bullet</option><option value="dash">– Dash item</option><option value="cap">Figure caption</option></select>
+      <span class="wx-sep"></span>
+      <button type="button" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+      <span class="wx-sep"></span>
+      <button type="button" data-do="bullet" title="Bullet list">• ≡</button><button type="button" data-do="outdent" title="Decrease indent">⇤</button><button type="button" data-do="indent" title="Increase indent">⇥</button>
+      <span class="wx-sep"></span>
+      <button type="button" data-do="table" title="Insert table">▦ Table</button>
+      <span class="wx-tblops"><button type="button" data-do="row+" title="Add row below">+ row</button><button type="button" data-do="col+" title="Add column right">+ col</button><button type="button" data-do="row-" title="Delete row">− row</button><button type="button" data-do="col-" title="Delete column">− col</button><button type="button" data-do="tbl-" title="Delete table">🗑</button></span>
+      <select class="wx-pic" title="Insert a picture of the template"><option value="">🖼 Picture…</option>${Object.keys(REPORT_IMAGES).map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('')}</select>
+      <select class="wx-rtsel" title="Insert the run-time table of a position"><option value="">▤ Run-time table…</option>${positions.map(p => `<option value="${escapeHtml(p.cfgPos)}">Pos. ${escapeHtml(p.cfgPos)} — ${escapeHtml(`${p.loadType || ''} ${p.pload || ''} kW`)}</option>`).join('')}</select>
+      <button type="button" data-do="pb" title="Insert page break">⤓ Page break</button>
+      <span style="flex:1"></span>
+      <button type="button" data-cmd="undo" title="Undo (Ctrl+Z)">↶</button><button type="button" data-cmd="redo" title="Redo (Ctrl+Y)">↷</button>
+      <button type="button" class="wx-mode" title="Show / edit the raw markup">‹/› Markup</button>
+    </div>
+    <div class="wx-page"><div class="wx-sheet"><div class="wx-h" data-level="${Math.min(3, s.level || 1)}"><span class="wx-hn">${escapeHtml(numberedSections(REPORT.sections).find(x => x.id === s.id)?.num || '')}</span> <span class="wx-ht">${escapeHtml(s.title || '')}</span></div><div class="wx-ed" contenteditable="true" spellcheck="true"></div><textarea class="wx-raw" spellcheck="false" style="display:none"></textarea></div></div>
+  </div>`;
+  const ed = host.querySelector('.wx-ed'), raw = host.querySelector('.wx-raw');
+  const styleSel = host.querySelector('.wx-style'), tblOps = host.querySelector('.wx-tblops');
+  try{ document.execCommand('defaultParagraphSeparator', false, 'p'); document.execCommand('styleWithCSS', false, false); }catch(e){}
+  const render = () => { ed.innerHTML = markupToWxHtml(s.body); };
+  render();
+  let t = null;
+  const sync = () => { clearTimeout(t); t = setTimeout(() => { const v = wxToMarkup(ed); if(v !== s.body){ s.body = v; onChange(); } }, 120); };
+  const refreshBar = () => { styleSel.value = wxBlockStyleOf(ed) || 'p'; tblOps.style.display = wxCurrentCell(ed) ? '' : 'none'; };
+  ed.addEventListener('input', () => {
+    // Chrome may leave bare text or <div>s at the top level after Enter/Delete — normalise to paragraphs
+    [...ed.childNodes].forEach(n => {
+      if(n.nodeType === 3 && n.nodeValue.trim()){ const p = document.createElement('p'); p.className = 'wx-p'; ed.replaceChild(p, n); p.appendChild(n); }
+      else if(n.nodeType === 1 && n.tagName === 'DIV' && !n.classList.contains('wx-obj')){ const p = document.createElement('p'); p.className = 'wx-p'; p.innerHTML = n.innerHTML; ed.replaceChild(p, n); }
+    });
+    sync();
+  });
+  ed.addEventListener('keyup', refreshBar); ed.addEventListener('mouseup', refreshBar);
+  document.addEventListener('selectionchange', () => { if(document.activeElement === ed) refreshBar(); });
+  ed.addEventListener('keydown', e => {
+    if(e.key === 'Tab'){ e.preventDefault(); if(!wxCurrentCell(ed)){ wxIndent(ed, e.shiftKey ? -1 : 1); sync(); refreshBar(); } }
+    // Enter on an empty bullet ends the list (as in Word)
+    if(e.key === 'Enter' && !e.shiftKey){ const b = wxCurrentBlocks(ed)[0]; if(b && b.classList.contains('wx-li') && !b.textContent.trim()){ e.preventDefault(); b.className = 'wx-p'; b.removeAttribute('data-b'); sync(); refreshBar(); } }
+  });
+  ed.addEventListener('paste', e => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertHTML', false, text.replace(/\r\n?/g, '\n').split('\n').map(l => escapeHtml(l)).join('<br>'));
+    // split the <br>s into paragraphs
+    setTimeout(() => { ed.querySelectorAll('p').forEach(p => { if(p.querySelector('br') && p.textContent.trim()){ const parts = p.innerHTML.split(/<br\s*\/?>/i); if(parts.length > 1){ const cls = p.className, b = p.dataset.b; parts.forEach((h, i) => { if(i === 0){ p.innerHTML = h || '<br>'; return; } const np = document.createElement('p'); np.className = cls; if(b) np.dataset.b = b; np.innerHTML = h || '<br>'; p.parentNode.insertBefore(np, (p.__last || p).nextSibling); p.__last = np; }); delete p.__last; } } }); sync(); }, 0);
+  });
+  ed.addEventListener('click', e => { const x = e.target.closest('.wx-x'); if(x){ x.closest('.wx-obj').remove(); sync(); } });
+  host.querySelectorAll('[data-cmd]').forEach(b => b.addEventListener('mousedown', e => { e.preventDefault(); ed.focus(); document.execCommand(b.dataset.cmd); sync(); refreshBar(); }));
+  styleSel.addEventListener('change', () => { ed.focus(); wxSetBlockStyle(ed, styleSel.value); sync(); refreshBar(); });
+  const act = {
+    bullet: () => { const cur = wxBlockStyleOf(ed); wxSetBlockStyle(ed, ['dot', 'bold', 'sub', 'dash'].includes(cur) ? 'p' : 'dot'); },
+    indent: () => wxIndent(ed, 1), outdent: () => wxIndent(ed, -1),
+    table: () => { const [tbl] = wxInsertAfterCaret(ed, '<table class="wx-tbl"><tr><td><br></td><td><br></td></tr><tr><td><br></td><td><br></td></tr><tr><td><br></td><td><br></td></tr></table>'); wxPlaceCaret(tbl.querySelector('td')); },
+    'row+': () => { const c = wxCurrentCell(ed); if(!c) return; const tr = c.parentNode, nr = tr.cloneNode(true); nr.querySelectorAll('td,th').forEach(td => td.innerHTML = '<br>'); tr.after(nr); wxPlaceCaret(nr.children[0]); },
+    'col+': () => { const c = wxCurrentCell(ed); if(!c) return; const i = [...c.parentNode.children].indexOf(c); c.closest('table').querySelectorAll('tr').forEach(tr => { const td = document.createElement('td'); td.innerHTML = '<br>'; (tr.children[i] || tr.lastElementChild).after(td); }); },
+    'row-': () => { const c = wxCurrentCell(ed); if(!c) return; const tbl = c.closest('table'); c.parentNode.remove(); if(!tbl.querySelector('tr')) tbl.remove(); },
+    'col-': () => { const c = wxCurrentCell(ed); if(!c) return; const i = [...c.parentNode.children].indexOf(c), tbl = c.closest('table'); tbl.querySelectorAll('tr').forEach(tr => tr.children[i] && tr.children[i].remove()); if(!tbl.querySelector('td,th')) tbl.remove(); },
+    'tbl-': () => { const c = wxCurrentCell(ed); if(c) c.closest('table').remove(); },
+    pb: () => wxInsertAfterCaret(ed, '<div class="wx-obj wx-pb" contenteditable="false" data-pb="1">page break<button type="button" class="wx-x" title="Remove">×</button></div>'),
+  };
+  host.querySelectorAll('[data-do]').forEach(b => b.addEventListener('mousedown', e => { e.preventDefault(); ed.focus(); act[b.dataset.do](); sync(); refreshBar(); }));
+  host.querySelector('.wx-pic').addEventListener('change', e => {
+    const name = e.target.value; e.target.value = '';
+    if(!name) return;
+    ed.focus();
+    const nodes = wxInsertAfterCaret(ed, wxImageHtml(name) + '<p class="wx-cap"><br></p>');
+    wxPlaceCaret(nodes[nodes.length - 1]);
+    sync();
+  });
+  host.querySelector('.wx-rtsel').addEventListener('change', e => { const v = e.target.value; e.target.value = ''; if(!v) return; ed.focus(); wxInsertAfterCaret(ed, wxRuntimeHtml(v)); sync(); });
+  host.querySelector('.wx-mode').addEventListener('click', e => {
+    const toRaw = raw.style.display === 'none';
+    if(toRaw){ clearTimeout(t); s.body = wxToMarkup(ed); raw.value = s.body; raw.style.display = ''; ed.style.display = 'none'; e.target.classList.add('on'); host.querySelector('.wx-bar').classList.add('raw'); }
+    else { s.body = raw.value; render(); raw.style.display = 'none'; ed.style.display = ''; e.target.classList.remove('on'); host.querySelector('.wx-bar').classList.remove('raw'); }
+  });
+  raw.addEventListener('input', () => { s.body = raw.value; onChange(); });
+  refreshBar();
+  // pictures: swap the placeholders for the real images once the template is available
+  if(!reportImagePreview) loadReportImagePreviews().then(map => { if(map && document.body.contains(ed)) ed.querySelectorAll('.wx-img').forEach(el => { const n = el.dataset.img; if(map[n]){ const tmp = document.createElement('div'); tmp.innerHTML = wxImageHtml(n); el.replaceWith(tmp.firstChild); } }); }).catch(() => {});
+  return ed;
+}
+
 // ---- "Initialize Report" window ----
 let reportSel = 0, reportTab = 'data';
 function reportPersistApprover(v){ try{ localStorage.setItem('upsConfigurator.reportApprover', v); }catch(e){} }
@@ -8192,9 +8513,7 @@ function renderReportSections(body){
       <div class="rp-row"><label class="grow">Title<input type="text" data-e="title" value="${escapeHtml(s.title)}"></label>
         <label>Level<select data-e="level">${[1, 2, 3].map(l => `<option value="${l}"${s.level === l ? ' selected' : ''}>${l === 1 ? 'Chapter (1.)' : l === 2 ? 'Section (1.1)' : 'Sub-section (1.1.1)'}</option>`).join('')}</select></label></div>
       <div class="rp-row">${libSel('product', 'product:')}${libSel('config', 'config:')}${libSel('battery', 'battery:')}</div>
-      <textarea data-e="body" spellcheck="true">${escapeHtml(s.body)}</textarea>
-      <div class="rp-help">Markup: <code>- bullet</code> <code>* bold bullet</code> <code>-- sub-bullet</code> <code>~ dash item</code> <code>**bold**</code> <code>__underline__</code> <code>//italic//</code> <code>[image:NAME]</code> <code>[caption] text</code> <code>[table]</code> … <code>a | b</code> … <code>[/table]</code> <code>[runtime:POS]</code> <code>[pagebreak]</code><br>
-        Pictures: ${Object.keys(REPORT_IMAGES).map(k => `<code>${escapeHtml(k)}</code>`).join(' ')}</div>
+      <div class="rp-wx" data-e="body"></div>
       ${!s.custom ? `<button type="button" class="dl-a" data-reset>↺ Back to library / offer text</button>` : ''}` : '<p class="settings-note">No sections.</p>'}
     </div></div>`;
   body.querySelectorAll('[data-sel]').forEach(el => el.addEventListener('click', e => { if(e.target.matches('input')) return; reportSel = Number(el.dataset.sel); renderReportSections(body); }));
@@ -8219,9 +8538,13 @@ function renderReportSections(body){
   });
   if(!s) return;
   const title = body.querySelector('[data-e="title"]');
-  title.addEventListener('input', () => { s.title = title.value; s.edited = true; const t = body.querySelector('.rp-item.on .rp-title'); if(t) t.textContent = s.title; });
+  title.addEventListener('input', () => { s.title = title.value; s.edited = true; const t = body.querySelector('.rp-item.on .rp-title'); if(t) t.textContent = s.title; const h = body.querySelector('.wx-ht'); if(h) h.textContent = s.title; });
   body.querySelector('[data-e="level"]').addEventListener('change', e => { s.level = Number(e.target.value); s.edited = true; renderReportSections(body); });
-  body.querySelector('[data-e="body"]').addEventListener('input', e => { s.body = e.target.value; s.edited = true; });
+  mountWordEditor(body.querySelector('[data-e="body"]'), s, () => {
+    s.edited = true;
+    const item = body.querySelector('.rp-item.on');
+    if(item && !item.querySelector('.rp-badge')) item.querySelector('.rp-title').insertAdjacentHTML('afterend', '<span class="rp-badge e">edited</span>');
+  });
   body.querySelectorAll('[data-lib]').forEach(sel => sel.addEventListener('change', async () => {
     if(s.edited){
       const ok = await openAppDialog({title: 'Replace the text?', message: 'This section was edited by hand. Using another library block replaces its text.', buttons: [{label: 'Cancel', value: false}, {label: 'Replace', value: true, primary: true}]});
@@ -8476,6 +8799,7 @@ const CURRENT_VERSION = 'beta_5.51';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
+    'Editor "stile Word" per i capitoli: pagina bianca con i caratteri del documento, titolo rosso numerato, testo giustificato; barra con stile paragrafo (normale, elenco, elenco grassetto, sotto-elenco, trattino, didascalia), grassetto/corsivo/sottolineato (anche Ctrl+B/I/U), rientri (Tab/Maiusc+Tab), tabelle (aggiungi/togli righe e colonne), immagini del modello con didascalia, tabella run-time per posizione, interruzione di pagina, annulla/ripeti; incolla come testo semplice; "Markup" mostra il testo grezzo',
     'Nuovo "Initialize Report" (menu Documents): prepara la Technical Solution Description con gli stessi capitoli della Technical Note di riferimento — General Approach to RFQ, Multipower 2nd Generation, UPS Product (una sezione per posizione), Batteries (Battery System, DC Bus Coupling se il kit è in BOM, Line Up per posizione), TCO, SiC vs Si (3 sottosezioni), Attachments — numerati come nel Word',
     'Ogni sezione è modificabile (titolo, livello, testo con elenchi, grassetti, tabelle, figure), si può includere/escludere, spostare, e se ne possono aggiungere di nuove. I testi partono da una libreria (quelli della Technical Note R02) compilata con i dati dell\'offerta: codici, n. moduli, potenze, quantità, cliente, progetto; per prodotto, configurazione e batterie si può scegliere il blocco dalla libreria',
     'Scheda "Data & revisions": approvatore, tabella revisioni della copertina (precompilata dallo storico, modificabile, righe aggiungibili), per ogni posizione autonomia, cabinet batterie, n. cabinet e moduli, 3-wire, autonomia EOL/BOL — alimentano i testi e la tabella run-time',

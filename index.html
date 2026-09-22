@@ -248,6 +248,19 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 .row-kebab-item.row-kebab-delete{color:var(--red);}
 .row-kebab-item.row-kebab-save{color:var(--accent); font-weight:600;}
 .row-kebab.is-editing{color:#fff; background:var(--accent); border-color:var(--accent);}
+.bom-drag-handle{position:relative; display:inline-flex; align-items:center; justify-content:center; width:18px; height:24px; margin:0 3px 0 -4px; vertical-align:middle;
+  color:var(--dim); font-size:15px; line-height:1; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; border-radius:5px;}
+.bom-drag-handle:hover{color:var(--accent); background:var(--field-bg);}
+#bomBody.read-only .bom-drag-handle{display:none;}
+td.bom-pos-cell{white-space:nowrap;}
+.bom-drag-handle::after{content:''; position:absolute; left:2px; bottom:1px; height:2px; width:0; background:var(--accent); border-radius:2px; transition:none;}
+.bom-drag-handle.holding::after{width:calc(100% - 4px); transition:width .5s linear;}
+body.bom-dragging, body.bom-dragging *{cursor:grabbing !important; user-select:none !important; -webkit-user-select:none !important;}
+tr.bom-drag-source{opacity:.3;}
+table.bom-drag-ghost{position:fixed; z-index:1200; pointer-events:none; opacity:.72; background:#fff; border-collapse:collapse; table-layout:fixed;
+  box-shadow:0 14px 34px rgba(20,22,26,.25); border-radius:6px; overflow:hidden;}
+.bom-drop-indicator{position:fixed; z-index:1201; height:3px; background:var(--accent); border-radius:2px; pointer-events:none; box-shadow:0 0 0 2px var(--accent-soft);}
+.bom-drop-indicator.invalid{background:var(--red); box-shadow:0 0 0 2px rgba(192,0,0,.15);}
 .offer-toasts{position:fixed; right:16px; bottom:16px; z-index:1100; display:flex; flex-direction:column; gap:10px; max-width:calc(100vw - 32px);}
 .offer-toast{width:350px; max-width:100%; background:#fff; border:1px solid var(--panel-border); border-left:4px solid var(--accent); border-radius:10px; box-shadow:0 10px 30px rgba(20,22,26,.18); padding:12px 14px; font-family:'Work Sans',sans-serif;}
 .offer-toast.flash{animation:offerToastFlash .9s ease 2;}
@@ -582,7 +595,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.41</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.45</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -1646,32 +1659,6 @@ let noWaitCancelled = false;
 // lookup that should never itself trigger a "project created" notification.
 let waitingForNewOfferCreation = false;
 
-async function requestNotificationPermissionIfNeeded(){
-  if(typeof Notification === 'undefined') return;
-  if(Notification.permission === 'default') await Notification.requestPermission();
-}
-
-// Fired once Power Automate has assigned PRJ_ID/FolderLink0 — but only when the popup isn't the
-// thing on screen right now (closed, or the tab lost focus while it was still open), since seeing
-// it happen live in the "success" view already tells the person directly. Clicking the
-// notification jumps straight to the upload step for that project — no need to look it up again,
-// the details are already known from the wait that just finished.
-function notifyOfferReady(prjId, folderLink, siteId){
-  if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-  const n = new Notification(t('newOffer.notifyTitle') || 'Project created', {
-    body: `${prjId} — ${t('newOffer.notifyBody') || 'click to upload files'}`,
-    tag: 'ups-configurator-offer-ready',
-    requireInteraction: true, // stays on screen until clicked or dismissed — not the browser's own timeout
-  });
-  n.onclick = ()=>{
-    // Brings the page forward, where the "Project created" notice waits for a choice — the
-    // notification itself doesn't load or change anything.
-    window.focus();
-    n.close();
-    const toast = document.querySelector(`#offerToasts .offer-toast[data-prj-id="${CSS.escape(String(prjId))}"]`);
-    if(toast){ toast.classList.remove('flash'); void toast.offsetWidth; toast.classList.add('flash'); }
-  };
-}
 
 // The fixed "Project created" notice (bottom-right, stays until answered). "Load into Project
 // Details" fills them in for that project; "📎 Upload files" opens the upload step for its "01 RFQ"
@@ -1703,7 +1690,7 @@ function showOfferReadyToast({prjId, folderLink, siteId, onLoad}){
 }
 
 // Reopens the modal directly into the upload step for a project whose folder is already resolved
-// — used by the notification's click handler, so there's no need to re-look-up the SharePoint item
+// — used by the "📎 Upload files" button of the "Project created" notice, so there's no need to re-look-up the SharePoint item
 // (unlike the "📎 Files" button, which starts from just a Project Reference and has to find it).
 async function openUploadForKnownProject(prjId, folderLink, siteId){
   newOfferOverlay.style.display = 'flex';
@@ -1715,7 +1702,7 @@ async function openUploadForKnownProject(prjId, folderLink, siteId){
     const token = await getGraphToken();
     await prepareRfqUploadTarget(token, siteId, folderLink);
   }catch(err){
-    console.warn('Could not prepare the upload target when reopening from the notification:', err);
+    console.warn('Could not prepare the upload target when reopening from the "Project created" notice:', err);
   }
   setNewOfferView('upload');
 }
@@ -1754,8 +1741,8 @@ document.getElementById('btnNewOfferCancel').addEventListener('click', closeNewO
 document.getElementById('btnNewOfferCancelWait').addEventListener('click', ()=>{
   // "Stop waiting" means "stop watching it happen, not stop it happening" — same as closing the
   // popup any other way (X, backdrop, Escape) while it's mid-wait: closeNewOffer() already leaves
-  // the background poll running in that case and lets the browser notification (once permission is
-  // granted) pick up the result, rather than genuinely abandoning the wait.
+  // the creation running in that case, and the in-app "Project created" notice picks up the result,
+  // rather than genuinely abandoning it.
   closeNewOffer();
 });
 setupBackdropClose(newOfferOverlay, closeNewOffer);
@@ -2073,7 +2060,7 @@ async function ensureProjectSubfolder(token, siteId, parentPath, subfolderName){
 // items are ever created some other way, e.g. by hand in the list) give its trigger the condition
 // @empty(triggerBody()?['PRJ_ID']) so it only handles items that arrive without a number.
 
-const PRJ_ID_CLAIM_MAX_ATTEMPTS = 6;
+const PRJ_ID_CLAIM_MAX_ATTEMPTS = 10;
 
 // Fetches every non-empty PRJ_ID currently on the list, field-scoped ($expand=fields($select=...) —
 // the nested option needs its own "$" too: "fields(select=…)" is rejected by Graph with a 400)
@@ -2141,8 +2128,8 @@ async function createItemWithUniquePrjId(token, site, list, baseFields, folderNa
     }
     const existingIds = await fetchAllPrjIds(token, site, list);
     const candidate = computeNextPrjId(existingIds, currentYear2);
-    const preCheck = await findSharePointItemByRef(token, site, list, candidate);
-    if(preCheck && String(preCheck.id) !== String(itemId)) continue; // taken since the scan — recompute
+    const preHolders = await findSharePointItemsByRef(token, site, list, candidate);
+    if(preHolders.some(h => String(h.id) !== String(itemId))) continue; // taken since the scan — recompute
     const idFields = {PRJ_ID: candidate, FolderLink0: folderNameFor(candidate)};
     if(!itemId){
       const created = await graphPost(itemsUrl, token, {fields: {...baseFields, ...idFields}});
@@ -2150,12 +2137,15 @@ async function createItemWithUniquePrjId(token, site, list, baseFields, folderNa
     } else {
       await graphPatch(`${itemsUrl}/${itemId}/fields`, token, idFields);
     }
-    // findSharePointItemByRef returns the FIRST match in the list's natural order — so if two runs
-    // both wrote the same number, both see the same first item here, and exactly one of them
-    // recognises itself and keeps it; the other retries with a fresh scan (which now includes the
-    // duplicate, so it lands on the next number) and overwrites its own copy.
-    const postCheck = await findSharePointItemByRef(token, site, list, candidate);
-    if(postCheck && String(postCheck.id) === String(itemId)){
+    // After writing: the number is kept ONLY if this item is its sole holder right now. Anyone who
+    // finds another holder yields and retries — always, whatever the list order. That is what makes
+    // it safe: whoever writes first and checks before the other write sees only itself and keeps
+    // it; whoever writes second is certain to see the first one, and moves on. (The earlier rule —
+    // "the first match in list order keeps it" — let a later writer with a lower item id keep a
+    // number someone else had already confirmed, leaving two projects with the same reference.)
+    // If both check after both wrote, both yield and try again — slower, never a duplicate.
+    const holders = await findSharePointItemsByRef(token, site, list, candidate);
+    if(holders.length === 1 && String(holders[0].id) === String(itemId)){
       return {itemId, prjId: candidate, folderLink: idFields.FolderLink0};
     }
   }
@@ -2393,22 +2383,20 @@ async function uploadToProjectOfferFolder(blob, filename, subfolder){
 // without and with margins (PDF + Excel) — built with exactly the same functions as the Export
 // buttons, so the files are identical to a manual export. Each document is built on its own, so one
 // that fails is reported without losing the others.
-function buildOfferDocumentSet(){
+async function buildOfferDocumentSet(){
   const files = [], problems = [];
   if(!bomHasRows()) return {files, problems, noOffer: true};
-  const safeRef = (getProjectInfo().ref || 'draft').replace(/[^a-z0-9_-]/gi,'_');
-  const xls = html => new Blob(['\ufeff', html], {type:'application/vnd.ms-excel'});
-  const add = (label, fn) => { try{ files.push(fn()); }catch(e){ console.warn(label, 'not built:', e); problems.push(`${label}: ${e.message || e}`); } };
+  const add = async (label, fn) => { try{ files.push(await fn()); }catch(e){ console.warn(label, 'not built:', e); problems.push(`${label}: ${e.message || e}`); } };
   if(typeof window.jspdf !== 'undefined'){
-    add('BOM PDF', ()=>{ const {doc, filename} = buildBomPdfDoc(); return {filename, blob: doc.output('blob')}; });
-    add('Offer PDF', ()=>{ const {doc, filename} = buildOfferPdfDoc(false); return {filename, blob: doc.output('blob')}; });
-    add('Offer PDF with margin', ()=>{ const {doc, filename} = buildOfferPdfDoc(true); return {filename, blob: doc.output('blob')}; });
+    await add('BOM PDF', ()=>{ const {doc, filename} = buildBomPdfDoc(); return {filename, blob: doc.output('blob')}; });
+    await add('Offer PDF', ()=>{ const {doc, filename} = buildOfferPdfDoc(false); return {filename, blob: doc.output('blob')}; });
+    await add('Offer PDF with margin', ()=>{ const {doc, filename} = buildOfferPdfDoc(true); return {filename, blob: doc.output('blob')}; });
   } else {
     problems.push('PDF files: the PDF library did not load');
   }
-  add('BOM Excel', ()=>({filename: `${safeRef}_BOM_R${REVISION}.xls`, blob: xls(buildBomHtmlDoc())}));
-  add('Offer Excel', ()=>({filename: `${safeRef}_Offer_R${REVISION}.xls`, blob: xls(buildOfferHtmlDoc(false))}));
-  add('Offer Excel with margin', ()=>({filename: `${safeRef}_Offer_R${REVISION}_with_margin.xls`, blob: xls(buildOfferHtmlDoc(true))}));
+  await add('BOM Excel', ()=>buildBomXlsxFile());
+  await add('Offer Excel', ()=>buildOfferXlsxFile(false));
+  await add('Offer Excel with margin', ()=>buildOfferXlsxFile(true));
   return {files, problems, noOffer: false};
 }
 
@@ -2418,7 +2406,7 @@ function buildOfferDocumentSet(){
 async function saveOfferDocumentsToRevisionFolder(){
   const revFolder = `R${REVISION}`;
   try{
-    const {files, problems, noOffer} = buildOfferDocumentSet();
+    const {files, problems, noOffer} = await buildOfferDocumentSet();
     if(noOffer) return {revFolder, noOffer: true, uploaded: [], failed: [], problems};
     const ref = document.getElementById('prjRef').value.trim();
     const {token, site, targetPath} = await resolveProjectOfferFolder(ref);
@@ -2612,7 +2600,6 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
 
     noWaitCancelled = false;
     waitingForNewOfferCreation = true;
-    await requestNotificationPermissionIfNeeded();
     setNewOfferView('waiting');
     document.getElementById('noWaitingSub').textContent = t('newOffer.waitingSub');
 
@@ -2634,7 +2621,6 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
       // person may well be working on something else by now. A notice stays in the corner instead:
       // "Load into Project Details" fills them in, "×" just dismisses it, nothing else happens.
       showOfferReadyToast({prjId, folderLink, siteId: site.id, onLoad: ()=>fillCreatedProjectDetails(prjId)});
-      notifyOfferReady(prjId, folderLink, site.id);
       return;
     }
 
@@ -3301,6 +3287,7 @@ function addBomRow(data, insertBeforeNode){
       });
       row.querySelector('.bom-actions').appendChild(rmSectionBtn);
     }
+    attachBomDragHandle(row);
     return row;
   }
 
@@ -3433,6 +3420,7 @@ function addBomRow(data, insertBeforeNode){
   }
   row.querySelectorAll('input').forEach(inp=>inp.addEventListener('input', recalc));
   recalc();
+  if(kind === 'line' || kind === 'accessory') attachBomDragHandle(row);
   return row;
 }
 document.addEventListener('click', ()=>{
@@ -4228,6 +4216,283 @@ function moveSectionDown(headerRow){
   block.forEach(row=>{ if(insertionPoint) bomBody.insertBefore(row, insertionPoint); else bomBody.appendChild(row); });
 }
 
+// ---- Drag & drop in Offer Lines ----
+// Hold the ⠿ handle at the right of a chapter or line for half a second (a bar under it fills up), then
+// drag: the chapter (header + its lines + its total) or the single line lifts off semi-transparent
+// and follows the pointer (closed hand), a line shows where it will land, Escape cancels.
+//  - A chapter moves as a whole, between other chapters.
+//  - A line moves within its chapter or into another one — except lines GENERATED by "Generate
+//    Offer" (cabinet, modules, kits…): those stay inside their own chapter, since regenerating
+//    would otherwise bring them back in the original chapter as well (a duplicate).
+//  - The auto Delivery line always stays last in SERVICES; totals and Delivery are recalculated,
+//    and numbered lines (1.1, 1.2…) are renumbered in their new order.
+const BOM_DRAG_HOLD_MS = 500;
+let bomDrag = null;
+
+function attachBomDragHandle(row){
+  const handle = document.createElement('span');
+  handle.className = 'bom-drag-handle';
+  handle.textContent = '⠿';
+  handle.title = row.dataset.kind === 'header'
+    ? 'Hold ½ second, then drag to move the whole chapter'
+    : 'Hold ½ second, then drag to move this line';
+  handle.addEventListener('pointerdown', e => bomDragLongPress(e, row, handle));
+  // Left side, right before the position number: the number moves into its own span so
+  // renumbering (bomRenumberChapter) only rewrites the number, never the handle.
+  const cell = row.cells[0];
+  const posText = document.createElement('span');
+  posText.className = 'bom-pos-text';
+  posText.textContent = cell.textContent;
+  cell.textContent = '';
+  cell.classList.add('bom-pos-cell');
+  cell.append(handle, posText);
+}
+
+function bomDragLongPress(e, row, handle){
+  if(e.button !== 0 || READ_ONLY || bomDrag) return;
+  e.preventDefault();
+  const sx = e.clientX, sy = e.clientY;
+  let lx = sx, ly = sy;
+  handle.classList.add('holding');
+  const cleanup = ()=>{
+    clearTimeout(timer);
+    handle.classList.remove('holding');
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', cleanup);
+    window.removeEventListener('pointercancel', cleanup);
+  };
+  const onMove = ev => {
+    lx = ev.clientX; ly = ev.clientY;
+    if(Math.hypot(lx - sx, ly - sy) > 8) cleanup(); // moved before the 2 s — not a long press
+  };
+  const timer = setTimeout(()=>{ cleanup(); bomDragBegin(row, lx, ly); }, BOM_DRAG_HOLD_MS);
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', cleanup);
+  window.addEventListener('pointercancel', cleanup);
+}
+
+function bomChapterOf(row){
+  return row.dataset.kind === 'header' ? row : bomBody.querySelector(`tr[data-kind="header"][data-row-id="${row.dataset.groupOf}"]`);
+}
+
+function bomDragBegin(row, x, y){
+  const isChapter = row.dataset.kind === 'header';
+  const rows = isChapter ? getGroupBlock(row) : [row];
+  const table = row.closest('table');
+  const tRect = table.getBoundingClientRect();
+  const firstRect = rows[0].getBoundingClientRect();
+
+  // Semi-transparent copy that follows the pointer, same column widths as the real table.
+  const ghost = document.createElement('table');
+  ghost.className = table.className + ' bom-drag-ghost';
+  ghost.style.width = tRect.width + 'px';
+  const colgroup = document.createElement('colgroup');
+  [...rows[0].cells].forEach(c => { const col = document.createElement('col'); col.style.width = c.getBoundingClientRect().width + 'px'; colgroup.appendChild(col); });
+  ghost.appendChild(colgroup);
+  const gBody = document.createElement('tbody');
+  rows.forEach(r => {
+    const clone = r.cloneNode(true);
+    clone.querySelectorAll('input, textarea').forEach((el, i) => {
+      const src = r.querySelectorAll('input, textarea')[i];
+      if(src) el.value = src.value;
+    });
+    gBody.appendChild(clone);
+  });
+  ghost.appendChild(gBody);
+  document.body.appendChild(ghost);
+
+  const indicator = document.createElement('div');
+  indicator.className = 'bom-drop-indicator';
+  indicator.style.display = 'none';
+  document.body.appendChild(indicator);
+
+  rows.forEach(r => r.classList.add('bom-drag-source'));
+  document.body.classList.add('bom-dragging');
+
+  bomDrag = {row, rows, isChapter, ghost, indicator, table, left: tRect.left,
+             offsetY: y - firstRect.top, target: null, lastX: x, lastY: y, scrollTimer: null};
+  bomDragPlaceGhost(x, y);
+  bomDragUpdateTarget(x, y);
+
+  window.addEventListener('pointermove', bomDragOnMove);
+  window.addEventListener('pointerup', bomDragOnUp);
+  window.addEventListener('pointercancel', bomDragCancel);
+  window.addEventListener('keydown', bomDragOnKey);
+  bomDrag.scrollTimer = setInterval(()=>{ // keep scrolling while held near the top/bottom edge
+    if(!bomDrag) return;
+    const edge = 70, yy = bomDrag.lastY;
+    const dy = yy < edge ? -Math.ceil((edge - yy) / 5) : (yy > window.innerHeight - edge ? Math.ceil((yy - (window.innerHeight - edge)) / 5) : 0);
+    if(dy){ window.scrollBy(0, dy); bomDragUpdateTarget(bomDrag.lastX, bomDrag.lastY); }
+  }, 30);
+}
+
+function bomDragPlaceGhost(x, y){
+  const g = bomDrag.ghost;
+  g.style.left = bomDrag.table.getBoundingClientRect().left + 'px';
+  g.style.top = (y - bomDrag.offsetY) + 'px';
+}
+
+// Rows the dragged item can be dropped in front of, per chapter: every priceable line, plus the
+// chapter's own end marker (its total — or, in SERVICES, the Delivery line, which stays last).
+function bomChapterEndMarker(headerRow){
+  const owner = headerRow.dataset.rowId;
+  return bomBody.querySelector(`tr[data-kind="delivery"][data-group-of="${owner}"]`)
+      || bomBody.querySelector(`tr[data-kind="total"][data-group-of="${owner}"]`);
+}
+
+function bomDragComputeTarget(x, y){
+  const d = bomDrag;
+  const allRows = [...bomBody.querySelectorAll('tr[data-kind]')].filter(r => !d.rows.includes(r));
+  if(d.isChapter){
+    // Chapters: in front of the first other chapter whose middle is below the pointer, else at the end.
+    const headers = allRows.filter(r => r.dataset.kind === 'header');
+    for(const h of headers){
+      const block = getGroupBlock(h);
+      const top = h.getBoundingClientRect().top, bottom = block[block.length-1].getBoundingClientRect().bottom;
+      if(y < (top + bottom) / 2) return {before: h, lineY: top, valid: true};
+    }
+    const last = allRows[allRows.length - 1];
+    return {before: null, lineY: last ? last.getBoundingClientRect().bottom : bomDrag.table.getBoundingClientRect().bottom, valid: true};
+  }
+  // Single line: find the row under the pointer's height.
+  let hit = null;
+  for(const r of allRows){
+    const rc = r.getBoundingClientRect();
+    if(y >= rc.top && y <= rc.bottom){ hit = r; break; }
+  }
+  if(!hit){
+    // above/below the table: nearest end
+    const first = allRows[0], last = allRows[allRows.length - 1];
+    if(!first) return null;
+    hit = y < first.getBoundingClientRect().top ? first : last;
+  }
+  const rc = hit.getBoundingClientRect();
+  const upper = y < rc.top + rc.height / 2;
+  const chapter = bomChapterOf(hit);
+  if(!chapter) return null;
+  const endMarker = bomChapterEndMarker(chapter);
+  let before;
+  if(hit.dataset.kind === 'header'){
+    // upper half of a chapter title → end of the previous chapter; lower half → first line of this one
+    if(upper){
+      const prevRows = allRows.slice(0, allRows.indexOf(hit)).reverse();
+      const prevHeader = prevRows.find(r => r.dataset.kind === 'header');
+      if(prevHeader){ before = bomChapterEndMarker(prevHeader); return bomDragTargetFor(before, bomChapterOf(before)); }
+    }
+    before = hit.nextElementSibling;
+    while(before && d.rows.includes(before)) before = before.nextElementSibling;
+  } else if(hit.dataset.kind === 'total' || hit.dataset.kind === 'delivery'){
+    before = endMarker;
+  } else {
+    before = upper ? hit : hit.nextElementSibling;
+    while(before && d.rows.includes(before)) before = before.nextElementSibling;
+    // never below the Delivery line / past the end marker
+    if(before && before.dataset.kind === 'total' && endMarker && endMarker.dataset.kind === 'delivery') before = endMarker;
+  }
+  if(!before) before = endMarker;
+  return bomDragTargetFor(before, chapter);
+}
+
+function bomDragTargetFor(before, chapter){
+  const d = bomDrag;
+  const lineY = before ? before.getBoundingClientRect().top : bomDrag.table.getBoundingClientRect().bottom;
+  // Generated lines stay inside their own chapter.
+  const valid = !(d.row.dataset.kind === 'line' && chapter.dataset.rowId !== d.row.dataset.groupOf);
+  return {before, chapter, lineY, valid};
+}
+
+function bomDragUpdateTarget(x, y){
+  const t = bomDragComputeTarget(x, y);
+  bomDrag.target = t;
+  const ind = bomDrag.indicator;
+  if(!t){ ind.style.display = 'none'; return; }
+  const tRect = bomDrag.table.getBoundingClientRect();
+  ind.style.display = 'block';
+  ind.style.left = tRect.left + 'px';
+  ind.style.width = tRect.width + 'px';
+  ind.style.top = (t.lineY - 1) + 'px';
+  ind.classList.toggle('invalid', !t.valid);
+  ind.title = t.valid ? '' : 'Generated lines stay in their own chapter';
+}
+
+function bomDragOnMove(e){
+  if(!bomDrag) return;
+  bomDrag.lastX = e.clientX; bomDrag.lastY = e.clientY;
+  bomDragPlaceGhost(e.clientX, e.clientY);
+  bomDragUpdateTarget(e.clientX, e.clientY);
+}
+function bomDragOnKey(e){ if(e.key === 'Escape') bomDragCancel(); }
+
+function bomDragEnd(){
+  const d = bomDrag;
+  if(!d) return;
+  clearInterval(d.scrollTimer);
+  d.ghost.remove(); d.indicator.remove();
+  d.rows.forEach(r => r.classList.remove('bom-drag-source'));
+  document.body.classList.remove('bom-dragging');
+  window.removeEventListener('pointermove', bomDragOnMove);
+  window.removeEventListener('pointerup', bomDragOnUp);
+  window.removeEventListener('pointercancel', bomDragCancel);
+  window.removeEventListener('keydown', bomDragOnKey);
+  bomDrag = null;
+}
+function bomDragCancel(){ bomDragEnd(); }
+
+function bomDragOnUp(e){
+  const d = bomDrag;
+  if(!d) return;
+  bomDragUpdateTarget(e.clientX, e.clientY);
+  const t = d.target;
+  bomDragEnd();
+  if(!t || !t.valid) return;
+  bomMoveRows(d.row, t.before, t.chapter);
+}
+
+// Performs the move (also usable without a pointer). before = row to insert in front of (null =
+// at the very end, chapters only); chapter = target chapter header (lines only).
+function bomMoveRows(row, before, chapter){
+  if(row.dataset.kind === 'header'){
+    const block = getGroupBlock(row);
+    if(before && block.includes(before)) return;
+    block.forEach(r => { if(before) bomBody.insertBefore(r, before); else bomBody.appendChild(r); });
+    return;
+  }
+  if(!chapter || before === row) return;
+  const oldOwner = row.dataset.groupOf;
+  const newOwner = chapter.dataset.rowId;
+  if(row.dataset.kind === 'line' && newOwner !== oldOwner) return; // generated lines stay in their chapter
+  bomBody.insertBefore(row, before);
+  if(newOwner !== oldOwner){
+    row.dataset.groupOf = newOwner;
+    if(chapter.dataset.baseModel) row.dataset.baseModel = chapter.dataset.baseModel; else delete row.dataset.baseModel;
+  }
+  bomRenumberChapter(oldOwner);
+  if(newOwner !== oldOwner) bomRenumberChapter(newOwner);
+  recalcGroupTotal(oldOwner);
+  if(newOwner !== oldOwner) recalcGroupTotal(newOwner);
+  updateDeliveryRow();
+  recalcProjectTotal();
+}
+
+// Numbered chapters (header "2.0") number their lines 2.1, 2.2… in their current order. Lines
+// that were never numbered (hand-entered ones) stay blank, and chapters without a number (SERVICES,
+// custom sections) have no line numbers at all — same conventions the table already follows.
+function bomRenumberChapter(owner){
+  const header = bomBody.querySelector(`tr[data-kind="header"][data-row-id="${owner}"]`);
+  if(!header) return;
+  const m = String(header.dataset.pos || '').match(/^(\d+)\.0$/);
+  let i = 0;
+  [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)]
+    .filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory')
+    .forEach(r => {
+      const had = /^\d+\.\d+$/.test(r.dataset.pos || '');
+      const pos = (m && had) ? `${m[1]}.${++i}` : '';
+      r.dataset.pos = pos;
+      const posEl = r.cells[0].querySelector('.bom-pos-text');
+      if(posEl) posEl.textContent = pos; else r.cells[0].textContent = pos;
+    });
+}
+
 // ---- Services (manual, free-form line entry — installation/commissioning/SAT/training/etc.,
 // always added at the very end of the offer; the auto Delivery line always stays last) ----
 function openServiceModal(headerRow){
@@ -4603,6 +4868,7 @@ function setReadOnly(ro){
   document.getElementById('btnGenerate').disabled = ro;
   document.getElementById('btnCloseOffer').disabled = ro;
   document.querySelectorAll('#bomBody input, #bomBody button').forEach(el=>{ el.disabled = ro; });
+  bomBody.classList.toggle('read-only', ro); // hides the ⠿ drag handles while the revision is closed
   updateRevisionStatus();
 }
 
@@ -4640,6 +4906,30 @@ setupBackdropClose(document.getElementById('newRevOverlay'), closeNewRevModal);
 // column's actual type — a text-style filter against a genuinely Number column returns zero
 // results with no error, so without this fallback a numeric PRJ_ID column would silently look
 // like "no such project" everywhere this lookup is used.
+// Every item holding this Project Reference (not just the first) — the duplicate check in
+// createItemWithUniquePrjId needs to know whether anyone ELSE holds a number too.
+async function findSharePointItemsByRef(token, site, list, ref){
+  const safeRef = String(ref).replace(/'/g,"''");
+  const nonIndexedHeader = {Prefer: 'HonorNonIndexedQueriesWarningMayFailRandomly'};
+  const asText = await graphGet(
+    `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$filter=${encodeURIComponent(`fields/PRJ_ID eq '${safeRef}'`)}`,
+    token, nonIndexedHeader
+  );
+  if(asText.value && asText.value.length) return asText.value;
+  if(!isNaN(ref) && String(ref).trim() !== ''){
+    try{
+      const asNumber = await graphGet(
+        `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$filter=${encodeURIComponent(`fields/PRJ_ID eq ${Number(ref)}`)}`,
+        token, nonIndexedHeader
+      );
+      if(asNumber.value && asNumber.value.length) return asNumber.value;
+    }catch(err){
+      console.warn('Numeric PRJ_ID filter also failed:', err);
+    }
+  }
+  return [];
+}
+
 async function findSharePointItemByRef(token, site, list, ref){
   const safeRef = ref.replace(/'/g,"''");
   // PRJ_ID isn't an indexed column on the real list, and Graph refuses to filter on a non-indexed
@@ -5795,7 +6085,361 @@ function previewOfferPdf(){
   showPdfPreview(doc, filename, 'Offer Preview');
 }
 
-// ---- Excel exports — built as a styled HTML table saved with an .xls extension, so the
+// ---- Native .xlsx writer (Office Open XML packed with JSZip) — used by the Excel exports so the
+// files keep live formulas AND the branding (colours, fonts, merged bars, logo). SheetJS's free
+// build writes formulas but no cell styles; the old HTML-as-.xls export kept styles but only
+// static text. A real .xlsx also opens in Excel Online / the SharePoint preview. ----
+function xlsxColName(c){ let s = ''; while(c > 0){ const m = (c - 1) % 26; s = String.fromCharCode(65 + m) + s; c = Math.floor((c - 1) / 26); } return s; }
+function xlsxRef(r, c){ return xlsxColName(c) + r; }
+function xlsxEsc(v){
+  return String(v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function xlsxMoneyFormat(){
+  const sym = String(CURRENCY.symbol || CURRENCY.code || '').replace(/"/g, '');
+  return sym ? `"${sym}"#,##0.00` : '#,##0.00';
+}
+function createXlsxSheet(name){
+  return {name, cells: new Map(), heights: {}, cols: [], merges: [], image: null, freezeRow: 0, maxRow: 0, maxCol: 0};
+}
+// cell: {v: number|string, f: 'FORMULA' (no leading =), s: style object}
+function xlsxSet(ws, r, c, cell){
+  ws.cells.set(`${r},${c}`, {...cell, r, c});
+  if(r > ws.maxRow) ws.maxRow = r;
+  if(c > ws.maxCol) ws.maxCol = c;
+}
+// Merged range: the top-left cell carries the value; every other cell gets the same style so fills
+// and borders paint across the whole bar.
+function xlsxMerge(ws, r1, c1, r2, c2, cell){
+  xlsxSet(ws, r1, c1, cell);
+  for(let r = r1; r <= r2; r++) for(let c = c1; c <= c2; c++){
+    if(r !== r1 || c !== c1) xlsxSet(ws, r, c, {s: cell.s});
+  }
+  if(r2 > r1 || c2 > c1) ws.merges.push(`${xlsxRef(r1, c1)}:${xlsxRef(r2, c2)}`);
+}
+function xlsxPngSize(dataUrl){
+  try{
+    const bin = atob(String(dataUrl).split(',')[1].slice(0, 44));
+    const u32 = i => ((bin.charCodeAt(i) << 24) | (bin.charCodeAt(i+1) << 16) | (bin.charCodeAt(i+2) << 8) | bin.charCodeAt(i+3)) >>> 0;
+    return {w: u32(16), h: u32(20)};
+  }catch(e){ return {w: 355, h: 104}; }
+}
+function xlsxStylesXml(list){
+  const fonts = ['<font><sz val="10.5"/><color rgb="FF000000"/><name val="Calibri"/><family val="2"/></font>'];
+  const fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'];
+  const borders = ['<border><left/><right/><top/><bottom/><diagonal/></border>'];
+  const numFmts = [];
+  const xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'];
+  const idx = (arr, xml) => { let i = arr.indexOf(xml); if(i < 0){ arr.push(xml); i = arr.length - 1; } return i; };
+  list.forEach(s => {
+    const f = s.font || {};
+    const fontXml = `<font>${f.b?'<b/>':''}${f.i?'<i/>':''}${f.u?'<u/>':''}<sz val="${f.sz || 10.5}"/><color rgb="FF${f.color || '000000'}"/><name val="Calibri"/><family val="2"/></font>`;
+    const fontId = idx(fonts, fontXml);
+    const fillId = s.fill ? idx(fills, `<fill><patternFill patternType="solid"><fgColor rgb="FF${s.fill}"/><bgColor indexed="64"/></patternFill></fill>`) : 0;
+    let borderId = 0;
+    if(s.border){
+      const side = t => `<${t} style="thin"><color rgb="FF${s.border}"/></${t}>`;
+      borderId = idx(borders, `<border>${side('left')}${side('right')}${side('top')}${side('bottom')}<diagonal/></border>`);
+    }
+    let numFmtId = 0;
+    if(s.numFmt === '0.00%') numFmtId = 10;
+    else if(s.numFmt){ let i = numFmts.indexOf(s.numFmt); if(i < 0){ numFmts.push(s.numFmt); i = numFmts.length - 1; } numFmtId = 164 + i; }
+    const a = s.align || {};
+    const alignXml = (a.h || a.v || a.wrap) ? `<alignment${a.h?` horizontal="${a.h}"`:''}${a.v?` vertical="${a.v}"`:''}${a.wrap?' wrapText="1"':''}/>` : '';
+    xfs.push(`<xf numFmtId="${numFmtId}" fontId="${fontId}" fillId="${fillId}" borderId="${borderId}" xfId="0"${numFmtId?' applyNumberFormat="1"':''}${fontId?' applyFont="1"':''}${fillId?' applyFill="1"':''}${borderId?' applyBorder="1"':''}${alignXml?' applyAlignment="1">'+alignXml+'</xf>':'/>'}`);
+  });
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${numFmts.length ? `<numFmts count="${numFmts.length}">${numFmts.map((f, i) => `<numFmt numFmtId="${164 + i}" formatCode="${xlsxEsc(f)}"/>`).join('')}</numFmts>` : ''}<fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills><borders count="${borders.length}">${borders.join('')}</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+}
+async function buildXlsxBlob(ws){
+  if(typeof JSZip === 'undefined') throw new Error('the zip library did not load');
+  const styleKeys = [], styleList = [];
+  const styleIndex = s => {
+    if(!s) return 0;
+    const k = JSON.stringify(s);
+    let i = styleKeys.indexOf(k);
+    if(i < 0){ styleKeys.push(k); styleList.push(s); i = styleKeys.length - 1; }
+    return i + 1;
+  };
+  const rowsXml = [];
+  for(let r = 1; r <= ws.maxRow; r++){
+    const cells = [];
+    for(let c = 1; c <= ws.maxCol; c++){
+      const cell = ws.cells.get(`${r},${c}`);
+      if(!cell) continue;
+      const ref = xlsxRef(r, c), s = styleIndex(cell.s);
+      const sAttr = s ? ` s="${s}"` : '';
+      if(cell.f != null){
+        const isText = typeof cell.v === 'string';
+        const cached = cell.v == null ? '' : `<v>${xlsxEsc(isText ? cell.v : (Number.isFinite(cell.v) ? cell.v : 0))}</v>`;
+        cells.push(`<c r="${ref}"${sAttr}${isText ? ' t="str"' : ''}><f>${xlsxEsc(cell.f)}</f>${cached}</c>`);
+      } else if(typeof cell.v === 'number' && Number.isFinite(cell.v)){
+        cells.push(`<c r="${ref}"${sAttr}><v>${cell.v}</v></c>`);
+      } else if(cell.v != null && cell.v !== ''){
+        cells.push(`<c r="${ref}"${sAttr} t="inlineStr"><is><t xml:space="preserve">${xlsxEsc(cell.v)}</t></is></c>`);
+      } else {
+        cells.push(`<c r="${ref}"${sAttr}/>`);
+      }
+    }
+    const h = ws.heights[r];
+    if(cells.length || h) rowsXml.push(`<row r="${r}"${h ? ` ht="${h}" customHeight="1"` : ''}>${cells.join('')}</row>`);
+  }
+  const lastRef = xlsxRef(Math.max(ws.maxRow, 1), Math.max(ws.maxCol, 1));
+  const pane = ws.freezeRow ? `<pane ySplit="${ws.freezeRow}" topLeftCell="A${ws.freezeRow + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A${ws.freezeRow + 1}" sqref="A${ws.freezeRow + 1}"/>` : '';
+  const sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${lastRef}"/><sheetViews><sheetView workbookViewId="0" zoomScale="90" zoomScaleNormal="90">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>${ws.cols.length ? `<cols>${ws.cols.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols>` : ''}<sheetData>${rowsXml.join('')}</sheetData>${ws.merges.length ? `<mergeCells count="${ws.merges.length}">${ws.merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : ''}<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>${ws.image ? '<drawing r:id="rId1"/>' : ''}</worksheet>`;
+
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${ws.image ? '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' : ''}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`);
+  zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`);
+  const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  zip.file('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>Riello UPS Configurator</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`);
+  zip.file('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Microsoft Excel</Application></Properties>`);
+  zip.file('xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${xlsxEsc(ws.name)}" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`);
+  zip.file('xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+  zip.file('xl/worksheets/sheet1.xml', sheetXml);
+  zip.file('xl/styles.xml', xlsxStylesXml(styleList));
+  if(ws.image){
+    const {dataUrl, heightPx} = ws.image;
+    const {w, h} = xlsxPngSize(dataUrl);
+    const cy = Math.round(heightPx * 9525), cx = Math.round(heightPx * (w / h) * 9525);
+    zip.file('xl/worksheets/_rels/sheet1.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>`);
+    zip.file('xl/drawings/_rels/drawing1.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/></Relationships>`);
+    zip.file('xl/drawings/drawing1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>38100</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>38100</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`);
+    zip.file('xl/media/image1.png', String(dataUrl).split(',')[1], {base64: true});
+  }
+  return zip.generateAsync({type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+// Rough row height for wrapped text, since Excel doesn't re-measure rows of a generated file.
+function xlsxWrappedHeight(text, colWidth, lineHeight = 14){
+  const lines = String(text || '').split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / Math.max(1, colWidth * 1.15))), 0);
+  return Math.max(16, lines * lineHeight + 3);
+}
+
+const XLSX_GRID = 'D9D9D9';
+// Commercial offer as a real .xlsx with live formulas: Net Unit = List × (1 − Discount), Net Total =
+// Net Unit × Qty, chapter subtotal = SUM of its lines, chapter total = subtotal × the position Q.ty
+// (the Q.ty sits in its own cell on the total bar so it can be changed in Excel), project price =
+// sum of the chapter totals, final price = project price × (1 − project discount). The margin
+// variant adds Unit Cost, Total Cost = Unit Cost × Qty and Margin % = (Net Total − Cost) / Net Total.
+// Every figure is written in the offer currency (EUR list prices × the current rate).
+function buildOfferWorksheet(withMargin){
+  const info = getProjectInfo();
+  const data = collectOfferRows();
+  const rate = Number(CURRENCY_RATE) || 1;
+  const money = xlsxMoneyFormat();
+  const nCols = withMargin ? 11 : 8;
+  const ws = createXlsxSheet('Offer');
+  ws.cols = withMargin ? [7, 18, 16, 58, 14, 10, 14, 16, 13, 15, 10] : [7, 20, 18, 64, 15, 11, 15, 17];
+  ws.image = {dataUrl: LOGO_B64, heightPx: 64};
+
+  const cellS = extra => ({border: XLSX_GRID, align: {v: 'top'}, ...extra});
+  const S = {
+    head: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID, align: {h: 'left', v: 'center', wrap: true}},
+    text: cellS({}),
+    qty: cellS({align: {h: 'center', v: 'top'}}),
+    desc: cellS({align: {v: 'top', wrap: true}}),
+    money: cellS({numFmt: money}),
+    pct: cellS({numFmt: '0.00%'}),
+    section: {font: {b: true, u: true, color: 'C00000', sz: 12.5}},
+    subtotal: {font: {b: true, color: '0070C0'}, numFmt: money, align: {h: 'center'}},
+    barText: {font: {b: true, color: 'FFFFFF', sz: 11}, fill: '4472C4', align: {h: 'left', v: 'center'}},
+    barQty: {font: {b: true, color: 'FFFFFF', sz: 11}, fill: '4472C4', align: {h: 'center', v: 'center'}},
+    barMoney: {font: {b: true, color: 'FFFFFF', sz: 11}, fill: '4472C4', numFmt: money, align: {h: 'center', v: 'center'}},
+    barPct: {font: {b: true, color: 'FFFFFF', sz: 11}, fill: '4472C4', numFmt: '0.00%', align: {h: 'center', v: 'center'}},
+    divider: {fill: 'D6D6D6'},
+    infoLabel: {align: {h: 'right', v: 'center'}},
+    infoValue: {font: {color: 'FFFFFF'}, fill: 'FF0000', align: {h: 'left', v: 'center'}},
+    internal: {font: {i: true, color: 'FF0000'}},
+    sumLabel: {align: {h: 'left'}},
+    sumMoney: {numFmt: money},
+    sumPct: {numFmt: '0.00%'},
+    finalText: {font: {b: true, color: 'FFFFFF', sz: 13}, fill: '4472C4', align: {h: 'left', v: 'center'}},
+    finalMoney: {font: {b: true, color: 'FFFFFF', sz: 13}, fill: '4472C4', numFmt: money, align: {h: 'right', v: 'center'}},
+  };
+
+  // header block: logo (top-left) + the red project info box on the right, as on the PDF
+  const infoRows = [
+    ['Project Reference:', `${info.ref} - Rev.${REVISION}`],
+    ['Customer', info.customer],
+    ['Prepared:', info.owner],
+    ['Currency', CURRENCY.code],
+  ];
+  infoRows.forEach(([label, val], i) => {
+    const r = i + 1;
+    xlsxMerge(ws, r, nCols - 3, r, nCols - 2, {v: label, s: S.infoLabel});
+    xlsxMerge(ws, r, nCols - 1, r, nCols, {v: String(val ?? ''), s: S.infoValue});
+    ws.heights[r] = 17;
+  });
+  if(withMargin) xlsxSet(ws, 5, 1, {v: 'INTERNAL — includes cost & margin', s: S.internal});
+
+  const headRow = 7;
+  const heads = ['Qty','Model','Code','Description','Standard List Price','Discount %','Net Unit Price','Net Total Price'];
+  if(withMargin) heads.push('Unit Cost','Total Cost','Margin %');
+  heads.forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: S.head}));
+  ws.heights[headRow] = 30;
+  ws.freezeRow = headRow;
+
+  const H = c => xlsxColName(c);   // A=Qty … H=Net Total, I=Unit Cost, J=Total Cost, K=Margin
+  const totalRefs = [], costRefs = [];
+  let r = headRow + 1;
+  data.groups.forEach((g, gIdx) => {
+    xlsxMerge(ws, r, 1, r, nCols, {v: g.label, s: S.section});
+    ws.heights[r] = 20;
+    r++;
+    const first = r;
+    g.lines.forEach(l => {
+      const gross = l.gross * rate, cost = l.cost * rate, disc = l.disc / 100;
+      const net = gross * (1 - disc), tot = net * l.qty, tcost = cost * l.qty;
+      xlsxSet(ws, r, 1, {v: Number(l.qty) || 0, s: S.qty});
+      xlsxSet(ws, r, 2, {v: l.model || '', s: S.text});
+      xlsxSet(ws, r, 3, {v: l.code || '', s: S.text});
+      xlsxSet(ws, r, 4, {v: String(l.desc || ''), s: S.desc});
+      xlsxSet(ws, r, 5, {v: gross, s: S.money});
+      xlsxSet(ws, r, 6, {v: disc, s: S.pct});
+      xlsxSet(ws, r, 7, {f: `E${r}*(1-F${r})`, v: net, s: S.money});
+      xlsxSet(ws, r, 8, {f: `G${r}*A${r}`, v: tot, s: S.money});
+      if(withMargin){
+        xlsxSet(ws, r, 9, {v: cost, s: S.money});
+        xlsxSet(ws, r, 10, {f: `I${r}*A${r}`, v: tcost, s: S.money});
+        xlsxSet(ws, r, 11, {f: `IF(H${r}>0,(H${r}-J${r})/H${r},0)`, v: tot > 0 ? (tot - tcost) / tot : 0, s: S.pct});
+      }
+      ws.heights[r] = xlsxWrappedHeight(l.desc, ws.cols[3]);
+      r++;
+    });
+    const last = r - 1;
+    const sumOf = col => last >= first ? `SUM(${col}${first}:${col}${last})` : '0';
+    const subPrice = g.subtotalPrice * rate;
+    const perSystem = !g.isServices && !g.isCustomSection;
+    let subtotalRef = null;
+    if(perSystem){
+      // per-system subtotal (before the Q.ty multiplication), blue, under Net Total
+      xlsxSet(ws, r, 8, {f: sumOf('H'), v: subPrice, s: S.subtotal});
+      subtotalRef = `H${r}`;
+      r++;
+    }
+    // chapter total bar: Q.ty (editable) in the Qty column, label, total price under Net Total and,
+    // for the margin variant, total cost + margin under their own columns
+    const t = r;
+    let priceF, costF;
+    if(perSystem){
+      xlsxSet(ws, t, 1, {v: Number(g.configQty) || 1, s: S.barQty});
+      xlsxMerge(ws, t, 2, t, 7, {f: `"Total for "&A${t}&" "&"${String(g.label).replace(/"/g, '""')}"&" →"`, v: `Total for ${g.configQty} ${g.label} →`, s: S.barText});
+      priceF = `${subtotalRef}*A${t}`;
+      costF = `${sumOf('J')}*A${t}`;
+    } else {
+      const label = g.isServices ? 'Total for Services →' : `Total for ${g.label} →`;
+      xlsxMerge(ws, t, 1, t, 7, {v: label, s: S.barText});
+      const mult = (Number(g.configQty) || 1) !== 1 ? `*${Number(g.configQty)}` : '';
+      priceF = sumOf('H') + mult;
+      costF = sumOf('J') + mult;
+    }
+    xlsxSet(ws, t, 8, {f: priceF, v: g.groupTotalPrice * rate, s: S.barMoney});
+    totalRefs.push(`H${t}`);
+    if(withMargin){
+      const gp = g.groupTotalPrice * rate, gc = g.groupTotalCost * rate;
+      xlsxSet(ws, t, 9, {s: S.barMoney});
+      xlsxSet(ws, t, 10, {f: costF, v: gc, s: S.barMoney});
+      xlsxSet(ws, t, 11, {f: `IF(H${t}>0,(H${t}-J${t})/H${t},0)`, v: gp > 0 ? (gp - gc) / gp : 0, s: S.barPct});
+      costRefs.push(`J${t}`);
+    }
+    ws.heights[t] = 20;
+    r++;
+    if(g.isCustomSection && gIdx < data.groups.length - 1){
+      for(let c = 1; c <= nCols; c++) xlsxSet(ws, r, c, {s: S.divider});
+      ws.heights[r] = 4;
+      r++;
+    }
+    r++;   // breathing space between chapters
+  });
+
+  // project summary
+  const grand = data.grandTotal * rate, grandCost = data.grandCost * rate;
+  const sumRefs = refs => refs.length ? refs.join('+') : '0';
+  const priceRow = r;
+  xlsxMerge(ws, r, 1, r, 7, {v: `Project Price in ${CURRENCY.code}`, s: S.sumLabel});
+  xlsxSet(ws, r, 8, {f: sumRefs(totalRefs), v: grand, s: S.sumMoney}); r++;
+  const discRow = r;
+  xlsxMerge(ws, r, 1, r, 7, {v: 'Project Discount', s: S.sumLabel});
+  xlsxSet(ws, r, 8, {v: (Number(PROJECT_DISCOUNT) || 0) / 100, s: S.sumPct}); r++;
+  if(withMargin){
+    const costRow = r;
+    xlsxMerge(ws, r, 1, r, 7, {v: 'Total Cost', s: S.sumLabel});
+    xlsxSet(ws, r, 8, {f: sumRefs(costRefs), v: grandCost, s: S.sumMoney}); r++;
+    xlsxMerge(ws, r, 1, r, 7, {v: 'Overall Margin', s: S.sumLabel});
+    xlsxSet(ws, r, 8, {f: `IF(H${priceRow}>0,(H${priceRow}-H${costRow})/H${priceRow},0)`, v: data.grandMargin / 100, s: S.sumPct}); r++;
+  }
+  r++;
+  xlsxMerge(ws, r, 1, r, 7, {v: `Project Final Net Price in ${CURRENCY.code}`, s: S.finalText});
+  xlsxSet(ws, r, 8, {f: `H${priceRow}*(1-H${discRow})`, v: grand * (1 - (Number(PROJECT_DISCOUNT) || 0) / 100), s: S.finalMoney});
+  if(withMargin) xlsxMerge(ws, r, 9, r, 11, {s: S.finalText});
+  ws.heights[r] = 26;
+  return ws;
+}
+
+// BOM as a real .xlsx (no prices, so no formulas — same content and look as the PDF BOM).
+function buildBomWorksheet(){
+  const info = getProjectInfo();
+  const ws = createXlsxSheet('BOM');
+  ws.cols = [8, 22, 20, 80];
+  ws.image = {dataUrl: LOGO_B64, heightPx: 64};
+  const cellS = extra => ({border: XLSX_GRID, align: {v: 'top'}, ...extra});
+  xlsxSet(ws, 5, 1, {v: `IT USP Solutions - REV${REVISION}`, s: {font: {i: true, color: '0070C0', sz: 12}}});
+  xlsxSet(ws, 6, 1, {v: info.name || info.ref || '', s: {font: {b: true, color: '0070C0', sz: 13}}});
+  const headRow = 8;
+  ['Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
+  ws.freezeRow = headRow;
+  let r = headRow + 1;
+  [...bomBody.querySelectorAll('tr[data-kind]')].forEach(row => {
+    const kind = row.dataset.kind;
+    if(kind === 'total' || isServicesRow(row)) return;
+    if(kind === 'header'){
+      xlsxMerge(ws, r, 1, r, 4, {v: row.cells[4].textContent, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}});
+      ws.heights[r] = 19;
+      r++;
+      return;
+    }
+    const qty = bomLineQty(row);
+    const desc = String(rowDescText(row) + (rowExtSupplier(row) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
+    const qn = Number(qty);
+    xlsxSet(ws, r, 1, {v: qty !== '' && Number.isFinite(qn) ? qn : String(qty ?? ''), s: cellS({align: {h: 'center', v: 'top'}})});
+    xlsxSet(ws, r, 2, {v: rowModelText(row) || '', s: cellS({})});
+    xlsxSet(ws, r, 3, {v: rowCodeText(row) || '', s: cellS({})});
+    xlsxSet(ws, r, 4, {v: desc, s: cellS({align: {v: 'top', wrap: true}})});
+    ws.heights[r] = xlsxWrappedHeight(desc, ws.cols[3]);
+    r++;
+  });
+  return ws;
+}
+
+// {filename, blob} for each Excel document; falls back to the old styled-HTML .xls (static values)
+// only if the zip library could not load.
+async function buildOfferXlsxFile(withMargin){
+  const safeRef = (getProjectInfo().ref || 'draft').replace(/[^a-z0-9_-]/gi,'_');
+  const suffix = withMargin ? '_with_margin' : '';
+  if(typeof JSZip === 'undefined'){
+    return {filename: `${safeRef}_Offer_R${REVISION}${suffix}.xls`, blob: new Blob(['﻿', buildOfferHtmlDoc(withMargin)], {type:'application/vnd.ms-excel'})};
+  }
+  return {filename: `${safeRef}_Offer_R${REVISION}${suffix}.xlsx`, blob: await buildXlsxBlob(buildOfferWorksheet(withMargin))};
+}
+async function buildBomXlsxFile(){
+  const safeRef = (getProjectInfo().ref || 'draft').replace(/[^a-z0-9_-]/gi,'_');
+  if(typeof JSZip === 'undefined'){
+    return {filename: `${safeRef}_BOM_R${REVISION}.xls`, blob: new Blob(['﻿', buildBomHtmlDoc()], {type:'application/vnd.ms-excel'})};
+  }
+  return {filename: `${safeRef}_BOM_R${REVISION}.xlsx`, blob: await buildXlsxBlob(buildBomWorksheet())};
+}
+
+// ---- Legacy Excel exports (fallback when the zip library is unavailable) — built as a styled HTML table saved with an .xls extension, so the
 // formatting (logo, brand colours, section bars) matches the PDF exactly: the plain SheetJS
 // writer used elsewhere in this tool cannot write cell colours/fonts (free-tier limitation),
 // but Excel opens and displays a coloured HTML table just fine under the classic .xls format. ----
@@ -5947,35 +6591,20 @@ function buildOfferHtmlDoc(withMargin){
 
 async function exportBomXlsx(){
   if(!bomHasRows()){ alert('Generate the Offer first — there are no lines to export.'); return; }
-  const info = getProjectInfo();
-  const safeRef = (info.ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
-  const html = buildBomHtmlDoc();
-  const filename = `${safeRef}_BOM_R${REVISION}.xls`;
-  const blob = new Blob(['\ufeff', html], {type:'application/vnd.ms-excel'});
+  const {filename, blob} = await buildBomXlsxFile();
   await saveBlob(blob, filename);
   syncExportToSharePoint(blob, filename);
 }
 
 async function exportOfferXlsx(){
   if(!bomHasRows()){ alert('Generate the Offer first — there are no lines to export.'); return; }
-  const info = getProjectInfo();
-  const safeRef = (info.ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
-  const stdHtml = buildOfferHtmlDoc(false);
-  const withMHtml = buildOfferHtmlDoc(true);
-  const stdBlob = new Blob(['\ufeff', stdHtml], {type:'application/vnd.ms-excel'});
-  const withMBlob = new Blob(['\ufeff', withMHtml], {type:'application/vnd.ms-excel'});
-  const stdFilename = `${safeRef}_Offer_R${REVISION}.xls`;
-  const withMFilename = `${safeRef}_Offer_R${REVISION}_with_margin.xls`;
-  await downloadAsZip(
-    [
-      {filename: stdFilename, blob: stdBlob},
-      {filename: withMFilename, blob: withMBlob},
-    ],
-    `${safeRef}_Offer_R${REVISION}.zip`
-  );
+  const safeRef = (getProjectInfo().ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
+  const std = await buildOfferXlsxFile(false);
+  const withM = await buildOfferXlsxFile(true);
+  await downloadAsZip([std, withM], `${safeRef}_Offer_R${REVISION}.zip`);
   // A manual export syncs only the standard (customer-facing) file; the complete set, "with_margin"
   // included, is saved to "02 OFFER/R<revision>" by Save Configuration / Close Offer.
-  syncExportToSharePoint(stdBlob, stdFilename);
+  syncExportToSharePoint(std.blob, std.filename);
 }
 
 document.getElementById('btnPreviewBom').addEventListener('click', previewBomPdf);
@@ -6018,8 +6647,25 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.41';
+const CURRENT_VERSION = 'beta_5.45';
 const CHANGELOG = [
+  {version:'beta_5.45', date:'2026-09-22', notes:[
+    'Offer Lines: per trascinare basta tenere premuta la maniglia ⠿ per mezzo secondo (prima 2 secondi)',
+  ]},
+  {version:'beta_5.44', date:'2026-09-22', notes:[
+    'Offer Lines: la maniglia di trascinamento ⠿ è ora a sinistra, subito prima del numero di posizione (1.0, 1.1…) di capitoli e voci',
+    'Offer — Excel (con e senza margini) è ora un vero file .xlsx con formule attive: Net Unit Price = List × (1 − Sconto), Net Total = Net Unit × Qty, subtotale capitolo = SOMMA delle voci, totale capitolo = subtotale × Q.tà della posizione (la Q.tà è in una cella modificabile sulla barra del totale, anche l\'etichetta si aggiorna), Project Price = somma dei totali, prezzo finale = Project Price × (1 − sconto progetto). Nella versione con margini anche Total Cost = Unit Cost × Qty e Margin % sono formule. Si può quindi modificare prezzi, sconti e quantità direttamente in Excel. Logo, colori e intestazione restano come prima; riga di intestazione bloccata',
+    'Anche BOM — Excel diventa .xlsx (stesso contenuto, senza prezzi). I file .xlsx si aprono anche in Excel Online / anteprima SharePoint e non danno più l\'avviso "formato ed estensione non corrispondono"; gli stessi file vengono salvati in "02 OFFER/R<n>"',
+  ]},
+  {version:'beta_5.43', date:'2026-09-22', notes:[
+    'Offer Lines: spostamento a trascinamento. Tenendo premuto la maniglia ⠿ di un capitolo o di una voce (una barra sotto la maniglia si riempie), la riga si stacca in trasparenza e segue il puntatore (mano aperta → mano chiusa); una linea indica dove verrà inserita, Esc annulla',
+    'Un capitolo si sposta intero (titolo, voci e totale). Una voce si sposta dentro il suo capitolo o in un altro; le righe generate da "Generate Offer" (cabinet, moduli, kit) restano nel loro capitolo — spostarle altrove creerebbe un doppione alla rigenerazione — e la linea diventa rossa se si prova a farlo',
+    'Dopo lo spostamento totali di capitolo, Delivery e totale progetto vengono ricalcolati e le voci numerate (1.1, 1.2…) rinumerate; la riga Delivery resta sempre l\'ultima dei SERVICES. In sola lettura (revisione chiusa) il trascinamento è disattivato',
+  ]},
+  {version:'beta_5.42', date:'2026-09-22', notes:[
+    'Corretto un caso raro nella protezione anti-duplicati del Project Reference: con più creazioni quasi simultanee, due progetti potevano ricevere lo stesso numero (circa 1 volta su 40 in una prova con 5 creazioni nello stesso istante). Ora un numero viene tenuto solo da chi ne è l\'unico titolare al momento del controllo; chiunque lo trovi anche su un altro progetto cede e passa al successivo',
+    'Tolte le notifiche del browser (Chrome) su "Create New Offer", compresa la richiesta "Consentire le notifiche?": resta solo l\'avviso dell\'app. Di conseguenza la creazione non aspetta più la risposta a quella richiesta prima di partire',
+  ]},
   {version:'beta_5.41', date:'2026-09-22', notes:[
     'Corretto il login MS365 che, dopo un tentativo andato male (finestra chiusa, account sbagliato, annullato), restava in errore fino al ricaricamento della pagina: ora si riprova subito. Il pannello resta aperto con un messaggio chiaro invece di chiudersi da solo, ogni tentativo mostra la scelta dell\'account, e un doppio clic non apre due finestre',
     'Se "Create New Offer" termina mentre la sua finestra era chiusa, i Project Details non vengono più compilati da soli: compare un avviso fisso in basso a destra con "Carica in Project Details", "Carica file" e × (chiude senza fare nulla). Se invece la finestra è aperta, i dati si compilano come prima',

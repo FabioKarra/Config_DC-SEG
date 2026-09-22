@@ -5062,7 +5062,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       const dcc = lookupAuxByExactCode(dccCode) || lookupAuxByKeyword(largeKit ? 'M2S 1600' : model, /dc\s*coupling/i, sizeHint);
       addBomRow({
         kind:'line', pos:`${gruppo}.${subIdx}`, qty:qtyUnit, groupOf:owner, baseModel:model,
-        model: dcc ? dcc.model : model, code: dcc ? dcc.code : dccCode, desc: dcc ? dcc.description : 'DC Coupling',
+        model: dcc ? dcc.model : `DC Coupling ${sizeHint}`, code: dcc ? dcc.code : dccCode, desc: dcc ? dcc.description : `DC coupling kit for M2S ${sizeHint}`,
         gross: dcc ? dcc.price : 0, cost: dcc ? dcc.cost : 0,
       });
     }
@@ -7861,7 +7861,7 @@ function reportContext(){
       pload: $('.f-pload').value, loadType, loadTitle: lt, groupUpper: String(loadType).split(/\s+/)[0].toUpperCase(),
       series, seriesName: series === 'M2S' ? 'Multipower 2 Scalable' : 'Multipower 2',
       code: cabModel + (hasVeKit ? ' + VE kit' : ''), npm, pmKw, kw: npm * pmKw,
-      hasDC: lines.some(r => /dc\s*coupling/i.test(lm(r))),
+      hasDC: lines.some(r => /dc\s*coupling/i.test(lm(r)) || /^YM2SE2[67]A$/i.test(rowCodeText(r) || '')),
       airExtraction: vent === 'Front to Top' ? 'Front to top' : 'Standard',
       ioSection: conn === 'Flanged Version' ? 'I/O flanges installation' : 'I/O Cabling forecast for Cable Connection',
       lineupImage: series === 'M2S' ? 'Line-up M2S' : 'Line-up MP2',
@@ -8104,17 +8104,44 @@ async function buildTechNoteBlob(templateBuf){
 // The template: from SharePoint (Template_Offer_Folder) when signed in, otherwise picked from the computer.
 async function getTechNoteTemplate({allowPick = true} = {}){
   if(techNoteTemplateCache) return techNoteTemplateCache;
+  let reason = 'you are not signed in with MS 365, so it cannot be read from SharePoint';
   if(msalInstance && msalAccount){
     try{
       const token = await getGraphToken();
       const {site} = await resolveSharePointList(token);
       const r = await fetch(`https://graph.microsoft.com/v1.0/sites/${site.id}/drive/root:/${encodeGraphPath(TECH_NOTE_TEMPLATE_PATH)}:/content`, {headers: {Authorization: `Bearer ${token}`}});
       if(r.ok){ techNoteTemplateCache = await r.arrayBuffer(); return techNoteTemplateCache; }
+      reason = r.status === 404 ? 'it is not on SharePoint yet' : `SharePoint answered ${r.status}`;
       console.warn('Technical Note template not found on SharePoint:', r.status);
-    }catch(e){ console.warn('Technical Note template download failed:', e); }
+    }catch(e){ reason = `SharePoint could not be reached (${e.message || e})`; console.warn('Technical Note template download failed:', e); }
   }
   if(!allowPick) return null;
-  return pickTechNoteTemplateFile();
+  // Say what is happening before any file window opens — and offer to put the chosen template on
+  // SharePoint, so next time (and for everyone) it is found automatically.
+  const choice = await openAppDialog({
+    title: 'Technical Note template needed',
+    message: `The Word is built from the template "TechnicalNote_Template.docx", normally read from SharePoint:\n${TECH_NOTE_TEMPLATE_PATH}\n\nIt was not found: ${reason}.\n\nChoose the template file from your computer to continue${msalInstance && msalAccount ? ' — you can then save it to SharePoint so this is not asked again' : ''}.`,
+    buttons: [{label: 'Cancel', value: false}, {label: 'Choose template file…', value: true, primary: true}],
+  });
+  if(choice !== true) return null;
+  const buf = await pickTechNoteTemplateFile();
+  if(!buf) return null;
+  if(msalInstance && msalAccount){
+    const up = await openAppDialog({title: 'Save the template to SharePoint?', message: `Upload it to "${TECH_NOTE_TEMPLATE_PATH}" so the Technical Note finds it automatically next time, for everyone?`,
+      buttons: [{label: 'Not now', value: false}, {label: 'Save to SharePoint', value: true, primary: true}]});
+    if(up === true){
+      try{
+        const token = await getGraphToken();
+        const {site} = await resolveSharePointList(token);
+        const folder = TECH_NOTE_TEMPLATE_PATH.slice(0, TECH_NOTE_TEMPLATE_PATH.lastIndexOf('/'));
+        await uploadOneFile(token, site.id, folder, new File([buf], TECH_NOTE_TEMPLATE_PATH.split('/').pop(), {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
+        setPrjAutoLoadStatus('Technical Note template saved to SharePoint (Template_Offer_Folder).', 'loaded');
+      }catch(e){
+        openAppDialog({title: 'Template not saved to SharePoint', message: `${e.message || e}\n\nThe Technical Note is generated anyway with the chosen file.`});
+      }
+    }
+  }
+  return buf;
 }
 function pickTechNoteTemplateFile(){
   return new Promise(resolve => {
@@ -8123,8 +8150,20 @@ function pickTechNoteTemplateFile(){
     inp.addEventListener('change', async () => {
       const f = inp.files[0];
       if(!f) return resolve(null);
-      techNoteTemplateCache = await f.arrayBuffer();
-      resolve(techNoteTemplateCache);
+      const buf = await f.arrayBuffer();
+      // must be the Technical Note template (has the {{CONTENT}} marker), not any Word file
+      try{
+        const doc = await (await JSZip.loadAsync(buf)).file('word/document.xml').async('string');
+        if(!doc.includes('{{CONTENT}}')){
+          openAppDialog({title: 'Not the Technical Note template', message: `"${f.name}" is a Word file but not the template (it has no {{CONTENT}} marker). Use "TechnicalNote_Template.docx".`});
+          return resolve(null);
+        }
+      }catch(e){
+        openAppDialog({title: 'Not a Word file', message: `"${f.name}" could not be read as a .docx.`});
+        return resolve(null);
+      }
+      techNoteTemplateCache = buf;
+      resolve(buf);
     });
     inp.click();
   });
@@ -8132,7 +8171,7 @@ function pickTechNoteTemplateFile(){
 async function prepareTechNoteFile({allowPick = false} = {}){
   if(!REPORT) return null;
   const buf = await getTechNoteTemplate({allowPick});
-  if(!buf) throw new Error(`Technical Note template not found (${TECH_NOTE_TEMPLATE_PATH})`);
+  if(!buf){ if(allowPick) return null; throw new Error(`Technical Note template not found (${TECH_NOTE_TEMPLATE_PATH})`); }
   return {filename: techNoteFilename(), blob: await buildTechNoteBlob(buf)};
 }
 
@@ -8817,6 +8856,8 @@ function setBetaFunctionsUnlocked(on){
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
   {version:'beta_5.51', date:'2026-09-22', notes:[
+    'Technical Note (beta): se il modello non è su SharePoint non si apre più direttamente la finestra di scelta file — un messaggio spiega perché, poi si sceglie il modello; da collegati si può salvarlo su SharePoint (Template_Offer_Folder) così non viene più chiesto. Un Word che non è il modello viene rifiutato con un messaggio',
+    'Regressione: senza listino importato la riga del kit DC Coupling (M2S + litio) mostrava come modello il nome dell\'UPS; ora mostra "DC Coupling 1600" / "DC Coupling 1250" (codice invariato, YM2SE27A / YM2SE26A)',
     '🔔 "My deadlines" nella barra in alto (visibile da collegati): le offerte ancora in corso assegnate a te ("Assigned to"), ordinate per Due date — rosso scaduta, arancio entro 3 giorni, blu entro 7 giorni, grigio senza data. Il numero sulla campanella conta scadute + entro 3 giorni. Le offerte chiuse (Status "Offer Review" o esito finale) non compaiono',
     'Da ogni riga: "Open offer" carica il progetto (come ↑ Load); "Postpone…" scrive la nuova Due date su SharePoint. Al Sign-in, una volta per sessione, un piccolo avviso in basso a sinistra se ci sono offerte scadute o in scadenza',
   ]},

@@ -741,7 +741,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.51</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.52</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -2551,6 +2551,47 @@ async function syncExportToSharePoint(blob, filename){
   }catch(err){
     console.warn('Export → SharePoint sync failed (non-blocking — the download itself still went through):', err);
   }
+}
+
+// Manual exports (PDF / Excel / Word / Technical Note): when signed in and the project has a
+// reference, the files go ONLY into "02 OFFER/R<revision>" on SharePoint — no copy in Downloads.
+// Only when that isn't possible (guest, no reference, SharePoint unreachable) do they download to
+// this computer, saying why. files: [{filename, blob}]; zipName: bundle name for a multi-file download.
+async function deliverExportFiles(files, zipName){
+  const ref = document.getElementById('prjRef').value.trim();
+  let reason = '';
+  if(!msalInstance || !msalAccount){ /* guest: plain download */ }
+  else if(!ref) reason = 'no Project Reference';
+  else {
+    showExportToast(`Saving to 02 OFFER/R${REVISION}…`);
+    try{
+      for(const f of files) await uploadToProjectOfferFolder(f.blob, f.filename, `R${REVISION}`);
+      showExportToast(`✓ Saved to 02 OFFER/R${REVISION}: ${files.map(f => f.filename).join(', ')}`, 'ok');
+      return 'sharepoint';
+    }catch(err){
+      console.warn('Export → SharePoint failed, downloading locally instead:', err);
+      reason = `SharePoint save failed: ${err.message || err}`;
+    }
+  }
+  if(reason) showExportToast(`Not saved to SharePoint (${reason}) — downloading to this computer.`, 'warn');
+  if(files.length > 1 && zipName) await downloadAsZip(files, zipName);
+  else await saveBlob(files[0].blob, files[0].filename);
+  return 'local';
+}
+let exportToastTimer = null;
+function showExportToast(text, kind){
+  let el = document.getElementById('exportToast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'exportToast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1500;max-width:min(680px,92vw);padding:10px 16px;border-radius:8px;font-size:13px;box-shadow:0 4px 18px rgba(0,0,0,.25);color:#fff;background:#333;word-break:break-word;';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.style.background = kind === 'ok' ? '#2e7d32' : kind === 'warn' ? '#b26a00' : '#333';
+  el.style.display = 'block';
+  clearTimeout(exportToastTimer);
+  if(kind) exportToastTimer = setTimeout(() => { el.style.display = 'none'; }, kind === 'warn' ? 8000 : 5000);
 }
 
 // Resolves the current project's "02 OFFER" folder from its SharePoint record (FolderLink0) —
@@ -6552,7 +6593,7 @@ function closePdfPreview(){
 document.getElementById('btnPreviewClose').addEventListener('click', closePdfPreview);
 document.getElementById('btnPreviewCancel').addEventListener('click', closePdfPreview);
 document.getElementById('btnPreviewDownload').addEventListener('click', ()=>{
-  if(PREVIEW_DOC) PREVIEW_DOC.save(PREVIEW_FILENAME);
+  if(PREVIEW_DOC) deliverExportFiles([{filename: PREVIEW_FILENAME, blob: PREVIEW_DOC.output('blob')}]);
 });
 
 function getProjectInfo(){
@@ -6646,8 +6687,7 @@ async function exportBomPdf(){
   if(!bomHasRows()){ alert('Generate the Offer first — there are no lines to export.'); return; }
   const {doc, filename} = buildBomPdfDoc();
   const blob = doc.output('blob');
-  await saveBlob(blob, filename);
-  syncExportToSharePoint(blob, filename);
+  await deliverExportFiles([{filename, blob}]);
 }
 
 function previewBomPdf(){
@@ -6868,16 +6908,13 @@ async function exportOfferPdf(){
   const withMBlob = withM.doc.output('blob');
   // bundled into one zip so the browser doesn't challenge downloading two files at once
   const safeRef = (getProjectInfo().ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
-  await downloadAsZip(
+  await deliverExportFiles(
     [
       {filename: std.filename, blob: stdBlob},
       {filename: withM.filename, blob: withMBlob},
     ],
     `${safeRef}_Offer_R${REVISION}.zip`
   );
-  // A manual export syncs only the standard (customer-facing) file; the complete set, "with_margin"
-  // included, is saved to "02 OFFER/R<revision>" by Save Configuration / Close Offer.
-  syncExportToSharePoint(stdBlob, std.filename);
 }
 
 function previewOfferPdf(){
@@ -8794,8 +8831,7 @@ async function generateTechNote(){
   try{
     const f = await prepareTechNoteFile({allowPick: true});
     if(!f) return;
-    await saveBlob(f.blob, f.filename);
-    syncExportToSharePoint(f.blob, f.filename);
+    await deliverExportFiles([f]);
   }catch(err){
     console.error(err);
     openAppDialog({title: 'Technical Note not generated', message: `${err.message || err}\n\nThe template "TechnicalNote_Template.docx" goes in "01_DTBS Offer/Template_Offer_Folder" on SharePoint (or pick it from your computer when asked).`});
@@ -8955,8 +8991,7 @@ function buildOfferHtmlDoc(withMargin){
 async function exportBomXlsx(){
   if(!bomHasRows()){ alert('Generate the Offer first — there are no lines to export.'); return; }
   const {filename, blob} = await buildBomXlsxFile();
-  await saveBlob(blob, filename);
-  syncExportToSharePoint(blob, filename);
+  await deliverExportFiles([{filename, blob}]);
 }
 
 async function exportOfferXlsx(){
@@ -8964,10 +8999,7 @@ async function exportOfferXlsx(){
   const safeRef = (getProjectInfo().ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
   const std = await buildOfferXlsxFile(false);
   const withM = await buildOfferXlsxFile(true);
-  await downloadAsZip([std, withM], `${safeRef}_Offer_R${REVISION}.zip`);
-  // A manual export syncs only the standard (customer-facing) file; the complete set, "with_margin"
-  // included, is saved to "02 OFFER/R<revision>" by Save Configuration / Close Offer.
-  syncExportToSharePoint(std.blob, std.filename);
+  await deliverExportFiles([std, withM], `${safeRef}_Offer_R${REVISION}.zip`);
 }
 
 document.getElementById('btnPreviewBom').addEventListener('click', previewBomPdf);
@@ -8980,8 +9012,7 @@ async function exportPreparedFile(prepare){
   if(!bomHasRows()){ alert('Generate the Offer first — there are no lines to export.'); return; }
   if(typeof JSZip === 'undefined'){ alert('The zip library failed to load (no internet access?) — Word/summary files need it.'); return; }
   const f = await finishXlsxFile(prepare());
-  await saveBlob(f.blob, f.filename);
-  syncExportToSharePoint(f.blob, f.filename);
+  await deliverExportFiles([f]);
 }
 document.getElementById('btnExportOfferDocx').addEventListener('click', ()=>exportPreparedFile(prepareOfferDocxFile));
 document.getElementById('btnExportTechSummary').addEventListener('click', ()=>exportPreparedFile(prepareTechSummaryFile));
@@ -9021,7 +9052,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.51';
+const CURRENT_VERSION = 'beta_5.52';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -9046,6 +9077,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_5.52', date:'2026-09-22', notes:[
+    'Export PDF / Excel / Word / scheda tecnica: se sei loggato e il progetto ha un riferimento, i file vengono salvati SOLO nella cartella 02 OFFER/R<n> su SharePoint (nessuna copia in Download); un avviso in basso conferma dove sono stati salvati. Il download sul computer resta solo come ripiego (ospite, senza riferimento o SharePoint non raggiungibile)',
+  ]},
   {version:'beta_5.51', date:'2026-09-22', notes:[
     'Corretto: i messaggi dell\'app (conferme, errori, domande) aperti da dentro un\'altra finestra potevano restare nascosti dietro di essa, e sembrava che non succedesse niente; ora compaiono sempre in primo piano',
     'Regressione: senza listino importato la riga del kit DC Coupling (M2S + litio) mostrava come modello il nome dell\'UPS; ora mostra "DC Coupling 1600" / "DC Coupling 1250" (codice invariato, YM2SE27A / YM2SE26A)',

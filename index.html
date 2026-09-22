@@ -490,6 +490,9 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   position:fixed; inset:0; background:rgba(20,22,26,0.45);
   display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;
 }
+/* messages and questions always sit above any window that opened them (e.g. Initialize Report) */
+#appDialogOverlay{z-index:1400;}
+.note-dialog-overlay{z-index:1350;}
 .acc-modal{
   background:#fff; border-radius:12px; width:100%; max-width:960px; max-height:88vh;
   display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(20,22,26,0.28);
@@ -8064,6 +8067,183 @@ function markupToXml(body, fig){
   if(table) out.push(rnTable(table));
   return out.join('');
 }
+// ---- Layout: chapters kept together, estimated pagination, "intentionally left blank" notes, index ----
+// Word lays the pages out, but it only knows "keep with next" rules: a heading, the sentence that
+// introduces a picture/table, the picture and its caption, and every row of a table are chained
+// together, so none of them is ever left alone at the bottom of a page or split. On top of that the
+// pages are estimated here (A4, the template's margins and fonts): where a block has to jump to the
+// next page leaving a large empty area, that area gets a note — "This space has been intentionally
+// left blank" — and an explicit page break; the same estimate gives the page numbers of the index.
+const RN_PAGE_H = (16840 - 993 - 1985) / 20;      // usable height of an A4 page of the template, pt
+const RN_BLANK_NOTE_MIN = 0.22;                    // leftover fraction of a page that deserves the note
+function rnTextLines(text, cpl){
+  return String(text || '').split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.replace(/\*\*|__|\/\//g, '').length / cpl)), 0);
+}
+function rnAddKeepNext(xml){
+  // schema order: <w:pStyle> first, then <w:keepNext>
+  return xml.replace(/<w:p>(?!<w:pPr>)/g, '<w:p><w:pPr></w:pPr>')
+    .replace(/<w:p><w:pPr>(<w:pStyle [^>]*\/>)?(?!(?:<w:pStyle [^>]*\/>)?<w:keepNext\/>)/g, (m, st) => `<w:p><w:pPr>${st || ''}<w:keepNext/>`);
+}
+function rnTableKeep(xml){
+  // every row but the last keeps with the next one → the table is never split across pages
+  const rows = xml.match(/<w:tr>.*?<\/w:tr>/gs) || [];
+  rows.slice(0, -1).forEach(r => { xml = xml.replace(r, rnAddKeepNext(r)); });
+  return xml;
+}
+// One section body (markup) → blocks {xml, h (pt), keep, split, kind}
+function markupToBlocks(body, fig){
+  const lines = String(body || '').replace(/\r\n?/g, '\n').split('\n');
+  const out = [];
+  const LINE = 14.0, CPL = 80;
+  const push = (xml, h, o = {}) => out.push({xml, h, keep: false, split: false, kind: 'p', ...o});
+  let table = null, lastEmpty = true;
+  const flushTable = () => {
+    const rows = table; table = null; lastEmpty = false;
+    const h = rows.reduce((a, r) => a + 2.6 + 11.6 * Math.max(1, ...r.map((c, i) => rnTextLines(c, r.length === 2 ? (i === 0 ? 27 : 55) : Math.floor(84 / r.length)))), 0);
+    push(rnTableKeep(rnTable(rows)), h + LINE, {kind: 'table'});
+  };
+  for(const raw of lines){
+    const line = raw.replace(/\s+$/, '');
+    if(table){
+      if(/^\[\/table\]$/i.test(line.trim())) flushTable();
+      else if(line.trim()) table.push(line.split('|').map(x => x.trim()));
+      continue;
+    }
+    const t = line.trim();
+    if(!t){ if(!lastEmpty) push(rnPara(''), LINE, {kind: 'empty'}); lastEmpty = true; continue; }
+    lastEmpty = false;
+    let m;
+    if(/^\[table\]$/i.test(t)){ table = []; continue; }
+    if(/^\[pagebreak\]$/i.test(t)){ push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>', 0, {kind: 'break'}); continue; }
+    if((m = /^\[image:(.+)\]$/i.exec(t))){ const im = REPORT_IMAGES[m[1].trim()]; push(rnImage(m[1].trim(), REPORT_IMAGES), (im ? im.cy / 12700 : 20) + 5, {kind: 'image', keep: true}); continue; }
+    if((m = /^\[caption\]\s*(.*)$/i.exec(t))){ push(rnCaption(m[1], ++fig.n), 20.5, {kind: 'caption'}); continue; }
+    if((m = /^\[runtime:(.+)\]$/i.exec(t))){ push(rnRuntimeTable(m[1].trim()), 58, {kind: 'table'}); continue; }
+    if(t.startsWith('-- ')){ push(rnBullet(t.slice(3), 'sub'), 13.5 * rnTextLines(t.slice(3), 80), {kind: 'li'}); continue; }
+    if(t.startsWith('- ')){ push(rnBullet(t.slice(2), 'dot'), 12.8 * rnTextLines(t.slice(2), 88), {kind: 'li'}); continue; }
+    if(t.startsWith('* ')){ push(rnBullet(t.slice(2), 'bold'), 12.8 * rnTextLines(t.slice(2), 84), {kind: 'li'}); continue; }
+    if(t.startsWith('~ ')){ push(rnBullet(t.slice(2), 'dash'), 12.8 * rnTextLines(t.slice(2), 88), {kind: 'li'}); continue; }
+    // a sentence introducing what follows ("…shown below:", "UPS Overall Dimensions:") stays with it
+    push(rnPara(t), LINE * rnTextLines(t, CPL), {kind: 'p', split: !/:\s*$/.test(t), keep: /:\s*$/.test(t)});
+  }
+  if(table) flushTable();
+  // a short paragraph that introduces a table or a picture ("Here below the configuration…",
+  // the dimensions line) stays on the same page as it
+  out.forEach((b, i) => {
+    if(b.kind !== 'p') return;
+    let j = i + 1;
+    while(j < out.length && out[j].kind === 'empty') j++;
+    if(j < out.length && (out[j].kind === 'table' || out[j].kind === 'image')){
+      b.keep = true; b.split = b.h > 3 * 14.0;   // a long one only carries its last lines along
+      for(let k = i + 1; k < j; k++) out[k].keep = true;
+    }
+  });
+  return out;
+}
+function rnHeadingBm(level, title, bmId, bmName){
+  const x = rnHeading(level, title).replace('</w:numPr>', '</w:numPr><w:spacing w:before="240" w:after="160"/>');
+  return x.replace(/(<\/w:pPr>)/, `$1<w:bookmarkStart w:id="${bmId}" w:name="${bmName}"/>`).replace(/<\/w:p>$/, `<w:bookmarkEnd w:id="${bmId}"/></w:p>`);
+}
+function rnAddPageBreakBefore(xml){
+  if(!/^<w:p>/.test(xml)) return '<w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:br w:type="page"/></w:r></w:p>' + xml;
+  if(!/^<w:p><w:pPr>/.test(xml)) xml = xml.replace(/^<w:p>/, '<w:p><w:pPr></w:pPr>');
+  return xml.replace(/^<w:p><w:pPr>((?:<w:pStyle [^>]*\/>)?(?:<w:keepNext\/>)?(?:<w:keepLines\/>)?)/, '<w:p><w:pPr>$1<w:pageBreakBefore/>');
+}
+function rnBlankNote(leftPt){
+  const before = Math.round(Math.max(0, Math.min(leftPt * 0.3, 140)) * 20);
+  return `<w:p><w:pPr><w:spacing w:before="${before}" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr>${RN_FONT}<w:i/><w:color w:val="8C939E"/><w:sz w:val="18"/><w:szCs w:val="18"/><w:lang w:val="en-US"/></w:rPr><w:t>This space has been intentionally left blank.</w:t></w:r></w:p>`;
+}
+// Builds the content and the index together: returns {xml, toc: [{num, title, level, bm, page}]}
+function buildTechNoteLayout(firstContentPage){
+  const fig = {n: 0};
+  rnDocPrId = 7000;
+  const nums = numberedSections(REPORT.sections);
+  const blocks = [];
+  const toc = [];
+  let bm = 9100;
+  REPORT.sections.forEach((s, i) => {
+    if(!s.include) return;
+    const level = Math.min(3, Math.max(1, s.level || 1));
+    const name = `_TocRpt${++bm}`;
+    const entry = {num: (nums[i] && nums[i].num) || '', title: s.title || '', level, bm: name, page: 0};
+    toc.push(entry);
+    blocks.push({xml: rnHeadingBm(level, s.title || '', bm, name), h: level === 1 ? 38.6 : 36.3, keep: true, kind: 'heading', level, entry});
+    markupToBlocks(s.body, fig).forEach(b => blocks.push(b));
+  });
+  // units: a chain of "keep with next" blocks plus the block they hold on to (empty lines are carried along)
+  const units = [];
+  for(let i = 0; i < blocks.length;){
+    const u = [blocks[i]];
+    let j = i;
+    while(j + 1 < blocks.length && (blocks[j].keep || (blocks[j].kind === 'empty' && u.length > 1 && u[u.length - 2].keep && blocks[j + 1].kind !== 'heading'))){ j++; u.push(blocks[j]); if(!blocks[j].keep && blocks[j].kind !== 'empty') break; }
+    units.push(u);
+    i = j + 1;
+  }
+  // simulate the pages
+  const H = RN_PAGE_H;
+  let y = 0, page = firstContentPage;
+  const xml = [];
+  units.forEach(u => {
+    const first = u[0];
+    if(first.kind === 'break'){ xml.push(first.xml); page++; y = 0; return; }
+    // a long paragraph heading a chain flows normally; only its last 2 lines travel with the rest
+    let lead = 0;
+    if(first.kind === 'p' && first.split && u.length > 1){
+      lead = Math.max(0, first.h - 2 * 14.0);
+      y += lead;
+      while(y > H){ y -= H; page++; }
+    }
+    const total = u.reduce((a, b) => a + b.h, 0) - lead;
+    const last = u[u.length - 1];
+    // the part that must stay together: everything but a splittable last paragraph (of which 2 lines)
+    const atomic = last.split && u.length > 1 ? total - last.h + Math.min(last.h, 2 * 14.6) : (last.split && u.length === 1 ? Math.min(total, 2 * 14.6) : total);
+    const left = H - y;
+    // A new chapter never starts in the last 30% of a page. Explicit breaks are only written where
+    // the estimate is safely clear of the page end (a small misjudgement near the bottom must not
+    // push a couple of lines onto an otherwise empty page); elsewhere Word's own "keep with next"
+    // does the job.
+    const chapterLate = first.kind === 'heading' && first.level === 1 && y > 0 && left < 0.3 * H && left > 0.1 * H;
+    let breakBefore = false;
+    if(y > 0 && (atomic > left || chapterLate) && atomic <= H){
+      if(left > RN_BLANK_NOTE_MIN * H){ xml.push(rnBlankNote(left)); breakBefore = true; }
+      else if(chapterLate) breakBefore = true;
+      page++; y = 0;
+    }
+    if(window.__rnLayoutLog) window.__rnLayoutLog.push([page, Math.round(y), first.kind, (first.entry && first.entry.title) || '', Math.round(atomic), breakBefore]);
+    u.forEach((b, bi) => {
+      if(b.entry) b.entry.page = page;
+      // Word applies keepNext itself; the XML of chained blocks carries it too
+      let bx = b.keep && b.kind !== 'table' ? rnAddKeepNext(b.xml) : b.xml;
+      if(bi === 0 && breakBefore && !lead) bx = rnAddPageBreakBefore(bx);
+      xml.push(bx);
+      y += bi === 0 ? b.h - lead : b.h;
+      while(y > H){ y -= H; page++; }
+    });
+  });
+  return {xml: xml.join(''), toc};
+}
+// Index: a real Word TOC field (Word can refresh it) whose content is already filled in — entries,
+// dotted leaders, page numbers (PAGEREF to each heading) — in Work Sans Light.
+function buildTechNoteToc(toc){
+  const rPr = (b, extra = '') => `<w:rPr>${RN_FONT}${b ? '<w:b/><w:bCs/>' : ''}<w:noProof/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/>${extra}</w:rPr>`;
+  const fld = (b, t) => `<w:r>${rPr(b)}${t}</w:r>`;
+  return toc.map((e, i) => {
+    const b = e.level === 1;
+    const begin = i === 0 ? fld(b, '<w:fldChar w:fldCharType="begin"/>') + fld(b, '<w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText>') + fld(b, '<w:fldChar w:fldCharType="separate"/>') : '';
+    const end = i === toc.length - 1 ? fld(b, '<w:fldChar w:fldCharType="end"/>') : '';
+    return `<w:p><w:pPr><w:pStyle w:val="Sommario${e.level}"/><w:tabs><w:tab w:val="left" w:pos="${[480, 1100, 1500][e.level - 1]}"/><w:tab w:val="right" w:leader="dot" w:pos="9622"/></w:tabs><w:spacing w:after="${b ? 80 : 40}"/><w:ind w:left="${[0, 220, 440][e.level - 1]}"/>${rPr(b)}</w:pPr>${begin}<w:hyperlink w:anchor="${e.bm}" w:history="1">${fld(b, `<w:t xml:space="preserve">${xlsxEsc(e.num)}</w:t>`)}${fld(b, '<w:tab/>')}${fld(b, `<w:t xml:space="preserve">${xlsxEsc(e.title)}</w:t>`)}${fld(b, '<w:tab/>')}${fld(b, '<w:fldChar w:fldCharType="begin"/>')}${fld(b, `<w:instrText xml:space="preserve"> PAGEREF ${e.bm} \\h </w:instrText>`)}${fld(b, '<w:fldChar w:fldCharType="separate"/>')}${fld(b, `<w:t>${e.page}</w:t>`)}${fld(b, '<w:fldChar w:fldCharType="end"/>')}</w:hyperlink>${end}</w:p>`;
+  }).join('');
+}
+// TOC styles in Work Sans Light, so a refresh done by Word keeps the same look
+function patchTocStyles(styles){
+  const rpr = lvl => `<w:rPr><w:rFonts w:ascii="Work Sans Light" w:hAnsi="Work Sans Light" w:cs="Calibri"/>${lvl === 1 ? '<w:b/><w:bCs/>' : ''}<w:noProof/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr>`;
+  const style = lvl => `<w:style w:type="paragraph" w:styleId="Sommario${lvl}"><w:name w:val="toc ${lvl}"/><w:basedOn w:val="Normale"/><w:next w:val="Normale"/><w:autoRedefine/><w:uiPriority w:val="39"/><w:unhideWhenUsed/><w:pPr><w:tabs><w:tab w:val="left" w:pos="${[480, 1100, 1500][lvl - 1]}"/><w:tab w:val="right" w:leader="dot" w:pos="9622"/></w:tabs><w:spacing w:after="${lvl === 1 ? 80 : 40}"/><w:ind w:left="${[0, 220, 440][lvl - 1]}"/></w:pPr>${rpr(lvl)}</w:style>`;
+  [1, 2, 3].forEach(l => {
+    const re = new RegExp(`<w:style [^>]*w:styleId="Sommario${l}"[^>]*>.*?</w:style>`, 's');
+    styles = re.test(styles) ? styles.replace(re, style(l)) : styles.replace('</w:styles>', style(l) + '</w:styles>');
+  });
+  return styles;
+}
+
 function buildTechNoteContentXml(){
   const fig = {n: 0};
   rnDocPrId = 7000;
@@ -8090,9 +8270,16 @@ async function buildTechNoteBlob(templateBuf){
     const rows = (REPORT.revisions || []).map(r => proto.replace('{{R_DATE}}', E(r.date)).replace('{{R_REV}}', E(r.rev)).replace('{{R_DESC}}', E(r.desc)).replace('{{R_EDIT}}', E(r.edited)).replace('{{R_APPR}}', E(r.approved)));
     doc = doc.replace(proto, rows.join(''));
   }
-  doc = doc.replace(/<w:p>(?:(?!<w:p[ >]).)*?\{\{CONTENT\}\}.*?<\/w:p>/s, buildTechNoteContentXml());
+  // content + index laid out together (index on page 2 — one page per ~34 entries — content after it)
+  const nEntries = REPORT.sections.filter(x => x.include).length;
+  const layout = buildTechNoteLayout(2 + Math.max(1, Math.ceil(nEntries / 34)));
+  doc = doc.replace(/<w:p>(?:(?!<w:p[ >]).)*?\{\{CONTENT\}\}.*?<\/w:p>/s, () => layout.xml);
+  // the template's index placeholder (a TOC field) → the filled-in index
+  doc = doc.replace(/<w:p>(?:(?!<w:p[ >]).)*?TOC \\o.*?<\/w:p>/s, () => buildTechNoteToc(layout.toc));
   if(REPORT.backCover === false) doc = doc.replace(/<w:p[ >](?:(?!<w:p[ >]).)*?r:embed="rId31".*?<\/w:p>/s, '');
   zip.file('word/document.xml', doc);
+  const stylesFile = zip.file('word/styles.xml');
+  if(stylesFile) zip.file('word/styles.xml', patchTocStyles(await stylesFile.async('string')));
   const settingsFile = zip.file('word/settings.xml');
   if(settingsFile){
     let s = await settingsFile.async('string');
@@ -8838,6 +9025,10 @@ const CURRENT_VERSION = 'beta_5.51';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
+    'Impaginazione della Technical Note: titoli, frasi introduttive, immagini con didascalia e tabelle restano insieme (mai un titolo o una frase isolata in fondo pagina, mai una tabella spezzata); un capitolo che cadrebbe nell\'ultimo 30% della pagina parte dalla pagina successiva; dove resta molto spazio libero (oltre ~22% della pagina) compare la nota "This space has been intentionally left blank."',
+    'Indice creato automaticamente con voci, puntini e numeri di pagina (collegamenti ai capitoli), in Work Sans Light; gli stili dell\'indice del modello sono impostati a Work Sans Light, quindi anche l\'aggiornamento fatto da Word mantiene il carattere',
+    'Technical Note: se il modello non è su SharePoint non si apre più direttamente la finestra di scelta file — un messaggio spiega perché, poi si sceglie il modello; da collegati si può salvarlo su SharePoint (Template_Offer_Folder) così non viene più chiesto. Un Word che non è il modello viene rifiutato con un messaggio',
+    'Generate Word dentro Initialize Report: il messaggio sul modello mancante restava nascosto dietro la finestra (sembrava non succedere niente) — corretto',
     'Editor "stile Word" per i capitoli: pagina bianca con i caratteri del documento, titolo rosso numerato, testo giustificato; barra con stile paragrafo (normale, elenco, elenco grassetto, sotto-elenco, trattino, didascalia), grassetto/corsivo/sottolineato (anche Ctrl+B/I/U), rientri (Tab/Maiusc+Tab), tabelle (aggiungi/togli righe e colonne), immagini del modello con didascalia, tabella run-time per posizione, interruzione di pagina, annulla/ripeti; incolla come testo semplice; "Markup" mostra il testo grezzo',
     'Nuovo "Initialize Report" (menu Documents): prepara la Technical Solution Description con gli stessi capitoli della Technical Note di riferimento — General Approach to RFQ, Multipower 2nd Generation, UPS Product (una sezione per posizione), Batteries (Battery System, DC Bus Coupling se il kit è in BOM, Line Up per posizione), TCO, SiC vs Si (3 sottosezioni), Attachments — numerati come nel Word',
     'Ogni sezione è modificabile (titolo, livello, testo con elenchi, grassetti, tabelle, figure), si può includere/escludere, spostare, e se ne possono aggiungere di nuove. I testi partono da una libreria (quelli della Technical Note R02) compilata con i dati dell\'offerta: codici, n. moduli, potenze, quantità, cliente, progetto; per prodotto, configurazione e batterie si può scegliere il blocco dalla libreria',
@@ -8856,7 +9047,7 @@ function setBetaFunctionsUnlocked(on){
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
   {version:'beta_5.51', date:'2026-09-22', notes:[
-    'Technical Note (beta): se il modello non è su SharePoint non si apre più direttamente la finestra di scelta file — un messaggio spiega perché, poi si sceglie il modello; da collegati si può salvarlo su SharePoint (Template_Offer_Folder) così non viene più chiesto. Un Word che non è il modello viene rifiutato con un messaggio',
+    'Corretto: i messaggi dell\'app (conferme, errori, domande) aperti da dentro un\'altra finestra potevano restare nascosti dietro di essa, e sembrava che non succedesse niente; ora compaiono sempre in primo piano',
     'Regressione: senza listino importato la riga del kit DC Coupling (M2S + litio) mostrava come modello il nome dell\'UPS; ora mostra "DC Coupling 1600" / "DC Coupling 1250" (codice invariato, YM2SE27A / YM2SE26A)',
     '🔔 "My deadlines" nella barra in alto (visibile da collegati): le offerte ancora in corso assegnate a te ("Assigned to"), ordinate per Due date — rosso scaduta, arancio entro 3 giorni, blu entro 7 giorni, grigio senza data. Il numero sulla campanella conta scadute + entro 3 giorni. Le offerte chiuse (Status "Offer Review" o esito finale) non compaiono',
     'Da ogni riga: "Open offer" carica il progetto (come ↑ Load); "Postpone…" scrive la nuova Due date su SharePoint. Al Sign-in, una volta per sessione, un piccolo avviso in basso a sinistra se ci sono offerte scadute o in scadenza',

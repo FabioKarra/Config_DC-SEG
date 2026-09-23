@@ -236,7 +236,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 .wx-ed p.wx-li[data-b="sub"]{padding-left:62px;} .wx-ed p.wx-li[data-b="sub"]::before{content:'o'; left:44px; font-size:11px;}
 .wx-ed p.wx-li[data-b="dash"]::before{content:'-';}
 .wx-ed p.wx-cap{text-align:center; color:#FF0000; font-family:'Work Sans',sans-serif; font-weight:400; font-size:12px; margin:2px 0 10px;}
-.wx-ed p.wx-cap::before{content:'Figure # – '; opacity:.75;}
+.wx-ed p.wx-cap::before{content:var(--wx-cap,'Figure # – '); opacity:.75;}
 .wx-ed table.wx-tbl{width:100%; border-collapse:collapse; margin:6px 0 10px; font-size:12.5px;}
 .wx-ed table.wx-tbl td{border-bottom:1px solid #000; border-top:1px solid #000; padding:2px 6px; vertical-align:top; text-align:left;}
 .wx-ed table.wx-tbl td:first-child{width:35%;}
@@ -750,7 +750,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.53</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.54</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -7807,6 +7807,78 @@ const REPORT_IMAGES = {
 // {approver, backCover, positions: {<cfgPos>: {backup, cabinetModel, cabinets, modules, threeWire, eol, bol}},
 //  revisions: [{rev, date, desc, edited, approved}], sections: [{id, key, level, title, body, include,
 //  edited, custom, libKeys}], initializedAt, updatedAt}
+// ---- Document language (Technical Note) ----
+// The library texts are English by default; a translation lives in the SharePoint list
+// "Report Library" either as its own key ("general:intro@it") or as a row with a Lang column.
+// Everything the tool writes by itself — section titles, captions, the run-time table, the
+// "left blank" note, the joining words inside the texts — is translated here.
+const TN_LANGS = [['en', 'English'], ['it', 'Italiano'], ['de', 'Deutsch'], ['fr', 'Français'], ['es', 'Español']];
+const TN_STRINGS = {
+  en: {wlang: 'en-US', and: 'and', figure: 'Figure', parallel: 'in parallel to', single: 'to',
+    batteryPhrase: ', including Lithium Batteries', brandPhrase: '. For this project we have selected the technology by {{brand}}',
+    configSentence: 'Here below the high-level configuration for the proposed UPS.',
+    blank: 'This space has been intentionally left blank.', eol: 'min (EOL)',
+    loads: {it: 'IT Loads', mech: 'Mechanical Loads', house: 'House Loads', other: 'UPS'},
+    rtHead: ['UPS Rating (kVA)', 'Required Backup Time', '3-Wire Topology', 'Module Quantity per Rack', 'Rack Quantity', 'Measured Backup Time at EOL', 'Measured Backup Time (BOL)'],
+    titles: {general: 'General Approach to RFQ', mp2: 'Multipower 2nd Generation UPS System', product: 'UPS Product',
+      productPos: '{{load}} - UPS {{series}} Series', battery: 'Batteries (out of Riello Scope)', batsys: '{{load}} Battery System',
+      dccoupling: 'DC Bus Coupling', lineup: '{{load}} Power Module Line Up', tco: 'Total Cost of Ownership Considerations',
+      sic: 'SiC vs Si: A Technological Leap Forward', sicFacts: 'SiC Basic Facts', sicComparison: 'Efficiency comparison: Si vs SiC',
+      sicField: 'Field Results', attachments: 'Attachments'}},
+  it: {wlang: 'it-IT', and: 'e', figure: 'Figura', parallel: 'in parallelo a', single: 'a',
+    batteryPhrase: ', comprensivi di batterie al litio', brandPhrase: '. Per questo progetto è stata selezionata la tecnologia {{brand}}',
+    configSentence: 'Di seguito la configurazione di massima dell’UPS proposto.',
+    blank: 'Questo spazio è stato lasciato intenzionalmente vuoto.', eol: 'min (EOL)',
+    loads: {it: 'Carichi IT', mech: 'Carichi meccanici', house: 'Carichi di servizio', other: 'UPS'},
+    rtHead: ['Potenza UPS (kVA)', 'Autonomia richiesta', 'Topologia 3 fili', 'Moduli per armadio', 'Numero armadi', 'Autonomia misurata a EOL', 'Autonomia misurata (BOL)'],
+    titles: {general: 'Approccio generale alla RFQ', mp2: 'Sistema UPS Multipower 2ª generazione', product: 'Prodotto UPS',
+      productPos: '{{load}} - UPS serie {{series}}', battery: 'Batterie (fuori fornitura Riello)', batsys: 'Sistema batterie — {{load}}',
+      dccoupling: 'Accoppiamento bus DC', lineup: 'Line up moduli di potenza — {{load}}', tco: 'Considerazioni sul costo totale di possesso',
+      sic: 'SiC e Si: un salto tecnologico', sicFacts: 'SiC: dati di base', sicComparison: 'Confronto di efficienza: Si e SiC',
+      sicField: 'Risultati sul campo', attachments: 'Allegati'}},
+  de: {wlang: 'de-DE', and: 'und', figure: 'Abbildung', parallel: 'parallel zu', single: 'zu',
+    batteryPhrase: ', einschließlich Lithium-Batterien', brandPhrase: '. Für dieses Projekt wurde die Technologie von {{brand}} gewählt',
+    configSentence: 'Nachfolgend die Grundkonfiguration der vorgeschlagenen USV.',
+    blank: 'Diese Seite wurde absichtlich frei gelassen.', eol: 'Min. (EOL)',
+    loads: {it: 'IT-Lasten', mech: 'Mechanische Lasten', house: 'Hauslasten', other: 'USV'},
+    rtHead: ['USV-Leistung (kVA)', 'Geforderte Überbrückungszeit', '3-Leiter-Topologie', 'Module pro Schrank', 'Anzahl Schränke', 'Gemessene Überbrückungszeit EOL', 'Gemessene Überbrückungszeit (BOL)'],
+    titles: {general: 'Allgemeiner Ansatz zur Anfrage', mp2: 'Multipower USV-System der 2. Generation', product: 'USV-Produkt',
+      productPos: '{{load}} - USV Serie {{series}}', battery: 'Batterien (nicht im Riello-Lieferumfang)', batsys: 'Batteriesystem — {{load}}',
+      dccoupling: 'DC-Bus-Kopplung', lineup: 'Leistungsmodul-Aufstellung — {{load}}', tco: 'Betrachtungen zu den Gesamtbetriebskosten',
+      sic: 'SiC gegenüber Si: ein technologischer Sprung', sicFacts: 'SiC: Grundlagen', sicComparison: 'Effizienzvergleich: Si und SiC',
+      sicField: 'Ergebnisse aus der Praxis', attachments: 'Anlagen'}},
+  fr: {wlang: 'fr-FR', and: 'et', figure: 'Figure', parallel: 'en parallèle à', single: 'à',
+    batteryPhrase: ', batteries au lithium incluses', brandPhrase: '. Pour ce projet, la technologie {{brand}} a été retenue',
+    configSentence: 'Ci-dessous la configuration générale de l’ASI proposée.',
+    blank: 'Cet espace a été laissé vide intentionnellement.', eol: 'min (EOL)',
+    loads: {it: 'Charges IT', mech: 'Charges mécaniques', house: 'Charges de service', other: 'ASI'},
+    rtHead: ['Puissance ASI (kVA)', 'Autonomie requise', 'Topologie 3 fils', 'Modules par armoire', 'Nombre d’armoires', 'Autonomie mesurée à EOL', 'Autonomie mesurée (BOL)'],
+    titles: {general: 'Approche générale de l’appel d’offres', mp2: 'Système ASI Multipower 2e génération', product: 'Produit ASI',
+      productPos: '{{load}} - ASI série {{series}}', battery: 'Batteries (hors fourniture Riello)', batsys: 'Système de batteries — {{load}}',
+      dccoupling: 'Couplage du bus DC', lineup: 'Line up des modules de puissance — {{load}}', tco: 'Considérations sur le coût total de possession',
+      sic: 'SiC et Si : un saut technologique', sicFacts: 'SiC : notions de base', sicComparison: 'Comparaison de rendement : Si et SiC',
+      sicField: 'Résultats sur le terrain', attachments: 'Annexes'}},
+  es: {wlang: 'es-ES', and: 'y', figure: 'Figura', parallel: 'en paralelo a', single: 'a',
+    batteryPhrase: ', incluidas baterías de litio', brandPhrase: '. Para este proyecto se ha seleccionado la tecnología de {{brand}}',
+    configSentence: 'A continuación, la configuración general del SAI propuesto.',
+    blank: 'Este espacio se ha dejado intencionadamente en blanco.', eol: 'min (EOL)',
+    loads: {it: 'Cargas IT', mech: 'Cargas mecánicas', house: 'Cargas de servicio', other: 'SAI'},
+    rtHead: ['Potencia SAI (kVA)', 'Autonomía requerida', 'Topología 3 hilos', 'Módulos por armario', 'Número de armarios', 'Autonomía medida en EOL', 'Autonomía medida (BOL)'],
+    titles: {general: 'Enfoque general de la RFQ', mp2: 'Sistema SAI Multipower 2ª generación', product: 'Producto SAI',
+      productPos: '{{load}} - SAI serie {{series}}', battery: 'Baterías (fuera del alcance Riello)', batsys: 'Sistema de baterías — {{load}}',
+      dccoupling: 'Acoplamiento de bus DC', lineup: 'Line up de módulos de potencia — {{load}}', tco: 'Consideraciones sobre el coste total de propiedad',
+      sic: 'SiC frente a Si: un salto tecnológico', sicFacts: 'SiC: datos básicos', sicComparison: 'Comparación de eficiencia: Si y SiC',
+      sicField: 'Resultados de campo', attachments: 'Anexos'}},
+};
+function reportLang(){ const l = REPORT && REPORT.lang; return TN_STRINGS[l] ? l : 'en'; }
+function TS(){ return TN_STRINGS[reportLang()]; }
+// A library block in the document language, with the English one as the fallback.
+function libText(key){
+  const l = reportLang();
+  if(l !== 'en' && REPORT_LIBRARY[`${key}@${l}`] !== undefined) return REPORT_LIBRARY[`${key}@${l}`];
+  return REPORT_LIBRARY[key] ?? '';
+}
+function libHasLang(key){ const l = reportLang(); return l === 'en' || REPORT_LIBRARY[`${key}@${l}`] !== undefined; }
 let REPORT = null;
 let REPORT_LIBRARY = {...REPORT_LIBRARY_DEFAULT};
 let reportLibrarySource = 'built-in';
@@ -7824,8 +7896,11 @@ async function loadReportLibraryFromSharePoint(){
     let n = 0;
     items.forEach(it => {
       const f = it.fields || {};
-      const key = String(f.Title || '').trim();
+      let key = String(f.Title || '').trim();
       if(!key || f.Active === false) return;
+      // a translation is either its own key ("general:intro@it") or a row with a Lang column
+      const lang = String(f.Lang || f.Language || '').trim().toLowerCase().slice(0, 2);
+      if(lang && lang !== 'en' && !key.includes('@')) key = `${key}@${lang}`;
       lib[key] = String(f.Body ?? f.Text ?? '').replace(/\r\n?/g, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<\/?(div|p)[^>]*>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\n{3,}/g, '\n\n').trim();
       n++;
     });
@@ -7839,9 +7914,9 @@ async function loadReportLibraryFromSharePoint(){
     return false;
   }
 }
-function libraryKeys(prefix){ return Object.keys(REPORT_LIBRARY).filter(k => k.startsWith(prefix)).sort(); }
+function libraryKeys(prefix){ return Object.keys(REPORT_LIBRARY).filter(k => k.startsWith(prefix) && !k.includes('@')).sort(); }
 function pickLibraryKey(prefix, candidates){
-  for(const c of candidates){ if(REPORT_LIBRARY[prefix + c] !== undefined) return prefix + c; }
+  for(const c of candidates){ if(REPORT_LIBRARY[prefix + c] !== undefined && !String(c).includes('@')) return prefix + c; }
   return prefix + '*';
 }
 function fillPlaceholders(text, vars){
@@ -7860,10 +7935,16 @@ function countryDisplay(v){
 }
 function loadTitleFor(lt){
   const s = String(lt || '').trim();
-  if(/^it\b/i.test(s)) return 'IT Loads';
-  if(/^mech/i.test(s)) return 'Mechanical Loads';
-  if(/^house/i.test(s)) return 'House Loads';
-  return s || 'UPS';
+  const L = TS().loads;
+  if(/^it\b/i.test(s)) return L.it;
+  if(/^mech/i.test(s)) return L.mech;
+  if(/^house/i.test(s)) return L.house;
+  return s || L.other;
+}
+// "IT" out of "IT Loads" / "Carichi IT" — the short form used in titles and in the load list
+function loadShort(lt){
+  const t = String(lt || '').replace(/\b(Loads|Carichi|Lasten|Charges|Cargas)\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+  return t ? t[0].toUpperCase() + t.slice(1) : String(lt || '');
 }
 
 // Everything the texts can refer to, per position (from System Configuration + the generated lines).
@@ -7907,51 +7988,53 @@ function reportContext(){
       lineupImage: series === 'M2S' ? 'Line-up M2S' : 'Line-up MP2',
       backup: d.backup ?? 5, cabinetModel, cabinetShort: String(cabinetModel).split(/\s+/)[0] || '',
       cabinets, modules: d.modules ?? '', threeWire: d.threeWire ?? 'NO', eol: d.eol ?? '', bol: d.bol ?? '',
-      parallelPhrase: Number(cabinets) > 1 ? 'in parallel to' : 'to',
+      parallelPhrase: Number(cabinets) > 1 ? TS().parallel : TS().single,
       brand: brand || '', batteryType: lithium ? 'LITHIUM' : 'VRLA',
     });
   });
-  const titles = [...new Set(positions.map(x => x.loadTitle.replace(/\s*Loads$/, '')))];
-  const loadList = titles.length > 1 ? `${titles.slice(0, -1).join(', ')} and ${titles[titles.length - 1]}` : (titles[0] || '');
+  const titles = [...new Set(positions.map(x => loadShort(x.loadTitle)))];
+  const loadList = titles.length > 1 ? `${titles.slice(0, -1).join(', ')} ${TS().and} ${titles[titles.length - 1]}` : (titles[0] || '');
   return {
     global: {customer: p.customer || '', project: p.name || '', countryName: country.name, countryCover: country.cover, countryCode: country.code, ref: p.ref || '',
-      batteryPhrase: lithium ? ', including Lithium Batteries' : '', loadList, brand, batteryType: lithium ? 'LITHIUM' : 'VRLA',
-      brandPhrase: brand ? `. For this project we have selected the technology by ${brand}` : ''},
+      batteryPhrase: lithium ? TS().batteryPhrase : '', loadList, brand, batteryType: lithium ? 'LITHIUM' : 'VRLA',
+      brandPhrase: brand ? TS().brandPhrase.replace('{{brand}}', brand) : ''},
     positions, lithium, brand,
   };
 }
 
 // Default section list — the chapters of the reference Technical Note, one set per position.
 function defaultReportSections(ctx){
-  const L = k => REPORT_LIBRARY[k] ?? '';
+  const L = k => libText(k);
+  const T = TS().titles;
+  const ti = (k, vars = {}) => String(T[k]).replace(/\{\{(\w+)\}\}/g, (m, n) => vars[n] ?? '');
   const g = ctx.global;
   const S = [];
   const add = (id, level, title, body, extra = {}) => S.push({id, key: id.split('@')[0], level, title, body, include: true, edited: false, custom: false, ...extra});
-  add('general', 1, 'General Approach to RFQ', [fillPlaceholders(L('general:intro'), g), ...ctx.positions.map(p => fillPlaceholders(L('general:position'), {...g, ...p})), fillPlaceholders(L('general:closing'), g)].join('\n\n'));
-  add('mp2', 1, 'Multipower 2nd Generation UPS System', fillPlaceholders(L('mp2:intro'), g));
-  add('product', 1, 'UPS Product', '');
+  add('general', 1, ti('general'), [fillPlaceholders(L('general:intro'), g), ...ctx.positions.map(p => fillPlaceholders(L('general:position'), {...g, ...p})), fillPlaceholders(L('general:closing'), g)].join('\n\n'));
+  add('mp2', 1, ti('mp2'), fillPlaceholders(L('mp2:intro'), g));
+  add('product', 1, ti('product'), '');
   ctx.positions.forEach(p => {
     const pk = pickLibraryKey('product:', [p.model]);
     const ck = pickLibraryKey('config:', [`${p.model}|${p.config}`, `${p.model}|*`]);
-    add(`product@${p.cfgPos}`, 2, `${p.loadTitle} - UPS ${p.series} Series`, composeProductBody(pk, ck, {...g, ...p}), {libKeys: {product: pk, config: ck}});
+    add(`product@${p.cfgPos}`, 2, ti('productPos', {load: p.loadTitle, series: p.series}), composeProductBody(pk, ck, {...g, ...p}), {libKeys: {product: pk, config: ck}});
   });
   const bk = pickLibraryKey('battery:', [String(ctx.brand).toUpperCase()]);
-  add('battery', 1, 'Batteries (out of Riello Scope)', fillPlaceholders(L(bk), g), {libKeys: {battery: bk}});
+  add('battery', 1, ti('battery'), fillPlaceholders(L(bk), g), {libKeys: {battery: bk}});
   ctx.positions.forEach(p => {
-    add(`batsys@${p.cfgPos}`, 2, `${p.loadTitle} Battery System`, fillPlaceholders(L('battery:system'), {...g, ...p}).replace('[runtime]', `[runtime:${p.cfgPos}]`));
-    if(p.hasDC) add(`dccoupling@${p.cfgPos}`, 3, 'DC Bus Coupling', fillPlaceholders(L('dccoupling'), {...g, ...p}));
-    add(`lineup@${p.cfgPos}`, 3, `${p.loadTitle.replace(/\s*Loads$/, '')} Power Module Line Up`.replace(/^Mechanical/, 'Mechanical'), fillPlaceholders(L('lineup'), {...g, ...p}));
+    add(`batsys@${p.cfgPos}`, 2, ti('batsys', {load: p.loadTitle}), fillPlaceholders(L('battery:system'), {...g, ...p}).replace('[runtime]', `[runtime:${p.cfgPos}]`));
+    if(p.hasDC) add(`dccoupling@${p.cfgPos}`, 3, ti('dccoupling'), fillPlaceholders(L('dccoupling'), {...g, ...p}));
+    add(`lineup@${p.cfgPos}`, 3, ti('lineup', {load: loadShort(p.loadTitle)}), fillPlaceholders(L('lineup'), {...g, ...p}));
   });
-  add('tco', 1, 'Total Cost of Ownership Considerations', fillPlaceholders(L('tco'), g));
-  add('sic', 1, 'SiC vs Si: A Technological Leap Forward', fillPlaceholders(L('sic:intro'), g));
-  add('sic-facts', 2, 'SiC Basic Facts', fillPlaceholders(L('sic:facts'), g));
-  add('sic-comparison', 2, 'Efficiency comparison: Si vs SiC', fillPlaceholders(L('sic:comparison'), g));
-  add('sic-field', 2, 'Field Results', fillPlaceholders(L('sic:field'), g));
-  add('attachments', 1, 'Attachments', fillPlaceholders(L('attachments'), g));
+  add('tco', 1, ti('tco'), fillPlaceholders(L('tco'), g));
+  add('sic', 1, ti('sic'), fillPlaceholders(L('sic:intro'), g));
+  add('sic-facts', 2, ti('sicFacts'), fillPlaceholders(L('sic:facts'), g));
+  add('sic-comparison', 2, ti('sicComparison'), fillPlaceholders(L('sic:comparison'), g));
+  add('sic-field', 2, ti('sicField'), fillPlaceholders(L('sic:field'), g));
+  add('attachments', 1, ti('attachments'), fillPlaceholders(L('attachments'), g));
   return S;
 }
 function composeProductBody(pk, ck, vars){
-  return `${fillPlaceholders(REPORT_LIBRARY[pk] ?? '', vars)}\n\nHere below the high-level configuration for the proposed UPS.\n\n${fillPlaceholders(REPORT_LIBRARY[ck] ?? '', vars)}`;
+  return `${fillPlaceholders(libText(pk), vars)}\n\n${TS().configSentence}\n\n${fillPlaceholders(libText(ck), vars)}`;
 }
 function defaultRevisionRows(approver){
   const list = REVISION_HISTORY.filter(e => e.rev <= REVISION).map(e => ({...e}));
@@ -7969,7 +8052,11 @@ function defaultRevisionRows(approver){
 // by hand are regenerated; edited and added sections are kept where they are.
 function rebuildReport(){
   const approver = (REPORT && REPORT.approver) || (() => { try{ return localStorage.getItem('upsConfigurator.reportApprover') || ''; }catch(e){ return ''; } })();
-  const base = REPORT || {approver, backCover: true, positions: {}, revisions: [], sections: []};
+  const base = REPORT || {approver, backCover: true, lang: 'en', positions: {}, revisions: [], sections: []};
+  if(!TN_STRINGS[base.lang]) base.lang = 'en';
+  if(!Array.isArray(base.sections)) base.sections = [];
+  if(!Array.isArray(base.revisions)) base.revisions = [];
+  if(!base.positions || typeof base.positions !== 'object') base.positions = {};
   REPORT = base;
   const ctx = reportContext();
   const defs = defaultReportSections(ctx);
@@ -8003,7 +8090,7 @@ function recomposeWithKeys(s, ctx){
   const p = ctx.positions.find(x => s.id.endsWith('@' + x.cfgPos));
   const vars = {...ctx.global, ...(p || {})};
   if(s.libKeys.product) return composeProductBody(s.libKeys.product, s.libKeys.config, vars);
-  if(s.libKeys.battery) return fillPlaceholders(REPORT_LIBRARY[s.libKeys.battery] ?? '', vars);
+  if(s.libKeys.battery) return fillPlaceholders(libText(s.libKeys.battery), vars);
   return s.body;
 }
 function numberedSections(sections){
@@ -8018,6 +8105,8 @@ function numberedSections(sections){
 
 // ---- markup → WordprocessingML, with the fonts/styles/numbering of the Technical Note template ----
 const RN_FONT = '<w:rFonts w:ascii="Work Sans Light" w:hAnsi="Work Sans Light" w:cs="Calibri"/>';
+// proofing language of the runs the tool writes — follows the document language
+function RN_LANG(){ return `<w:lang w:val="${TS().wlang}"/>`; }
 function rnRuns(text, base = {}){
   const parts = String(text).split(/(\*\*[^*]+?\*\*|__[^_]+?__|\/\/.+?\/\/)/);
   return parts.filter(x => x !== '').map(t => {
@@ -8025,27 +8114,27 @@ function rnRuns(text, base = {}){
     if(/^\*\*.+\*\*$/.test(t)){ o.b = true; v = t.slice(2, -2); }
     else if(/^__.+__$/.test(t)){ o.u = true; v = t.slice(2, -2); }
     else if(/^\/\/.+\/\/$/.test(t)){ o.i = true; v = t.slice(2, -2); }
-    const rPr = `${o.font || RN_FONT}${o.b ? '<w:b/><w:bCs/>' : ''}${o.i ? '<w:i/><w:iCs/>' : ''}${o.u ? '<w:u w:val="single"/>' : ''}${o.color ? `<w:color w:val="${o.color}"/>` : ''}${o.sz ? `<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>` : ''}<w:lang w:val="en-US"/>`;
+    const rPr = `${o.font || RN_FONT}${o.b ? '<w:b/><w:bCs/>' : ''}${o.i ? '<w:i/><w:iCs/>' : ''}${o.u ? '<w:u w:val="single"/>' : ''}${o.color ? `<w:color w:val="${o.color}"/>` : ''}${o.sz ? `<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>` : ''}${RN_LANG()}`;
     return `<w:r><w:rPr>${rPr}</w:rPr><w:t xml:space="preserve">${xlsxEsc(v)}</w:t></w:r>`;
   }).join('');
 }
 function rnPara(text, {jc = 'both', pPr = '', run = {}} = {}){
-  return `<w:p><w:pPr>${pPr}<w:jc w:val="${jc}"/><w:rPr>${RN_FONT}<w:lang w:val="en-US"/></w:rPr></w:pPr>${rnRuns(text, run)}</w:p>`;
+  return `<w:p><w:pPr>${pPr}<w:jc w:val="${jc}"/><w:rPr>${RN_FONT}${RN_LANG()}</w:rPr></w:pPr>${rnRuns(text, run)}</w:p>`;
 }
 function rnHeading(level, title){
   const l = Math.min(3, Math.max(1, level));
-  const rPr = l === 1 ? '<w:rFonts w:ascii="Work Sans" w:hAnsi="Work Sans" w:cs="Calibri"/><w:b/><w:bCs/><w:color w:val="FF0000"/><w:lang w:val="en-US"/>'
-                      : '<w:rFonts w:ascii="Work Sans" w:hAnsi="Work Sans" w:cs="Calibri"/><w:color w:val="FF0000"/><w:sz w:val="28"/><w:szCs w:val="28"/><w:lang w:val="en-US"/>';
+  const rPr = l === 1 ? `<w:rFonts w:ascii="Work Sans" w:hAnsi="Work Sans" w:cs="Calibri"/><w:b/><w:bCs/><w:color w:val="FF0000"/>${RN_LANG()}`
+                      : `<w:rFonts w:ascii="Work Sans" w:hAnsi="Work Sans" w:cs="Calibri"/><w:color w:val="FF0000"/><w:sz w:val="28"/><w:szCs w:val="28"/>${RN_LANG()}`;
   return `<w:p><w:pPr><w:pStyle w:val="Titolo1"/><w:numPr><w:ilvl w:val="${l - 1}"/><w:numId w:val="1"/></w:numPr><w:rPr>${rPr}</w:rPr></w:pPr><w:r><w:rPr>${rPr}</w:rPr><w:t xml:space="preserve">${xlsxEsc(title)}</w:t></w:r></w:p>`;
 }
 function rnBullet(text, kind){
   const map = {dot: [7, 0, '<w:ind w:left="426"/>'], bold: [8, 0, ''], sub: [8, 1, ''], dash: [20, 0, '']};
   const [numId, ilvl, ind] = map[kind];
-  return `<w:p><w:pPr><w:pStyle w:val="Paragrafoelenco"/><w:numPr><w:ilvl w:val="${ilvl}"/><w:numId w:val="${numId}"/></w:numPr>${ind}<w:jc w:val="both"/><w:rPr>${RN_FONT}<w:lang w:val="en-US"/></w:rPr></w:pPr>${rnRuns(text, kind === 'bold' ? {b: true} : {})}</w:p>`;
+  return `<w:p><w:pPr><w:pStyle w:val="Paragrafoelenco"/><w:numPr><w:ilvl w:val="${ilvl}"/><w:numId w:val="${numId}"/></w:numPr>${ind}<w:jc w:val="both"/><w:rPr>${RN_FONT}${RN_LANG()}</w:rPr></w:pPr>${rnRuns(text, kind === 'bold' ? {b: true} : {})}</w:p>`;
 }
 function rnCaption(text, n){
-  const r = t => `<w:r><w:rPr><w:rFonts w:ascii="Work Sans" w:hAnsi="Work Sans" w:cs="Calibri"/><w:color w:val="FF0000"/><w:lang w:val="en-US"/></w:rPr>${t}</w:r>`;
-  return `<w:p><w:pPr><w:pStyle w:val="Didascalia"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Work Sans" w:hAnsi="Work Sans" w:cs="Calibri"/><w:color w:val="FF0000"/><w:lang w:val="en-US"/></w:rPr></w:pPr>${r('<w:t xml:space="preserve">Figure </w:t>')}${r('<w:fldChar w:fldCharType="begin"/>')}${r('<w:instrText xml:space="preserve"> SEQ Figure \\* ARABIC </w:instrText>')}${r('<w:fldChar w:fldCharType="separate"/>')}${r(`<w:t>${n}</w:t>`)}${r('<w:fldChar w:fldCharType="end"/>')}${r(`<w:t xml:space="preserve"> – ${xlsxEsc(text)}</w:t>`)}</w:p>`;
+  const r = t => `<w:r><w:rPr><w:rFonts w:ascii="Work Sans" w:hAnsi="Work Sans" w:cs="Calibri"/><w:color w:val="FF0000"/>${RN_LANG()}</w:rPr>${t}</w:r>`;
+  return `<w:p><w:pPr><w:pStyle w:val="Didascalia"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Work Sans" w:hAnsi="Work Sans" w:cs="Calibri"/><w:color w:val="FF0000"/>${RN_LANG()}</w:rPr></w:pPr>${r(`<w:t xml:space="preserve">${TS().figure} </w:t>`)}${r('<w:fldChar w:fldCharType="begin"/>')}${r('<w:instrText xml:space="preserve"> SEQ Figure \\* ARABIC </w:instrText>')}${r('<w:fldChar w:fldCharType="separate"/>')}${r(`<w:t>${n}</w:t>`)}${r('<w:fldChar w:fldCharType="end"/>')}${r(`<w:t xml:space="preserve"> – ${xlsxEsc(text)}</w:t>`)}</w:p>`;
 }
 let rnDocPrId = 7000;
 function rnImage(key, images){
@@ -8069,8 +8158,8 @@ function rnTable(rows){
 function rnRuntimeTable(cfgPos){
   const d = (REPORT.positions || {})[cfgPos] || {};
   const p = reportContext().positions.find(x => x.cfgPos === String(cfgPos)) || {};
-  const head = ['UPS Rating (kVA)', 'Required Backup Time', '3-Wire Topology', 'Module Quantity per Rack', 'Rack Quantity', 'Measured Backup Time at EOL', 'Measured Backup Time (BOL)'];
-  const vals = [p.pload || '', d.backup ? `${d.backup} min (EOL)` : '', d.threeWire || '', d.modules || '', d.cabinets || '', d.eol || '', d.bol || ''];
+  const head = TS().rtHead;
+  const vals = [p.pload || '', d.backup ? `${d.backup} ${TS().eol}` : '', d.threeWire || '', d.modules || '', d.cabinets || '', d.eol || '', d.bol || ''];
   const w = [1300, 1500, 1100, 1450, 1100, 1592, 1592];
   const tr = (cells, o) => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${cells.map((c, i) => rnCell(String(c), w[i], {...o, sz: 16, jc: 'center'})).join('')}</w:tr>`;
   return `<w:tbl><w:tblPr><w:tblStyle w:val="Grigliatabella"/><w:tblW w:w="9634" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid>${w.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>${tr(head, {fill: '0070C0', color: 'FFFFFF', b: true})}${tr(vals, {})}</w:tbl>${rnPara('')}`;
@@ -8188,7 +8277,7 @@ function rnAddPageBreakBefore(xml){
 }
 function rnBlankNote(leftPt){
   const before = Math.round(Math.max(0, Math.min(leftPt * 0.3, 140)) * 20);
-  return `<w:p><w:pPr><w:spacing w:before="${before}" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr>${RN_FONT}<w:i/><w:color w:val="8C939E"/><w:sz w:val="18"/><w:szCs w:val="18"/><w:lang w:val="en-US"/></w:rPr><w:t>This space has been intentionally left blank.</w:t></w:r></w:p>`;
+  return `<w:p><w:pPr><w:spacing w:before="${before}" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr>${RN_FONT}<w:i/><w:color w:val="8C939E"/><w:sz w:val="18"/><w:szCs w:val="18"/>${RN_LANG()}</w:rPr><w:t>${xlsxEsc(TS().blank)}</w:t></w:r></w:p>`;
 }
 // Builds the content and the index together: returns {xml, toc: [{num, title, level, bm, page}]}
 function buildTechNoteLayout(firstContentPage){
@@ -8262,7 +8351,7 @@ function buildTechNoteLayout(firstContentPage){
 // Index: a real Word TOC field (Word can refresh it) whose content is already filled in — entries,
 // dotted leaders, page numbers (PAGEREF to each heading) — in Work Sans Light.
 function buildTechNoteToc(toc){
-  const rPr = (b, extra = '') => `<w:rPr>${RN_FONT}${b ? '<w:b/><w:bCs/>' : ''}<w:noProof/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/>${extra}</w:rPr>`;
+  const rPr = (b, extra = '') => `<w:rPr>${RN_FONT}${b ? '<w:b/><w:bCs/>' : ''}<w:noProof/><w:sz w:val="20"/><w:szCs w:val="20"/>${RN_LANG()}${extra}</w:rPr>`;
   const fld = (b, t) => `<w:r>${rPr(b)}${t}</w:r>`;
   return toc.map((e, i) => {
     const b = e.level === 1;
@@ -8273,7 +8362,7 @@ function buildTechNoteToc(toc){
 }
 // TOC styles in Work Sans Light, so a refresh done by Word keeps the same look
 function patchTocStyles(styles){
-  const rpr = lvl => `<w:rPr><w:rFonts w:ascii="Work Sans Light" w:hAnsi="Work Sans Light" w:cs="Calibri"/>${lvl === 1 ? '<w:b/><w:bCs/>' : ''}<w:noProof/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr>`;
+  const rpr = lvl => `<w:rPr><w:rFonts w:ascii="Work Sans Light" w:hAnsi="Work Sans Light" w:cs="Calibri"/>${lvl === 1 ? '<w:b/><w:bCs/>' : ''}<w:noProof/><w:sz w:val="20"/><w:szCs w:val="20"/>${RN_LANG()}</w:rPr>`;
   const style = lvl => `<w:style w:type="paragraph" w:styleId="Sommario${lvl}"><w:name w:val="toc ${lvl}"/><w:basedOn w:val="Normale"/><w:next w:val="Normale"/><w:autoRedefine/><w:uiPriority w:val="39"/><w:unhideWhenUsed/><w:pPr><w:tabs><w:tab w:val="left" w:pos="${[480, 1100, 1500][lvl - 1]}"/><w:tab w:val="right" w:leader="dot" w:pos="9622"/></w:tabs><w:spacing w:after="${lvl === 1 ? 80 : 40}"/><w:ind w:left="${[0, 220, 440][lvl - 1]}"/></w:pPr>${rpr(lvl)}</w:style>`;
   [1, 2, 3].forEach(l => {
     const re = new RegExp(`<w:style [^>]*w:styleId="Sommario${l}"[^>]*>.*?</w:style>`, 's');
@@ -8449,8 +8538,8 @@ function wxImageHtml(name){
 function wxRuntimeHtml(pos){
   const d = (REPORT.positions || {})[pos] || {};
   const p = reportContext().positions.find(x => x.cfgPos === String(pos)) || {};
-  const head = ['UPS Rating (kVA)', 'Required Backup Time', '3-Wire Topology', 'Module Quantity per Rack', 'Rack Quantity', 'Measured Backup Time at EOL', 'Measured Backup Time (BOL)'];
-  const vals = [p.pload || '', d.backup ? `${d.backup} min (EOL)` : '', d.threeWire || '', d.modules || '', d.cabinets || '', d.eol || '', d.bol || ''];
+  const head = TS().rtHead;
+  const vals = [p.pload || '', d.backup ? `${d.backup} ${TS().eol}` : '', d.threeWire || '', d.modules || '', d.cabinets || '', d.eol || '', d.bol || ''];
   return `<div class="wx-obj wx-rt" contenteditable="false" data-runtime="${escapeHtml(pos)}" title="Run-time table of position ${escapeHtml(pos)} — values from tab 1"><table><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr><tr>${vals.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr></table><button type="button" class="wx-x" title="Remove table">×</button></div>`;
 }
 function markupToWxHtml(markup){
@@ -8597,6 +8686,7 @@ function wxBlockStyleOf(ed){
   return 'p';
 }
 function mountWordEditor(host, s, onChange){
+  host.style.setProperty('--wx-cap', `"${TS().figure} # – "`);
   const positions = reportContext().positions;
   host.innerHTML = `<div class="wx">
     <div class="wx-bar">
@@ -8753,7 +8843,10 @@ function renderReportData(body){
   const R = REPORT;
   body.innerHTML = `<div class="rp-data">
     <div class="rp-row"><label>Approved by<input type="text" data-f="approver" value="${escapeHtml(R.approver || '')}" placeholder="e.g. A.Coccia"></label>
+      <label>Document language<select data-f="lang">${TN_LANGS.map(([c, n]) => `<option value="${c}"${reportLang() === c ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
       <label class="rp-check"><input type="checkbox" data-f="backCover"${R.backCover !== false ? ' checked' : ''}> Back cover page</label></div>
+    <p class="settings-note">The language applies to what the tool writes: section titles, captions, the run-time table, the index and the "left blank" note. The long texts come from the library: a translation is a row in the SharePoint list "Report Library" with the same key and the language (key "general:intro@it", or a "Lang" column). Without it the English text is used and the section is marked "EN". The cover, header and back cover come from the Word template, which is the same in every language.
+      <button type="button" class="dl-a" data-transcsv>⤓ Translation sheet (CSV)</button></p>
     <h4>Revision table (cover page)</h4>
     <table class="rp-table"><thead><tr><th>Date</th><th>Rev</th><th>Description</th><th>Edited</th><th>Approved</th><th></th></tr></thead><tbody>
       ${(R.revisions || []).map((r, i) => `<tr>${['date', 'rev', 'desc', 'edited', 'approved'].map(k => `<td><input type="text" data-rev="${i}" data-k="${k}" value="${escapeHtml(r[k] || '')}"${k === 'desc' ? ' class="wide"' : ''}></td>`).join('')}<td><button type="button" class="dl-a" data-delrev="${i}">✕</button></td></tr>`).join('')}
@@ -8772,6 +8865,19 @@ function renderReportData(body){
     body.querySelectorAll('[data-k="approved"]').forEach((inp, i) => { inp.value = R.revisions[i].approved || ''; });
   });
   body.querySelector('[data-f="backCover"]').addEventListener('change', e => { R.backCover = e.target.checked; });
+  body.querySelector('[data-f="lang"]').addEventListener('change', async e => {
+    const lang = e.target.value;
+    const edited = R.sections.filter(x => x.edited && !x.custom).length + R.sections.filter(x => x.custom).length;
+    if(edited){
+      const ok = await openAppDialog({title: 'Change the document language?', message: `The sections regenerate in ${TN_LANGS.find(l => l[0] === lang)[1]}. The ${edited} section${edited > 1 ? 's' : ''} you edited or added stay${edited > 1 ? '' : 's'} as written — translate them by hand if needed.`, buttons: [{label: 'Cancel', value: false}, {label: 'Change language', value: true, primary: true}]});
+      if(!ok){ e.target.value = reportLang(); return; }
+    }
+    R.lang = lang;
+    rebuildReport();
+    renderReportWindow();
+  });
+  const tcsv = body.querySelector('[data-transcsv]');
+  if(tcsv) tcsv.addEventListener('click', () => downloadTranslationSheet());
   body.querySelectorAll('[data-rev]').forEach(inp => inp.addEventListener('input', () => { R.revisions[Number(inp.dataset.rev)][inp.dataset.k] = inp.value; }));
   body.querySelectorAll('[data-delrev]').forEach(b => b.addEventListener('click', () => { R.revisions.splice(Number(b.dataset.delrev), 1); renderReportData(body); }));
   body.querySelector('[data-addrev]').addEventListener('click', () => {
@@ -8851,6 +8957,24 @@ function reportDragBegin(i, x, y, body){
   scroller = setInterval(() => { const r = list.getBoundingClientRect(); const dy = lastY < r.top + 40 ? -8 : lastY > r.bottom - 40 ? 8 : 0; if(dy){ list.scrollTop += dy; } }, 30);
   place(x, y);
 }
+// A CSV with every library key, its English text and the translation already in the library —
+// the sheet to fill in and paste into the SharePoint list "Report Library" (Title, Body, Lang).
+function downloadTranslationSheet(){
+  const lang = reportLang();
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const keys = Object.keys(REPORT_LIBRARY).filter(k => !k.includes('@')).sort();
+  const rows = [['Title (key)', 'Lang', 'Body (English, reference)', `Body (${lang})`].map(q).join(',')];
+  keys.forEach(k => rows.push([k, lang, REPORT_LIBRARY[k], REPORT_LIBRARY[`${k}@${lang}`] ?? ''].map(q).join(',')));
+  saveBlob(new Blob(['\ufeff' + rows.join('\r\n')], {type: 'text/csv'}), `ReportLibrary_${lang}.csv`);
+}
+// true when the section's library text has no translation in the document language
+function sectionNeedsTranslation(s){
+  if(reportLang() === 'en' || s.custom || s.edited) return false;
+  const keys = s.libKeys ? Object.values(s.libKeys) : [];
+  if(!keys.length) keys.push(...REPORT_SECTION_KEYS[s.key] || []);
+  return keys.length ? keys.some(k => k && !libHasLang(k)) : false;
+}
+const REPORT_SECTION_KEYS = {general: ['general:intro', 'general:position', 'general:closing'], mp2: ['mp2:intro'], batsys: ['battery:system'], dccoupling: ['dccoupling'], lineup: ['lineup'], tco: ['tco'], sic: ['sic:intro'], 'sic-facts': ['sic:facts'], 'sic-comparison': ['sic:comparison'], 'sic-field': ['sic:field'], attachments: ['attachments']};
 function renderReportSections(body){
   const R = REPORT;
   const list = numberedSections(R.sections);
@@ -8863,7 +8987,7 @@ function renderReportSections(body){
         <span class="rp-drag" data-drag="${i}" title="Hold briefly (0.2 s), then drag to move${x.level < 3 ? ' (with its sub-sections)' : ''}">⠿</span>
         <input type="checkbox" data-inc="${i}"${x.include ? ' checked' : ''} title="Include in the report">
         <span class="rp-num">${escapeHtml(x.num)}</span><span class="rp-title">${escapeHtml(x.title || '(untitled)')}</span>
-        ${x.custom ? '<span class="rp-badge c">added</span>' : x.edited ? '<span class="rp-badge e">edited</span>' : ''}${x.orphan ? '<span class="rp-badge o">not in offer</span>' : ''}
+        ${x.custom ? '<span class="rp-badge c">added</span>' : x.edited ? '<span class="rp-badge e">edited</span>' : ''}${x.orphan ? '<span class="rp-badge o">not in offer</span>' : ''}${sectionNeedsTranslation(x) ? `<span class="rp-badge o" title="No ${reportLang().toUpperCase()} text in the library — the English one is used">EN</span>` : ''}
         <button type="button" class="rp-rm" data-rm="${i}" title="Delete this section${x.level < 3 ? ' and its sub-sections' : ''}">✕</button>
       </div>`).join('')}
       <div class="rp-list-actions"><button type="button" class="dl-a" data-add>+ Add section</button>${(R.removed || []).length ? `<button type="button" class="dl-a" data-restore title="Bring back the offer sections deleted from this report">↺ Restore deleted (${R.removed.length})</button>` : ''}</div>
@@ -9151,10 +9275,13 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.53';
+const CURRENT_VERSION = 'beta_5.54';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
+    'Lingua del documento (EN/IT/DE/FR/ES) scelta in "1 · Data & revisions", indipendente dalla lingua dell\'app e salvata nel JSON d\'offerta: titoli dei capitoli, didascalie (Figura/Abbildung…), tabella autonomie, nota dello spazio vuoto e lingua di correzione di Word seguono la scelta',
+    'Testi lunghi tradotti: nella SharePoint list "Report Library" basta una riga con la stessa chiave e la lingua (chiave "general:intro@it" oppure colonna "Lang"); dove manca la traduzione resta l\'inglese e la sezione è marcata "EN". Il pulsante "⤓ Translation sheet (CSV)" scarica tutte le chiavi con il testo inglese e la colonna da tradurre',
+    'Copertina, intestazione e retro restano quelli del modello Word, uguali in tutte le lingue',
     'Initialize Report: pulsante "✕ Exit without saving" (annulla tutte le modifiche fatte da quando la finestra è stata aperta); la × in alto chiede se salvare quando ci sono modifiche; Generate Word vale come salvataggio',
     'Sezioni: si spostano trascinando la maniglia ⠿ (0,2 s, come nelle Offer Lines) insieme ai loro sotto-capitoli; ✕ su ogni riga elimina il capitolo (e i suoi sotto-capitoli). Le sezioni dell\'offerta eliminate non ricompaiono con "Rebuild from offer"; "↺ Restore deleted" le riporta',
     'Impaginazione della Technical Note: titoli, frasi introduttive, immagini con didascalia e tabelle restano insieme (mai un titolo o una frase isolata in fondo pagina, mai una tabella spezzata); un capitolo che cadrebbe nell\'ultimo 30% della pagina parte dalla pagina successiva; dove resta molto spazio libero (oltre ~22% della pagina) compare la nota "This space has been intentionally left blank."',

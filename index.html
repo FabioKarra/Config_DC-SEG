@@ -754,7 +754,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.55</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.57</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -5450,13 +5450,66 @@ async function offerToCreateMissingProjectFolder(token, site, ref, folderLinkVal
 // there are two routes: the path is copied, ready to paste into Explorer, and — if the small
 // "ups-folder" helper has been installed on the PC — the same button opens the folder directly.
 const LOCAL_ROOT_KEY = 'upsConfigurator.localSyncRoot';
-const LOCAL_ROOT_DEFAULT = '%USERPROFILE%\\OneDrive - RPS S.p.A\\TEC DC - Documents';
-function localSyncRoot(){
-  try{ return localStorage.getItem(LOCAL_ROOT_KEY) || LOCAL_ROOT_DEFAULT; }catch(e){ return LOCAL_ROOT_DEFAULT; }
+const LOCAL_LIBRARY_FOLDER = 'OneDrive - RPS S.p.A\\TEC DC - Documents';
+// Not every place expands %USERPROFILE% (the Explorer address bar does, a file dialog or a paste
+// into another program does not), so the real user folder is used whenever it can be worked out.
+// The Windows user name is NOT the mail address: "f.carraro@…" is the user "fcarraro", so the
+// guess is the part before "@" without dots, hyphens and underscores. It is only a guess — the
+// name is shown in its own field in the Folder window, and whatever is typed there (or the whole
+// path, in the field below it) is remembered on that computer.
+const LOCAL_USER_KEY = 'upsConfigurator.windowsUser';
+function windowsUserGuess(){
+  const u = (msalAccount && msalAccount.username) || '';
+  const name = String(u).split('@')[0].trim().replace(/[._-]/g, '');
+  return /^[A-Za-z0-9]+$/.test(name) ? name : '';
 }
-function setLocalSyncRoot(v){ try{ localStorage.setItem(LOCAL_ROOT_KEY, v); }catch(e){} }
+// Automatic: the AD account name (onPremisesSamAccountName) is what the Windows profile folder is
+// named on a domain-joined PC — "f.carraro@…" signs in, "fcarraro" is the folder. It is read once
+// per session from Graph /me with a User.Read token; if that token or that property isn't there,
+// the guess from the mail address is used, and the field stays editable either way.
+let windowsUserFromAd = null;
+function windowsUser(){
+  try{ return localStorage.getItem(LOCAL_USER_KEY) || windowsUserFromAd || windowsUserGuess(); }catch(e){ return windowsUserFromAd || windowsUserGuess(); }
+}
+const AD_USER_CACHE_KEY = 'upsConfigurator.adUserName';
+async function loadWindowsUserFromAd(){
+  if(windowsUserFromAd) return windowsUserFromAd;
+  try{ const c = localStorage.getItem(AD_USER_CACHE_KEY); if(c){ windowsUserFromAd = c; return c; } }catch(e){}
+  if(!(msalInstance && msalAccount)) return '';
+  let token;
+  try{
+    const resp = await msalInstance.acquireTokenSilent({scopes: ['User.Read'], account: msalAccount});
+    token = resp.accessToken;
+  }catch(err){ console.info('No silent User.Read token — the Windows user stays a guess:', err && (err.errorCode || err.message)); return ''; }
+  try{
+    const me = await graphGet('https://graph.microsoft.com/v1.0/me?$select=onPremisesSamAccountName,mailNickname,userPrincipalName', token);
+    const name = String(me.onPremisesSamAccountName || me.mailNickname || '').trim();
+    if(!/^[A-Za-z0-9._-]+$/.test(name)) return '';
+    windowsUserFromAd = name;
+    try{ localStorage.setItem(AD_USER_CACHE_KEY, name); }catch(e){}
+    return name;
+  }catch(err){ console.info('Graph /me not available — the Windows user stays a guess:', err && (err.message || err)); return ''; }
+}
+function setWindowsUser(v){ try{ v ? localStorage.setItem(LOCAL_USER_KEY, v) : localStorage.removeItem(LOCAL_USER_KEY); }catch(e){} }
+function defaultLocalRoot(){
+  const u = windowsUser();
+  return u ? `C:\\Users\\${u}\\${LOCAL_LIBRARY_FOLDER}` : `%USERPROFILE%\\${LOCAL_LIBRARY_FOLDER}`;
+}
+function localSyncRoot(){
+  try{ return localStorage.getItem(LOCAL_ROOT_KEY) || defaultLocalRoot(); }catch(e){ return defaultLocalRoot(); }
+}
+function setLocalSyncRoot(v){ try{ v ? localStorage.setItem(LOCAL_ROOT_KEY, v) : localStorage.removeItem(LOCAL_ROOT_KEY); }catch(e){} }
 function localPathFor(rel){
   return `${localSyncRoot().replace(/[\\/]+$/, '')}\\${String(rel || '').replace(/\//g, '\\')}`;
+}
+// What is handed to the "ups-folder" helper: unless the folder was set by hand, the path keeps
+// %USERPROFILE% in front — the PC expands it to its own user, so File Explorer opens the right
+// folder whatever the Windows user is called.
+function localPathForHelper(rel){
+  let manual = '';
+  try{ manual = localStorage.getItem(LOCAL_ROOT_KEY) || ''; }catch(e){}
+  if(manual) return localPathFor(rel);
+  return `%USERPROFILE%\\${LOCAL_LIBRARY_FOLDER}\\${String(rel || '').replace(/\//g, '\\')}`;
 }
 function sharePointUrlFor(rel){
   const host = (document.getElementById('spSiteHost').value || 'rielloups.sharepoint.com').trim();
@@ -5486,6 +5539,7 @@ function openFolderProtocol(path){
 }
 async function openProjectFolderDialog(){
   const ref = document.getElementById('prjRef').value.trim();
+  await loadWindowsUserFromAd();
   if(!ref){ alert('Enter or load a Project Reference first.'); return; }
   const rel = await projectFolderRelPath();
   if(!rel){ alert('Could not work out this project\'s folder.'); return; }
@@ -5498,14 +5552,21 @@ async function openProjectFolderDialog(){
     <div class="acc-modal-header"><h3>Project folder — ${escapeHtml(ref)}</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
     <div style="padding:16px 18px;">
       <p class="pf-hint" style="margin-top:0;">${escapeHtml(rel)}</p>
-      <label style="font-size:12px; color:var(--dim);">On this computer (OneDrive)</label>
+      <label style="font-size:12px; color:var(--dim);">Windows user (the name of the folder in C:\Users)</label>
+      <div class="pf-box"><input type="text" id="pfUser" value="${escapeHtml(windowsUser())}" spellcheck="false" placeholder="e.g. fcarraro" style="max-width:220px;">
+        <button type="button" class="btn-ghost act" data-saveuser>Save</button>
+        <span class="pf-hint" style="margin:0;">Not the mail address: check it in File Explorer under C:\Users.</span></div>
+      <label style="font-size:12px; color:var(--dim);">Synced folder on this computer (the OneDrive folder of the SharePoint library)</label>
+      <div class="pf-box"><input type="text" id="pfRoot" value="${escapeHtml(localSyncRoot())}" spellcheck="false">
+        <button type="button" class="btn-ghost act" data-saveroot>Save</button>
+        <button type="button" class="btn-ghost act" data-resetroot title="Back to the suggested folder">↺</button></div>
+      <label style="font-size:12px; color:var(--dim);">Project folder on this computer</label>
       <div class="pf-box"><input type="text" id="pfLocal" readonly value="${escapeHtml(localPathFor(rel))}">
         <button type="button" class="btn-ghost act" data-copy>Copy</button></div>
-      <p class="pf-hint">File Explorer: <b>Win + E</b>, then <b>Ctrl + L</b>, paste and press Enter. %USERPROFILE% is resolved by Explorer itself, so the path works for every user.</p>
+      <p class="pf-hint">File Explorer: <b>Win + E</b>, then <b>Ctrl + L</b>, paste and press Enter. If the folder does not open, correct the synced folder above (in File Explorer: right-click the folder → "Copy as path") and press Save — it stays saved on this computer.</p>
       <div class="pf-actions">
         <button type="button" class="act btn-primary" data-sp>🌐 Open on SharePoint</button>
         <button type="button" class="btn-ghost act" data-explorer>🗂 Open in File Explorer</button>
-        <button type="button" class="btn-ghost act" data-root>⚙ Synced folder…</button>
       </div>
       <p class="pf-hint" id="pfMsg"></p>
     </div></div>`;
@@ -5521,17 +5582,33 @@ async function openProjectFolderDialog(){
     catch(e){ const i = overlay.querySelector('#pfLocal'); i.removeAttribute('readonly'); i.select(); document.execCommand('copy'); i.setAttribute('readonly', ''); msg('Path copied.'); }
   });
   overlay.querySelector('[data-explorer]').addEventListener('click', async () => {
-    const path = overlay.querySelector('#pfLocal').value;
-    try{ await navigator.clipboard.writeText(path); }catch(e){}
+    const path = localPathForHelper(rel);
+    try{ await navigator.clipboard.writeText(overlay.querySelector('#pfLocal').value); }catch(e){}
     msg('Opening File Explorer… if nothing happens the "ups-folder" helper is not installed on this PC: the path is already copied, paste it into Explorer (Win + E, Ctrl + L).');
     openFolderProtocol(path);
   });
-  overlay.querySelector('[data-root]').addEventListener('click', async () => {
-    const v = prompt('Local folder that syncs the SharePoint library "Shared Documents":', localSyncRoot());
-    if(v === null) return;
-    setLocalSyncRoot(v.trim() || LOCAL_ROOT_DEFAULT);
-    overlay.querySelector('#pfLocal').value = localPathFor(rel);
+  const applyRoot = () => { overlay.querySelector('#pfLocal').value = localPathFor(rel); };
+  overlay.querySelector('[data-saveuser]').addEventListener('click', () => {
+    const u = overlay.querySelector('#pfUser').value.trim().replace(/[\\/]/g, '');
+    setWindowsUser(u);
+    setLocalSyncRoot('');   // the folder goes back to following the user name
+    overlay.querySelector('#pfUser').value = windowsUser();
+    overlay.querySelector('#pfRoot').value = localSyncRoot();
+    applyRoot();
+    msg(u ? `Windows user saved: the folder now starts with C:\\Users\\${u}.` : 'Windows user cleared — %USERPROFILE% is used again.');
+  });
+  overlay.querySelector('[data-saveroot]').addEventListener('click', () => {
+    const v = overlay.querySelector('#pfRoot').value.trim().replace(/^"+|"+$/g, '');
+    setLocalSyncRoot(v);
+    overlay.querySelector('#pfRoot').value = localSyncRoot();
+    applyRoot();
     msg('Synced folder saved on this computer.');
+  });
+  overlay.querySelector('[data-resetroot]').addEventListener('click', () => {
+    setLocalSyncRoot('');
+    overlay.querySelector('#pfRoot').value = localSyncRoot();
+    applyRoot();
+    msg('Back to the suggested folder.');
   });
 }
 document.getElementById('btnProjectFolder').addEventListener('click', () => openProjectFolderDialog());
@@ -9375,7 +9452,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.55';
+const CURRENT_VERSION = 'beta_5.57';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -9405,6 +9482,14 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_5.57', date:'2026-09-23', notes:[
+    '📂 Folder: l\'utente Windows viene preso da solo dall\'account aziendale (onPremisesSamAccountName di Graph /me, cioè il nome con cui si accede al PC) — il campo resta per correggerlo se serve',
+    '📂 Folder: "Open in File Explorer" passa all\'helper un percorso con %USERPROFILE%, che il PC espande da sé: la cartella si apre giusta anche se il nome utente non è stato riconosciuto (a meno che la cartella sincronizzata sia stata impostata a mano)',
+  ]},
+  {version:'beta_5.56', date:'2026-09-23', notes:[
+    '📂 Folder: il percorso locale usa la cartella utente reale (C:\\Users\\<utente>) invece di %USERPROFILE%, che non viene espanso ovunque. L\'utente Windows non si può leggere dal browser e non coincide con la mail (f.carraro@… → fcarraro): c\'è un campo "Windows user" nella finestra, si scrive una volta e resta memorizzato su quel computer',
+    '📂 Folder: la cartella sincronizzata si scrive direttamente nella finestra (campo + Save, ↺ torna a quella suggerita) e resta memorizzata su quel computer',
+  ]},
   {version:'beta_5.55', date:'2026-09-23', notes:[
     'Nuovo pulsante "📂 Folder" in Project Details: mostra la cartella del progetto e la apre su SharePoint, oppure ne copia il percorso locale OneDrive (%USERPROFILE%\\OneDrive - RPS S.p.A\\TEC DC - Documents\\01_DTBS Offer\\<anno>\\<progetto>) pronto da incollare in Esplora file',
     'Con l\'helper "ups-folder" installato sul PC (file Installa_ups-folder.cmd, nessun diritto di amministratore), lo stesso pulsante apre la cartella direttamente in Esplora file',

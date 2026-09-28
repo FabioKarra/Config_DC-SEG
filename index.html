@@ -197,6 +197,10 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 .rp-item.on{background:#EAF0FB;} .rp-item.off .rp-title, .rp-item.off .rp-num{color:#B0B6C0; text-decoration:line-through;}
 .rp-num{color:var(--accent-dark); min-width:34px; font-weight:500;} .rp-title{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .rp-badge{font-size:10px; padding:1px 6px; border-radius:10px;} .rp-badge.e{background:#FFF4E0; color:#B26A00;} .rp-badge.c{background:#E8F5E9; color:#2E7D32;} .rp-badge.o{background:#FDE7EB; color:#C00030;}
+@keyframes bomRowNew{0%{background:#FFF3C4;}100%{background:transparent;}}
+.bom-row-new > td{animation:bomRowNew 1.6s ease-out;}
+#cfgBody tr.bom-row-new > td{animation:bomRowNew 1.6s ease-out;}
+.delivery-forced{display:inline-block; font-size:10px; padding:1px 6px; border-radius:10px; background:#FFF4E0; color:#B26A00; margin-right:4px; vertical-align:middle;}
 .pf-box{display:flex; gap:6px; align-items:center; margin:6px 0 2px;}
 .pf-box input{flex:1; min-width:0; font-family:Consolas,'Courier New',monospace; font-size:12px; padding:7px 8px; border:1px solid var(--field-border); border-radius:6px; background:#F7F8FA;}
 .pf-hint{font-size:11.5px; color:var(--dim); line-height:1.6; margin:4px 0 0;}
@@ -754,7 +758,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.58</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.61</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3165,10 +3169,51 @@ function moduleKwForModel(model){
 }
 
 function renumberRows(){
-  [...cfgBody.querySelectorAll('tr')].forEach((tr, idx)=>{
+  const rows = [...cfgBody.querySelectorAll('tr')];
+  // A position number that shifts (a row added in the middle, or one removed) must be followed by
+  // the offer chapter that belongs to it — the two are linked by that number alone.
+  const map = new Map();
+  rows.forEach((tr, idx)=>{ const n = String(idx+1); if(tr.dataset.pos && tr.dataset.pos !== n) map.set(tr.dataset.pos, n); });
+  if(map.size && typeof bomBody !== 'undefined' && bomBody){
+    const headers = [...bomBody.querySelectorAll('tr[data-kind="header"][data-cfg-pos]')];
+    const moved = headers.map(h => map.get(h.dataset.cfgPos) || h.dataset.cfgPos);
+    headers.forEach((h, i)=>{ h.dataset.cfgPos = moved[i]; });
+  }
+  rows.forEach((tr, idx)=>{
     const n = idx+1;
     tr.dataset.pos = n;
     tr.querySelector('.pos-badge').textContent = String(n).padStart(2,'0');
+  });
+}
+
+// Puts the offer's UPS chapters back in the order of System Configuration and renumbers them
+// (1.0, 2.0, … and their lines 1.1, 1.2 …) — after a position is added in the middle or moved.
+// SERVICES and the project sections keep their place at the end.
+function reorderChaptersByPosition(){
+  if(typeof bomBody === 'undefined' || !bomBody) return;
+  const order = [...cfgBody.querySelectorAll('tr')].map(tr => tr.dataset.pos);
+  const headers = [...bomBody.querySelectorAll('tr[data-kind="header"]')].filter(h => h.dataset.cfgPos);
+  if(headers.length < 2){ renumberChapters(); return; }
+  const blocks = headers.map(h => getGroupBlock(h));
+  const last = blocks[blocks.length - 1];
+  const anchor = last[last.length - 1].nextElementSibling;   // SERVICES / project sections, or nothing
+  const rank = h => { const i = order.indexOf(h.dataset.cfgPos); return i < 0 ? 1e6 : i; };
+  const sorted = blocks.slice().sort((a, b) => rank(a[0]) - rank(b[0]));
+  const frag = document.createDocumentFragment();
+  sorted.forEach(block => block.forEach(r => frag.appendChild(r)));
+  bomBody.insertBefore(frag, anchor);
+  renumberChapters();
+}
+// Chapter numbers follow the order of the positions; SERVICES and project sections have none.
+function renumberChapters(){
+  let n = 0;
+  [...bomBody.querySelectorAll('tr[data-kind="header"]')].forEach(h => {
+    if(!h.dataset.cfgPos) return;
+    n++;
+    h.dataset.pos = `${n}.0`;
+    const posEl = h.cells[0].querySelector('.bom-pos-text');
+    if(posEl) posEl.textContent = `${n}.0`; else h.cells[0].textContent = `${n}.0`;
+    bomRenumberChapter(h.dataset.rowId);
   });
 }
 
@@ -3288,8 +3333,13 @@ function buildRow(prefill){
     if(headerRow) recalcGroupTotal(headerRow.dataset.rowId);
   });
   tr.querySelector('.row-remove').addEventListener('click', ()=>{
+    // the chapter of a removed position keeps its lines but loses the link, so the number now
+    // belonging to another position doesn't pick up this one's accessories at the next regenerate
+    const orphan = [...bomBody.querySelectorAll('tr[data-kind="header"][data-cfg-pos]')].find(h => h.dataset.cfgPos === tr.dataset.pos);
+    if(orphan) delete orphan.dataset.cfgPos;
     tr.remove();
     renumberRows();
+    renumberChapters();
   });
 
   // called after a price list import so open rows pick up the new model/connection/configuration data
@@ -3638,6 +3688,15 @@ function addBomRow(data, insertBeforeNode){
       accBtn.addEventListener('click', ()=>openAccessoryModal(row));
     }
     row.querySelector('.bom-actions').appendChild(accBtn);
+    if(!data.isServices){
+      const dupBtn = document.createElement('button');
+      dupBtn.type = 'button'; dupBtn.className = 'row-remove'; dupBtn.textContent = '⧉';
+      dupBtn.title = data.isCustomSection
+        ? 'Duplicate this section with all its lines'
+        : 'Duplicate this chapter with all its lines — and its position in System Configuration';
+      dupBtn.addEventListener('click', ()=>duplicateBomChapter(row));
+      row.querySelector('.bom-actions').appendChild(dupBtn);
+    }
     if(data.isCustomSection){
       // (moving a section: drag its ⠿ handle — the old ↑/↓ buttons were removed in beta_5.53)
       const rmSectionBtn = document.createElement('button');
@@ -3760,9 +3819,46 @@ function addBomRow(data, insertBeforeNode){
       row.querySelector('.bom-actions').appendChild(rmBtn);
     }
   }
+  if(kind === 'line' || kind === 'accessory'){
+    const dupBtn = document.createElement('button');
+    dupBtn.type = 'button'; dupBtn.className = 'row-remove'; dupBtn.textContent = '⧉';
+    dupBtn.title = 'Duplicate this line (the copy stays after Generate Offer)';
+    dupBtn.addEventListener('click', ()=>duplicateBomLine(row));
+    row.querySelector('.bom-actions').prepend(dupBtn);
+  }
   if(kind==='delivery'){
-    // auto-computed by updateDeliveryRow() — not directly user-editable
-    row.querySelectorAll('input').forEach(inp=>{ inp.disabled = true; });
+    // Normally auto-computed by updateDeliveryRow() from "Delivery %", but the price (and its cost)
+    // can be forced by typing over it: from then on this row keeps the typed value and the
+    // percentage no longer touches it, until "↺" puts it back under the percentage. Quantity and
+    // discount stay locked — the delivery line is one line at 100%.
+    row.querySelector('.in-qty').disabled = true;
+    row.querySelector('.in-disc').disabled = true;
+    if(data.deliveryManual) row.dataset.manualDelivery = 'true';
+    const chip = document.createElement('span');
+    chip.className = 'delivery-forced';
+    chip.textContent = 'forced';
+    chip.title = 'Price typed by hand — the "Delivery %" in Settings no longer changes it';
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button'; resetBtn.className = 'row-remove'; resetBtn.textContent = '↺';
+    resetBtn.title = 'Back to the automatic value (Delivery % in Settings)';
+    const syncForced = ()=>{
+      const on = row.dataset.manualDelivery === 'true';
+      chip.style.display = on ? '' : 'none';
+      resetBtn.style.display = on ? '' : 'none';
+    };
+    row.querySelector('.bom-actions').append(chip, resetBtn);
+    resetBtn.addEventListener('click', ()=>{
+      delete row.dataset.manualDelivery;
+      syncForced();
+      updateDeliveryRow();
+    });
+    ['.in-gross', '.in-cost'].forEach(sel => row.querySelector(sel).addEventListener('input', ()=>{
+      if(_writingDelivery) return;   // the value was just written by updateDeliveryRow, not typed
+      row.dataset.manualDelivery = 'true';
+      syncForced();
+    }));
+    row._syncDeliveryForced = syncForced;
+    syncForced();
   }
 
   function recalc(){
@@ -3992,14 +4088,22 @@ function computeSystemsTotalPrice(){
 // Keeps the auto-computed "Delivery" line (inside SERVICES) in sync with DELIVERY_PERCENT and
 // the current total net price of all generated solutions. Guarded against re-entrancy since it
 // goes through the same recalcGroupTotal → recalcProjectTotal chain as every other priced row.
-let _updatingDelivery = false;
+let _updatingDelivery = false;   // guards the recalc chain
+let _writingDelivery = false;    // true while updateDeliveryRow writes the row's own inputs
 function updateDeliveryRow(){
   const row = bomBody.querySelector('tr[data-kind="delivery"]');
   if(!row) return;
-  const systemsPrice = computeSystemsTotalPrice();
-  const deliveryValue = systemsPrice * (DELIVERY_PERCENT/100);
   const descEl = row.querySelector('.desc-text');
   if(descEl) descEl.textContent = 'Delivery'; else row.cells[4].textContent = 'Delivery';
+  // price forced by hand: the percentage is ignored, only the totals are refreshed
+  if(row.dataset.manualDelivery === 'true'){
+    if(row._syncDeliveryForced) row._syncDeliveryForced();
+    if(row.dataset.groupOf) recalcGroupTotal(row.dataset.groupOf);
+    return;
+  }
+  _writingDelivery = true;
+  const systemsPrice = computeSystemsTotalPrice();
+  const deliveryValue = systemsPrice * (DELIVERY_PERCENT/100);
   row.querySelector('.in-gross').value = deliveryValue.toFixed(2);
   row.querySelector('.in-cost').value = deliveryValue.toFixed(2);
   row.querySelector('.out-net').textContent = formatMoney(deliveryValue);
@@ -4007,6 +4111,8 @@ function updateDeliveryRow(){
   row.querySelector('.out-tprice').textContent = formatMoney(deliveryValue);
   const mEl = row.querySelector('.out-margin');
   if(mEl){ mEl.textContent = '0.00%'; mEl.className = 'num out-margin margin-pos'; }
+  _writingDelivery = false;
+  if(row._syncDeliveryForced) row._syncDeliveryForced();
   if(row.dataset.groupOf) recalcGroupTotal(row.dataset.groupOf);
 }
 
@@ -4857,6 +4963,96 @@ function bomRenumberChapter(owner){
     });
 }
 
+// ---- Duplicate (⧉) — a single line, or a whole chapter ----
+// A duplicated line is added as a manual line of the same chapter, so it survives the next
+// "Generate Offer" (which rebuilds only the lines it generates itself).
+// Duplicating a UPS chapter also adds its position to System Configuration — the chapter and the
+// position are two views of the same thing, and a chapter with no position of its own would
+// disappear at the next "Generate Offer".
+function bomRowCopyData(r){
+  return {
+    qty: rowQty(r),
+    model: rowModelText(r),
+    code: rowCodeText(r),
+    desc: rowDescText(r),
+    gross: r.querySelector('.in-gross') ? r.querySelector('.in-gross').value : 0,
+    disc: r.querySelector('.in-disc') ? r.querySelector('.in-disc').value : 0,
+    cost: r.querySelector('.in-cost') ? r.querySelector('.in-cost').value : 0,
+    extSupplier: rowExtSupplier(r),
+    techCategory: r.dataset.techCategory || null,
+    baseModel: r.dataset.baseModel || '',
+    pos: r.dataset.pos || '',   // renumbered right after, but the copy has to start numbered
+  };
+}
+function flashNewRow(row){
+  if(!row) return;
+  row.classList.add('bom-row-new');
+  setTimeout(()=>row.classList.remove('bom-row-new'), 1600);
+}
+function duplicateBomLine(row){
+  if(READ_ONLY) return null;
+  const copy = addBomRow({...bomRowCopyData(row), kind: 'accessory', manualEntry: true, groupOf: row.dataset.groupOf}, row.nextElementSibling);
+  if(row.dataset.groupOf){ bomRenumberChapter(row.dataset.groupOf); recalcGroupTotal(row.dataset.groupOf); }
+  flashNewRow(copy);
+  return copy;
+}
+function nextChapterNumber(){
+  let max = 0;
+  bomBody.querySelectorAll('tr[data-kind="header"]').forEach(h=>{
+    const m = /^(\d+)\.0$/.exec(h.dataset.pos || '');
+    if(m) max = Math.max(max, Number(m[1]));
+  });
+  return max + 1;
+}
+// Copies one System Configuration row (its inputs as they are now) into a new row at the end.
+function duplicateCfgPosition(srcTr){
+  const $ = sel => srcTr.querySelector(sel);
+  const before = [...cfgBody.querySelectorAll('tr')];
+  buildRow({
+    qty: $('.f-qty').value, upssys: $('.f-upssys').value,
+    loadtype: $('.f-loadtype').value, loadtypeOther: $('.f-loadtype-other').value,
+    pload: $('.f-pload').value, red: $('.f-red').value,
+    model: $('.f-model').value, conn: $('.f-conn').value, config: $('.f-config').value,
+    vent: $('.f-vent').value, batt: $('.f-batt').value, higheff: $('.f-higheff').checked,
+  });
+  // the copy goes right under the position it came from, and the numbering is redone from there
+  const copy = [...cfgBody.querySelectorAll('tr')].find(tr => !before.includes(tr));
+  if(copy && srcTr.nextElementSibling !== copy) cfgBody.insertBefore(copy, srcTr.nextElementSibling);
+  renumberRows();
+  return copy;
+}
+function duplicateBomChapter(header){
+  if(READ_ONLY) return null;
+  if(header.dataset.isServices === 'true') return null;   // there is only ever one SERVICES section
+  const block = getGroupBlock(header);
+  const after = block[block.length - 1].nextElementSibling;
+  const isCustom = header.dataset.isCustomSection === 'true';
+  let cfgPos = '';
+  let newCfgRow = null;
+  if(header.dataset.cfgPos){
+    const src = [...cfgBody.querySelectorAll('tr')].find(tr => tr.dataset.pos === header.dataset.cfgPos);
+    if(src){ newCfgRow = duplicateCfgPosition(src); cfgPos = newCfgRow.dataset.pos; }
+  }
+  const label = header.cells[4].textContent + (isCustom ? ' (copy)' : '');
+  const newHeader = addBomRow({
+    kind: 'header', pos: `${nextChapterNumber()}.0`, label,
+    baseModel: header.dataset.baseModel || '', cfgPos: cfgPos || undefined,
+    isCustomSection: isCustom || undefined,
+  }, after);
+  const owner = newHeader.dataset.rowId;
+  block.slice(1).forEach(r => {
+    if(r.dataset.kind !== 'line' && r.dataset.kind !== 'accessory') return;
+    addBomRow({...bomRowCopyData(r), kind: r.dataset.kind, manualEntry: r.dataset.manualEntry === 'true' || undefined, groupOf: owner}, after);
+  });
+  addBomRow({kind: 'total', groupOf: owner}, after);
+  bomRenumberChapter(owner);
+  recalcGroupTotal(owner);
+  reorderChaptersByPosition();
+  flashNewRow(newHeader);
+  if(newCfgRow) flashNewRow(newCfgRow);
+  return newHeader;
+}
+
 // ---- Services (manual, free-form line entry — installation/commissioning/SAT/training/etc.,
 // always added at the very end of the offer; the auto Delivery line always stays last) ----
 function openServiceModal(headerRow){
@@ -4969,6 +5165,17 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
 
   // Preserve manually added Service lines too (there's only ever one SERVICES section, so no
   // per-position key is needed — just find it by its isServices marker before wiping).
+  // A Delivery price forced by hand survives a regenerate — the percentage would otherwise take
+  // the line back over on the next Generate Offer.
+  let savedDelivery = null;
+  const existingDelivery = bomBody.querySelector('tr[data-kind="delivery"]');
+  if(existingDelivery && existingDelivery.dataset.manualDelivery === 'true'){
+    savedDelivery = {
+      gross: existingDelivery.querySelector('.in-gross').value,
+      cost: existingDelivery.querySelector('.in-cost').value,
+    };
+  }
+
   let savedServiceLines = [];
   const existingServicesHeader = bomBody.querySelector('tr[data-kind="header"][data-is-services="true"]');
   if(existingServicesHeader){
@@ -5181,8 +5388,10 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       });
     });
     addBomRow({
-      kind:'delivery', qty:1, groupOf:servicesOwner,
-      desc:`Delivery`, gross:0, cost:0,
+      kind:'delivery', qty:1, groupOf:servicesOwner, desc:`Delivery`,
+      gross: savedDelivery ? savedDelivery.gross : 0,
+      cost: savedDelivery ? savedDelivery.cost : 0,
+      deliveryManual: !!savedDelivery,
     });
     addBomRow({kind:'total', groupOf:servicesOwner, isServices:true});
     recalcGroupTotal(servicesOwner);
@@ -5302,6 +5511,8 @@ function setReadOnly(ro){
   document.getElementById('btnGenerate').disabled = ro;
   document.getElementById('btnCloseOffer').disabled = ro;
   document.querySelectorAll('#bomBody input, #bomBody button').forEach(el=>{ el.disabled = ro; });
+  // the Delivery line's quantity and discount are never editable (one line, no discount)
+  bomBody.querySelectorAll('tr[data-kind="delivery"] .in-qty, tr[data-kind="delivery"] .in-disc').forEach(el=>{ el.disabled = true; });
   bomBody.classList.toggle('read-only', ro); // hides the ⠿ drag handles while the revision is closed
   updateRevisionStatus();
 }
@@ -5726,6 +5937,7 @@ function buildConfigState(){
     if(r.dataset.extSupplier) item.extSupplier = true;
     if(r.dataset.techCategory) item.techCategory = r.dataset.techCategory;
     if(r.dataset.manualEntry) item.manualEntry = true;
+    if(r.dataset.manualDelivery) item.deliveryManual = true;
     if(kind === 'header'){
       item.label = r.cells[4].textContent;
     } else if(kind === 'total'){
@@ -9471,7 +9683,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.58';
+const CURRENT_VERSION = 'beta_5.61';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -9501,6 +9713,19 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_5.61', date:'2026-09-28', notes:[
+    'Duplicando un capitolo UPS, la posizione copiata viene inserita subito sotto quella di origine in System Configuration (non più in fondo) e tutte le posizioni successive si rinumerano; i capitoli dell\'offerta si riordinano di conseguenza e vengono rinumerati (1.0, 2.0, … con le loro righe 1.1, 1.2 …)',
+    'Correzione: togliendo una posizione, i capitoli restavano legati ai vecchi numeri — ora seguono la rinumerazione, e il capitolo della posizione eliminata viene scollegato (le sue righe restano finché non si rigenera, ma non finiscono più su un\'altra posizione)',
+  ]},
+  {version:'beta_5.60', date:'2026-09-28', notes:[
+    'Nuovo pulsante ⧉ nelle Offer Lines per duplicare una riga: la copia si inserisce subito sotto, viene rinumerata e resta anche dopo Generate Offer (è trattata come riga manuale del capitolo)',
+    'Il ⧉ sulla riga di capitolo duplica tutto il capitolo con le sue righe. Se è un capitolo UPS viene aggiunta automaticamente anche la posizione corrispondente in System Configuration (stessi dati: modello, potenza, Q.ty, ridondanza, batteria…), così il capitolo non sparisce al successivo Generate Offer',
+    'SERVICES non è duplicabile (è unica); le sezioni di progetto si duplicano con "(copy)" nel nome',
+  ]},
+  {version:'beta_5.59', date:'2026-09-28', notes:[
+    'Delivery: il prezzo si può forzare scrivendolo direttamente nella riga delle Offer Lines. Da quel momento la riga è marcata "forced" e la percentuale "Delivery %" non la tocca più; il pulsante ↺ sulla riga la riporta al calcolo automatico',
+    'Il valore forzato resta dopo Generate Offer, nel salvataggio JSON e nei documenti (PDF, Excel, Word); quantità e sconto della riga Delivery restano bloccati',
+  ]},
   {version:'beta_5.58', date:'2026-09-28', notes:[
     'M2X: il codice dell\'armadio non considera più la parte " - 30" / " - 15" del modello (è la taglia del modulo, non dell\'armadio): "M2X 120 - 30" cerca a listino "M2X 120 PCS" e trova codice, descrizione e prezzo. La taglia continua a decidere il modulo di potenza (30 kW o 15 kW) e il numero massimo di 5 moduli',
     'Import listino: le righe UPS M2X sono riconosciute sia con la taglia nel nome ("M2X 120 - 30 PCS") sia senza ("M2X 120 PCS"); se esistono entrambe vince quella con la taglia',

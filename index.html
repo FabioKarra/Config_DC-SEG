@@ -754,7 +754,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.57</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_5.58</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3383,9 +3383,11 @@ function parseCatalogModelString(modelStr){
   // M2X uses "M2X <total kW> - <module kW>" (e.g. "M2X 120 - 30"), a different numbering
   // convention from MP2/M2S's plain "<prefix> <pmax>" — handled as its own branch since a single
   // shared regex can't cover both shapes.
-  const mX = s.match(/^(M2X)\s+(\d+)\s*-\s*(\d+)/i);
+  // The module size is optional: a price list can name the cabinet either way ("M2X 120 - 30 PCS"
+  // or just "M2X 120 PCS") — it is the same cabinet, and the size only decides the power module.
+  const mX = s.match(/^(M2X)\s+(\d+)(?:\s*-\s*(\d+))?/i);
   if(mX){
-    const baseModel = `M2X ${mX[2]} - ${mX[3]}`;
+    const baseModel = mX[3] ? `M2X ${mX[2]} - ${mX[3]}` : `M2X ${mX[2]}`;
     const tokens = s.slice(mX[0].length).trim().split(/\s+/).filter(Boolean);
     const connection = tokens.includes('F') ? 'Flanged Version' : 'Cabled Version';
     const ventFlag = tokens.includes('VE');
@@ -3420,13 +3422,20 @@ function processCatalog(rows, filename){
     const parsed = parseCatalogModelString(modelStr);
     if(!parsed) return;
     newArch.push({pmax:parsed.pmax, model:parsed.baseModel, connection:parsed.connection, configuration:parsed.configuration});
-    lookup[`${parsed.baseModel}|${parsed.connection}|${parsed.configuration}|${parsed.ventFlag}`] = {
+    const entry = {
       code: String(r.Code||'').trim(),
       description: String(r.Description||'').trim(),
       price: Number(r.Price)||0,
       cost: Number(r.Cost)||0,
       model: modelStr,
     };
+    const variant = `${parsed.connection}|${parsed.configuration}|${parsed.ventFlag}`;
+    lookup[`${parsed.baseModel}|${variant}`] = entry;
+    // …and under the cabinet's own name ("M2X 120"), so an M2X row named with its module size is
+    // still found when the offer asks for the cabinet, and vice versa. A row that names the size
+    // stays the more specific match and is preferred when both exist.
+    const cabKey = `${cabinetModelName(parsed.baseModel)}|${variant}`;
+    if(!lookup[cabKey]) lookup[cabKey] = entry;
   });
 
   if(!newArch.length){
@@ -3504,7 +3513,10 @@ function lookupCabinet(codiceStr){
   if(!CATALOG_LOADED) return null;
   const parsed = parseCatalogModelString(codiceStr);
   if(!parsed) return null;
-  return CATALOG_LOOKUP[`${parsed.baseModel}|${parsed.connection}|${parsed.configuration}|${parsed.ventFlag}`] || null;
+  const variant = `${parsed.connection}|${parsed.configuration}|${parsed.ventFlag}`;
+  return CATALOG_LOOKUP[`${parsed.baseModel}|${variant}`]
+      || CATALOG_LOOKUP[`${cabinetModelName(parsed.baseModel)}|${variant}`]
+      || null;
 }
 
 // Resolves the cabinet line for a "codice" that may carry a trailing " VE" (top ventilation).
@@ -3514,6 +3526,10 @@ function lookupCabinet(codiceStr){
 //    "fifth to last = VE": the base cabinet's own code, with its 5th-and-4th-from-last
 //    characters (the option-flag placeholder, normally "00") replaced by "VE" — mirroring the
 //    same convention used for "DV" (coating) and "CS" (cold start) codes in the same file.
+// "M2X 120 - 30" -> "M2X 120" (the cabinet's own name); every other model is unchanged.
+function cabinetModelName(model){
+  return String(model || '').replace(/^(M2X\s+\d+)\s*-\s*\d+\s*$/i, '$1').trim();
+}
 function resolveCabinetEntry(model, codiceStr){
   const direct = lookupCabinet(codiceStr);
   if(direct) return direct;
@@ -5033,7 +5049,10 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     const owner = headerRow.dataset.rowId;
 
     // ---- codice + VE substitution rules, verbatim from Generate_BOM ----
-    let codice = `${model} ${config}`;
+    // The M2X models carry the module size in their name ("M2X 120 - 30" / "M2X 120 - 15"), but the
+    // cabinet is the same one and the price list names it without that part ("M2X 120 PCS"), so the
+    // size is dropped when composing the cabinet code. It still decides the power module (30/15 kW).
+    let codice = `${cabinetModelName(model)} ${config}`;
     if(conn === 'Flanged Version') codice += ' F';
     let addVE = false;
     if(vent && vent !== 'Standard'){
@@ -8148,7 +8167,7 @@ function reportContext(){
     const npm = pmLines.reduce((a, r) => a + (Number(rowQty(r)) || 0), 0) || Number(computeNPM($('.f-pload').value, $('.f-red').value, moduleKwForModel(model))) || 0;
     const pmKw = (pmLines.length && Number((/(\d+)\s*PM/.exec(lm(pmLines[0])) || [])[1])) || moduleKwForModel(model) || MODULE_KW_ACTIVE;
     const hasVeKit = lines.some(r => /top\s*vent/i.test(lm(r)));
-    const cabModel = cab ? lm(cab) : `${model} ${config}`;
+    const cabModel = cab ? lm(cab) : `${cabinetModelName(model)} ${config}`;
     const series = String(model).split(' ')[0];
     const lt = loadTitleFor(loadType);
     const d = (REPORT && REPORT.positions && REPORT.positions[cfgPos]) || {};
@@ -9452,7 +9471,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.57';
+const CURRENT_VERSION = 'beta_5.58';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -9482,6 +9501,10 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_5.58', date:'2026-09-28', notes:[
+    'M2X: il codice dell\'armadio non considera più la parte " - 30" / " - 15" del modello (è la taglia del modulo, non dell\'armadio): "M2X 120 - 30" cerca a listino "M2X 120 PCS" e trova codice, descrizione e prezzo. La taglia continua a decidere il modulo di potenza (30 kW o 15 kW) e il numero massimo di 5 moduli',
+    'Import listino: le righe UPS M2X sono riconosciute sia con la taglia nel nome ("M2X 120 - 30 PCS") sia senza ("M2X 120 PCS"); se esistono entrambe vince quella con la taglia',
+  ]},
   {version:'beta_5.57', date:'2026-09-23', notes:[
     '📂 Folder: l\'utente Windows viene preso da solo dall\'account aziendale (onPremisesSamAccountName di Graph /me, cioè il nome con cui si accede al PC) — il campo resta per correggerlo se serve',
     '📂 Folder: "Open in File Explorer" passa all\'helper un percorso con %USERPROFILE%, che il PC espande da sé: la cartella si apre giusta anche se il nome utente non è stato riconosciuto (a meno che la cartella sincronizzata sia stata impostata a mano)',

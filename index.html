@@ -372,6 +372,7 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
   display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
 }
 .row-remove:hover{color:var(--red); border-color:var(--red);}
+.row-dup:hover{color:var(--accent-dark); border-color:var(--accent-dark);}   /* ⧉ duplicate — same shape as ×, blue on hover */
 .row-kebab-wrap{position:relative; display:inline-block;}
 .row-kebab{
   width:26px; height:26px; border-radius:6px; border:1px solid var(--panel-border);
@@ -758,7 +759,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_5.61</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.00</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3690,7 +3691,7 @@ function addBomRow(data, insertBeforeNode){
     row.querySelector('.bom-actions').appendChild(accBtn);
     if(!data.isServices){
       const dupBtn = document.createElement('button');
-      dupBtn.type = 'button'; dupBtn.className = 'row-remove'; dupBtn.textContent = '⧉';
+      dupBtn.type = 'button'; dupBtn.className = 'row-remove row-dup'; dupBtn.textContent = '⧉';
       dupBtn.title = data.isCustomSection
         ? 'Duplicate this section with all its lines'
         : 'Duplicate this chapter with all its lines — and its position in System Configuration';
@@ -3821,7 +3822,7 @@ function addBomRow(data, insertBeforeNode){
   }
   if(kind === 'line' || kind === 'accessory'){
     const dupBtn = document.createElement('button');
-    dupBtn.type = 'button'; dupBtn.className = 'row-remove'; dupBtn.textContent = '⧉';
+    dupBtn.type = 'button'; dupBtn.className = 'row-remove row-dup'; dupBtn.textContent = '⧉';
     dupBtn.title = 'Duplicate this line (the copy stays after Generate Offer)';
     dupBtn.addEventListener('click', ()=>duplicateBomLine(row));
     row.querySelector('.bom-actions').prepend(dupBtn);
@@ -5457,7 +5458,8 @@ function fmtStamp(iso){
   const p = n => String(n).padStart(2, '0');
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
-// Rows for the "Revision history" block of the documents: oldest first, up to the current revision.
+// Revision rows, oldest first, up to the current one — used by the in-app Revision History panel
+// (since beta_5.62 the documents no longer carry this block).
 function revisionHistoryRows(){
   const rows = REVISION_HISTORY.filter(e => e.rev <= REVISION).map(e => ({
     rev: `R${e.rev}`,
@@ -7018,26 +7020,6 @@ function bomHasRows(){
   return !!bomBody.querySelector('tr[data-kind]');
 }
 
-// "Revision history" table appended to the PDF documents (new page if it doesn't fit).
-function pdfAppendRevisionHistory(doc, startY, margin){
-  const rows = revisionHistoryRows();
-  if(!rows.length) return;
-  const pageH = doc.internal.pageSize.getHeight();
-  let y = startY;
-  if(y > pageH - 110){ doc.addPage(); y = 40; }
-  doc.setFont('WorkSans','bold'); doc.setFontSize(10.5); doc.setTextColor(0,60,120);
-  doc.text('Revision history', margin, y);
-  doc.autoTable({
-    startY: y + 8,
-    head: [['Rev.','Opened','Opening note','Closed','Closing note']],
-    body: rows.map(x => [x.rev, x.opened, x.openNote, x.closed, x.closeNote]),
-    margin:{left:margin, right:margin},
-    styles:{font:'WorkSans', fontSize:7.6, cellPadding:3.2, lineColor:[225,225,225], lineWidth:0.5, overflow:'linebreak', valign:'top'},
-    headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize:8},
-    columnStyles:{0:{cellWidth:34, halign:'center'}, 1:{cellWidth:120}, 2:{cellWidth:'auto'}, 3:{cellWidth:120}, 4:{cellWidth:'auto'}},
-  });
-}
-
 function buildBomPdfDoc(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape', unit:'pt', format:'a4'});
@@ -7054,8 +7036,6 @@ function buildBomPdfDoc(){
   doc.text('BILLS OF MATERIALS', boxX+boxW/2, boxY+boxH/2+5, {align:'center'});
 
   let y = 96;
-  doc.setFont('WorkSans','italic'); doc.setFontSize(10); doc.setTextColor(0,112,192);
-  doc.text(`IT USP Solutions - REV${REVISION}`, margin, y); y += 15;
   doc.setFont('WorkSans','bold'); doc.setFontSize(11); doc.setTextColor(0,112,192);
   doc.text(info.name || info.ref, margin, y);
 
@@ -7084,7 +7064,6 @@ function buildBomPdfDoc(){
     headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize:9},
     columnStyles:{0:{cellWidth:32, halign:'center'}, 1:{cellWidth:140}, 2:{cellWidth:140}, 3:{overflow:'linebreak', cellWidth:'auto'}},
   });
-  pdfAppendRevisionHistory(doc, doc.lastAutoTable.finalY + 26, margin);
 
   const safeRef = (info.ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
   return {doc, filename: `${safeRef}_BOM_R${REVISION}.pdf`};
@@ -7153,8 +7132,11 @@ function collectOfferRows(){
     grandTotal += g.groupTotalPrice;
     grandCost += g.groupTotalCost;
   });
-  const grandMargin = grandTotal>0 ? ((grandTotal-grandCost)/grandTotal*100) : 0;
-  return {groups, grandTotal, grandCost, grandMargin};
+  // Overall margin on what is actually invoiced: the project price AFTER the project discount
+  // (the same figure as "Project Final Net Price"), not the list total before it.
+  const grandNet = grandTotal * (1 - (Number(PROJECT_DISCOUNT) || 0) / 100);
+  const grandMargin = grandNet>0 ? ((grandNet-grandCost)/grandNet*100) : 0;
+  return {groups, grandTotal, grandCost, grandNet, grandMargin};
 }
 
 function buildOfferPdfDoc(withMargin){
@@ -7285,7 +7267,6 @@ function buildOfferPdfDoc(withMargin){
   doc.setTextColor(255,255,255); doc.setFont('WorkSans','bold'); doc.setFontSize(11);
   doc.text(`Project Final Net Price in ${CURRENCY.code}`, pageW/2, ey+15, {align:'center'});
   doc.text(formatMoney(discounted), pageW-margin-10, ey+15, {align:'right'});
-  pdfAppendRevisionHistory(doc, ey + 52, margin);
 
   const safeRef = (info.ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
   const suffix = withMargin ? '_with_margin' : '';
@@ -7623,50 +7604,19 @@ function buildOfferWorksheet(withMargin){
     xlsxMerge(ws, r, 1, r, 7, {v: 'Total Cost', s: S.sumLabel});
     xlsxSet(ws, r, 8, {f: sumRefs(costRefs), v: grandCost, s: S.sumMoney}); r++;
     xlsxMerge(ws, r, 1, r, 7, {v: 'Overall Margin', s: S.sumLabel});
-    xlsxSet(ws, r, 8, {f: `IF(H${priceRow}>0,(H${priceRow}-H${costRow})/H${priceRow},0)`, v: data.grandMargin / 100, s: S.sumPct}); r++;
+    // On the discounted price: the cell points straight at "Project Final Net Price" two rows
+    // below (blank row in between), so it follows prices, project discount and any manual edit there.
+    const finalRow = r + 2;
+    xlsxSet(ws, r, 8, {f: `IF(H${finalRow}>0,(H${finalRow}-H${costRow})/H${finalRow},0)`, v: data.grandMargin / 100, s: S.sumPct}); r++;
   }
   r++;
   xlsxMerge(ws, r, 1, r, 7, {v: `Project Final Net Price in ${CURRENCY.code}`, s: S.finalText});
   xlsxSet(ws, r, 8, {f: `H${priceRow}*(1-H${discRow})`, v: grand * (1 - (Number(PROJECT_DISCOUNT) || 0) / 100), s: S.finalMoney});
   if(withMargin) xlsxMerge(ws, r, 9, r, 11, {s: S.finalText});
   ws.heights[r] = 26;
-  xlsxAppendRevisionHistory(ws, r + 2, nCols);
   return ws;
 }
 
-// "Revision history" block at the bottom of the Excel documents: opening and closing notes of
-// every revision up to this one (who, when, why).
-function xlsxAppendRevisionHistory(ws, startRow, nCols){
-  const rows = revisionHistoryRows();
-  if(!rows.length) return startRow;
-  const head = {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID, align: {v: 'center', wrap: true}};
-  const cell = {border: XLSX_GRID, align: {v: 'top', wrap: true}};
-  const title = {font: {b: true, color: '003C78', sz: 12}};
-  let r = startRow;
-  xlsxSet(ws, r, 1, {v: 'Revision history', s: title}); ws.heights[r] = 20; r++;
-  // column groups: [Rev][Opened][Opening note][Closed][Closing note]
-  const groups = nCols >= 8
-    ? [[1, 1], [2, 3], [4, 4], [5, nCols >= 11 ? 7 : 6], [nCols >= 11 ? 8 : 7, nCols]]
-    : [[1, 1], [2, 2], [3, 3], null, [4, 4]];
-  const put = (row, idx, v, s) => { const g = groups[idx]; if(!g) return; xlsxMerge(ws, row, g[0], row, g[1], {v, s}); };
-  if(groups[3]){
-    ['Rev.', 'Opened', 'Opening note', 'Closed', 'Closing note'].forEach((h, i) => put(r, i, h, head));
-  } else {
-    ['Rev.', 'Opened / Closed', 'Opening note', null, 'Closing note'].forEach((h, i) => h && put(r, i, h, head));
-  }
-  ws.heights[r] = 18; r++;
-  rows.forEach(x => {
-    put(r, 0, x.rev, {...cell, align: {h: 'center', v: 'top'}});
-    if(groups[3]){ put(r, 1, x.opened, cell); put(r, 3, x.closed, cell); }
-    else put(r, 1, [x.opened, x.closed && `→ ${x.closed}`].filter(Boolean).join('\n'), cell);
-    put(r, 2, x.openNote, cell);
-    put(r, 4, x.closeNote, cell);
-    const widthOf = g => g ? ws.cols.slice(g[0] - 1, g[1]).reduce((a, b) => a + b, 0) : 30;
-    ws.heights[r] = Math.max(xlsxWrappedHeight(x.openNote, widthOf(groups[2])), xlsxWrappedHeight(x.closeNote, widthOf(groups[4])), groups[3] ? 16 : 30);
-    r++;
-  });
-  return r;
-}
 
 // BOM as a real .xlsx (no prices, so no formulas — same content and look as the PDF BOM).
 function buildBomWorksheet(){
@@ -7675,7 +7625,6 @@ function buildBomWorksheet(){
   ws.cols = [8, 22, 20, 80];
   ws.image = {dataUrl: LOGO_B64, heightPx: 64};
   const cellS = extra => ({border: XLSX_GRID, align: {v: 'top'}, ...extra});
-  xlsxSet(ws, 5, 1, {v: `IT USP Solutions - REV${REVISION}`, s: {font: {i: true, color: '0070C0', sz: 12}}});
   xlsxSet(ws, 6, 1, {v: info.name || info.ref || '', s: {font: {b: true, color: '0070C0', sz: 13}}});
   const headRow = 8;
   ['Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
@@ -7700,7 +7649,6 @@ function buildBomWorksheet(){
     ws.heights[r] = xlsxWrappedHeight(desc, ws.cols[3]);
     r++;
   });
-  xlsxAppendRevisionHistory(ws, r + 1, 4);
   return ws;
 }
 
@@ -7811,7 +7759,6 @@ function buildTechSummaryWorksheet(){
     r++;
   });
   if(!positions.length) xlsxSet(ws, r++, 1, {v: 'No positions configured.'});
-  xlsxAppendRevisionHistory(ws, r + 1, Math.max(nCols, 4) >= 8 ? 8 : 4);
   return ws;
 }
 function prepareTechSummaryFile(){
@@ -7975,10 +7922,6 @@ function buildOfferDocxBody(){
     [L('Installation & commissioning'), data.groups.some(g => g.isServices && g.lines.length > 1) ? 'As per the SERVICES section of the price schedule' : DOCX_TODO],
     [L('Exclusions'), DOCX_TODO],
   ], [3200, DOCX_W - 3200], {header: true, sz: 9.5}));
-
-  out.push(dxPara('6. Revision history', {style: 'Heading1'}));
-  out.push(dxTable([['Rev.', 'Opened', 'Opening note', 'Closed', 'Closing note'], ...revisionHistoryRows().map(x => [{text: x.rev, align: 'center'}, x.opened, x.openNote, x.closed, x.closeNote])],
-    [650, 1800, 2794, 1800, 2594], {header: true, sz: 8.5}));
 
   out.push(dxPara('We remain at your disposal for any clarification.', {after: 60}));
   out.push(dxPara('Best regards,', {after: 60}));
@@ -9506,7 +9449,6 @@ function buildBomHtmlDoc(){
 </style></head>
 <body>
   <table style="border:none;"><tr><td style="border:none;"><img src="${LOGO_B64}" height="60"></td></tr></table>
-  <p style="font-style:italic; color:#0070C0; font-size:12pt; margin:6px 0 2px;">IT USP Solutions - REV${REVISION}</p>
   <p style="font-weight:bold; color:#0070C0; font-size:13pt; margin:0;">${escapeHtml(info.name || info.ref)}</p>
   <table class="main">
     <tr><th>Qty</th><th>Model</th><th>Code</th><th>Description</th></tr>
@@ -9683,7 +9625,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_5.61';
+const CURRENT_VERSION = 'beta_6.00';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -9713,6 +9655,26 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.00', date:'2026-09-29', notes:[
+    'Versione di rilascio: raccoglie tutto il lavoro delle 5.52 → 5.64 (il dettaglio resta nelle voci sotto). In sintesi:',
+    'Documenti — export solo in "02 OFFER/R<n>" su SharePoint quando si è collegati (niente copia in Download), tolta la riga "IT USP Solutions - REV<n>" e tolta da tutti i documenti la tabella "Revision history" (lo storico resta nell\'app e nel JSON)',
+    'Margini — Overall Margin calcolato sul "Project Final Net Price" (prezzo dopo lo sconto di progetto); nell\'Excel with_margin la cella contiene la formula =IF(netto>0,(netto-costo)/netto,0) agganciata alla riga del netto finale',
+    'Offer Lines — riga Delivery con prezzo forzabile a mano (etichetta "forced" e ↺ per tornare alla percentuale); pulsante ⧉ per duplicare una riga o un intero capitolo, con la posizione aggiunta in System Configuration e rinumerazione automatica di posizioni e capitoli; tolte le frecce ↑/↓ (si trascina con ⠿, attesa 0,2 s)',
+    'M2X — il codice dell\'armadio ignora la taglia del modulo nel nome ("M2X 120 - 30" → listino "M2X 120 PCS"); l\'import listino accetta entrambe le forme',
+    'Cartella di progetto — pulsante 📂 Folder: apre la cartella su SharePoint o ne copia il percorso locale OneDrive (utente Windows preso in automatico dall\'account, correggibile); con l\'helper "ups-folder" installato la apre direttamente in Esplora file',
+    'Technical Note (beta function, solo Admin) — impaginazione che non spezza i capitoli, note sullo spazio lasciato vuoto, indice automatico in Work Sans Light, scelta della lingua del documento, editor stile Word con capitoli trascinabili, eliminabili e uscita senza salvare',
+  ]},
+  {version:'beta_5.64', date:'2026-09-28', notes:[
+    'Excel "with_margin": la cella Overall Margin punta direttamente al "Project Final Net Price" — =IF(H30>0,(H30-H27)/H30,0) — invece di ricalcolare prezzo×(1-sconto), così segue anche una modifica fatta a mano su quella riga',
+  ]},
+  {version:'beta_5.63', date:'2026-09-28', notes:[
+    'Overall Margin calcolato sul prezzo dopo lo sconto di progetto (cioè sul "Project Final Net Price"), non più sul totale di listino: con 100.000 di prezzo, 60.000 di costo e 10% di sconto il margine passa da 40,00% a 33,33%',
+    'Nell\'Excel "with_margin" la cella Overall Margin contiene la formula corretta =IF(prezzo*(1-sconto)>0,(prezzo*(1-sconto)-costo)/(prezzo*(1-sconto)),0), così si aggiorna da sola cambiando prezzi o sconto in Excel',
+  ]},
+  {version:'beta_5.62', date:'2026-09-28', notes:[
+    'Tolta dalle stampe la riga "IT USP Solutions - REV<n>" (BOM PDF ed Excel)',
+    'Tolta da tutti i documenti la tabella "Revision history" (BOM e Offer in PDF ed Excel, Word d\'offerta, scheda tecnica): lo storico resta nel pannello "Revision History" dell\'app e dentro il JSON d\'offerta',
+  ]},
   {version:'beta_5.61', date:'2026-09-28', notes:[
     'Duplicando un capitolo UPS, la posizione copiata viene inserita subito sotto quella di origine in System Configuration (non più in fondo) e tutte le posizioni successive si rinumerano; i capitoli dell\'offerta si riordinano di conseguenza e vengono rinumerati (1.0, 2.0, … con le loro righe 1.1, 1.2 …)',
     'Correzione: togliendo una posizione, i capitoli restavano legati ai vecchi numeri — ora seguono la rinumerazione, e il capitolo della posizione eliminata viene scollegato (le sue righe restano finché non si rigenera, ma non finiscono più su un\'altra posizione)',

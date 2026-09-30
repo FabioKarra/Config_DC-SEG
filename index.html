@@ -387,6 +387,7 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 .kit-ren{margin-left:4px; border:none; background:transparent; color:#1F4E9C; cursor:pointer; font-size:12px; padding:0 3px; border-radius:4px; vertical-align:middle;} .kit-ren:hover{background:#EAF1FC;}
 #bomBody tr.kit-member > td:first-child{box-shadow:inset 3px 0 0 #7FA6E0;}
 #bomBody tr.kit-child > td{background:#F6F9FE;}
+#bomBody tr.kit-parent > td{background:#EEF4FD;} #bomBody tr.kit-parent > td:nth-child(3){font-weight:600; color:#1F4E9C;}
 #bomBody tr.kit-child > td:nth-child(3){padding-left:22px;}
 .kit-pick{width:100%; border-collapse:collapse; font-size:12.5px;} .kit-pick th{text-align:left; font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:.04em; padding:4px 6px; border-bottom:1px solid var(--panel-border);}
 .kit-pick td{padding:5px 6px; border-bottom:1px solid #F1F3F6;} .kit-pick .num{text-align:right;} .kit-code{color:var(--dim); font-size:11px; margin-left:4px;}
@@ -778,7 +779,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.05</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.07</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3770,7 +3771,9 @@ function addBomRow(data, insertBeforeNode){
   if(Array.isArray(data.subBom) && data.subBom.length) row.dataset.subBom = JSON.stringify(data.subBom);
   if(data.kitId){
     row.dataset.kitId = data.kitId;
-    if(data.kitHead) row.dataset.kitHead = 'true';
+    if(data.kitParent) row.dataset.kitParent = 'true';
+    if(data.kitDefaults) row.dataset.kitDefaults = typeof data.kitDefaults === 'string' ? data.kitDefaults : JSON.stringify(data.kitDefaults);
+    if(data.kitHead) row.dataset.kitHead = 'true';   // files from 6.01–6.05, converted by refreshKitsInChapter
     if(data.kitName) row.dataset.kitName = data.kitName;
     if(data.kitDesc) row.dataset.kitDesc = data.kitDesc;
   }
@@ -4034,6 +4037,8 @@ function exitRowEditMode(row, keep){
   if(row.dataset.subBom) attachSubBomChip(row);
   if(row.dataset.kitId) refreshKitsInChapter(row.dataset.groupOf);
 }
+// Ext. Supplier is an INTERNAL marker: shown in the tool (badge on the row, Save/Load) but never
+// printed on any document (offer or BOM) since beta_6.07.
 function rowExtSupplier(row){
   return row.dataset.extSupplier === 'true';
 }
@@ -4070,7 +4075,7 @@ function isServicesRow(row){
 // project total that sums every group) even though the row itself displays it correctly.
 function computeGroupTotal(headerRow){
   const owner = headerRow.dataset.rowId;
-  const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r=>r.dataset.kind==='line'||r.dataset.kind==='accessory'||r.dataset.kind==='delivery');
+  const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r=>!isKitMember(r)).filter(r=>r.dataset.kind==='line'||r.dataset.kind==='accessory'||r.dataset.kind==='delivery');
   let lineSum = 0, lineCostSum = 0;
   rows.forEach(r=>{
     const gross = Number(r.querySelector('.in-gross')?.value)||0;
@@ -4992,15 +4997,20 @@ function bomRenumberChapter(owner){
   if(!header) return;
   const m = String(header.dataset.pos || '').match(/^(\d+)\.0$/);
   let i = 0;
-  [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)]
-    .filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory')
-    .forEach(r => {
-      const had = /^\d+\.\d+$/.test(r.dataset.pos || '');
-      const pos = (m && had) ? `${m[1]}.${++i}` : '';
-      r.dataset.pos = pos;
-      const posEl = r.cells[0].querySelector('.bom-pos-text');
-      if(posEl) posEl.textContent = pos; else r.cells[0].textContent = pos;
-    });
+  const setPos = (r, pos) => {
+    r.dataset.pos = pos;
+    const posEl = r.cells[0].querySelector('.bom-pos-text');
+    if(posEl) posEl.textContent = pos; else r.cells[0].textContent = pos;
+  };
+  const lines = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory');
+  lines.forEach(r => {
+    if(isKitMember(r)) return;   // numbered under their kit line, below
+    const had = /^\d+(\.\d+)+$/.test(r.dataset.pos || '');
+    const pos = (m && had) ? `${m[1]}.${++i}` : '';
+    setPos(r, pos);
+    // a kit's components: 1.5 → 1.5.1, 1.5.2 …
+    if(isKitParent(r)) lines.filter(x => isKitMember(x) && x.dataset.kitId === r.dataset.kitId).forEach((x, j) => setPos(x, pos ? `${pos}.${j + 1}` : ''));
+  });
 }
 
 // ---- Sales code with its own BOM (from Excel) ----
@@ -5195,28 +5205,39 @@ function bomDocumentRows(){
       out.push({type: 'header', pos: m ? m[1] : '', label: r.cells[4].textContent});
       return;
     }
-    const qty = bomLineQty(r);
-    const pos = r.dataset.pos || '';
-    out.push({type: 'line', pos, qty, model: rowModelText(r), code: rowCodeText(r),
-      desc: String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n')});
-    (rowSubBom(r) || []).forEach((it, i) => {
-      const q = (Number(it.qty) || 0) * (Number(qty) || 0);
-      out.push({type: 'sub', pos: pos ? `${pos}.${i + 1}` : '', qty: Math.round(q * 1000) / 1000, model: '', code: it.code || '', desc: it.desc || ''});
-    });
+    if(isKitMember(r)) return;   // listed under their kit line
+    const emit = (row, qty, pos, type) => {
+      out.push({type, pos, qty: Math.round(qty * 1000) / 1000, model: rowModelText(row).replace(/^↳\s*/, ''), code: rowCodeText(row),
+        desc: String(rowDescText(row)).replace(/\r\n?/g, '\n')});
+      (rowSubBom(row) || []).forEach((it, i) => {
+        out.push({type: 'sub', pos: pos ? `${pos}.${i + 1}` : '', qty: Math.round((Number(it.qty) || 0) * qty * 1000) / 1000, model: '', code: it.code || '', desc: it.desc || ''});
+      });
+    };
+    const qty = Number(bomLineQty(r)) || 0;
+    emit(r, qty, r.dataset.pos || '', 'line');
+    // a kit: its components, quantity per kit × the kit line's BOM quantity
+    if(isKitParent(r)) kitMembersOf(r.dataset.kitId).forEach(m => emit(m, (Number(rowQty(m)) || 0) * qty, m.dataset.pos || '', 'sub'));
   });
   return out;
 }
 
-// ---- Kits (sub-BOM): several lines of a chapter sold as ONE offer line ----
-// A kit is a set of lines of the same chapter (UPS lines, batteries, technology integration…) with
-// one of them as its "head". In the offer documents (PDF, Excel, Word) the kit is a single line:
-// the head's quantity, model, code and description, priced with the sum of all its lines. In the
-// BOM documents nothing changes — every line is listed, i.e. the kit is exploded. In Offer Lines
-// the kit is shown collapsed on its head (▸ opens it), with the kit total on the head row.
-// Stored on the rows themselves (data-kit-id / data-kit-head), so it travels with the JSON.
+// ---- Kits: a kit line with its component lines under it ----
+// A kit is its own line of the chapter (position 1.5) with its components right under it
+// (1.5.1, 1.5.2 …). The kit line has its own quantity (default 1) and its own model / code /
+// description (taken from a "main line" when it is created, changeable with ✎). Component
+// quantities are PER KIT: 230 × code A + 5 × code B make one kit; with 2 kits the BOM lists 460 × A
+// and 10 × B. The kit's unit price and cost are the sum of its components (net × qty) — they are
+// computed, not typed. In the offer documents only the kit line appears; in the BOM the kit line is
+// followed by its components. Stored on the rows (data-kit-id, data-kit-parent), so it travels
+// with the JSON; files saved with the earlier "head line" kits (6.01–6.05) are converted on load.
 function kitMembersOf(kitId){
-  return [...bomBody.querySelectorAll('tr[data-kind]')].filter(r => r.dataset.kitId === kitId);
+  return [...bomBody.querySelectorAll('tr[data-kind]')].filter(r => r.dataset.kitId === kitId && r.dataset.kitParent !== 'true');
 }
+function kitParentOf(kitId){
+  return [...bomBody.querySelectorAll('tr[data-kind]')].find(r => r.dataset.kitId === kitId && r.dataset.kitParent === 'true') || null;
+}
+function isKitMember(r){ return !!(r && r.dataset.kitId && r.dataset.kitParent !== 'true'); }
+function isKitParent(r){ return !!(r && r.dataset.kitId && r.dataset.kitParent === 'true'); }
 function kitRowNet(r){
   const qty = Number(rowQty(r)) || 0;
   const gross = Number(r.querySelector('.in-gross')?.value) || 0;
@@ -5224,180 +5245,245 @@ function kitRowNet(r){
   const cost = Number(r.querySelector('.in-cost')?.value) || 0;
   return {qty, gross, disc, cost, net: gross * (1 - disc / 100)};
 }
-function clearKitLook(r){
-  r.classList.remove('kit-head', 'kit-child', 'kit-member', 'kit-has-desc');
-  r.style.display = '';
-  r.querySelectorAll('.kit-chip, .kit-ren, .kit-desc-view').forEach(el => el.remove());
+function newKitId(){ return 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+// Net / total / margin cells of a row, recomputed from its inputs (no chain to the chapter total).
+function rowRecalcOutputs(row){
+  const v = kitRowNet(row);
+  const tprice = v.net * v.qty, tcost = v.cost * v.qty;
+  const margin = tprice > 0 ? ((tprice - tcost) / tprice * 100) : 0;
+  const set = (sel, t) => { const el = row.querySelector(sel); if(el) el.textContent = t; };
+  set('.out-net', formatMoney(v.net)); set('.out-tprice', formatMoney(tprice)); set('.out-tcost', formatMoney(tcost));
+  const mEl = row.querySelector('.out-margin');
+  if(mEl){ mEl.textContent = margin.toFixed(2) + '%'; mEl.className = 'num out-margin ' + (margin >= 0 ? 'margin-pos' : 'margin-neg'); }
 }
-function applyKitLook(head, members){
-  const open = head.dataset.kitOpen === 'true';
-  let total = 0;
+function clearKitLook(r){
+  r.classList.remove('kit-head', 'kit-child', 'kit-member', 'kit-parent');
+  r.style.display = '';
+  r.querySelectorAll('.kit-chip, .kit-ren').forEach(el => el.remove());
+  if(!READ_ONLY) r.querySelectorAll('.in-gross, .in-disc, .in-cost').forEach(el => { if(r.dataset.kind !== 'delivery') el.disabled = false; });
+}
+function applyKitLook(parent, members){
+  const open = parent.dataset.kitOpen === 'true';
+  parent.classList.add('kit-member', 'kit-parent');
+  parent.classList.remove('kit-child');
+  parent.querySelectorAll('.in-gross, .in-disc, .in-cost').forEach(el => { el.disabled = true; el.title = 'Kit: sum of its component lines (per kit)'; });
+  if(!READ_ONLY) { const q = parent.querySelector('.in-qty'); if(q) q.disabled = false; }
   members.forEach(r => {
-    const v = kitRowNet(r);
-    total += v.net * v.qty;
-    r.classList.add('kit-member');
-    r.classList.toggle('kit-head', r === head);
-    r.classList.toggle('kit-child', r !== head);
-    if(r !== head){ r.style.display = open ? '' : 'none'; r.classList.remove('kit-has-desc'); r.querySelectorAll('.kit-chip, .kit-ren, .kit-desc-view').forEach(el => el.remove()); }
+    r.classList.add('kit-member', 'kit-child');
+    r.classList.remove('kit-parent');
+    r.style.display = open ? '' : 'none';
+    r.querySelectorAll('.kit-chip, .kit-ren').forEach(el => el.remove());
+    const q = r.querySelector('.in-qty'); if(q) q.title = 'Quantity per kit';
   });
-  let chip = head.querySelector('.kit-chip');
+  let chip = parent.querySelector('.kit-chip');
   if(!chip){
     chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'kit-chip';
     chip.addEventListener('click', e => {
       e.stopPropagation();
-      head.dataset.kitOpen = head.dataset.kitOpen === 'true' ? 'false' : 'true';
-      refreshKitsInChapter(head.dataset.groupOf);
+      parent.dataset.kitOpen = parent.dataset.kitOpen === 'true' ? 'false' : 'true';
+      refreshKitsInChapter(parent.dataset.groupOf);
     });
-    head.cells[2].appendChild(chip);
+    parent.cells[2].appendChild(chip);
   }
-  let ren = head.querySelector('.kit-ren');
+  let ren = parent.querySelector('.kit-ren');
   if(!ren){
     ren = document.createElement('button');
     ren.type = 'button';
     ren.className = 'kit-ren';
     ren.textContent = '✎';
-    ren.title = 'Name and description of the kit in the offer';
-    ren.addEventListener('click', e => { e.stopPropagation(); openKitRenameDialog(head.dataset.kitId); });
-    head.cells[2].appendChild(ren);
+    ren.title = 'Kit name, code, description and quantity';
+    ren.addEventListener('click', e => { e.stopPropagation(); openKitRenameDialog(parent.dataset.kitId); });
+    parent.cells[2].appendChild(ren);
   }
-  const name = head.dataset.kitName;
-  // the kit's own description (what the offer prints) shown on the head row, above the main line's
-  // description, which stays visible in grey — the BOM and every document still read the latter
-  const kd = head.dataset.kitDesc;
-  let kdv = head.cells[4].querySelector('.kit-desc-view');
-  if(kd){
-    if(!kdv){ kdv = document.createElement('div'); kdv.className = 'kit-desc-view'; head.cells[4].prepend(kdv); }
-    kdv.textContent = kd;
-    kdv.title = 'Kit description in the offer — ✎ to change it';
-  } else if(kdv) kdv.remove();
-  head.classList.toggle('kit-has-desc', !!kd);
-  chip.textContent = `${open ? '▾' : '▸'} KIT${name ? ` · ${name}` : ''}`;
-  chip.title = `${members.length} lines · total ${formatMoney(total)}${name ? ` · in the offer as "${name}"` : ''} — ${open ? 'click to close the kit' : 'click to open it and edit its lines'}`;
+  chip.textContent = `${open ? '▾' : '▸'} KIT`;
+  chip.title = `${members.length} component line${members.length === 1 ? '' : 's'} per kit — ${open ? 'click to close the kit' : 'click to open it and edit its components'}`;
 }
-// Name / description the kit carries in the OFFER documents (the BOM keeps listing its lines).
-// Empty = the main line's own model / description.
+// Kit line from a legacy "head" kit, or from the main line chosen in the dialog.
+function kitParentDataFrom(r, overrides = {}){
+  return {
+    model: overrides.model || r.dataset.kitName || rowModelText(r).replace(/^↳\s*/, ''),
+    code: overrides.code ?? rowCodeText(r),
+    desc: overrides.desc || r.dataset.kitDesc || rowDescText(r),
+    defaults: {model: rowModelText(r).replace(/^↳\s*/, ''), code: rowCodeText(r), desc: rowDescText(r)},
+  };
+}
+function insertKitParent(kitId, before, owner, pd, qty = 1, open = false){
+  KIT_BULK++;   // adding the row recalculates the chapter — not while the kit is half built
+  const row = addBomRow({kind: 'accessory', groupOf: owner, pos: before && before.dataset.pos ? before.dataset.pos : '', qty,
+    model: pd.model, code: pd.code, desc: pd.desc, gross: 0, cost: 0, manualEntry: true,
+    kitId, kitParent: true, kitDefaults: pd.defaults}, before);
+  KIT_BULK--;
+  row.dataset.kitOpen = open ? 'true' : 'false';
+  // no "↳" in front of a kit's name: it is a line of its own, not an accessory of the line above
+  const mc = row.cells[2];
+  [...mc.childNodes].forEach(n => { if(n.nodeType === 3) n.textContent = n.textContent.replace(/^↳\s*/, ''); });
+  return row;
+}
+// Keeps the kits of one chapter consistent: every kit has its kit line, its components sit right
+// under it (they follow it if it is dragged elsewhere), its price/cost are the sum of the
+// components; a kit line with no components left is removed, components without a kit line are
+// released. While a chapter or a file is rebuilt line by line (KIT_BULK > 0) nothing is checked.
+var KIT_BULK = 0;   // var: read by recalcGroupTotal, which can run before this line is reached
+function refreshKitsInChapter(owner){
+  if(KIT_BULK || !owner || typeof bomBody === 'undefined') return;
+  const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory');
+  const ids = new Set();
+  rows.forEach(r => { if(r.dataset.kitId) ids.add(r.dataset.kitId); else if(r.classList.contains('kit-member')) clearKitLook(r); });
+  let moved = false;
+  ids.forEach(kitId => {
+    let parent = kitParentOf(kitId);
+    let members = kitMembersOf(kitId);
+    // files from 6.01–6.05: one of the lines was the kit's "head" — it becomes the first component
+    if(!parent){
+      const head = members.find(r => r.dataset.kitHead === 'true');
+      if(head){
+        const pd = kitParentDataFrom(head);
+        parent = insertKitParent(kitId, members[0], members[0].dataset.groupOf, pd, 1, false);
+        members.forEach(r => { delete r.dataset.kitHead; delete r.dataset.kitName; delete r.dataset.kitDesc; });
+        moved = true;
+      } else {
+        members.forEach(r => { delete r.dataset.kitId; clearKitLook(r); });
+        return;
+      }
+    }
+    if(!members.length){ const g = parent.dataset.groupOf; parent.remove(); if(g !== owner) recalcGroupTotal(g); moved = true; return; }
+    // components follow their kit line (also into another chapter), in their current order
+    let anchor = parent;
+    members.forEach(r => {
+      if(r.dataset.groupOf !== parent.dataset.groupOf) r.dataset.groupOf = parent.dataset.groupOf;
+      if(anchor.nextElementSibling !== r){ bomBody.insertBefore(r, anchor.nextElementSibling); moved = true; }
+      anchor = r;
+    });
+    // kit price / cost per kit = sum of the components
+    let net = 0, cost = 0;
+    members.forEach(r => { const v = kitRowNet(r); net += v.net * v.qty; cost += v.cost * v.qty; });
+    const g = parent.querySelector('.in-gross'), d = parent.querySelector('.in-disc'), c = parent.querySelector('.in-cost');
+    if(g) g.value = net.toFixed(2);
+    if(d) d.value = 0;
+    if(c) c.value = cost.toFixed(2);
+    rowRecalcOutputs(parent);
+    applyKitLook(parent, members);
+  });
+  // the components' numbers hang off their kit line's (1.5 → 1.5.1 …)
+  if(moved || ids.size) bomRenumberChapter(owner);
+}
+function refreshAllKits(){
+  [...bomBody.querySelectorAll('tr[data-kind="header"]')].forEach(h => refreshKitsInChapter(h.dataset.rowId));
+}
+// rows: the component lines (any order); main: the line whose model/code/description the kit takes.
+function createKit(rows, main, opts = {}){
+  if(!rows.length) return null;
+  const kitId = newKitId();
+  const inOrder = [...bomBody.querySelectorAll('tr[data-kind]')].filter(r => rows.includes(r));
+  const first = inOrder[0];
+  const owner = first.dataset.groupOf;
+  const pd = kitParentDataFrom(main || first, {model: opts.name, code: opts.code, desc: opts.desc});
+  KIT_BULK++;
+  const parent = insertKitParent(kitId, first, owner, pd, Number(opts.qty) || 1, !!opts.open);
+  inOrder.forEach(r => {
+    r.dataset.kitId = kitId;
+    delete r.dataset.kitParent; delete r.dataset.kitHead; delete r.dataset.kitName; delete r.dataset.kitDesc;
+    if(r.dataset.groupOf !== owner){ const og = r.dataset.groupOf; r.dataset.groupOf = owner; recalcGroupTotal(og); }
+  });
+  KIT_BULK--;
+  refreshKitsInChapter(owner);
+  recalcGroupTotal(owner);
+  return {kitId, parent};
+}
+function ungroupKit(kitId){
+  const parent = kitParentOf(kitId);
+  const members = kitMembersOf(kitId);
+  const owner = (parent || members[0] || {}).dataset?.groupOf;
+  members.forEach(r => { delete r.dataset.kitId; delete r.dataset.kitOpen; clearKitLook(r); });
+  if(parent) parent.remove();
+  if(owner){ bomRenumberChapter(owner); recalcGroupTotal(owner); }
+}
+// Name, code, description (Alt+Enter: line breaks) and quantity of a kit — its line in the offer.
 function openKitRenameDialog(kitId){
   if(READ_ONLY) return;
+  const parent = kitParentOf(kitId);
+  if(!parent) return;
   const members = kitMembersOf(kitId);
-  const head = members.find(r => r.dataset.kitHead === 'true') || members[0];
-  if(!head) return;
+  let defaults = null;
+  try{ defaults = JSON.parse(parent.dataset.kitDefaults || 'null'); }catch(e){}
   const ov = document.createElement('div');
   ov.className = 'settings-overlay';
   ov.id = 'kitRenameOverlay';
   ov.style.display = 'flex';
-  ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:620px;">
-    <div class="acc-modal-header"><h3>Kit name in the offer</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
+  ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:640px;">
+    <div class="acc-modal-header"><h3>Kit — line in the offer</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
     <div style="padding:14px 18px;">
-      <p class="pf-hint" style="margin-top:0;">What the offer shows for this kit (code stays <b>${escapeHtml(rowCodeText(head) || '—')}</b>). The BOM keeps listing the ${members.length} lines with their own names. Leave empty to use the main line.</p>
-      <label style="font-size:12px; color:var(--dim);">Model / name</label>
-      <div class="pf-box"><input type="text" id="kitNameIn" value="${escapeHtml(head.dataset.kitName || '')}" placeholder="${escapeHtml(rowModelText(head))}"></div>
-      <label style="font-size:12px; color:var(--dim);">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span></label>
-      <div class="pf-box"><textarea id="kitDescIn" rows="3" class="kit-desc-ta" placeholder="${escapeHtml(rowDescText(head))}">${escapeHtml(head.dataset.kitDesc || '')}</textarea></div>
+      <p class="pf-hint" style="margin-top:0;">What the offer shows for this kit. The BOM lists the kit line and, under it, its ${members.length} component line${members.length === 1 ? '' : 's'} with quantities multiplied by the kit quantity.</p>
+      <div class="sb-grid">
+        <label class="wide">Model / name<input type="text" id="kitNameIn" value="${escapeHtml(rowModelText(parent).replace(/^↳\s*/, ''))}"></label>
+        <label>Code<input type="text" id="kitCodeIn" value="${escapeHtml(rowCodeText(parent))}"></label>
+        <label>Kit quantity<input type="number" id="kitQtyIn" min="0" step="1" value="${escapeHtml(String(rowQty(parent)))}"></label>
+        <label class="wide">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea id="kitDescIn" rows="3" class="kit-desc-ta">${escapeHtml(rowDescText(parent))}</textarea></label>
+      </div>
       <div class="pf-actions" style="justify-content:flex-end;">
-        <button type="button" class="btn-ghost act" data-reset>Use the main line</button>
+        ${defaults ? '<button type="button" class="btn-ghost act" data-reset>Use the main line</button>' : ''}
         <button type="button" class="btn-ghost act" data-close>Cancel</button>
         <button type="button" class="act btn-primary" data-save>Save</button>
       </div>
     </div></div>`;
   document.body.appendChild(ov);
+  const $ = sel => ov.querySelector(sel);
   const close = () => ov.remove();
-  const apply = (name, desc) => {
-    if(name) head.dataset.kitName = name; else delete head.dataset.kitName;
-    if(desc) head.dataset.kitDesc = desc; else delete head.dataset.kitDesc;
-    refreshKitsInChapter(head.dataset.groupOf);
-    close();
-  };
   ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
-  ov.querySelector('[data-reset]').addEventListener('click', () => apply('', ''));
-  ov.querySelector('[data-save]').addEventListener('click', () => apply(ov.querySelector('#kitNameIn').value.trim(), ov.querySelector('#kitDescIn').value.trim()));
-  attachMultilineDescriptionEditor(ov.querySelector('#kitDescIn'));
-  setTimeout(() => ov.querySelector('#kitNameIn').focus(), 0);
-}
-// Keeps the kits of one chapter consistent: one head each, at least two lines, lines kept together
-// right under the head; a line moved to another chapter (or a kit left with one line) is released.
-// While a whole chapter or file is being rebuilt line by line, a kit is momentarily incomplete —
-// the check waits until the rebuild is over (KIT_BULK > 0) instead of dissolving it.
-var KIT_BULK = 0;   // var: read by recalcGroupTotal, which can run before this line is reached
-function refreshKitsInChapter(owner){
-  if(KIT_BULK || !owner || typeof bomBody === 'undefined') return;
-  const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory');
-  const kits = new Map();
-  rows.forEach(r => {
-    if(!r.dataset.kitId){ if(r.classList.contains('kit-member')) clearKitLook(r); return; }
-    if(!kits.has(r.dataset.kitId)) kits.set(r.dataset.kitId, []);
-    kits.get(r.dataset.kitId).push(r);
+  if($('[data-reset]')) $('[data-reset]').addEventListener('click', () => {
+    $('#kitNameIn').value = defaults.model || ''; $('#kitCodeIn').value = defaults.code || ''; $('#kitDescIn').value = defaults.desc || '';
   });
-  let moved = false;
-  kits.forEach((members, kitId) => {
-    let head = members.find(r => r.dataset.kitHead === 'true');
-    const headElsewhere = !head && kitMembersOf(kitId).some(r => r.dataset.kitHead === 'true' && r.dataset.groupOf !== owner);
-    if(headElsewhere || members.length < 2){
-      members.forEach(r => { delete r.dataset.kitId; delete r.dataset.kitHead; delete r.dataset.kitName; delete r.dataset.kitDesc; clearKitLook(r); });
-      return;
-    }
-    if(!head){ head = members[0]; head.dataset.kitHead = 'true'; }
-    members.forEach(r => {
-      if(r === head) return;
-      delete r.dataset.kitHead;
-      if(r.dataset.kitName && !head.dataset.kitName) head.dataset.kitName = r.dataset.kitName;
-      if(r.dataset.kitDesc && !head.dataset.kitDesc) head.dataset.kitDesc = r.dataset.kitDesc;
-      delete r.dataset.kitName; delete r.dataset.kitDesc;
-    });
-    let anchor = head;
-    members.filter(r => r !== head).forEach(r => {
-      if(anchor.nextElementSibling !== r){ bomBody.insertBefore(r, anchor.nextElementSibling); moved = true; }
-      anchor = r;
-    });
-    applyKitLook(head, [head, ...members.filter(r => r !== head)]);
+  $('[data-save]').addEventListener('click', () => {
+    setKitLineTexts(parent, $('#kitNameIn').value.trim(), $('#kitCodeIn').value.trim(), $('#kitDescIn').value.replace(/^\s+|\s+$/g, ''));
+    const q = parent.querySelector('.in-qty');
+    if(q){ q.value = Math.max(0, Number($('#kitQtyIn').value) || 0); q.dispatchEvent(new Event('input', {bubbles: true})); }
+    refreshKitsInChapter(parent.dataset.groupOf);
+    recalcGroupTotal(parent.dataset.groupOf);
+    close();
   });
-  if(moved) bomRenumberChapter(owner);
+  attachMultilineDescriptionEditor($('#kitDescIn'));
+  setTimeout(() => $('#kitNameIn').focus(), 0);
 }
-function refreshAllKits(){
-  [...bomBody.querySelectorAll('tr[data-kind="header"]')].forEach(h => refreshKitsInChapter(h.dataset.rowId));
+function setKitLineTexts(row, model, code, desc){
+  const mc = row.cells[2];
+  [...mc.childNodes].forEach(n => { if(!(n.nodeType === 1 && /kit-chip|kit-ren|subbom-chip/.test(n.className))) n.remove(); });
+  mc.insertBefore(document.createTextNode(model), mc.firstChild);
+  row.cells[3].textContent = code;
+  const de = row.querySelector('.desc-text');
+  if(de) de.textContent = desc;
 }
-function createKit(rows, head){
-  const kitId = 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  rows.forEach(r => { r.dataset.kitId = kitId; if(r !== head){ delete r.dataset.kitHead; delete r.dataset.kitName; delete r.dataset.kitDesc; } });
-  head.dataset.kitHead = 'true';
-  head.dataset.kitOpen = 'false';
-  refreshKitsInChapter(head.dataset.groupOf);
-  recalcGroupTotal(head.dataset.groupOf);
-  return kitId;
-}
-function ungroupKit(kitId){
-  const members = kitMembersOf(kitId);
-  const owner = members[0] && members[0].dataset.groupOf;
-  members.forEach(r => { delete r.dataset.kitId; delete r.dataset.kitHead; delete r.dataset.kitOpen; delete r.dataset.kitName; delete r.dataset.kitDesc; clearKitLook(r); });
-  if(owner) recalcGroupTotal(owner);
-}
-// The kit dialog of a chapter: tick the lines, pick which one gives the kit its code, create.
+// The kit window of a chapter: tick the component lines, pick the main line (it gives the kit its
+// name, code and description — changeable), set the kit quantity, create. Also the entry point
+// for a sales code from an Excel BOM.
 function openKitDialog(header){
   if(READ_ONLY) return;
   const owner = header.dataset.rowId;
   const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory');
   const free = rows.filter(r => !r.dataset.kitId);
-  const kits = [...new Set(rows.filter(r => r.dataset.kitId).map(r => r.dataset.kitId))];
+  const kits = [...new Set(rows.filter(r => isKitParent(r)).map(r => r.dataset.kitId))];
   const ov = document.createElement('div');
   ov.className = 'settings-overlay';
   ov.id = 'kitOverlay';
   ov.style.display = 'flex';
-  const line = r => `${escapeHtml(String(rowQty(r)))} × ${escapeHtml(rowModelText(r) || '')}${rowCodeText(r) ? ` <span class="kit-code">${escapeHtml(rowCodeText(r))}</span>` : ''}`;
-  ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:760px;">
+  const line = r => `${escapeHtml(String(rowQty(r)))} × ${escapeHtml(rowModelText(r).replace(/^↳\s*/, '') || '')}${rowCodeText(r) ? ` <span class="kit-code">${escapeHtml(rowCodeText(r))}</span>` : ''}`;
+  ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:780px;">
     <div class="acc-modal-header"><h3>Kit — ${escapeHtml(header.cells[4].textContent)}</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
-    <div style="padding:14px 18px;">
+    <div style="padding:14px 18px; max-height:80vh; overflow:auto;">
       <div class="kit-excel"><span><b>Sales code from an Excel BOM</b> — a new line with your code; its composition comes from the Excel and is listed in the BOM.</span><button type="button" class="btn-ghost act" data-excel>⤒ Import Excel BOM…</button></div>
-      <p class="pf-hint" style="margin-top:0;">Or group lines already in the chapter: tick the lines that make up the kit and choose the <b>main line</b>: its quantity, model, code and description become the kit's single line in the offer, priced with the sum of all the ticked lines. The BOM keeps listing every line.</p>
-      ${free.length ? `<table class="kit-pick"><thead><tr><th>In kit</th><th>Main line</th><th>Line</th><th class="num">Total</th></tr></thead><tbody>
+      <p class="pf-hint" style="margin-top:0;">Or build a kit from lines of the chapter: tick its component lines (their quantities become quantities <b>per kit</b>) and choose the <b>main line</b>, which gives the kit its name, code and description. The kit becomes a line of its own (e.g. 1.5) with the components under it (1.5.1, 1.5.2 …); its price is the sum of the components.</p>
+      ${free.length ? `<table class="kit-pick"><thead><tr><th>In kit</th><th>Main line</th><th>Line (qty per kit)</th><th class="num">Total</th></tr></thead><tbody>
         ${free.map((r, i) => { const v = kitRowNet(r); return `<tr><td><input type="checkbox" data-i="${i}"></td><td><input type="radio" name="kitHead" data-i="${i}"></td><td>${line(r)}</td><td class="num">${formatMoney(v.net * v.qty)}</td></tr>`; }).join('')}
-      </tbody></table>` : '<p class="pf-hint">All the lines of this chapter are already in a kit.</p>'}
-      ${kits.length ? `<h4 style="margin:14px 0 6px;">Kits of this chapter</h4>${kits.map(k => { const m = kitMembersOf(k); const h = m.find(r => r.dataset.kitHead === 'true') || m[0]; return `<div class="kit-existing"><span>${line(h)} <span class="pf-hint">+ ${m.length - 1} line${m.length > 2 ? 's' : ''}</span></span><span style="display:flex; gap:6px;"><button type="button" class="btn-ghost act" data-rename="${k}">Rename…</button><button type="button" class="btn-ghost act" data-ungroup="${k}">Ungroup</button></span></div>`; }).join('')}` : ''}
-      ${free.length ? `<div style="margin-top:10px;"><label style="font-size:12px; color:var(--dim);">Kit name in the offer (optional — empty = the main line's model)</label>
-        <div class="pf-box"><input type="text" id="kitNewName" placeholder="e.g. Battery system 10 min"></div>
-        <label style="font-size:12px; color:var(--dim);">Description in the offer (optional) <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span></label>
-        <div class="pf-box"><textarea id="kitNewDesc" rows="1" class="kit-desc-ta" placeholder="empty = the main line's description"></textarea></div></div>` : ''}
+      </tbody></table>
+      <div class="sb-grid">
+        <label class="wide">Kit name in the offer (optional — empty = the main line's model)<input type="text" id="kitNewName" placeholder="e.g. Battery system 10 min"></label>
+        <label>Code (optional — empty = the main line's code)<input type="text" id="kitNewCode"></label>
+        <label>Kit quantity<input type="number" id="kitNewQty" min="1" step="1" value="1"></label>
+        <label class="wide">Description in the offer (optional) <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea id="kitNewDesc" rows="1" class="kit-desc-ta" placeholder="empty = the main line's description"></textarea></label>
+      </div>` : '<p class="pf-hint">All the lines of this chapter are already in a kit.</p>'}
+      ${kits.length ? `<h4 style="margin:14px 0 6px;">Kits of this chapter</h4>${kits.map(k => { const pr = kitParentOf(k); const m = kitMembersOf(k); return `<div class="kit-existing"><span>${line(pr)} <span class="pf-hint">— ${m.length} component line${m.length === 1 ? '' : 's'}</span></span><span style="display:flex; gap:6px;"><button type="button" class="btn-ghost act" data-rename="${k}">Edit…</button><button type="button" class="btn-ghost act" data-ungroup="${k}">Ungroup</button></span></div>`; }).join('')}` : ''}
       <p class="pf-hint" id="kitMsg"></p>
       <div class="pf-actions" style="justify-content:flex-end;">
         <button type="button" class="btn-ghost act" data-close>Close</button>
@@ -5408,7 +5494,6 @@ function openKitDialog(header){
   const close = () => ov.remove();
   ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
-  // picking the main line ticks it too
   ov.querySelectorAll('input[name="kitHead"]').forEach(rb => rb.addEventListener('change', () => {
     const cb = ov.querySelector(`input[type="checkbox"][data-i="${rb.dataset.i}"]`); if(cb) cb.checked = true;
   }));
@@ -5420,36 +5505,36 @@ function openKitDialog(header){
   if(create) create.addEventListener('click', () => {
     const picked = [...ov.querySelectorAll('input[type="checkbox"]:checked')].map(cb => free[Number(cb.dataset.i)]);
     const headRb = ov.querySelector('input[name="kitHead"]:checked');
-    const head = headRb ? free[Number(headRb.dataset.i)] : null;
+    const main = headRb ? free[Number(headRb.dataset.i)] : null;
     const msg = ov.querySelector('#kitMsg');
-    if(picked.length < 2){ msg.textContent = 'Tick at least two lines.'; return; }
-    if(!head){ msg.textContent = 'Choose the main line — it gives the kit its code in the offer.'; return; }
-    if(!picked.includes(head)) picked.push(head);
-    const nm = (ov.querySelector('#kitNewName') || {}).value || '', ds = (ov.querySelector('#kitNewDesc') || {}).value || '';
-    if(nm.trim()) head.dataset.kitName = nm.trim();
-    if(ds.trim()) head.dataset.kitDesc = ds.trim();
-    createKit(picked, head);
+    if(!picked.length){ msg.textContent = 'Tick the lines that make up the kit.'; return; }
+    if(!main){ msg.textContent = 'Choose the main line — it gives the kit its name and code (you can change them).'; return; }
+    if(!picked.includes(main)) picked.push(main);
+    createKit(picked, main, {
+      name: ov.querySelector('#kitNewName').value.trim(),
+      code: ov.querySelector('#kitNewCode').value.trim() || undefined,
+      desc: ov.querySelector('#kitNewDesc').value.replace(/^\s+|\s+$/g, ''),
+      qty: Number(ov.querySelector('#kitNewQty').value) || 1,
+    });
     close();
   });
 }
-// Before "Generate Offer" rebuilds the lines: each kit as {chapter, lines (kind/model/code/desc), head}.
+// Before "Generate Offer" rebuilds the lines: each kit as {chapter, kit line data, components}.
 function captureKitsForRegenerate(){
   const out = [];
-  const seen = new Set();
-  bomBody.querySelectorAll('tr[data-kind]').forEach(r => {
-    const k = r.dataset.kitId;
-    if(!k || seen.has(k)) return;
-    seen.add(k);
-    const h = bomBody.querySelector(`tr[data-kind="header"][data-row-id="${r.dataset.groupOf}"]`);
+  bomBody.querySelectorAll('tr[data-kind]').forEach(p => {
+    if(!isKitParent(p)) return;
+    const h = bomBody.querySelector(`tr[data-kind="header"][data-row-id="${p.dataset.groupOf}"]`);
     if(!h) return;
     const key = h.dataset.cfgPos ? `pos:${h.dataset.cfgPos}` : h.dataset.isServices === 'true' ? 'svc' : `sec:${h.cells[4].textContent}`;
-    const hd = kitMembersOf(k).find(m => m.dataset.kitHead === 'true');
-    out.push({key, open: false, name: hd ? hd.dataset.kitName || '' : '', desc: hd ? hd.dataset.kitDesc || '' : '',
-      lines: kitMembersOf(k).map(m => ({kind: m.dataset.kind, model: rowModelText(m), code: rowCodeText(m), desc: rowDescText(m), head: m.dataset.kitHead === 'true'}))});
+    let defaults = null; try{ defaults = JSON.parse(p.dataset.kitDefaults || 'null'); }catch(e){}
+    out.push({key, open: p.dataset.kitOpen === 'true', qty: rowQty(p),
+      parent: {model: rowModelText(p).replace(/^↳\s*/, ''), code: rowCodeText(p), desc: rowDescText(p), defaults},
+      lines: kitMembersOf(p.dataset.kitId).map(m => ({kind: m.dataset.kind, model: rowModelText(m), code: rowCodeText(m), desc: rowDescText(m)}))});
   });
   return out;
 }
-// …and after: the same lines (matched by kind, model, code and description) are grouped again.
+// …and after: the same component lines (matched by kind, model, code, description) get their kit back.
 function reapplyKitsAfterRegenerate(saved){
   if(!saved || !saved.length) return;
   const headers = [...bomBody.querySelectorAll('tr[data-kind="header"]')];
@@ -5459,18 +5544,14 @@ function reapplyKitsAfterRegenerate(saved){
     if(!h) return;
     const pool = [...bomBody.querySelectorAll(`tr[data-group-of="${h.dataset.rowId}"]`)].filter(r => (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !r.dataset.kitId);
     const matched = [];
-    let head = null;
     kit.lines.forEach(l => {
       const r = pool.find(x => !matched.includes(x) && x.dataset.kind === l.kind && rowModelText(x) === l.model && rowCodeText(x) === l.code && rowDescText(x) === l.desc)
              || pool.find(x => !matched.includes(x) && rowModelText(x) === l.model && rowCodeText(x) === l.code);
-      if(r){ matched.push(r); if(l.head) head = r; }
+      if(r) matched.push(r);
     });
-    if(matched.length >= 2){
-      const hh = head || matched[0];
-      if(kit.name) hh.dataset.kitName = kit.name;
-      if(kit.desc) hh.dataset.kitDesc = kit.desc;
-      createKit(matched, hh);
-    }
+    if(!matched.length) return;
+    const res = createKit(matched, null, {name: kit.parent.model, code: kit.parent.code, desc: kit.parent.desc, qty: kit.qty, open: kit.open});
+    if(res && kit.parent.defaults) res.parent.dataset.kitDefaults = JSON.stringify(kit.parent.defaults);
   });
 }
 
@@ -5503,10 +5584,30 @@ function flashNewRow(row){
 }
 function duplicateBomLine(row){
   if(READ_ONLY) return null;
-  const copy = addBomRow({...bomRowCopyData(row), kind: 'accessory', manualEntry: true, groupOf: row.dataset.groupOf}, row.nextElementSibling);
+  if(isKitParent(row)) return duplicateKit(row);
+  // a component stays in its kit
+  const copy = addBomRow({...bomRowCopyData(row), kind: 'accessory', manualEntry: true, groupOf: row.dataset.groupOf,
+    kitId: isKitMember(row) ? row.dataset.kitId : undefined}, row.nextElementSibling);
   if(row.dataset.groupOf){ bomRenumberChapter(row.dataset.groupOf); recalcGroupTotal(row.dataset.groupOf); }
   flashNewRow(copy);
   return copy;
+}
+// ⧉ on a kit line: the whole kit (kit line + components) again, right after it
+function duplicateKit(parent){
+  const kitId = newKitId();
+  const members = kitMembersOf(parent.dataset.kitId);
+  let after = (members[members.length - 1] || parent).nextElementSibling;
+  KIT_BULK++;
+  const np = addBomRow({...bomRowCopyData(parent), kind: 'accessory', manualEntry: true, groupOf: parent.dataset.groupOf,
+    kitId, kitParent: true, kitDefaults: parent.dataset.kitDefaults}, after);
+  np.dataset.kitOpen = parent.dataset.kitOpen || 'false';
+  setKitLineTexts(np, rowModelText(parent).replace(/^↳\s*/, ''), rowCodeText(parent), rowDescText(parent));
+  members.forEach(m => addBomRow({...bomRowCopyData(m), kind: m.dataset.kind === 'line' ? 'accessory' : m.dataset.kind, manualEntry: true, groupOf: parent.dataset.groupOf, kitId}, after));
+  KIT_BULK--;
+  bomRenumberChapter(parent.dataset.groupOf);
+  recalcGroupTotal(parent.dataset.groupOf);
+  flashNewRow(np);
+  return np;
 }
 function nextChapterNumber(){
   let max = 0;
@@ -5558,7 +5659,7 @@ function duplicateBomChapter(header){
     if(r.dataset.kind !== 'line' && r.dataset.kind !== 'accessory') return;
     const kitId = r.dataset.kitId ? (kitMap[r.dataset.kitId] = kitMap[r.dataset.kitId] || ('k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) : undefined;
     addBomRow({...bomRowCopyData(r), kind: r.dataset.kind, manualEntry: r.dataset.manualEntry === 'true' || undefined, groupOf: owner,
-               kitId, kitHead: r.dataset.kitHead === 'true' || undefined, kitName: r.dataset.kitName, kitDesc: r.dataset.kitDesc}, after);
+               kitId, kitParent: r.dataset.kitParent === 'true' || undefined, kitDefaults: r.dataset.kitDefaults}, after);
   });
   KIT_BULK--;
   addBomRow({kind: 'total', groupOf: owner}, after);
@@ -5665,7 +5766,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
   [...bomBody.querySelectorAll('tr[data-kind="header"]')].forEach(h=>{
     const cfgPos = h.dataset.cfgPos;
     if(!cfgPos) return;
-    const accRows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${h.dataset.rowId}"]`)];
+    const accRows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${h.dataset.rowId}"]`)].filter(r => !isKitParent(r));
     if(!accRows.length) return;
     savedAccessories[cfgPos] = accRows.map(r=>({
       model: rowModelText(r),
@@ -5698,7 +5799,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
   let savedServiceLines = [];
   const existingServicesHeader = bomBody.querySelector('tr[data-kind="header"][data-is-services="true"]');
   if(existingServicesHeader){
-    const svcRows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${existingServicesHeader.dataset.rowId}"]`)];
+    const svcRows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${existingServicesHeader.dataset.rowId}"]`)].filter(r => !isKitParent(r));
     savedServiceLines = svcRows.map(r=>({
       model: rowModelText(r),
       code: rowCodeText(r),
@@ -5723,7 +5824,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
   const allHeadersAtCapture = [...bomBody.querySelectorAll('tr[data-kind="header"]')];
   const existingCustomHeaders = allHeadersAtCapture.filter(h=>h.dataset.isCustomSection === 'true');
   existingCustomHeaders.forEach(h=>{
-    const rows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${h.dataset.rowId}"]`)];
+    const rows = [...bomBody.querySelectorAll(`tr[data-kind="accessory"][data-group-of="${h.dataset.rowId}"]`)].filter(r => !isKitParent(r));
     if(!rows.length) return;
     savedCustomSections.push({
       name: h.cells[4].textContent,
@@ -6036,6 +6137,8 @@ function setReadOnly(ro){
   document.querySelectorAll('#bomBody input, #bomBody button').forEach(el=>{ el.disabled = ro; });
   // the Delivery line's quantity and discount are never editable (one line, no discount)
   bomBody.querySelectorAll('tr[data-kind="delivery"] .in-qty, tr[data-kind="delivery"] .in-disc').forEach(el=>{ el.disabled = true; });
+  // a kit line's price and cost are always the sum of its components
+  bomBody.querySelectorAll('tr[data-kit-parent="true"] .in-gross, tr[data-kit-parent="true"] .in-disc, tr[data-kit-parent="true"] .in-cost').forEach(el=>{ el.disabled = true; });
   bomBody.classList.toggle('read-only', ro); // hides the ⠿ drag handles while the revision is closed
   updateRevisionStatus();
 }
@@ -6464,9 +6567,7 @@ function buildConfigState(){
     if(r.dataset.subBom){ try{ item.subBom = JSON.parse(r.dataset.subBom); }catch(e){} }
     if(r.dataset.kitId){
       item.kitId = r.dataset.kitId;
-      if(r.dataset.kitHead === 'true') item.kitHead = true;
-      if(r.dataset.kitName) item.kitName = r.dataset.kitName;
-      if(r.dataset.kitDesc) item.kitDesc = r.dataset.kitDesc;
+      if(r.dataset.kitParent === 'true'){ item.kitParent = true; try{ item.kitDefaults = JSON.parse(r.dataset.kitDefaults || 'null') || undefined; }catch(e){} }
     }
     if(kind === 'header'){
       item.label = r.cells[4].textContent;
@@ -7641,31 +7742,12 @@ function collectOfferRows(){
       return;
     }
     if(kind === 'total' || !current) return;
-    // a kit is ONE offer line: head's qty/model/code/description, priced with all its lines
-    if(r.dataset.kitId){
-      const kitId = r.dataset.kitId;
-      if(current._kitsDone && current._kitsDone.has(kitId)) return;
-      (current._kitsDone = current._kitsDone || new Set()).add(kitId);
-      const members = kitMembersOf(kitId).filter(m => m.dataset.groupOf === r.dataset.groupOf);
-      const head = members.find(m => m.dataset.kitHead === 'true') || members[0];
-      const hq = Number(rowQty(head)) || 1;
-      let sumGross = 0, sumNet = 0, sumCost = 0;
-      members.forEach(m => { const v = kitRowNet(m); sumGross += v.gross * v.qty; sumNet += v.net * v.qty; sumCost += v.cost * v.qty; });
-      const gross = sumGross / hq, net = sumNet / hq, cost = sumCost / hq;
-      const disc = gross > 0 ? (1 - net / gross) * 100 : 0;
-      const margin = sumNet > 0 ? ((sumNet - sumCost) / sumNet * 100) : 0;
-      const desc = head.dataset.kitDesc
-        ? String(head.dataset.kitDesc).replace(/\r\n?/g, '\n')
-        : String(rowDescText(head) + (rowExtSupplier(head) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
-      current.lines.push({qty: rowQty(head), model: head.dataset.kitName || rowModelText(head), code: rowCodeText(head), desc, gross, disc, net, cost, totalPrice: sumNet, totalCost: sumCost, margin, kit: members.length});
-      current.subtotalPrice += sumNet;
-      current.subtotalCost += sumCost;
-      return;
-    }
+    // a kit is ONE offer line — its own line; the component lines are inside its price
+    if(isKitMember(r)) return;
     const qty = rowQty(r);
     const model = rowModelText(r);
     const code = rowCodeText(r);
-    const desc = String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
+    const desc = String(rowDescText(r)).replace(/\r\n?/g, '\n');
     const gross = Number(r.querySelector('.in-gross')?.value)||0;
     const disc = Number(r.querySelector('.in-disc')?.value)||0;
     const cost = Number(r.querySelector('.in-cost')?.value)||0;
@@ -7678,7 +7760,6 @@ function collectOfferRows(){
     current.subtotalCost += totalCost;
   });
   groups.forEach(g=>{
-    delete g._kitsDone;
     g.groupTotalPrice = g.subtotalPrice * g.configQty;
     g.groupTotalCost = g.subtotalCost * g.configQty;
     grandTotal += g.groupTotalPrice;
@@ -8421,7 +8502,7 @@ function buildOfferDocxBody(){
     const label = h.cells[4].textContent;
     const p = tech.find(x => Number(x.pos) === Number(h.dataset.cfgPos));
     // a kit is one item in the offer: only its head line is listed
-    const lines = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !(r.dataset.kitId && r.dataset.kitHead !== 'true'));
+    const lines = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !isKitMember(r));
     if(!p && !lines.length) return;   // e.g. SERVICES with only Delivery — it's in the price schedule
     out.push(dxPara(p ? `Position ${p.pos} — ${label}` : label, {style: 'Heading2'}));
     if(p){
@@ -8429,7 +8510,7 @@ function buildOfferDocxBody(){
     }
     if(lines.length){
       const rows = [['Qty', 'Item', 'Description']];
-      lines.forEach(r => rows.push([String(rowQty(r)), [(r.dataset.kitId && r.dataset.kitName) || rowModelText(r), rowCodeText(r)].filter(Boolean).join('\n'), String(((r.dataset.kitId && r.dataset.kitDesc) || rowDescText(r)) + (rowExtSupplier(r) && !(r.dataset.kitId && r.dataset.kitDesc) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n')]));
+      lines.forEach(r => rows.push([String(rowQty(r)), [rowModelText(r), rowCodeText(r)].filter(Boolean).join('\n'), String(rowDescText(r)).replace(/\r\n?/g, '\n')]));
       out.push(dxTable(rows, [700, 2600, DOCX_W - 3300], {header: true, sz: 8.5}));
     }
   });
@@ -10172,7 +10253,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.05';
+const CURRENT_VERSION = 'beta_6.07';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -10202,6 +10283,16 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.07', date:'2026-09-30', notes:[
+    '"(Ext. Supplier)" non viene più stampato su nessun documento (offerta PDF/Excel/Word e BOM): resta solo come indicazione interna nello strumento (etichetta sulla riga, salvata nel JSON)',
+  ]},
+  {version:'beta_6.06', date:'2026-09-30', notes:[
+    'Kit rivisti: il kit è una riga a sé (es. 1.5) con i componenti sotto, numerati 1.5.1, 1.5.2 … sia nelle Offer Lines sia nella BOM',
+    'Il kit ha una sua quantità (predefinita 1), modificabile sulla riga o con ✎; le quantità dei componenti sono per kit (es. 230 × A + 5 × B = 1 kit). Nella BOM ogni componente è moltiplicato per la quantità dei kit (2 kit → 460 × A, 10 × B)',
+    'Prezzo e costo del kit sono la somma dei componenti (per kit) e si aggiornano da soli; in offerta compare solo la riga del kit, con la sua quantità',
+    'Nome, codice, descrizione (Alt+Invio per gli a capo) e quantità del kit si modificano con ✎; "Use the main line" riporta i dati della riga principale scelta alla creazione. ⧉ sulla riga del kit duplica tutto il kit; eliminando tutti i componenti la riga del kit sparisce',
+    'I kit salvati con le versioni 6.01–6.05 vengono convertiti automaticamente all\'apertura del file',
+  ]},
   {version:'beta_6.05', date:'2026-09-30', notes:[
     'Offer Lines: la descrizione data al kit (quella che va in offerta) compare sulla riga principale, in blu e con i suoi a capo; sotto, in grigio, resta la descrizione della riga, che è quella usata dalla BOM. Con "Use the main line" sparisce',
   ]},

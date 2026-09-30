@@ -379,6 +379,10 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 .kit-excel{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 12px; margin-bottom:12px; border:1px dashed #BFD3F2; border-radius:8px; background:#F7FAFE; font-size:12.5px;}
 .sb-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; margin-top:12px;} .sb-grid label{display:flex; flex-direction:column; font-size:12px; color:var(--dim); gap:3px;}
 .sb-grid label.wide{grid-column:1 / -1;} .sb-grid input{font-size:13px; padding:7px 8px; border:1px solid var(--field-border); border-radius:6px; color:var(--text);}
+.kit-desc-view{white-space:pre-wrap; color:#1F4E9C; font-weight:500; margin-bottom:3px; padding-left:6px; border-left:2px solid #7FA6E0;}
+#bomBody tr.kit-has-desc .desc-text{color:var(--dim); font-size:11px;}
+.kit-desc-ta{flex:1; width:100%; font-family:inherit; font-size:13px; padding:7px 8px; border:1px solid var(--field-border); border-radius:6px; resize:vertical; min-height:34px; color:var(--text); line-height:1.4;}
+.kit-alt-hint{font-size:10.5px; color:#9AA3AF; font-weight:400;}
 .sb-out{font-size:13px; color:var(--text); padding:7px 0;}
 .kit-ren{margin-left:4px; border:none; background:transparent; color:#1F4E9C; cursor:pointer; font-size:12px; padding:0 3px; border-radius:4px; vertical-align:middle;} .kit-ren:hover{background:#EAF1FC;}
 #bomBody tr.kit-member > td:first-child{box-shadow:inset 3px 0 0 #7FA6E0;}
@@ -774,7 +778,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.03</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.05</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -5086,7 +5090,7 @@ function openSubBomImportDialog(header, replaceRow){
         <label>Sales code *<input type="text" id="sbCode" value="${escapeHtml(cur.code)}" placeholder="e.g. RPS-BATT-10MIN"></label>
         <label>Quantity<input type="number" id="sbQty" min="0" step="1" value="${escapeHtml(String(cur.qty))}"></label>
         <label class="wide">Model / name in the offer<input type="text" id="sbName" value="${escapeHtml(cur.name)}" placeholder="empty = the sales code"></label>
-        <label class="wide">Description in the offer<input type="text" id="sbDesc" value="${escapeHtml(cur.desc)}"></label>
+        <label class="wide">Description in the offer <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea id="sbDesc" rows="1" class="kit-desc-ta">${escapeHtml(cur.desc)}</textarea></label>
         <label>Selling price per unit<input type="number" id="sbPrice" min="0" step="0.01" value="${escapeHtml(String(cur.price))}"></label>
         <label>Margin<output id="sbMargin" class="sb-out">—</output></label>
       </div>
@@ -5106,6 +5110,7 @@ function openSubBomImportDialog(header, replaceRow){
   ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
   $('#sbPrice').addEventListener('input', updateMargin);
+  attachMultilineDescriptionEditor($('#sbDesc'));
   $('#sbFile').addEventListener('change', async e => {
     const f = e.target.files && e.target.files[0];
     if(!f) return;
@@ -5126,7 +5131,7 @@ function openSubBomImportDialog(header, replaceRow){
     if(!code){ $('#sbMsg').textContent = 'Give the sales code — it is what the offer shows.'; $('#sbCode').focus(); return; }
     const qty = Number($('#sbQty').value) || 1;
     const name = $('#sbName').value.trim() || code;
-    const desc = $('#sbDesc').value.trim();
+    const desc = $('#sbDesc').value.replace(/^\s+|\s+$/g, '');
     const price = Number($('#sbPrice').value) || 0;
     const unitCost = subBomUnitCost(items);
     if(replaceRow){
@@ -5220,9 +5225,9 @@ function kitRowNet(r){
   return {qty, gross, disc, cost, net: gross * (1 - disc / 100)};
 }
 function clearKitLook(r){
-  r.classList.remove('kit-head', 'kit-child', 'kit-member');
+  r.classList.remove('kit-head', 'kit-child', 'kit-member', 'kit-has-desc');
   r.style.display = '';
-  r.querySelectorAll('.kit-chip, .kit-ren').forEach(el => el.remove());
+  r.querySelectorAll('.kit-chip, .kit-ren, .kit-desc-view').forEach(el => el.remove());
 }
 function applyKitLook(head, members){
   const open = head.dataset.kitOpen === 'true';
@@ -5233,7 +5238,7 @@ function applyKitLook(head, members){
     r.classList.add('kit-member');
     r.classList.toggle('kit-head', r === head);
     r.classList.toggle('kit-child', r !== head);
-    if(r !== head){ r.style.display = open ? '' : 'none'; r.querySelectorAll('.kit-chip, .kit-ren').forEach(el => el.remove()); }
+    if(r !== head){ r.style.display = open ? '' : 'none'; r.classList.remove('kit-has-desc'); r.querySelectorAll('.kit-chip, .kit-ren, .kit-desc-view').forEach(el => el.remove()); }
   });
   let chip = head.querySelector('.kit-chip');
   if(!chip){
@@ -5258,6 +5263,16 @@ function applyKitLook(head, members){
     head.cells[2].appendChild(ren);
   }
   const name = head.dataset.kitName;
+  // the kit's own description (what the offer prints) shown on the head row, above the main line's
+  // description, which stays visible in grey — the BOM and every document still read the latter
+  const kd = head.dataset.kitDesc;
+  let kdv = head.cells[4].querySelector('.kit-desc-view');
+  if(kd){
+    if(!kdv){ kdv = document.createElement('div'); kdv.className = 'kit-desc-view'; head.cells[4].prepend(kdv); }
+    kdv.textContent = kd;
+    kdv.title = 'Kit description in the offer — ✎ to change it';
+  } else if(kdv) kdv.remove();
+  head.classList.toggle('kit-has-desc', !!kd);
   chip.textContent = `${open ? '▾' : '▸'} KIT${name ? ` · ${name}` : ''}`;
   chip.title = `${members.length} lines · total ${formatMoney(total)}${name ? ` · in the offer as "${name}"` : ''} — ${open ? 'click to close the kit' : 'click to open it and edit its lines'}`;
 }
@@ -5278,8 +5293,8 @@ function openKitRenameDialog(kitId){
       <p class="pf-hint" style="margin-top:0;">What the offer shows for this kit (code stays <b>${escapeHtml(rowCodeText(head) || '—')}</b>). The BOM keeps listing the ${members.length} lines with their own names. Leave empty to use the main line.</p>
       <label style="font-size:12px; color:var(--dim);">Model / name</label>
       <div class="pf-box"><input type="text" id="kitNameIn" value="${escapeHtml(head.dataset.kitName || '')}" placeholder="${escapeHtml(rowModelText(head))}"></div>
-      <label style="font-size:12px; color:var(--dim);">Description</label>
-      <div class="pf-box"><textarea id="kitDescIn" rows="3" style="flex:1; font-family:inherit; font-size:12.5px; padding:7px 8px; border:1px solid var(--field-border); border-radius:6px;" placeholder="${escapeHtml(rowDescText(head))}">${escapeHtml(head.dataset.kitDesc || '')}</textarea></div>
+      <label style="font-size:12px; color:var(--dim);">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span></label>
+      <div class="pf-box"><textarea id="kitDescIn" rows="3" class="kit-desc-ta" placeholder="${escapeHtml(rowDescText(head))}">${escapeHtml(head.dataset.kitDesc || '')}</textarea></div>
       <div class="pf-actions" style="justify-content:flex-end;">
         <button type="button" class="btn-ghost act" data-reset>Use the main line</button>
         <button type="button" class="btn-ghost act" data-close>Cancel</button>
@@ -5298,6 +5313,7 @@ function openKitRenameDialog(kitId){
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
   ov.querySelector('[data-reset]').addEventListener('click', () => apply('', ''));
   ov.querySelector('[data-save]').addEventListener('click', () => apply(ov.querySelector('#kitNameIn').value.trim(), ov.querySelector('#kitDescIn').value.trim()));
+  attachMultilineDescriptionEditor(ov.querySelector('#kitDescIn'));
   setTimeout(() => ov.querySelector('#kitNameIn').focus(), 0);
 }
 // Keeps the kits of one chapter consistent: one head each, at least two lines, lines kept together
@@ -5380,8 +5396,8 @@ function openKitDialog(header){
       ${kits.length ? `<h4 style="margin:14px 0 6px;">Kits of this chapter</h4>${kits.map(k => { const m = kitMembersOf(k); const h = m.find(r => r.dataset.kitHead === 'true') || m[0]; return `<div class="kit-existing"><span>${line(h)} <span class="pf-hint">+ ${m.length - 1} line${m.length > 2 ? 's' : ''}</span></span><span style="display:flex; gap:6px;"><button type="button" class="btn-ghost act" data-rename="${k}">Rename…</button><button type="button" class="btn-ghost act" data-ungroup="${k}">Ungroup</button></span></div>`; }).join('')}` : ''}
       ${free.length ? `<div style="margin-top:10px;"><label style="font-size:12px; color:var(--dim);">Kit name in the offer (optional — empty = the main line's model)</label>
         <div class="pf-box"><input type="text" id="kitNewName" placeholder="e.g. Battery system 10 min"></div>
-        <label style="font-size:12px; color:var(--dim);">Description in the offer (optional)</label>
-        <div class="pf-box"><input type="text" id="kitNewDesc" placeholder="empty = the main line's description"></div></div>` : ''}
+        <label style="font-size:12px; color:var(--dim);">Description in the offer (optional) <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span></label>
+        <div class="pf-box"><textarea id="kitNewDesc" rows="1" class="kit-desc-ta" placeholder="empty = the main line's description"></textarea></div></div>` : ''}
       <p class="pf-hint" id="kitMsg"></p>
       <div class="pf-actions" style="justify-content:flex-end;">
         <button type="button" class="btn-ghost act" data-close>Close</button>
@@ -5399,6 +5415,7 @@ function openKitDialog(header){
   ov.querySelectorAll('[data-ungroup]').forEach(b => b.addEventListener('click', () => { ungroupKit(b.dataset.ungroup); close(); openKitDialog(header); }));
   ov.querySelectorAll('[data-rename]').forEach(b => b.addEventListener('click', () => { close(); openKitRenameDialog(b.dataset.rename); }));
   ov.querySelector('[data-excel]').addEventListener('click', () => { close(); openSubBomImportDialog(header); });
+  if(ov.querySelector('#kitNewDesc')) attachMultilineDescriptionEditor(ov.querySelector('#kitNewDesc'));
   const create = ov.querySelector('[data-create]');
   if(create) create.addEventListener('click', () => {
     const picked = [...ov.querySelectorAll('input[type="checkbox"]:checked')].map(cb => free[Number(cb.dataset.i)]);
@@ -10155,7 +10172,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.03';
+const CURRENT_VERSION = 'beta_6.05';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -10185,6 +10202,12 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.05', date:'2026-09-30', notes:[
+    'Offer Lines: la descrizione data al kit (quella che va in offerta) compare sulla riga principale, in blu e con i suoi a capo; sotto, in grigio, resta la descrizione della riga, che è quella usata dalla BOM. Con "Use the main line" sparisce',
+  ]},
+  {version:'beta_6.04', date:'2026-09-30', notes:[
+    'Kit: in tutti i campi descrizione (creazione kit, rinomina ✎ / "Rename…", codice di vendita da Excel) Alt+Invio apre l\'editor della descrizione su più righe, come nelle altre righe manuali; gli a capo arrivano nei documenti d\'offerta',
+  ]},
   {version:'beta_6.03', date:'2026-09-30', notes:[
     'Codice di vendita da BOM Excel: nella finestra "⊞ Kit" il pulsante "⤒ Import Excel BOM…" legge un Excel con le colonne quantità, codice, descrizione e costo (il costo può mancare; l\'intestazione viene trovata da sola, altrimenti si usano le colonne A–D). Si vede il costo totale, poi si indicano codice di vendita, nome, descrizione, quantità e prezzo di vendita, con il margine calcolato al volo',
     'In offerta (PDF, Excel, Word) compare una sola riga con il codice di vendita e il prezzo inserito; il costo è la somma della BOM. L\'etichetta "BOM · n" sulla riga mostra la composizione e permette di modificarla o sostituirla da un nuovo Excel',

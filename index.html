@@ -372,6 +372,21 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
   display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
 }
 .row-remove:hover{color:var(--red); border-color:var(--red);}
+.kit-chip{display:inline-block; margin-left:6px; font-size:10.5px; padding:2px 8px; border-radius:10px; border:1px solid #BFD3F2; background:#EAF1FC; color:#1F4E9C; cursor:pointer; white-space:nowrap; vertical-align:middle;}
+.kit-chip:hover{background:#DCE8FA;}
+.subbom-chip{display:inline-block; margin-left:6px; font-size:10.5px; padding:2px 8px; border-radius:10px; border:1px solid #CFE3D2; background:#EEF7EF; color:#2E6B35; cursor:pointer; white-space:nowrap; vertical-align:middle;}
+.subbom-chip:hover{background:#E0F0E2;}
+.kit-excel{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 12px; margin-bottom:12px; border:1px dashed #BFD3F2; border-radius:8px; background:#F7FAFE; font-size:12.5px;}
+.sb-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; margin-top:12px;} .sb-grid label{display:flex; flex-direction:column; font-size:12px; color:var(--dim); gap:3px;}
+.sb-grid label.wide{grid-column:1 / -1;} .sb-grid input{font-size:13px; padding:7px 8px; border:1px solid var(--field-border); border-radius:6px; color:var(--text);}
+.sb-out{font-size:13px; color:var(--text); padding:7px 0;}
+.kit-ren{margin-left:4px; border:none; background:transparent; color:#1F4E9C; cursor:pointer; font-size:12px; padding:0 3px; border-radius:4px; vertical-align:middle;} .kit-ren:hover{background:#EAF1FC;}
+#bomBody tr.kit-member > td:first-child{box-shadow:inset 3px 0 0 #7FA6E0;}
+#bomBody tr.kit-child > td{background:#F6F9FE;}
+#bomBody tr.kit-child > td:nth-child(3){padding-left:22px;}
+.kit-pick{width:100%; border-collapse:collapse; font-size:12.5px;} .kit-pick th{text-align:left; font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:.04em; padding:4px 6px; border-bottom:1px solid var(--panel-border);}
+.kit-pick td{padding:5px 6px; border-bottom:1px solid #F1F3F6;} .kit-pick .num{text-align:right;} .kit-code{color:var(--dim); font-size:11px; margin-left:4px;}
+.kit-existing{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid #F1F3F6; font-size:12.5px;}
 .row-dup:hover{color:var(--accent-dark); border-color:var(--accent-dark);}   /* ⧉ duplicate — same shape as ×, blue on hover */
 .row-kebab-wrap{position:relative; display:inline-block;}
 .row-kebab{
@@ -759,7 +774,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.00</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.03</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3690,6 +3705,11 @@ function addBomRow(data, insertBeforeNode){
     }
     row.querySelector('.bom-actions').appendChild(accBtn);
     if(!data.isServices){
+      const kitBtn = document.createElement('button');
+      kitBtn.type = 'button'; kitBtn.className = 'bom-batt-btn kit-btn'; kitBtn.textContent = '⊞ Kit';
+      kitBtn.title = 'Group lines of this chapter into one offer line (the BOM keeps every line)';
+      kitBtn.addEventListener('click', ()=>openKitDialog(row));
+      row.querySelector('.bom-actions').appendChild(kitBtn);
       const dupBtn = document.createElement('button');
       dupBtn.type = 'button'; dupBtn.className = 'row-remove row-dup'; dupBtn.textContent = '⧉';
       dupBtn.title = data.isCustomSection
@@ -3743,6 +3763,13 @@ function addBomRow(data, insertBeforeNode){
   if(data.extSupplier) row.dataset.extSupplier = 'true';
   if(data.techCategory) row.dataset.techCategory = data.techCategory;
   if(data.manualEntry) row.dataset.manualEntry = 'true';
+  if(Array.isArray(data.subBom) && data.subBom.length) row.dataset.subBom = JSON.stringify(data.subBom);
+  if(data.kitId){
+    row.dataset.kitId = data.kitId;
+    if(data.kitHead) row.dataset.kitHead = 'true';
+    if(data.kitName) row.dataset.kitName = data.kitName;
+    if(data.kitDesc) row.dataset.kitDesc = data.kitDesc;
+  }
   const modelCell = data.model
     ? (kind==='accessory' ? `↳ ${escapeHtml(data.model)}` : `<span class="model-cell">${escapeHtml(data.model)}</span>`)
     : '';
@@ -3826,6 +3853,7 @@ function addBomRow(data, insertBeforeNode){
     dupBtn.title = 'Duplicate this line (the copy stays after Generate Offer)';
     dupBtn.addEventListener('click', ()=>duplicateBomLine(row));
     row.querySelector('.bom-actions').prepend(dupBtn);
+    if(row.dataset.subBom) attachSubBomChip(row);
   }
   if(kind==='delivery'){
     // Normally auto-computed by updateDeliveryRow() from "Delivery %", but the price (and its cost)
@@ -3933,7 +3961,10 @@ function rowModelText(row){
   if(inp) return inp.value;
   const span = row.querySelector('.model-cell');
   if(span) return span.textContent;
-  return row.cells[2].textContent.replace(/^↳\s*/,'');
+  // the kit chip/rename button sit in this cell too — never part of the model name
+  let t = '';
+  row.cells[2].childNodes.forEach(n => { if(!(n.nodeType === 1 && (n.classList.contains('kit-chip') || n.classList.contains('kit-ren') || n.classList.contains('subbom-chip')))) t += n.textContent; });
+  return t.replace(/^↳\s*/,'');
 }
 function rowCodeText(row){
   const inp = row.querySelector('.in-code');
@@ -3995,6 +4026,9 @@ function exitRowEditMode(row, keep){
     ta.replaceWith(span);
   }
   delete row._editOriginal;
+  // the model cell was rewritten: put back the sales-code BOM chip and the kit label, if any
+  if(row.dataset.subBom) attachSubBomChip(row);
+  if(row.dataset.kitId) refreshKitsInChapter(row.dataset.groupOf);
 }
 function rowExtSupplier(row){
   return row.dataset.extSupplier === 'true';
@@ -4049,6 +4083,7 @@ function computeGroupTotal(headerRow){
 function recalcGroupTotal(owner){
   const headerRow = bomBody.querySelector(`tr[data-kind="header"][data-row-id="${owner}"]`);
   if(!headerRow) return 0;
+  refreshKitsInChapter(owner);
   const {price} = computeGroupTotal(headerRow);
   const totalRow = bomBody.querySelector(`tr[data-kind="total"][data-group-of="${owner}"]`);
   if(totalRow){
@@ -4964,6 +4999,464 @@ function bomRenumberChapter(owner){
     });
 }
 
+// ---- Sales code with its own BOM (from Excel) ----
+// A line with a generic sales code whose composition comes from an Excel BOM (columns: quantity,
+// code, description, cost — cost may be empty). In the OFFER it is one line (the sales code, with
+// the selling price typed in after seeing the total cost). In the BOM documents it is followed by
+// its components, numbered under it (1.3 → 1.3.1, 1.3.2 …), quantities multiplied by the line's.
+function rowSubBom(r){
+  if(!r || !r.dataset.subBom) return undefined;
+  try{ const a = JSON.parse(r.dataset.subBom); return Array.isArray(a) && a.length ? a : undefined; }catch(e){ return undefined; }
+}
+function subBomUnitCost(items){
+  return (items || []).reduce((a, it) => a + (Number(it.qty) || 0) * (Number(it.cost) || 0), 0);
+}
+function attachSubBomChip(row){
+  const items = rowSubBom(row);
+  let chip = row.querySelector('.subbom-chip');
+  if(!items){ if(chip) chip.remove(); return; }
+  if(!chip){
+    chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'subbom-chip';
+    chip.addEventListener('click', e => { e.stopPropagation(); openSubBomView(row); });
+    row.cells[2].appendChild(chip);
+  }
+  chip.textContent = `BOM · ${items.length}`;
+  chip.title = `Composition of this sales code (${items.length} items, cost ${formatMoney(subBomUnitCost(items))} per unit) — listed under it in the BOM documents`;
+}
+// Excel → [{qty, code, desc, cost}]. Finds the header row by its titles (Q.tà / Qty, Codice / Code,
+// Descrizione / Description, Costo / Cost); without recognisable titles, columns A–D in that order.
+function parseSubBomRows(aoa){
+  const norm = v => String(v ?? '').trim().toLowerCase();
+  const isQty = t => /^(q\.?\s*t[àa']?|q\.?ty|qty|quantit|pz|pcs|n\.?\s*pz)/.test(t);
+  const isCode = t => /^(cod|code|codice|part|p\/n|pn|articolo|item)/.test(t);
+  const isDesc = t => /^(desc|descrizione|description|denominazione)/.test(t);
+  const isCost = t => /^(cost|costo|unit cost|costo unitario|prezzo acquisto|purchase)/.test(t);
+  let hi = -1, cols = null;
+  for(let i = 0; i < Math.min(aoa.length, 30); i++){
+    const r = (aoa[i] || []).map(norm);
+    const c = {qty: r.findIndex(isQty), code: r.findIndex(isCode), desc: r.findIndex(isDesc), cost: r.findIndex(isCost)};
+    if(c.qty >= 0 && (c.code >= 0 || c.desc >= 0)){ hi = i; cols = c; break; }
+  }
+  if(!cols){ hi = -1; cols = {qty: 0, code: 1, desc: 2, cost: 3}; }
+  const num = v => { if(v === '' || v === null || v === undefined) return 0; if(typeof v === 'number') return v; const t = String(v).replace(/[€\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); const n = Number(t); return Number.isFinite(n) ? n : 0; };
+  const out = [];
+  aoa.slice(hi + 1).forEach(r => {
+    if(!r) return;
+    const code = cols.code >= 0 ? String(r[cols.code] ?? '').trim() : '';
+    const desc = cols.desc >= 0 ? String(r[cols.desc] ?? '').trim() : '';
+    const qtyRaw = cols.qty >= 0 ? r[cols.qty] : '';
+    if(!code && !desc) return;
+    const qty = num(qtyRaw);
+    if(!qty && (qtyRaw === '' || qtyRaw === undefined)) return;   // a title or note line, not a component
+    out.push({qty, code, desc, cost: cols.cost >= 0 ? num(r[cols.cost]) : 0});
+  });
+  return out;
+}
+async function readSubBomFile(file){
+  if(typeof XLSX === 'undefined') throw new Error('the Excel reader did not load (no internet access?)');
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(new Uint8Array(buf), {type: 'array'});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  return parseSubBomRows(XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''}));
+}
+function subBomTableHtml(items){
+  return `<table class="kit-pick"><thead><tr><th class="num">Qty</th><th>Code</th><th>Description</th><th class="num">Unit cost</th><th class="num">Cost</th></tr></thead><tbody>
+    ${items.map(it => `<tr><td class="num">${escapeHtml(String(it.qty))}</td><td>${escapeHtml(it.code)}</td><td>${escapeHtml(it.desc)}</td><td class="num">${it.cost ? formatMoney(it.cost) : '—'}</td><td class="num">${it.cost ? formatMoney(it.cost * it.qty) : '—'}</td></tr>`).join('')}
+    </tbody><tfoot><tr><td colspan="4" style="text-align:right; font-weight:600; padding:6px;">Total cost per unit</td><td class="num" style="font-weight:600; padding:6px;">${formatMoney(subBomUnitCost(items))}</td></tr></tfoot></table>`;
+}
+// The import window: pick the Excel, check the components and their total cost, then give the sales
+// code, its name/description, quantity and selling price.
+function openSubBomImportDialog(header, replaceRow){
+  if(READ_ONLY) return;
+  let items = replaceRow ? (rowSubBom(replaceRow) || []) : [];
+  const ov = document.createElement('div');
+  ov.className = 'settings-overlay';
+  ov.id = 'subBomOverlay';
+  ov.style.display = 'flex';
+  const cur = replaceRow ? {code: rowCodeText(replaceRow), name: rowModelText(replaceRow), desc: rowDescText(replaceRow), qty: rowQty(replaceRow), price: replaceRow.querySelector('.in-gross').value} : {code: '', name: '', desc: '', qty: 1, price: ''};
+  ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:860px;">
+    <div class="acc-modal-header"><h3>${replaceRow ? 'Sales code BOM' : 'Sales code from an Excel BOM'} — ${escapeHtml(header.cells[4].textContent)}</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
+    <div style="padding:14px 18px; max-height:78vh; overflow:auto;">
+      <p class="pf-hint" style="margin-top:0;">Excel with the columns <b>quantity, code, description, cost</b> (cost may be empty). The offer shows one line with your sales code; the BOM lists the components under it (1.3 → 1.3.1, 1.3.2 …).</p>
+      <div class="pf-box"><input type="file" id="sbFile" accept=".xlsx,.xls,.xlsm,.csv"><span class="pf-hint" id="sbFileMsg" style="margin:0;"></span></div>
+      <div id="sbPreview">${items.length ? subBomTableHtml(items) : ''}</div>
+      <div class="sb-grid">
+        <label>Sales code *<input type="text" id="sbCode" value="${escapeHtml(cur.code)}" placeholder="e.g. RPS-BATT-10MIN"></label>
+        <label>Quantity<input type="number" id="sbQty" min="0" step="1" value="${escapeHtml(String(cur.qty))}"></label>
+        <label class="wide">Model / name in the offer<input type="text" id="sbName" value="${escapeHtml(cur.name)}" placeholder="empty = the sales code"></label>
+        <label class="wide">Description in the offer<input type="text" id="sbDesc" value="${escapeHtml(cur.desc)}"></label>
+        <label>Selling price per unit<input type="number" id="sbPrice" min="0" step="0.01" value="${escapeHtml(String(cur.price))}"></label>
+        <label>Margin<output id="sbMargin" class="sb-out">—</output></label>
+      </div>
+      <p class="pf-hint" id="sbMsg"></p>
+      <div class="pf-actions" style="justify-content:flex-end;">
+        <button type="button" class="btn-ghost act" data-close>Cancel</button>
+        <button type="button" class="act btn-primary" data-ok>${replaceRow ? 'Save' : '⊞ Add to the offer'}</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(ov);
+  const $ = sel => ov.querySelector(sel);
+  const close = () => ov.remove();
+  const updateMargin = () => {
+    const c = subBomUnitCost(items), pr = Number($('#sbPrice').value) || 0;
+    $('#sbMargin').textContent = pr > 0 ? `${((pr - c) / pr * 100).toFixed(2)}%  (cost ${formatMoney(c)})` : `cost ${formatMoney(c)} per unit`;
+  };
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  $('#sbPrice').addEventListener('input', updateMargin);
+  $('#sbFile').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    try{
+      const parsed = await readSubBomFile(f);
+      if(!parsed.length){ $('#sbFileMsg').textContent = 'No components found — check the columns (quantity, code, description, cost).'; return; }
+      items = parsed;
+      $('#sbPreview').innerHTML = subBomTableHtml(items);
+      $('#sbFileMsg').textContent = `${items.length} components read from "${f.name}".`;
+      if(!$('#sbCode').value.trim()) $('#sbCode').focus();
+      updateMargin();
+    }catch(err){ $('#sbFileMsg').textContent = `Could not read the file: ${err.message || err}`; }
+  });
+  updateMargin();
+  $('[data-ok]').addEventListener('click', () => {
+    const code = $('#sbCode').value.trim();
+    if(!items.length){ $('#sbMsg').textContent = 'Load the Excel BOM first.'; return; }
+    if(!code){ $('#sbMsg').textContent = 'Give the sales code — it is what the offer shows.'; $('#sbCode').focus(); return; }
+    const qty = Number($('#sbQty').value) || 1;
+    const name = $('#sbName').value.trim() || code;
+    const desc = $('#sbDesc').value.trim();
+    const price = Number($('#sbPrice').value) || 0;
+    const unitCost = subBomUnitCost(items);
+    if(replaceRow){
+      replaceRow.dataset.subBom = JSON.stringify(items);
+      replaceRow.querySelector('.in-qty').value = qty;
+      replaceRow.querySelector('.in-gross').value = price.toFixed(2);
+      replaceRow.querySelector('.in-cost').value = unitCost.toFixed(2);
+      const mc = replaceRow.cells[2]; [...mc.childNodes].forEach(n => { if(!(n.nodeType === 1 && /kit-chip|kit-ren|subbom-chip/.test(n.className))) n.remove(); });
+      mc.insertBefore(document.createTextNode(`↳ ${name}`), mc.firstChild);
+      replaceRow.cells[3].textContent = code;
+      const de = replaceRow.querySelector('.desc-text'); if(de) de.textContent = desc;
+      attachSubBomChip(replaceRow);
+      replaceRow.querySelector('.in-gross').dispatchEvent(new Event('input', {bubbles: true}));
+    } else {
+      const owner = header.dataset.rowId;
+      const tot = bomBody.querySelector(`tr[data-kind="total"][data-group-of="${owner}"]`)
+               || bomBody.querySelector(`tr[data-kind="delivery"][data-group-of="${owner}"]`);
+      const row = addBomRow({kind: 'accessory', groupOf: owner, pos: header.dataset.pos && /^\d+\.0$/.test(header.dataset.pos) ? `${header.dataset.pos.split('.')[0]}.${nextSubIdxFor(header)}` : '',
+        qty, model: name, code, desc, gross: price, cost: unitCost, manualEntry: true, subBom: items}, tot);
+      bomRenumberChapter(owner);
+      recalcGroupTotal(owner);
+      flashNewRow(row);
+    }
+    close();
+  });
+}
+// Read-only view of a sales code's BOM, with "Replace from Excel / edit" for the whole line.
+function openSubBomView(row){
+  const items = rowSubBom(row) || [];
+  const header = bomBody.querySelector(`tr[data-kind="header"][data-row-id="${row.dataset.groupOf}"]`);
+  const ov = document.createElement('div');
+  ov.className = 'settings-overlay';
+  ov.id = 'subBomViewOverlay';
+  ov.style.display = 'flex';
+  ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:860px;">
+    <div class="acc-modal-header"><h3>${escapeHtml(rowCodeText(row))} — ${escapeHtml(rowModelText(row).replace(/^↳\s*/, ''))}</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
+    <div style="padding:14px 18px; max-height:78vh; overflow:auto;">
+      <p class="pf-hint" style="margin-top:0;">Composition listed under this line in the BOM documents (quantities there are multiplied by the line's ${escapeHtml(String(bomLineQty(row)))}).</p>
+      ${subBomTableHtml(items)}
+      <div class="pf-actions" style="justify-content:flex-end;">
+        <button type="button" class="btn-ghost act" data-close>Close</button>
+        ${READ_ONLY ? '' : '<button type="button" class="act btn-primary" data-edit>Edit / replace from Excel…</button>'}
+      </div>
+    </div></div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  const ed = ov.querySelector('[data-edit]');
+  if(ed) ed.addEventListener('click', () => { close(); if(header) openSubBomImportDialog(header, row); });
+}
+// The BOM documents' rows, with positions: chapter "1", its lines "1.1, 1.2 …", and under a sales
+// code its components "1.3.1, 1.3.2 …" (total quantities = component qty × the line's BOM qty).
+function bomDocumentRows(){
+  const out = [];
+  [...bomBody.querySelectorAll('tr[data-kind]')].forEach(r => {
+    const kind = r.dataset.kind;
+    if(kind === 'total' || isServicesRow(r)) return;
+    if(kind === 'header'){
+      const m = /^(\d+)\.0$/.exec(r.dataset.pos || '');
+      out.push({type: 'header', pos: m ? m[1] : '', label: r.cells[4].textContent});
+      return;
+    }
+    const qty = bomLineQty(r);
+    const pos = r.dataset.pos || '';
+    out.push({type: 'line', pos, qty, model: rowModelText(r), code: rowCodeText(r),
+      desc: String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n')});
+    (rowSubBom(r) || []).forEach((it, i) => {
+      const q = (Number(it.qty) || 0) * (Number(qty) || 0);
+      out.push({type: 'sub', pos: pos ? `${pos}.${i + 1}` : '', qty: Math.round(q * 1000) / 1000, model: '', code: it.code || '', desc: it.desc || ''});
+    });
+  });
+  return out;
+}
+
+// ---- Kits (sub-BOM): several lines of a chapter sold as ONE offer line ----
+// A kit is a set of lines of the same chapter (UPS lines, batteries, technology integration…) with
+// one of them as its "head". In the offer documents (PDF, Excel, Word) the kit is a single line:
+// the head's quantity, model, code and description, priced with the sum of all its lines. In the
+// BOM documents nothing changes — every line is listed, i.e. the kit is exploded. In Offer Lines
+// the kit is shown collapsed on its head (▸ opens it), with the kit total on the head row.
+// Stored on the rows themselves (data-kit-id / data-kit-head), so it travels with the JSON.
+function kitMembersOf(kitId){
+  return [...bomBody.querySelectorAll('tr[data-kind]')].filter(r => r.dataset.kitId === kitId);
+}
+function kitRowNet(r){
+  const qty = Number(rowQty(r)) || 0;
+  const gross = Number(r.querySelector('.in-gross')?.value) || 0;
+  const disc = Number(r.querySelector('.in-disc')?.value) || 0;
+  const cost = Number(r.querySelector('.in-cost')?.value) || 0;
+  return {qty, gross, disc, cost, net: gross * (1 - disc / 100)};
+}
+function clearKitLook(r){
+  r.classList.remove('kit-head', 'kit-child', 'kit-member');
+  r.style.display = '';
+  r.querySelectorAll('.kit-chip, .kit-ren').forEach(el => el.remove());
+}
+function applyKitLook(head, members){
+  const open = head.dataset.kitOpen === 'true';
+  let total = 0;
+  members.forEach(r => {
+    const v = kitRowNet(r);
+    total += v.net * v.qty;
+    r.classList.add('kit-member');
+    r.classList.toggle('kit-head', r === head);
+    r.classList.toggle('kit-child', r !== head);
+    if(r !== head){ r.style.display = open ? '' : 'none'; r.querySelectorAll('.kit-chip, .kit-ren').forEach(el => el.remove()); }
+  });
+  let chip = head.querySelector('.kit-chip');
+  if(!chip){
+    chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'kit-chip';
+    chip.addEventListener('click', e => {
+      e.stopPropagation();
+      head.dataset.kitOpen = head.dataset.kitOpen === 'true' ? 'false' : 'true';
+      refreshKitsInChapter(head.dataset.groupOf);
+    });
+    head.cells[2].appendChild(chip);
+  }
+  let ren = head.querySelector('.kit-ren');
+  if(!ren){
+    ren = document.createElement('button');
+    ren.type = 'button';
+    ren.className = 'kit-ren';
+    ren.textContent = '✎';
+    ren.title = 'Name and description of the kit in the offer';
+    ren.addEventListener('click', e => { e.stopPropagation(); openKitRenameDialog(head.dataset.kitId); });
+    head.cells[2].appendChild(ren);
+  }
+  const name = head.dataset.kitName;
+  chip.textContent = `${open ? '▾' : '▸'} KIT${name ? ` · ${name}` : ''}`;
+  chip.title = `${members.length} lines · total ${formatMoney(total)}${name ? ` · in the offer as "${name}"` : ''} — ${open ? 'click to close the kit' : 'click to open it and edit its lines'}`;
+}
+// Name / description the kit carries in the OFFER documents (the BOM keeps listing its lines).
+// Empty = the main line's own model / description.
+function openKitRenameDialog(kitId){
+  if(READ_ONLY) return;
+  const members = kitMembersOf(kitId);
+  const head = members.find(r => r.dataset.kitHead === 'true') || members[0];
+  if(!head) return;
+  const ov = document.createElement('div');
+  ov.className = 'settings-overlay';
+  ov.id = 'kitRenameOverlay';
+  ov.style.display = 'flex';
+  ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:620px;">
+    <div class="acc-modal-header"><h3>Kit name in the offer</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
+    <div style="padding:14px 18px;">
+      <p class="pf-hint" style="margin-top:0;">What the offer shows for this kit (code stays <b>${escapeHtml(rowCodeText(head) || '—')}</b>). The BOM keeps listing the ${members.length} lines with their own names. Leave empty to use the main line.</p>
+      <label style="font-size:12px; color:var(--dim);">Model / name</label>
+      <div class="pf-box"><input type="text" id="kitNameIn" value="${escapeHtml(head.dataset.kitName || '')}" placeholder="${escapeHtml(rowModelText(head))}"></div>
+      <label style="font-size:12px; color:var(--dim);">Description</label>
+      <div class="pf-box"><textarea id="kitDescIn" rows="3" style="flex:1; font-family:inherit; font-size:12.5px; padding:7px 8px; border:1px solid var(--field-border); border-radius:6px;" placeholder="${escapeHtml(rowDescText(head))}">${escapeHtml(head.dataset.kitDesc || '')}</textarea></div>
+      <div class="pf-actions" style="justify-content:flex-end;">
+        <button type="button" class="btn-ghost act" data-reset>Use the main line</button>
+        <button type="button" class="btn-ghost act" data-close>Cancel</button>
+        <button type="button" class="act btn-primary" data-save>Save</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  const apply = (name, desc) => {
+    if(name) head.dataset.kitName = name; else delete head.dataset.kitName;
+    if(desc) head.dataset.kitDesc = desc; else delete head.dataset.kitDesc;
+    refreshKitsInChapter(head.dataset.groupOf);
+    close();
+  };
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  ov.querySelector('[data-reset]').addEventListener('click', () => apply('', ''));
+  ov.querySelector('[data-save]').addEventListener('click', () => apply(ov.querySelector('#kitNameIn').value.trim(), ov.querySelector('#kitDescIn').value.trim()));
+  setTimeout(() => ov.querySelector('#kitNameIn').focus(), 0);
+}
+// Keeps the kits of one chapter consistent: one head each, at least two lines, lines kept together
+// right under the head; a line moved to another chapter (or a kit left with one line) is released.
+// While a whole chapter or file is being rebuilt line by line, a kit is momentarily incomplete —
+// the check waits until the rebuild is over (KIT_BULK > 0) instead of dissolving it.
+var KIT_BULK = 0;   // var: read by recalcGroupTotal, which can run before this line is reached
+function refreshKitsInChapter(owner){
+  if(KIT_BULK || !owner || typeof bomBody === 'undefined') return;
+  const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory');
+  const kits = new Map();
+  rows.forEach(r => {
+    if(!r.dataset.kitId){ if(r.classList.contains('kit-member')) clearKitLook(r); return; }
+    if(!kits.has(r.dataset.kitId)) kits.set(r.dataset.kitId, []);
+    kits.get(r.dataset.kitId).push(r);
+  });
+  let moved = false;
+  kits.forEach((members, kitId) => {
+    let head = members.find(r => r.dataset.kitHead === 'true');
+    const headElsewhere = !head && kitMembersOf(kitId).some(r => r.dataset.kitHead === 'true' && r.dataset.groupOf !== owner);
+    if(headElsewhere || members.length < 2){
+      members.forEach(r => { delete r.dataset.kitId; delete r.dataset.kitHead; delete r.dataset.kitName; delete r.dataset.kitDesc; clearKitLook(r); });
+      return;
+    }
+    if(!head){ head = members[0]; head.dataset.kitHead = 'true'; }
+    members.forEach(r => {
+      if(r === head) return;
+      delete r.dataset.kitHead;
+      if(r.dataset.kitName && !head.dataset.kitName) head.dataset.kitName = r.dataset.kitName;
+      if(r.dataset.kitDesc && !head.dataset.kitDesc) head.dataset.kitDesc = r.dataset.kitDesc;
+      delete r.dataset.kitName; delete r.dataset.kitDesc;
+    });
+    let anchor = head;
+    members.filter(r => r !== head).forEach(r => {
+      if(anchor.nextElementSibling !== r){ bomBody.insertBefore(r, anchor.nextElementSibling); moved = true; }
+      anchor = r;
+    });
+    applyKitLook(head, [head, ...members.filter(r => r !== head)]);
+  });
+  if(moved) bomRenumberChapter(owner);
+}
+function refreshAllKits(){
+  [...bomBody.querySelectorAll('tr[data-kind="header"]')].forEach(h => refreshKitsInChapter(h.dataset.rowId));
+}
+function createKit(rows, head){
+  const kitId = 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  rows.forEach(r => { r.dataset.kitId = kitId; if(r !== head){ delete r.dataset.kitHead; delete r.dataset.kitName; delete r.dataset.kitDesc; } });
+  head.dataset.kitHead = 'true';
+  head.dataset.kitOpen = 'false';
+  refreshKitsInChapter(head.dataset.groupOf);
+  recalcGroupTotal(head.dataset.groupOf);
+  return kitId;
+}
+function ungroupKit(kitId){
+  const members = kitMembersOf(kitId);
+  const owner = members[0] && members[0].dataset.groupOf;
+  members.forEach(r => { delete r.dataset.kitId; delete r.dataset.kitHead; delete r.dataset.kitOpen; delete r.dataset.kitName; delete r.dataset.kitDesc; clearKitLook(r); });
+  if(owner) recalcGroupTotal(owner);
+}
+// The kit dialog of a chapter: tick the lines, pick which one gives the kit its code, create.
+function openKitDialog(header){
+  if(READ_ONLY) return;
+  const owner = header.dataset.rowId;
+  const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory');
+  const free = rows.filter(r => !r.dataset.kitId);
+  const kits = [...new Set(rows.filter(r => r.dataset.kitId).map(r => r.dataset.kitId))];
+  const ov = document.createElement('div');
+  ov.className = 'settings-overlay';
+  ov.id = 'kitOverlay';
+  ov.style.display = 'flex';
+  const line = r => `${escapeHtml(String(rowQty(r)))} × ${escapeHtml(rowModelText(r) || '')}${rowCodeText(r) ? ` <span class="kit-code">${escapeHtml(rowCodeText(r))}</span>` : ''}`;
+  ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:760px;">
+    <div class="acc-modal-header"><h3>Kit — ${escapeHtml(header.cells[4].textContent)}</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
+    <div style="padding:14px 18px;">
+      <div class="kit-excel"><span><b>Sales code from an Excel BOM</b> — a new line with your code; its composition comes from the Excel and is listed in the BOM.</span><button type="button" class="btn-ghost act" data-excel>⤒ Import Excel BOM…</button></div>
+      <p class="pf-hint" style="margin-top:0;">Or group lines already in the chapter: tick the lines that make up the kit and choose the <b>main line</b>: its quantity, model, code and description become the kit's single line in the offer, priced with the sum of all the ticked lines. The BOM keeps listing every line.</p>
+      ${free.length ? `<table class="kit-pick"><thead><tr><th>In kit</th><th>Main line</th><th>Line</th><th class="num">Total</th></tr></thead><tbody>
+        ${free.map((r, i) => { const v = kitRowNet(r); return `<tr><td><input type="checkbox" data-i="${i}"></td><td><input type="radio" name="kitHead" data-i="${i}"></td><td>${line(r)}</td><td class="num">${formatMoney(v.net * v.qty)}</td></tr>`; }).join('')}
+      </tbody></table>` : '<p class="pf-hint">All the lines of this chapter are already in a kit.</p>'}
+      ${kits.length ? `<h4 style="margin:14px 0 6px;">Kits of this chapter</h4>${kits.map(k => { const m = kitMembersOf(k); const h = m.find(r => r.dataset.kitHead === 'true') || m[0]; return `<div class="kit-existing"><span>${line(h)} <span class="pf-hint">+ ${m.length - 1} line${m.length > 2 ? 's' : ''}</span></span><span style="display:flex; gap:6px;"><button type="button" class="btn-ghost act" data-rename="${k}">Rename…</button><button type="button" class="btn-ghost act" data-ungroup="${k}">Ungroup</button></span></div>`; }).join('')}` : ''}
+      ${free.length ? `<div style="margin-top:10px;"><label style="font-size:12px; color:var(--dim);">Kit name in the offer (optional — empty = the main line's model)</label>
+        <div class="pf-box"><input type="text" id="kitNewName" placeholder="e.g. Battery system 10 min"></div>
+        <label style="font-size:12px; color:var(--dim);">Description in the offer (optional)</label>
+        <div class="pf-box"><input type="text" id="kitNewDesc" placeholder="empty = the main line's description"></div></div>` : ''}
+      <p class="pf-hint" id="kitMsg"></p>
+      <div class="pf-actions" style="justify-content:flex-end;">
+        <button type="button" class="btn-ghost act" data-close>Close</button>
+        ${free.length ? '<button type="button" class="act btn-primary" data-create>⊞ Create kit</button>' : ''}
+      </div>
+    </div></div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  // picking the main line ticks it too
+  ov.querySelectorAll('input[name="kitHead"]').forEach(rb => rb.addEventListener('change', () => {
+    const cb = ov.querySelector(`input[type="checkbox"][data-i="${rb.dataset.i}"]`); if(cb) cb.checked = true;
+  }));
+  ov.querySelectorAll('[data-ungroup]').forEach(b => b.addEventListener('click', () => { ungroupKit(b.dataset.ungroup); close(); openKitDialog(header); }));
+  ov.querySelectorAll('[data-rename]').forEach(b => b.addEventListener('click', () => { close(); openKitRenameDialog(b.dataset.rename); }));
+  ov.querySelector('[data-excel]').addEventListener('click', () => { close(); openSubBomImportDialog(header); });
+  const create = ov.querySelector('[data-create]');
+  if(create) create.addEventListener('click', () => {
+    const picked = [...ov.querySelectorAll('input[type="checkbox"]:checked')].map(cb => free[Number(cb.dataset.i)]);
+    const headRb = ov.querySelector('input[name="kitHead"]:checked');
+    const head = headRb ? free[Number(headRb.dataset.i)] : null;
+    const msg = ov.querySelector('#kitMsg');
+    if(picked.length < 2){ msg.textContent = 'Tick at least two lines.'; return; }
+    if(!head){ msg.textContent = 'Choose the main line — it gives the kit its code in the offer.'; return; }
+    if(!picked.includes(head)) picked.push(head);
+    const nm = (ov.querySelector('#kitNewName') || {}).value || '', ds = (ov.querySelector('#kitNewDesc') || {}).value || '';
+    if(nm.trim()) head.dataset.kitName = nm.trim();
+    if(ds.trim()) head.dataset.kitDesc = ds.trim();
+    createKit(picked, head);
+    close();
+  });
+}
+// Before "Generate Offer" rebuilds the lines: each kit as {chapter, lines (kind/model/code/desc), head}.
+function captureKitsForRegenerate(){
+  const out = [];
+  const seen = new Set();
+  bomBody.querySelectorAll('tr[data-kind]').forEach(r => {
+    const k = r.dataset.kitId;
+    if(!k || seen.has(k)) return;
+    seen.add(k);
+    const h = bomBody.querySelector(`tr[data-kind="header"][data-row-id="${r.dataset.groupOf}"]`);
+    if(!h) return;
+    const key = h.dataset.cfgPos ? `pos:${h.dataset.cfgPos}` : h.dataset.isServices === 'true' ? 'svc' : `sec:${h.cells[4].textContent}`;
+    const hd = kitMembersOf(k).find(m => m.dataset.kitHead === 'true');
+    out.push({key, open: false, name: hd ? hd.dataset.kitName || '' : '', desc: hd ? hd.dataset.kitDesc || '' : '',
+      lines: kitMembersOf(k).map(m => ({kind: m.dataset.kind, model: rowModelText(m), code: rowCodeText(m), desc: rowDescText(m), head: m.dataset.kitHead === 'true'}))});
+  });
+  return out;
+}
+// …and after: the same lines (matched by kind, model, code and description) are grouped again.
+function reapplyKitsAfterRegenerate(saved){
+  if(!saved || !saved.length) return;
+  const headers = [...bomBody.querySelectorAll('tr[data-kind="header"]')];
+  const byKey = h => h.dataset.cfgPos ? `pos:${h.dataset.cfgPos}` : h.dataset.isServices === 'true' ? 'svc' : `sec:${h.cells[4].textContent}`;
+  saved.forEach(kit => {
+    const h = headers.find(x => byKey(x) === kit.key);
+    if(!h) return;
+    const pool = [...bomBody.querySelectorAll(`tr[data-group-of="${h.dataset.rowId}"]`)].filter(r => (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !r.dataset.kitId);
+    const matched = [];
+    let head = null;
+    kit.lines.forEach(l => {
+      const r = pool.find(x => !matched.includes(x) && x.dataset.kind === l.kind && rowModelText(x) === l.model && rowCodeText(x) === l.code && rowDescText(x) === l.desc)
+             || pool.find(x => !matched.includes(x) && rowModelText(x) === l.model && rowCodeText(x) === l.code);
+      if(r){ matched.push(r); if(l.head) head = r; }
+    });
+    if(matched.length >= 2){
+      const hh = head || matched[0];
+      if(kit.name) hh.dataset.kitName = kit.name;
+      if(kit.desc) hh.dataset.kitDesc = kit.desc;
+      createKit(matched, hh);
+    }
+  });
+}
+
 // ---- Duplicate (⧉) — a single line, or a whole chapter ----
 // A duplicated line is added as a manual line of the same chapter, so it survives the next
 // "Generate Offer" (which rebuilds only the lines it generates itself).
@@ -4983,6 +5476,7 @@ function bomRowCopyData(r){
     techCategory: r.dataset.techCategory || null,
     baseModel: r.dataset.baseModel || '',
     pos: r.dataset.pos || '',   // renumbered right after, but the copy has to start numbered
+    subBom: rowSubBom(r),
   };
 }
 function flashNewRow(row){
@@ -5041,10 +5535,15 @@ function duplicateBomChapter(header){
     isCustomSection: isCustom || undefined,
   }, after);
   const owner = newHeader.dataset.rowId;
+  const kitMap = {};
+  KIT_BULK++;
   block.slice(1).forEach(r => {
     if(r.dataset.kind !== 'line' && r.dataset.kind !== 'accessory') return;
-    addBomRow({...bomRowCopyData(r), kind: r.dataset.kind, manualEntry: r.dataset.manualEntry === 'true' || undefined, groupOf: owner}, after);
+    const kitId = r.dataset.kitId ? (kitMap[r.dataset.kitId] = kitMap[r.dataset.kitId] || ('k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))) : undefined;
+    addBomRow({...bomRowCopyData(r), kind: r.dataset.kind, manualEntry: r.dataset.manualEntry === 'true' || undefined, groupOf: owner,
+               kitId, kitHead: r.dataset.kitHead === 'true' || undefined, kitName: r.dataset.kitName, kitDesc: r.dataset.kitDesc}, after);
   });
+  KIT_BULK--;
   addBomRow({kind: 'total', groupOf: owner}, after);
   bomRenumberChapter(owner);
   recalcGroupTotal(owner);
@@ -5140,6 +5639,7 @@ function clearBom(){
 
 // ---- Generate Offer — faithful port of Modulo1.Generate_BOM (VBA), extended with High Efficiency ----
 document.getElementById('btnGenerate').addEventListener('click', ()=>{
+  const savedKits = captureKitsForRegenerate();
   // Preserve manually added accessories / battery configuration rows across a re-generate.
   // Keyed by the CONFIG ROW's own position (cfgPos), not by the VBA "gruppo" number — gruppo
   // only counts non-skipped rows, so it can shift when a Q.ty flips to/from zero, while cfgPos
@@ -5161,6 +5661,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       extSupplier: rowExtSupplier(r),
       techCategory: r.dataset.techCategory || null,
       manualEntry: r.dataset.manualEntry === 'true',
+      subBom: rowSubBom(r),
     }));
   });
 
@@ -5191,6 +5692,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       qty: rowQty(r),
       extSupplier: rowExtSupplier(r),
       manualEntry: r.dataset.manualEntry === 'true',
+      subBom: rowSubBom(r),
     }));
   }
 
@@ -5219,6 +5721,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         qty: rowQty(r),
         extSupplier: rowExtSupplier(r),
         manualEntry: r.dataset.manualEntry === 'true',
+        subBom: rowSubBom(r),
       })),
     });
   });
@@ -5365,7 +5868,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       carried.forEach(item=>{
         addBomRow({
           pos: `${gruppo}.${nextIdx}`, qty: item.qty, model: item.model, code: item.code, desc: item.desc,
-          gross: item.gross, disc: item.disc, cost: item.cost, extSupplier: item.extSupplier, techCategory: item.techCategory, kind:'accessory', groupOf:owner, manualEntry: item.manualEntry,
+          gross: item.gross, disc: item.disc, cost: item.cost, extSupplier: item.extSupplier, techCategory: item.techCategory, subBom: item.subBom, kind:'accessory', groupOf:owner, manualEntry: item.manualEntry,
         }, totalRow);
         nextIdx++;
       });
@@ -5385,7 +5888,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     savedServiceLines.forEach(item=>{
       addBomRow({
         qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-        gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:servicesOwner, manualEntry:item.manualEntry,
+        gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, kind:'accessory', groupOf:servicesOwner, manualEntry:item.manualEntry,
       });
     });
     addBomRow({
@@ -5415,13 +5918,14 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         section.items.forEach(item=>{
           addBomRow({
             qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-            gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, kind:'accessory', groupOf:sectionOwner, manualEntry:item.manualEntry,
+            gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, kind:'accessory', groupOf:sectionOwner, manualEntry:item.manualEntry,
           }, insertBeforeHeader);
         });
         addBomRow({kind:'total', groupOf:sectionOwner, isCustomSection:true}, insertBeforeHeader);
         recalcGroupTotal(sectionOwner);
       });
   }
+  reapplyKitsAfterRegenerate(savedKits);
   updateBomHeaders();
 });
 
@@ -5940,6 +6444,13 @@ function buildConfigState(){
     if(r.dataset.techCategory) item.techCategory = r.dataset.techCategory;
     if(r.dataset.manualEntry) item.manualEntry = true;
     if(r.dataset.manualDelivery) item.deliveryManual = true;
+    if(r.dataset.subBom){ try{ item.subBom = JSON.parse(r.dataset.subBom); }catch(e){} }
+    if(r.dataset.kitId){
+      item.kitId = r.dataset.kitId;
+      if(r.dataset.kitHead === 'true') item.kitHead = true;
+      if(r.dataset.kitName) item.kitName = r.dataset.kitName;
+      if(r.dataset.kitDesc) item.kitDesc = r.dataset.kitDesc;
+    }
     if(kind === 'header'){
       item.label = r.cells[4].textContent;
     } else if(kind === 'total'){
@@ -6923,6 +7434,7 @@ function applyLoadedState(state){
       const idMap = {};
       const headerById = {};
       state.bom.forEach(item=>{ if(item.kind === 'header' && item.rowId) headerById[item.rowId] = item; });
+      KIT_BULK++;
       state.bom.forEach(item=>{
         const remapped = {...item};
         if(remapped.kind === 'accessory' && remapped.manualEntry === undefined){
@@ -6932,6 +7444,8 @@ function applyLoadedState(state){
         const row = addBomRow(remapped);
         if(item.kind === 'header' && item.rowId) idMap[item.rowId] = row.dataset.rowId;
       });
+      KIT_BULK--;
+      refreshAllKits();
     } else {
       clearBom();
     }
@@ -7040,29 +7554,28 @@ function buildBomPdfDoc(){
   doc.text(info.name || info.ref, margin, y);
 
   const body = [];
-  [...bomBody.querySelectorAll('tr[data-kind]')].forEach(r=>{
-    const kind = r.dataset.kind;
-    if(kind === 'total') return; // packing-list style export — no pricing subtotal rows
-    if(isServicesRow(r)) return; // SERVICES/Delivery are commercial line items, not physical parts
-    if(kind === 'header'){
-      body.push([{content:r.cells[4].textContent, colSpan:4, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
+  const subStyle = {textColor:[90,98,112], fontSize:8};
+  bomDocumentRows().forEach(e=>{
+    if(e.type === 'header'){
+      body.push([{content: e.pos, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'center'}},
+                 {content: e.label, colSpan:4, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
       return;
     }
-    const qty = bomLineQty(r);
-    const model = rowModelText(r);
-    const code = rowCodeText(r);
-    const desc = String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
-    body.push([qty, model, code, desc]);
+    if(e.type === 'sub'){
+      body.push([{content: e.pos, styles:subStyle}, {content: String(e.qty), styles:{...subStyle, halign:'center'}}, {content: e.model, styles:subStyle}, {content: e.code, styles:subStyle}, {content: e.desc, styles:subStyle}]);
+      return;
+    }
+    body.push([e.pos, e.qty, e.model, e.code, e.desc]);
   });
 
   doc.autoTable({
     startY: y+10,
-    head: [['Qty','Model','Code','Description']],
+    head: [['Pos.','Qty','Model','Code','Description']],
     body,
     margin:{left:margin, right:margin},
     styles:{font:'WorkSans', fontSize:8.5, cellPadding:4, lineColor:[225,225,225], lineWidth:0.5, overflow:'visible'},
     headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize:9},
-    columnStyles:{0:{cellWidth:32, halign:'center'}, 1:{cellWidth:140}, 2:{cellWidth:140}, 3:{overflow:'linebreak', cellWidth:'auto'}},
+    columnStyles:{0:{cellWidth:44}, 1:{cellWidth:32, halign:'center'}, 2:{cellWidth:130}, 3:{cellWidth:130}, 4:{overflow:'linebreak', cellWidth:'auto'}},
   });
 
   const safeRef = (info.ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
@@ -7111,6 +7624,27 @@ function collectOfferRows(){
       return;
     }
     if(kind === 'total' || !current) return;
+    // a kit is ONE offer line: head's qty/model/code/description, priced with all its lines
+    if(r.dataset.kitId){
+      const kitId = r.dataset.kitId;
+      if(current._kitsDone && current._kitsDone.has(kitId)) return;
+      (current._kitsDone = current._kitsDone || new Set()).add(kitId);
+      const members = kitMembersOf(kitId).filter(m => m.dataset.groupOf === r.dataset.groupOf);
+      const head = members.find(m => m.dataset.kitHead === 'true') || members[0];
+      const hq = Number(rowQty(head)) || 1;
+      let sumGross = 0, sumNet = 0, sumCost = 0;
+      members.forEach(m => { const v = kitRowNet(m); sumGross += v.gross * v.qty; sumNet += v.net * v.qty; sumCost += v.cost * v.qty; });
+      const gross = sumGross / hq, net = sumNet / hq, cost = sumCost / hq;
+      const disc = gross > 0 ? (1 - net / gross) * 100 : 0;
+      const margin = sumNet > 0 ? ((sumNet - sumCost) / sumNet * 100) : 0;
+      const desc = head.dataset.kitDesc
+        ? String(head.dataset.kitDesc).replace(/\r\n?/g, '\n')
+        : String(rowDescText(head) + (rowExtSupplier(head) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
+      current.lines.push({qty: rowQty(head), model: head.dataset.kitName || rowModelText(head), code: rowCodeText(head), desc, gross, disc, net, cost, totalPrice: sumNet, totalCost: sumCost, margin, kit: members.length});
+      current.subtotalPrice += sumNet;
+      current.subtotalCost += sumCost;
+      return;
+    }
     const qty = rowQty(r);
     const model = rowModelText(r);
     const code = rowCodeText(r);
@@ -7127,6 +7661,7 @@ function collectOfferRows(){
     current.subtotalCost += totalCost;
   });
   groups.forEach(g=>{
+    delete g._kitsDone;
     g.groupTotalPrice = g.subtotalPrice * g.configQty;
     g.groupTotalCost = g.subtotalCost * g.configQty;
     grandTotal += g.groupTotalPrice;
@@ -7622,31 +8157,31 @@ function buildOfferWorksheet(withMargin){
 function buildBomWorksheet(){
   const info = getProjectInfo();
   const ws = createXlsxSheet('BOM');
-  ws.cols = [8, 22, 20, 80];
+  ws.cols = [9, 8, 22, 20, 78];
   ws.image = {dataUrl: LOGO_B64, heightPx: 64};
   const cellS = extra => ({border: XLSX_GRID, align: {v: 'top'}, ...extra});
   xlsxSet(ws, 6, 1, {v: info.name || info.ref || '', s: {font: {b: true, color: '0070C0', sz: 13}}});
   const headRow = 8;
-  ['Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
+  ['Pos.','Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
   ws.freezeRow = headRow;
   let r = headRow + 1;
-  [...bomBody.querySelectorAll('tr[data-kind]')].forEach(row => {
-    const kind = row.dataset.kind;
-    if(kind === 'total' || isServicesRow(row)) return;
-    if(kind === 'header'){
-      xlsxMerge(ws, r, 1, r, 4, {v: row.cells[4].textContent, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}});
+  bomDocumentRows().forEach(e => {
+    if(e.type === 'header'){
+      xlsxSet(ws, r, 1, {v: e.pos, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID, align: {h: 'center'}}});
+      xlsxMerge(ws, r, 2, r, 5, {v: e.label, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}});
       ws.heights[r] = 19;
       r++;
       return;
     }
-    const qty = bomLineQty(row);
-    const desc = String(rowDescText(row) + (rowExtSupplier(row) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
-    const qn = Number(qty);
-    xlsxSet(ws, r, 1, {v: qty !== '' && Number.isFinite(qn) ? qn : String(qty ?? ''), s: cellS({align: {h: 'center', v: 'top'}})});
-    xlsxSet(ws, r, 2, {v: rowModelText(row) || '', s: cellS({})});
-    xlsxSet(ws, r, 3, {v: rowCodeText(row) || '', s: cellS({})});
-    xlsxSet(ws, r, 4, {v: desc, s: cellS({align: {v: 'top', wrap: true}})});
-    ws.heights[r] = xlsxWrappedHeight(desc, ws.cols[3]);
+    const sub = e.type === 'sub';
+    const font = sub ? {font: {color: '5A6270', sz: 10}} : {};
+    const qn = Number(e.qty);
+    xlsxSet(ws, r, 1, {v: e.pos, s: cellS({...font})});
+    xlsxSet(ws, r, 2, {v: e.qty !== '' && Number.isFinite(qn) ? qn : String(e.qty ?? ''), s: cellS({...font, align: {h: 'center', v: 'top'}})});
+    xlsxSet(ws, r, 3, {v: e.model || '', s: cellS({...font})});
+    xlsxSet(ws, r, 4, {v: e.code || '', s: cellS({...font})});
+    xlsxSet(ws, r, 5, {v: e.desc, s: cellS({...font, align: {v: 'top', wrap: true}})});
+    ws.heights[r] = xlsxWrappedHeight(e.desc, ws.cols[4]);
     r++;
   });
   return ws;
@@ -7868,7 +8403,8 @@ function buildOfferDocxBody(){
     const owner = h.dataset.rowId;
     const label = h.cells[4].textContent;
     const p = tech.find(x => Number(x.pos) === Number(h.dataset.cfgPos));
-    const lines = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory');
+    // a kit is one item in the offer: only its head line is listed
+    const lines = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !(r.dataset.kitId && r.dataset.kitHead !== 'true'));
     if(!p && !lines.length) return;   // e.g. SERVICES with only Delivery — it's in the price schedule
     out.push(dxPara(p ? `Position ${p.pos} — ${label}` : label, {style: 'Heading2'}));
     if(p){
@@ -7876,7 +8412,7 @@ function buildOfferDocxBody(){
     }
     if(lines.length){
       const rows = [['Qty', 'Item', 'Description']];
-      lines.forEach(r => rows.push([String(rowQty(r)), [rowModelText(r), rowCodeText(r)].filter(Boolean).join('\n'), String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n')]));
+      lines.forEach(r => rows.push([String(rowQty(r)), [(r.dataset.kitId && r.dataset.kitName) || rowModelText(r), rowCodeText(r)].filter(Boolean).join('\n'), String(((r.dataset.kitId && r.dataset.kitDesc) || rowDescText(r)) + (rowExtSupplier(r) && !(r.dataset.kitId && r.dataset.kitDesc) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n')]));
       out.push(dxTable(rows, [700, 2600, DOCX_W - 3300], {header: true, sz: 8.5}));
     }
   });
@@ -9420,20 +9956,14 @@ async function generateTechNote(){
 function buildBomHtmlDoc(){
   const info = getProjectInfo();
   const rowsHtml = [];
-  [...bomBody.querySelectorAll('tr[data-kind]')].forEach(r=>{
-    const kind = r.dataset.kind;
-    if(kind === 'total') return;
-    if(isServicesRow(r)) return; // SERVICES/Delivery are commercial line items, not physical parts
-    if(kind === 'header'){
-      rowsHtml.push(`<tr><td colspan="4" style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml(r.cells[4].textContent)}</td></tr>`);
+  bomDocumentRows().forEach(e=>{
+    if(e.type === 'header'){
+      rowsHtml.push(`<tr><td style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml(e.pos)}</td><td colspan="4" style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml(e.label)}</td></tr>`);
       return;
     }
-    const qty = bomLineQty(r);
-    const model = rowModelText(r);
-    const code = rowCodeText(r);
-    const desc = String(rowDescText(r) + (rowExtSupplier(r) ? ' (Ext. Supplier)' : '')).replace(/\r\n?/g, '\n');
-    const descHtml = escapeHtml(desc).replace(/\n/g, '<br>');
-    rowsHtml.push(`<tr><td style="text-align:center;">${escapeHtml(qty)}</td><td>${escapeHtml(model)}</td><td>${escapeHtml(code)}</td><td style="white-space:pre-line;">${descHtml}</td></tr>`);
+    const st = e.type === 'sub' ? ' style="color:#5A6270;"' : '';
+    const descHtml = escapeHtml(e.desc).replace(/\n/g, '<br>');
+    rowsHtml.push(`<tr${st}><td>${escapeHtml(e.pos)}</td><td style="text-align:center;">${escapeHtml(String(e.qty))}</td><td>${escapeHtml(e.model)}</td><td>${escapeHtml(e.code)}</td><td style="white-space:pre-line;">${descHtml}</td></tr>`);
   });
 
   return `<!DOCTYPE html>
@@ -9444,14 +9974,14 @@ function buildBomHtmlDoc(){
   body{font-family:'Work Sans Light','Work Sans',Calibri,Arial,sans-serif; font-weight:300;}
   table.main{border-collapse:collapse; width:100%; margin-top:10px;}
   table.main td, table.main th{border:1px solid #D9D9D9; padding:5px 8px; font-size:11pt; white-space:nowrap;}
-  table.main td:nth-child(4), table.main th:nth-child(4){white-space:pre-wrap; vertical-align:top;}
+  table.main td:nth-child(5), table.main th:nth-child(5){white-space:pre-wrap; vertical-align:top;}
   table.main th{background:#4472C4; color:#FFFFFF; font-weight:bold; text-align:left;}
 </style></head>
 <body>
   <table style="border:none;"><tr><td style="border:none;"><img src="${LOGO_B64}" height="60"></td></tr></table>
   <p style="font-weight:bold; color:#0070C0; font-size:13pt; margin:0;">${escapeHtml(info.name || info.ref)}</p>
   <table class="main">
-    <tr><th>Qty</th><th>Model</th><th>Code</th><th>Description</th></tr>
+    <tr><th>Pos.</th><th>Qty</th><th>Model</th><th>Code</th><th>Description</th></tr>
     ${rowsHtml.join('\n')}
   </table>
 </body></html>`;
@@ -9625,7 +10155,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.00';
+const CURRENT_VERSION = 'beta_6.03';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -9655,6 +10185,22 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.03', date:'2026-09-30', notes:[
+    'Codice di vendita da BOM Excel: nella finestra "⊞ Kit" il pulsante "⤒ Import Excel BOM…" legge un Excel con le colonne quantità, codice, descrizione e costo (il costo può mancare; l\'intestazione viene trovata da sola, altrimenti si usano le colonne A–D). Si vede il costo totale, poi si indicano codice di vendita, nome, descrizione, quantità e prezzo di vendita, con il margine calcolato al volo',
+    'In offerta (PDF, Excel, Word) compare una sola riga con il codice di vendita e il prezzo inserito; il costo è la somma della BOM. L\'etichetta "BOM · n" sulla riga mostra la composizione e permette di modificarla o sostituirla da un nuovo Excel',
+    'Documenti BOM (PDF ed Excel) con la nuova colonna "Pos.": capitolo 1, righe 1.1, 1.2 …, e sotto un codice di vendita i suoi componenti 1.3.1, 1.3.2 … con le quantità moltiplicate per quelle della riga',
+    'La composizione resta nel JSON, dopo Generate Offer e nella duplicazione di riga o capitolo',
+  ]},
+  {version:'beta_6.02', date:'2026-09-30', notes:[
+    'Corretto: nei kit con riga principale "accessorio" (es. armadio batterie) il testo dell\'etichetta "KIT · n lines · €…" finiva nel campo Model dell\'offerta; ora il modello è sempre pulito, e l\'etichetta mostra solo "▸ KIT" (righe e totale nel suggerimento al passaggio del mouse)',
+    'Kit rinominabile: ✎ accanto all\'etichetta (oppure "Rename…" nella finestra Kit, o già alla creazione) apre una finestra per il nome e la descrizione del kit nell\'offerta. Il codice resta quello della riga principale; la BOM continua a elencare le righe con i loro nomi. "Use the main line" torna al modello e alla descrizione della riga principale',
+    'Il nome del kit resta nel JSON, dopo Generate Offer e nella duplicazione del capitolo',
+  ]},
+  {version:'beta_6.01', date:'2026-09-30', notes:[
+    'Kit (sotto-distinta): pulsante "⊞ Kit" sul capitolo per raggruppare più righe (UPS, batterie, technology integration…) in un\'unica voce. Si spuntano le righe e si sceglie la riga principale, che dà al kit quantità, modello, codice ("padre") e descrizione',
+    'Nei documenti d\'offerta (PDF, Excel, Word) il kit è una sola riga, con prezzo, sconto, costo e margine calcolati su tutte le sue righe; nei documenti BOM (PDF ed Excel) il kit è esploso e compaiono tutte le righe',
+    'Nelle Offer Lines il kit appare chiuso sulla riga principale con l\'etichetta "KIT · n righe · totale" (▸ lo apre per vedere e modificare le righe); resta nel JSON, dopo Generate Offer e nella duplicazione del capitolo; "Ungroup" nella stessa finestra lo scioglie',
+  ]},
   {version:'beta_6.00', date:'2026-09-29', notes:[
     'Versione di rilascio: raccoglie tutto il lavoro delle 5.52 → 5.64 (il dettaglio resta nelle voci sotto). In sintesi:',
     'Documenti — export solo in "02 OFFER/R<n>" su SharePoint quando si è collegati (niente copia in Download), tolta la riga "IT USP Solutions - REV<n>" e tolta da tutti i documenti la tabella "Revision history" (lo storico resta nell\'app e nel JSON)',

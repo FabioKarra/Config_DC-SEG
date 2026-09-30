@@ -779,7 +779,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.07</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.08</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -5193,30 +5193,27 @@ function openSubBomView(row){
   const ed = ov.querySelector('[data-edit]');
   if(ed) ed.addEventListener('click', () => { close(); if(header) openSubBomImportDialog(header, row); });
 }
-// The BOM documents' rows, with positions: chapter "1", its lines "1.1, 1.2 …", and under a sales
-// code its components "1.3.1, 1.3.2 …" (total quantities = component qty × the line's BOM qty).
+// The BOM documents' rows — a FLAT list, with no trace of nesting: a kit line or a sales code
+// never appears itself, only what it is made of, each item with its total quantity (quantity per
+// kit × kit quantity × the chapter's systems). No positions are printed. Chapter titles stay.
 function bomDocumentRows(){
   const out = [];
+  const line = (row, qty) => ({type: 'line', qty: Math.round(qty * 1000) / 1000, model: rowModelText(row).replace(/^↳\s*/, ''), code: rowCodeText(row),
+    desc: String(rowDescText(row)).replace(/\r\n?/g, '\n')});
+  // a row with an Excel BOM is replaced by its components; any other row is itself
+  const emit = (row, qty) => {
+    const sub = rowSubBom(row);
+    if(sub) sub.forEach(it => out.push({type: 'line', qty: Math.round((Number(it.qty) || 0) * qty * 1000) / 1000, model: '', code: it.code || '', desc: it.desc || ''}));
+    else out.push(line(row, qty));
+  };
   [...bomBody.querySelectorAll('tr[data-kind]')].forEach(r => {
     const kind = r.dataset.kind;
     if(kind === 'total' || isServicesRow(r)) return;
-    if(kind === 'header'){
-      const m = /^(\d+)\.0$/.exec(r.dataset.pos || '');
-      out.push({type: 'header', pos: m ? m[1] : '', label: r.cells[4].textContent});
-      return;
-    }
-    if(isKitMember(r)) return;   // listed under their kit line
-    const emit = (row, qty, pos, type) => {
-      out.push({type, pos, qty: Math.round(qty * 1000) / 1000, model: rowModelText(row).replace(/^↳\s*/, ''), code: rowCodeText(row),
-        desc: String(rowDescText(row)).replace(/\r\n?/g, '\n')});
-      (rowSubBom(row) || []).forEach((it, i) => {
-        out.push({type: 'sub', pos: pos ? `${pos}.${i + 1}` : '', qty: Math.round((Number(it.qty) || 0) * qty * 1000) / 1000, model: '', code: it.code || '', desc: it.desc || ''});
-      });
-    };
+    if(kind === 'header'){ out.push({type: 'header', label: r.cells[4].textContent}); return; }
+    if(isKitMember(r)) return;   // emitted through their kit line, below
     const qty = Number(bomLineQty(r)) || 0;
-    emit(r, qty, r.dataset.pos || '', 'line');
-    // a kit: its components, quantity per kit × the kit line's BOM quantity
-    if(isKitParent(r)) kitMembersOf(r.dataset.kitId).forEach(m => emit(m, (Number(rowQty(m)) || 0) * qty, m.dataset.pos || '', 'sub'));
+    if(isKitParent(r)) kitMembersOf(r.dataset.kitId).forEach(m => emit(m, (Number(rowQty(m)) || 0) * qty));
+    else emit(r, qty);
   });
   return out;
 }
@@ -7672,28 +7669,22 @@ function buildBomPdfDoc(){
   doc.text(info.name || info.ref, margin, y);
 
   const body = [];
-  const subStyle = {textColor:[90,98,112], fontSize:8};
   bomDocumentRows().forEach(e=>{
     if(e.type === 'header'){
-      body.push([{content: e.pos, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'center'}},
-                 {content: e.label, colSpan:4, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
+      body.push([{content: e.label, colSpan:4, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
       return;
     }
-    if(e.type === 'sub'){
-      body.push([{content: e.pos, styles:subStyle}, {content: String(e.qty), styles:{...subStyle, halign:'center'}}, {content: e.model, styles:subStyle}, {content: e.code, styles:subStyle}, {content: e.desc, styles:subStyle}]);
-      return;
-    }
-    body.push([e.pos, e.qty, e.model, e.code, e.desc]);
+    body.push([e.qty, e.model, e.code, e.desc]);
   });
 
   doc.autoTable({
     startY: y+10,
-    head: [['Pos.','Qty','Model','Code','Description']],
+    head: [['Qty','Model','Code','Description']],
     body,
     margin:{left:margin, right:margin},
     styles:{font:'WorkSans', fontSize:8.5, cellPadding:4, lineColor:[225,225,225], lineWidth:0.5, overflow:'visible'},
     headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize:9},
-    columnStyles:{0:{cellWidth:44}, 1:{cellWidth:32, halign:'center'}, 2:{cellWidth:130}, 3:{cellWidth:130}, 4:{overflow:'linebreak', cellWidth:'auto'}},
+    columnStyles:{0:{cellWidth:32, halign:'center'}, 1:{cellWidth:140}, 2:{cellWidth:140}, 3:{overflow:'linebreak', cellWidth:'auto'}},
   });
 
   const safeRef = (info.ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
@@ -8255,31 +8246,27 @@ function buildOfferWorksheet(withMargin){
 function buildBomWorksheet(){
   const info = getProjectInfo();
   const ws = createXlsxSheet('BOM');
-  ws.cols = [9, 8, 22, 20, 78];
+  ws.cols = [8, 22, 20, 80];
   ws.image = {dataUrl: LOGO_B64, heightPx: 64};
   const cellS = extra => ({border: XLSX_GRID, align: {v: 'top'}, ...extra});
   xlsxSet(ws, 6, 1, {v: info.name || info.ref || '', s: {font: {b: true, color: '0070C0', sz: 13}}});
   const headRow = 8;
-  ['Pos.','Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
+  ['Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
   ws.freezeRow = headRow;
   let r = headRow + 1;
   bomDocumentRows().forEach(e => {
     if(e.type === 'header'){
-      xlsxSet(ws, r, 1, {v: e.pos, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID, align: {h: 'center'}}});
-      xlsxMerge(ws, r, 2, r, 5, {v: e.label, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}});
+      xlsxMerge(ws, r, 1, r, 4, {v: e.label, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}});
       ws.heights[r] = 19;
       r++;
       return;
     }
-    const sub = e.type === 'sub';
-    const font = sub ? {font: {color: '5A6270', sz: 10}} : {};
     const qn = Number(e.qty);
-    xlsxSet(ws, r, 1, {v: e.pos, s: cellS({...font})});
-    xlsxSet(ws, r, 2, {v: e.qty !== '' && Number.isFinite(qn) ? qn : String(e.qty ?? ''), s: cellS({...font, align: {h: 'center', v: 'top'}})});
-    xlsxSet(ws, r, 3, {v: e.model || '', s: cellS({...font})});
-    xlsxSet(ws, r, 4, {v: e.code || '', s: cellS({...font})});
-    xlsxSet(ws, r, 5, {v: e.desc, s: cellS({...font, align: {v: 'top', wrap: true}})});
-    ws.heights[r] = xlsxWrappedHeight(e.desc, ws.cols[4]);
+    xlsxSet(ws, r, 1, {v: e.qty !== '' && Number.isFinite(qn) ? qn : String(e.qty ?? ''), s: cellS({align: {h: 'center', v: 'top'}})});
+    xlsxSet(ws, r, 2, {v: e.model || '', s: cellS({})});
+    xlsxSet(ws, r, 3, {v: e.code || '', s: cellS({})});
+    xlsxSet(ws, r, 4, {v: e.desc, s: cellS({align: {v: 'top', wrap: true}})});
+    ws.heights[r] = xlsxWrappedHeight(e.desc, ws.cols[3]);
     r++;
   });
   return ws;
@@ -10056,12 +10043,11 @@ function buildBomHtmlDoc(){
   const rowsHtml = [];
   bomDocumentRows().forEach(e=>{
     if(e.type === 'header'){
-      rowsHtml.push(`<tr><td style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml(e.pos)}</td><td colspan="4" style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml(e.label)}</td></tr>`);
+      rowsHtml.push(`<tr><td colspan="4" style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml(e.label)}</td></tr>`);
       return;
     }
-    const st = e.type === 'sub' ? ' style="color:#5A6270;"' : '';
     const descHtml = escapeHtml(e.desc).replace(/\n/g, '<br>');
-    rowsHtml.push(`<tr${st}><td>${escapeHtml(e.pos)}</td><td style="text-align:center;">${escapeHtml(String(e.qty))}</td><td>${escapeHtml(e.model)}</td><td>${escapeHtml(e.code)}</td><td style="white-space:pre-line;">${descHtml}</td></tr>`);
+    rowsHtml.push(`<tr><td style="text-align:center;">${escapeHtml(String(e.qty))}</td><td>${escapeHtml(e.model)}</td><td>${escapeHtml(e.code)}</td><td style="white-space:pre-line;">${descHtml}</td></tr>`);
   });
 
   return `<!DOCTYPE html>
@@ -10072,14 +10058,14 @@ function buildBomHtmlDoc(){
   body{font-family:'Work Sans Light','Work Sans',Calibri,Arial,sans-serif; font-weight:300;}
   table.main{border-collapse:collapse; width:100%; margin-top:10px;}
   table.main td, table.main th{border:1px solid #D9D9D9; padding:5px 8px; font-size:11pt; white-space:nowrap;}
-  table.main td:nth-child(5), table.main th:nth-child(5){white-space:pre-wrap; vertical-align:top;}
+  table.main td:nth-child(4), table.main th:nth-child(4){white-space:pre-wrap; vertical-align:top;}
   table.main th{background:#4472C4; color:#FFFFFF; font-weight:bold; text-align:left;}
 </style></head>
 <body>
   <table style="border:none;"><tr><td style="border:none;"><img src="${LOGO_B64}" height="60"></td></tr></table>
   <p style="font-weight:bold; color:#0070C0; font-size:13pt; margin:0;">${escapeHtml(info.name || info.ref)}</p>
   <table class="main">
-    <tr><th>Pos.</th><th>Qty</th><th>Model</th><th>Code</th><th>Description</th></tr>
+    <tr><th>Qty</th><th>Model</th><th>Code</th><th>Description</th></tr>
     ${rowsHtml.join('\n')}
   </table>
 </body></html>`;
@@ -10253,7 +10239,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.07';
+const CURRENT_VERSION = 'beta_6.08';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -10283,6 +10269,10 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.08', date:'2026-09-30', notes:[
+    'BOM (PDF ed Excel) senza evidenza della nidificazione: la riga del kit e il codice di vendita da Excel non compaiono, al loro posto ci sono solo i componenti, ciascuno con la quantità totale (quantità per kit × numero di kit × sistemi). Tolta la colonna "Pos."; restano Qty / Model / Code / Description con i titoli dei capitoli',
+    'Le posizioni 1.5 / 1.5.1 … restano nelle Offer Lines, dove servono per lavorare',
+  ]},
   {version:'beta_6.07', date:'2026-09-30', notes:[
     '"(Ext. Supplier)" non viene più stampato su nessun documento (offerta PDF/Excel/Word e BOM): resta solo come indicazione interna nello strumento (etichetta sulla riga, salvata nel JSON)',
   ]},

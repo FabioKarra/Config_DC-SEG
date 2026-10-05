@@ -372,6 +372,82 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
   display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
 }
 .row-remove:hover{color:var(--red); border-color:var(--red);}
+/* ---- Kit Builder side panel ---- */
+.kb-backdrop{position:fixed; inset:0; z-index:890; background:rgba(20,22,26,.18);}
+.kb-panel{position:fixed; top:0; right:0; bottom:0; z-index:900; width:480px; max-width:100vw; background:#fff; border-left:1px solid var(--panel-border); box-shadow:-18px 0 40px rgba(20,22,26,.16); display:flex; flex-direction:column; font-size:13px; animation:kbIn .16s ease-out;}
+@keyframes kbIn{from{transform:translateX(24px); opacity:0;} to{transform:none; opacity:1;}}
+.kb-head{padding:14px 18px 0; display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+.kb-sub{font-size:11px; color:var(--dim);}
+.kb-title{font-size:17px; font-weight:600; color:var(--navy); display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.kb-dirty{font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:10px; background:var(--cream); color:#8A4B00;}
+.kb-x{width:34px; height:34px; border:1px solid var(--panel-border); background:#fff; border-radius:8px; font-size:17px; color:#4B5260; cursor:pointer; flex:none;}
+.kb-tabs{display:flex; gap:2px; padding:8px 18px 0; border-bottom:1px solid var(--panel-border);}
+.kb-tab{height:34px; padding:0 12px; border:none; background:transparent; font:inherit; font-size:12.5px; color:#4B5260; border-bottom:2px solid transparent; cursor:pointer;}
+.kb-tab.on{color:var(--navy); font-weight:600; border-bottom-color:var(--accent-dark);}
+.kb-body{flex:1; overflow:auto; padding:12px 18px; display:flex; flex-direction:column; gap:8px;}
+.kb-sec{display:flex; justify-content:space-between; font-size:10.5px; font-weight:600; color:var(--dim); letter-spacing:.06em; text-transform:uppercase; margin-top:4px;}
+.kb-comp{display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--panel-border); border-radius:8px; background:#fff;}
+.kb-panel.kb-edit .kb-comp.kb-new{background:#E3F4F1; border-color:#9FD6CC;}
+.kb-comp.kb-removed{background:#FBEAEA; border-color:#E8B4B4; color:#8C2B2B;}
+.kb-comp.kb-removed .kb-cname{text-decoration:line-through;}
+.kb-comp.kb-over{box-shadow:0 -3px 0 var(--accent);}
+.kb-grip{cursor:grab; color:#A0A7B4; user-select:none; padding:0 2px;}
+.kb-cname{flex:1; min-width:0; line-height:1.3;}
+.kb-cname small{display:block; color:var(--dim); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.kb-badge{font-size:9.5px; font-weight:700; letter-spacing:.04em; color:#0B6B62; margin-left:4px;}
+.kb-step{display:flex; align-items:center; border:1px solid var(--field-border); border-radius:7px; background:#fff; flex:none;}
+.kb-step button{width:24px; height:26px; border:none; background:transparent; font-size:14px; color:var(--accent-dark); cursor:pointer;}
+.kb-step input{width:44px; height:26px; border:none; text-align:center; font:inherit; font-weight:600; background:transparent; -moz-appearance:textfield;}
+.kb-step input::-webkit-inner-spin-button{display:none;}
+.kb-ic{width:28px; height:28px; border:none; background:transparent; color:var(--dim); cursor:pointer; border-radius:6px; flex:none;}
+.kb-ic:hover{background:var(--field-bg); color:var(--text);}
+.kb-mini{height:26px; padding:0 8px; border:1px solid currentColor; background:#fff; border-radius:6px; font:inherit; font-size:11px; cursor:pointer; flex:none;}
+.kb-add-toggle{height:34px; border:1px dashed var(--accent); background:#fff; color:var(--accent-dark); border-radius:8px; font:inherit; font-size:12.5px; cursor:pointer;}
+.kb-add{border:1px solid var(--panel-border); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:8px; background:#FAFBFD;}
+.kb-subtabs{display:flex; gap:4px; flex-wrap:wrap;}
+.kb-subtab{height:28px; padding:0 10px; border-radius:14px; border:1px solid var(--field-border); background:#fff; font:inherit; font-size:12px; cursor:pointer;}
+.kb-subtab.on{background:var(--accent-dark); border-color:var(--accent-dark); color:#fff;}
+.kb-pick{display:flex; align-items:center; gap:8px; padding:7px 9px; border:1px solid var(--panel-border); border-radius:8px; background:#fff; cursor:pointer;}
+.kb-pick.on{border-color:var(--accent); background:var(--accent-soft);}
+.kb-res{display:flex; align-items:center; gap:8px; padding:7px 9px; border:1px solid var(--panel-border); border-radius:8px; background:#fff;}
+.kb-res .kb-cname b{font-weight:600;}
+.kb-addbtn{height:28px; padding:0 10px; border:1px solid var(--accent); background:#fff; color:var(--accent-dark); border-radius:7px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; flex:none;}
+.kb-addbtn.in{background:var(--accent-soft);}
+.kb-in{height:34px; border:1px solid var(--field-border); background:var(--field-bg); border-radius:8px; padding:0 10px; font:inherit; font-size:13px; color:var(--text); width:100%; box-sizing:border-box;}
+.kb-strip{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; background:var(--bg);}
+.kb-data{display:flex; flex-direction:column; gap:8px; padding:10px; border:1px solid #BFD3F2; background:#F5F9FF; border-radius:10px;}
+.kb-grid{display:grid; grid-template-columns:minmax(0,1fr) 140px 80px; gap:8px;}
+.kb-grid label, .kb-lab{display:flex; flex-direction:column; gap:4px; font-size:11px; color:#4B5260;}
+.kb-ta{min-height:64px; resize:vertical; border:1px solid var(--field-border); background:var(--field-bg); border-radius:8px; padding:8px 10px; font:inherit; font-size:12.5px; line-height:1.45;}
+.kb-note{font-size:11.5px; color:#4B5260; background:var(--bg); border-radius:8px; padding:8px 10px;}
+.kb-warn{font-size:12px; color:#8C2B2B;}
+.kb-tbl{width:100%; border-collapse:collapse; font-size:11.5px; border:1px solid var(--panel-border); border-radius:8px; overflow:hidden;}
+.kb-tbl th{background:var(--accent); color:#fff; font-weight:600; text-align:left; padding:6px 7px;}
+.kb-tbl td{padding:6px 7px; border-top:1px solid var(--panel-border); vertical-align:top;}
+.kb-tbl .num{text-align:right; white-space:nowrap;}
+.kb-tbl tr.kb-flag td{background:#FFF6E5;}
+.kb-sum{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; padding:10px 18px; background:var(--bg); border-top:1px solid var(--panel-border); font-size:10.5px; color:#4B5260;}
+.kb-sum b{display:block; font-size:14px; font-weight:600; color:var(--text);}
+.kb-sum s{display:block; font-size:11.5px; color:var(--dim);}
+.kb-sum .kb-m{color:#0B6B62;} .kb-sum .kb-m.neg{color:var(--red);}
+.kb-foot{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 18px; border-top:1px solid var(--panel-border);}
+.kb-foot .kb-r{display:flex; gap:8px; margin-left:auto;}
+.kb-link{border:none; background:none; color:var(--accent-dark); font:inherit; font-size:12px; text-decoration:underline; cursor:pointer; padding:0;}
+.kb-danger{height:36px; padding:0 12px; border:1px solid #E8B4B4; background:#fff; color:#8C2B2B; border-radius:8px; font:inherit; font-size:12.5px; cursor:pointer;}
+/* row selection + action bar */
+table.bom input.kb-sel, .kb-sel{width:14px !important; min-width:0 !important; height:14px; padding:0 !important; margin:0 3px 0 -2px; vertical-align:middle; cursor:pointer; accent-color:var(--accent-dark); box-shadow:none;}
+#bomBody tr.kb-selected > td{background:var(--accent-soft) !important;}
+.kb-selbar{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:880; display:flex; align-items:center; gap:6px; background:#14161A; color:#fff; border-radius:12px; padding:7px 7px 7px 14px; box-shadow:0 14px 36px rgba(20,22,26,.32); font-size:12.5px; white-space:nowrap; max-width:calc(100vw - 24px); flex-wrap:wrap;}
+.kb-selbar button{height:34px; padding:0 12px; border:1px solid #4B5260; background:transparent; color:#fff; border-radius:8px; font:inherit; font-size:12.5px; cursor:pointer;}
+.kb-selbar button.kb-pri{border:none; background:var(--accent); font-weight:600;}
+.kb-selbar button:disabled{opacity:.45; cursor:default;}
+.kb-selmenu{position:absolute; bottom:calc(100% + 6px); right:40px; background:#fff; color:var(--text); border:1px solid var(--panel-border); border-radius:10px; box-shadow:0 12px 30px rgba(20,22,26,.2); padding:6px; display:flex; flex-direction:column; min-width:240px;}
+.kb-selmenu button{border:none; color:var(--text); text-align:left; border-radius:6px; height:auto; padding:8px 10px;}
+.kb-selmenu button:hover{background:var(--accent-soft);}
+.kb-toast{position:fixed; right:22px; bottom:22px; z-index:1150; display:flex; align-items:center; gap:12px; background:#14161A; color:#fff; border-radius:12px; padding:10px 10px 10px 16px; box-shadow:0 14px 36px rgba(20,22,26,.3); font-size:12.5px;}
+.kb-toast button{height:32px; padding:0 12px; border:1px solid #4B5260; background:transparent; color:#fff; border-radius:8px; font:inherit; font-size:12.5px; cursor:pointer;}
+@media (max-width:560px){ .kb-panel{width:100vw;} .kb-grid{grid-template-columns:1fr 1fr;} .kb-grid label:first-child{grid-column:span 2;} .kb-sum{grid-template-columns:repeat(2,minmax(0,1fr));} }
+
 .kit-chip{display:inline-block; margin-left:6px; font-size:10.5px; padding:2px 8px; border-radius:10px; border:1px solid #BFD3F2; background:#EAF1FC; color:#1F4E9C; cursor:pointer; white-space:nowrap; vertical-align:middle;}
 .kit-chip:hover{background:#DCE8FA;}
 .subbom-chip{display:inline-block; margin-left:6px; font-size:10.5px; padding:2px 8px; border-radius:10px; border:1px solid #CFE3D2; background:#EEF7EF; color:#2E6B35; cursor:pointer; white-space:nowrap; vertical-align:middle;}
@@ -454,11 +530,11 @@ table.bom textarea.desc-text.manual-desc-input{resize:vertical; min-height:34px;
 /* ---- BOM / Offer table ---- */
 table.bom{width:100%; border-collapse:collapse; min-width:0; table-layout:fixed;}
 /* Offer Lines: fit the entire table inside the available page width. Description gets the largest share. */
-table.bom th:nth-child(1),table.bom td:nth-child(1){width:4%;}
+table.bom th:nth-child(1),table.bom td:nth-child(1){width:5.5%;}
 table.bom th:nth-child(2),table.bom td:nth-child(2){width:4%;}
 table.bom th:nth-child(3),table.bom td:nth-child(3){width:8.5%;}
 table.bom th:nth-child(4),table.bom td:nth-child(4){width:7.5%;}
-table.bom th:nth-child(5),table.bom td:nth-child(5){width:24.5%;}
+table.bom th:nth-child(5),table.bom td:nth-child(5){width:23%;}
 table.bom th:nth-child(6),table.bom td:nth-child(6){width:6.5%;}
 table.bom th:nth-child(7),table.bom td:nth-child(7){width:5%;}
 table.bom th:nth-child(8),table.bom td:nth-child(8){width:6.5%;}
@@ -789,7 +865,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.14</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.15</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3723,7 +3799,7 @@ function addBomRow(data, insertBeforeNode){
       const kitBtn = document.createElement('button');
       kitBtn.type = 'button'; kitBtn.className = 'bom-batt-btn kit-btn'; kitBtn.textContent = '⊞ Kit';
       kitBtn.title = 'Group lines of this chapter into one offer line (the BOM keeps every line)';
-      kitBtn.addEventListener('click', ()=>openKitDialog(row));
+      kitBtn.addEventListener('click', ()=>openKitPanel({owner: row.dataset.rowId, rows: kbSelectedRows().filter(r => r.dataset.groupOf === row.dataset.rowId)}));
       row.querySelector('.bom-actions').appendChild(kitBtn);
       const dupBtn = document.createElement('button');
       dupBtn.type = 'button'; dupBtn.className = 'row-remove row-dup'; dupBtn.textContent = '⧉';
@@ -5325,8 +5401,8 @@ function applyKitLook(parent, members){
     ren.type = 'button';
     ren.className = 'kit-ren';
     ren.textContent = '✎';
-    ren.title = 'Kit name, code, description and quantity';
-    ren.addEventListener('click', e => { e.stopPropagation(); openKitRenameDialog(parent.dataset.kitId); });
+    ren.title = 'Edit the kit: components, name, code, description, quantity';
+    ren.addEventListener('click', e => { e.stopPropagation(); openKitPanel({kitId: parent.dataset.kitId}); });
     parent.cells[2].appendChild(ren);
   }
   chip.textContent = `${open ? '▾' : '▸'} KIT`;
@@ -5636,6 +5712,511 @@ function openKitDialog(header){
     close();
   });
 }
+// ---- Kit Builder: one side panel to create, load and change kits (beta_6.15) ----
+// Opens on the right, over the Offer Lines. A draft (KB) holds the kit being built; nothing in the
+// offer changes until "Create kit" / "Save changes". Components come from the chapter's lines,
+// the catalog (built-in batteries + imported price list), an Excel file or text pasted from
+// Excel. Edit mode marks what changes (removed lines struck through, added ones green) and shows
+// the price / margin before and after. Rows of the Offer Lines get a tick box: ticked lines of
+// one chapter → "Create kit" from the action bar at the bottom.
+let KB = null;
+function kbHeader(owner){ return bomBody.querySelector(`tr[data-kind="header"][data-row-id="${owner}"]`); }
+function kbChapterRows(owner){
+  return [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory');
+}
+function kbFreeRows(owner){ return kbChapterRows(owner).filter(r => !r.dataset.kitId); }
+function kbCatalog(){
+  const out = [];
+  (typeof BATTERY_CATALOG !== 'undefined' ? BATTERY_CATALOG : []).forEach(x => out.push({group: 'Battery', model: x.model, code: x.code, desc: x.description, price: Number(x.price) || 0, cost: Number(x.cost) || 0, ext: !!x.extSupplier}));
+  (CATALOG_PM || []).forEach(x => out.push({group: 'Power module', model: x.model, code: x.code, desc: x.description, price: x.price, cost: x.cost}));
+  (CATALOG_AUX || []).forEach(x => out.push({group: 'Accessory', model: x.model, code: x.code, desc: x.description, price: x.price, cost: x.cost}));
+  return out;
+}
+function kbCatalogByCode(code){
+  const k = String(code || '').replace(/\s+/g, '').toUpperCase();
+  return k ? kbCatalog().find(x => String(x.code || '').replace(/\s+/g, '').toUpperCase() === k) || null : null;
+}
+// per-kit values of one component of the draft
+function kbVals(c){
+  if(c.row){
+    const v = kitRowNet(c.row);
+    return {model: rowModelText(c.row).replace(/^↳\s*/, ''), code: rowCodeText(c.row), desc: rowDescText(c.row), net: v.net, cost: v.cost};
+  }
+  const d = c.data;
+  return {model: d.model, code: d.code, desc: d.desc, net: (Number(d.gross) || 0) * (1 - (Number(d.disc) || 0) / 100), cost: Number(d.cost) || 0};
+}
+function kbTotals(comps){
+  let net = 0, cost = 0;
+  comps.filter(c => !c.removed).forEach(c => { const v = kbVals(c); net += v.net * c.qty; cost += v.cost * c.qty; });
+  return {net, cost, margin: net > 0 ? (net - cost) / net * 100 : 0};
+}
+function kbChanges(){
+  if(!KB) return 0;
+  let n = 0;
+  KB.comps.forEach(c => { if(c.removed || c.added || c.qty !== c.qty0) n++; });
+  if(KB.mode === 'edit'){
+    const o = KB.orig;
+    if(KB.name !== o.name || KB.code !== o.code || KB.desc !== o.desc || KB.qty !== o.qty) n++;
+    if(KB.comps.filter(c => c.row && !c.added).map(c => c.row).some((r, i) => r !== o.order[i])) n++;
+  }
+  return n;
+}
+// Entry point. opts: {owner, rows} for a new kit (rows = lines to start with), {kitId, addRows}
+// to change an existing one.
+function openKitPanel(opts = {}){
+  if(READ_ONLY) return;
+  closeKitPanel(true);
+  document.getElementById('kbToast')?.remove();
+  let d;
+  if(opts.kitId){
+    const parent = kitParentOf(opts.kitId);
+    if(!parent) return;
+    const members = kitMembersOf(opts.kitId);
+    d = {mode: 'edit', kitId: opts.kitId, owner: parent.dataset.groupOf, parent,
+      name: rowModelText(parent).replace(/^↳\s*/, ''), code: rowCodeText(parent), desc: rowDescText(parent), qty: Number(rowQty(parent)) || 0,
+      comps: members.map(r => ({row: r, qty: Number(rowQty(r)) || 0, qty0: Number(rowQty(r)) || 0}))};
+    d.orig = {name: d.name, code: d.code, desc: d.desc, qty: d.qty, order: members.slice(), totals: kbTotals(d.comps)};
+    (opts.addRows || []).filter(r => !r.dataset.kitId && r.dataset.groupOf === d.owner).forEach(r => d.comps.push({row: r, qty: Number(rowQty(r)) || 0, qty0: Number(rowQty(r)) || 0, added: true}));
+  } else {
+    const owner = opts.owner || (opts.rows && opts.rows[0] && opts.rows[0].dataset.groupOf);
+    if(!owner || !kbHeader(owner)) return;
+    const rows = (opts.rows || []).filter(r => r.dataset.groupOf === owner && !r.dataset.kitId);
+    const ordered = kbChapterRows(owner).filter(r => rows.includes(r));
+    const first = ordered[0];
+    d = {mode: 'new', owner, name: first ? rowModelText(first).replace(/^↳\s*/, '') : '', code: first ? rowCodeText(first) : '', desc: first ? rowDescText(first) : '', qty: 1,
+      comps: ordered.map(r => ({row: r, qty: Number(rowQty(r)) || 0, qty0: Number(rowQty(r)) || 0, added: true})), autoTexts: true};
+  }
+  Object.assign(d, {tab: 'comp', addOpen: d.mode === 'new' && !d.comps.length, addTab: 'rows', catQuery: '', catGroup: '', imported: null, importName: '', pasteText: '', pricing: 'list', markup: 35, msg: ''});
+  KB = d;
+  const bd = document.createElement('div'); bd.className = 'kb-backdrop'; bd.id = 'kbBackdrop';
+  bd.addEventListener('click', () => requestCloseKitPanel());
+  const panel = document.createElement('aside'); panel.className = 'kb-panel'; panel.id = 'kitPanel';
+  panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true'); panel.setAttribute('aria-label', d.mode === 'edit' ? 'Edit kit' : 'New kit');
+  document.body.append(bd, panel);
+  document.addEventListener('keydown', kbKeydown, true);
+  kbClearSelection();
+  renderKitPanel();
+}
+function kbKeydown(e){
+  if(e.key !== 'Escape' || !KB) return;
+  if([...document.querySelectorAll('.settings-overlay, .acc-modal-overlay')].some(el => getComputedStyle(el).display !== 'none')) return;   // a window on top handles it
+  e.preventDefault(); requestCloseKitPanel();
+}
+function closeKitPanel(){
+  document.getElementById('kitPanel')?.remove();
+  document.getElementById('kbBackdrop')?.remove();
+  document.removeEventListener('keydown', kbKeydown, true);
+  KB = null;
+  kbUpdateSelBar();
+}
+async function requestCloseKitPanel(){
+  if(KB && kbChanges()){
+    const ok = await openAppDialog({title: 'Close without saving?', message: KB.mode === 'edit' ? 'The changes to this kit will be lost.' : 'The kit has not been created yet.',
+      buttons: [{label: 'Keep editing', value: false}, {label: 'Close without saving', value: true, primary: true}]});
+    if(!ok) return;
+  }
+  closeKitPanel();
+}
+function kbSetDirtyBadge(){
+  const b = document.getElementById('kbDirty');
+  if(!b) return;
+  const n = kbChanges();
+  b.style.display = KB.mode === 'edit' && n ? '' : 'none';
+  b.textContent = `${n} unsaved change${n === 1 ? '' : 's'}`;
+}
+function kbRenderSummary(){
+  const el = document.getElementById('kbSum');
+  if(!el || !KB) return;
+  const t = kbTotals(KB.comps), q = KB.qty;
+  const o = KB.mode === 'edit' ? KB.orig.totals : null;
+  const was = (now, before, fmt) => (o && Math.abs(now - before) > 0.005) ? `<s>${fmt(before)}</s>` : '';
+  const pct = v => `${v.toFixed(1)} %`;
+  el.innerHTML = `<div>Price / kit${was(t.net, o && o.net, formatMoney)}<b>${formatMoney(t.net)}</b></div>
+    <div>Cost / kit${was(t.cost, o && o.cost, formatMoney)}<b>${formatMoney(t.cost)}</b></div>
+    <div>Total × ${escapeHtml(String(q))}${o && q !== KB.orig.qty ? `<s>× ${escapeHtml(String(KB.orig.qty))}</s>` : ''}<b>${formatMoney(t.net * q)}</b></div>
+    <div>Margin${was(t.margin, o && o.margin, pct)}<b class="kb-m${t.margin < 0 ? ' neg' : ''}">${pct(t.margin)}</b></div>`;
+  kbSetDirtyBadge();
+}
+function renderKitPanel(){
+  const panel = document.getElementById('kitPanel');
+  if(!panel || !KB) return;
+  const d = KB, h = kbHeader(d.owner);
+  panel.classList.toggle('kb-edit', d.mode === 'edit');
+  const scroll = panel.querySelector('.kb-body')?.scrollTop || 0;
+  const chapter = h ? h.cells[4].textContent : '';
+  const sub = d.mode === 'edit' ? `Pos. ${escapeHtml(d.parent.dataset.pos || '')}${d.orig.code ? ' · ' + escapeHtml(d.orig.code) : ''} · ${escapeHtml(chapter)}` : escapeHtml(chapter);
+  const tab = (id, label) => `<button type="button" class="kb-tab${d.tab === id ? ' on' : ''}" data-tab="${id}">${label}</button>`;
+  const active = d.comps.filter(c => !c.removed).length;
+  panel.innerHTML = `
+    <div class="kb-head"><div><div class="kb-sub">${sub}</div><div class="kb-title">${d.mode === 'edit' ? 'Edit kit' : 'New kit'}<span class="kb-dirty" id="kbDirty" style="display:none"></span></div></div>
+      <button type="button" class="kb-x" data-close aria-label="Close">×</button></div>
+    <div class="kb-tabs">${tab('comp', `Components (${active})`)}${tab('data', 'Kit data')}${tab('preview', 'Print preview')}</div>
+    <div class="kb-body">${d.tab === 'preview' ? kbPreviewHtml() : d.tab === 'data' ? kbDataHtml() : kbStripHtml() + kbCompHtml()}</div>
+    <div class="kb-sum" id="kbSum"></div>
+    <div class="kb-foot">
+      ${d.mode === 'edit' ? '<button type="button" class="kb-danger" data-ungroup>Ungroup kit</button>' : '<button type="button" class="kb-link" data-salescode title="A new line with your sales code whose composition comes from an Excel BOM">Sales code from an Excel BOM…</button>'}
+      <span class="kb-r"><button type="button" class="btn-ghost act" data-close>Cancel</button>
+      ${d.mode === 'new' && d.tab === 'comp' ? '<button type="button" class="act btn-primary" data-next>Next: kit data ›</button>' : `<button type="button" class="act btn-primary" data-apply>${d.mode === 'edit' ? 'Save changes' : '⊞ Create kit'}</button>`}</span>
+    </div>`;
+  panel.querySelector('.kb-body').scrollTop = scroll;
+  kbWire(panel);
+  kbRenderSummary();
+}
+// one line on the Components tab: what the offer will show, with a way to change it
+function kbStripHtml(){
+  const d = KB;
+  return `<div class="kb-strip"><span class="kb-cname"><b>${escapeHtml(d.name || 'Kit name not set')}</b><small>${escapeHtml([d.code || 'no code', (d.desc || '').split('\n')[0]].filter(Boolean).join(' · '))}</small></span>
+    <button type="button" class="kb-mini" data-tab="data" style="color:var(--accent-dark)">✎ Name, code, description</button></div>`;
+}
+function kbCompHtml(){
+  const d = KB;
+  const items = d.comps.map((c, i) => {
+    const v = kbVals(c);
+    const cls = c.removed ? ' kb-removed' : c.added ? ' kb-new' : '';
+    const badge = c.removed ? '' : c.added && d.mode === 'edit' ? `<span class="kb-badge">NEW${c.row ? '' : ' · ' + escapeHtml(c.src || '')}</span>` : !c.row ? `<span class="kb-badge">${escapeHtml((c.src || '').toUpperCase())}</span>` : '';
+    const right = c.removed
+      ? `<span style="font-size:11px">back to a normal line</span><button type="button" class="kb-mini" data-restore="${i}">Restore</button>`
+      : `<span class="kb-step"><button type="button" data-dec="${i}" aria-label="Less">−</button><input type="number" min="0" step="1" value="${escapeHtml(String(c.qty))}" data-q="${i}" aria-label="Quantity per kit"><button type="button" data-inc="${i}" aria-label="More">+</button></span>
+         <button type="button" class="kb-ic" data-rm="${i}" title="${c.row && !c.added ? 'Take out of the kit (stays in the chapter as a normal line)' : 'Remove'}" aria-label="Remove">⊖</button>`;
+    return `<div class="kb-comp${cls}" draggable="${c.removed ? 'false' : 'true'}" data-ci="${i}"><span class="kb-grip" title="Drag to reorder">⋮⋮</span>
+      <span class="kb-cname">${escapeHtml(v.model || v.code || '—')}${badge}<small>${escapeHtml([v.code, formatMoney(v.net)].filter(Boolean).join(' · '))}</small></span>${right}</div>`;
+  }).join('');
+  return `<div class="kb-sec"><span>Components · drag to reorder</span><span>Per kit</span></div>
+    ${items || '<div class="kb-note">No components yet — add them below: lines of this chapter, the catalog, an Excel file or rows pasted from Excel.</div>'}
+    ${d.msg ? `<div class="kb-warn">${escapeHtml(d.msg)}</div>` : ''}
+    <button type="button" class="kb-add-toggle" data-addtoggle aria-expanded="${d.addOpen}">${d.addOpen ? '− Hide' : '+ Add components'} (chapter lines · catalog · Excel · paste)</button>
+    ${d.addOpen ? kbAddHtml() : ''}`;
+}
+function kbAddHtml(){
+  const d = KB;
+  const st = (id, label) => `<button type="button" class="kb-subtab${d.addTab === id ? ' on' : ''}" data-addtab="${id}">${label}</button>`;
+  let body = '';
+  if(d.addTab === 'rows'){
+    const inDraft = new Set(d.comps.filter(c => c.row).map(c => c.row));
+    const free = kbFreeRows(d.owner);
+    const list = [...free, ...d.comps.filter(c => c.row && c.added && !free.includes(c.row)).map(c => c.row)];
+    body = list.length ? list.map((r, i) => { const on = inDraft.has(r); const v = kitRowNet(r);
+      return `<label class="kb-pick${on ? ' on' : ''}"><input type="checkbox" data-row="${i}"${on ? ' checked' : ''}><span class="kb-cname">${escapeHtml(rowModelText(r).replace(/^↳\s*/, '') || rowCodeText(r))}<small>${escapeHtml([rowCodeText(r), `qty ${rowQty(r)}`, formatMoney(v.net)].filter(Boolean).join(' · '))}</small></span></label>`; }).join('')
+      : '<div class="kb-note">No free lines in this chapter (lines already in another kit are not listed).</div>';
+    d._rowList = list;
+    body += '<div class="kb-note">A ticked line moves into the kit; its quantity becomes the quantity per kit.</div>';
+  } else if(d.addTab === 'cat'){
+    const all = kbCatalog();
+    const groups = [...new Set(all.map(x => x.group))];
+    const q = d.catQuery.trim().toLowerCase();
+    const res = all.filter(x => (!d.catGroup || x.group === d.catGroup) && (!q || `${x.model} ${x.code} ${x.desc}`.toLowerCase().includes(q))).slice(0, 40);
+    d._catRes = res;
+    body = `<input type="search" class="kb-in" id="kbCatQ" placeholder="Search model, code or description…" value="${escapeHtml(d.catQuery)}">
+      <div class="kb-subtabs">${['', ...groups].map(g => `<button type="button" class="kb-subtab${d.catGroup === g ? ' on' : ''}" data-catgroup="${escapeHtml(g)}">${escapeHtml(g || 'All')}</button>`).join('')}</div>
+      <div id="kbCatRes" style="display:flex; flex-direction:column; gap:6px;">${kbCatResHtml()}</div>
+      ${CATALOG_LOADED ? '' : '<div class="kb-note">Only the built-in battery catalog is available — import the price list (Settings) to search power modules and accessories too.</div>'}`;
+  } else {
+    const isPaste = d.addTab === 'paste';
+    const items = d.imported || [];
+    body = (isPaste
+      ? `<label class="kb-lab">Copy the cells in Excel (Qty · Code · Description · Cost) and paste them here<textarea class="kb-ta" id="kbPaste" style="font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; min-height:90px" placeholder="1\t519100001304\tAmpace battery cabinet\t13711,75">${escapeHtml(d.pasteText)}</textarea></label>`
+      : `<label class="kb-lab">Excel file with the columns quantity, code, description, cost (cost may be empty)<input type="file" id="kbFile" accept=".xlsx,.xls,.xlsm,.csv"></label>${d.importName ? `<div class="kb-note">${escapeHtml(d.importName)}</div>` : ''}`)
+      + `<div id="kbImp">${kbImportHtml()}</div>`;
+  }
+  return `<div class="kb-add"><div class="kb-subtabs">${st('rows', 'Chapter lines')}${st('cat', 'Catalog')}${st('excel', 'Excel')}${st('paste', 'Paste')}</div>${body}</div>`;
+}
+function kbCatResHtml(){
+  const d = KB, res = d._catRes || [];
+  if(!res.length) return '<div class="kb-note">Nothing found.</div>';
+  return res.map((x, i) => { const n = d.comps.filter(c => !c.row && !c.removed && c.data.code === x.code).reduce((a, c) => a + c.qty, 0);
+    return `<div class="kb-res"><span class="kb-cname"><b>${escapeHtml(x.model || x.code)}</b><small>${escapeHtml([x.code, x.group, formatMoney(x.price)].filter(Boolean).join(' · '))}</small></span><button type="button" class="kb-addbtn${n ? ' in' : ''}" data-cat="${i}">${n ? `✓ ${n} · +1` : '+ Add'}</button></div>`; }).join('');
+}
+function kbImportHtml(){
+  const d = KB, items = d.imported || [];
+  if(!items.length) return d.addTab === 'paste' && d.pasteText.trim() ? '<div class="kb-warn">No rows recognised — the columns are quantity, code, description, cost.</div>' : '';
+  const cost = items.reduce((a, it) => a + it.qty * (it.cost || 0), 0);
+  return `<table class="kb-tbl"><thead><tr><th class="num">Qty</th><th>Code</th><th>Description</th><th class="num">Cost</th></tr></thead><tbody>
+    ${items.map(it => `<tr${it.cost ? '' : ' class="kb-flag"'}><td class="num">${escapeHtml(String(it.qty))}</td><td>${escapeHtml(it.code)}</td><td>${escapeHtml(it.desc)}</td><td class="num">${it.cost ? formatMoney(it.cost) : 'empty'}</td></tr>`).join('')}</tbody></table>
+    <fieldset style="border:none; padding:0; margin:0; display:flex; flex-direction:column; gap:5px; font-size:12px;">
+      <legend class="kb-sec" style="padding:0; margin-bottom:4px;">Selling price of these components</legend>
+      <label><input type="radio" name="kbPricing" value="list"${d.pricing === 'list' ? ' checked' : ''}> price list when the code is found, otherwise 0 (type it in later)</label>
+      <label><input type="radio" name="kbPricing" value="markup"${d.pricing === 'markup' ? ' checked' : ''}> cost + markup <input type="number" id="kbMarkup" value="${escapeHtml(String(d.markup))}" min="0" step="1" style="width:56px; height:24px; border:1px solid var(--field-border); border-radius:6px; text-align:center;"> %</label>
+    </fieldset>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><span style="font-size:12px; color:#4B5260">${items.length} rows · cost ${formatMoney(cost)} per kit</span><button type="button" class="act btn-primary" data-import>Add ${items.length} row${items.length === 1 ? '' : 's'} to the kit</button></div>`;
+}
+function kbDataHtml(){
+  const d = KB;
+  return `<div class="kb-data"><div class="kb-sec"><span>Kit line in the offer — your name, code and description</span></div><div class="kb-grid">
+      <label>Name / model<input type="text" class="kb-in" id="kbName" value="${escapeHtml(d.name)}" placeholder="e.g. Battery kit PU-100"></label>
+      <label>Code<input type="text" class="kb-in" id="kbCode" value="${escapeHtml(d.code)}" placeholder="e.g. KIT-PU100-08"></label>
+      <label>No. of kits<input type="number" class="kb-in" id="kbQty" min="0" step="1" value="${escapeHtml(String(d.qty))}"></label>
+    </div>
+    <label class="kb-lab">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea class="kb-ta" id="kbDesc" rows="2" placeholder="What the offer says about this kit">${escapeHtml(d.desc)}</textarea></label>
+    <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:11.5px; color:#4B5260"><span id="kbDataHint">${d.mode === 'new' && d.autoTexts ? 'Proposed from the first component — overwrite as you like.' : 'Price = sum of the components; the BOM lists only the components.'}</span>
+    ${d.comps.length ? `<button type="button" class="kb-link" data-fromfirst>From the first component</button>` : ''}</div></div>`;
+}
+function kbPreviewHtml(){
+  const d = KB, h = kbHeader(d.owner);
+  const sys = h ? (Number(configQtyFor(h)) || 1) : 1;
+  const t = kbTotals(d.comps);
+  const act = d.comps.filter(c => !c.removed);
+  const round = n => Math.round(n * 1000) / 1000;
+  const bomRows = [];
+  act.forEach(c => {
+    const sub = c.row ? rowSubBom(c.row) : undefined, v = kbVals(c), q = c.qty * d.qty * sys;
+    if(sub) sub.forEach(it => bomRows.push({qty: round((Number(it.qty) || 0) * q), code: it.code, desc: it.desc}));
+    else bomRows.push({qty: round(q), code: v.code, desc: v.desc || v.model});
+  });
+  return `<div class="kb-sec"><span>In the offer (PDF · Excel · Word) — one line</span></div>
+    <table class="kb-tbl"><thead><tr><th class="num">Qty</th><th>Code</th><th>Description</th><th class="num">Total</th></tr></thead><tbody>
+      <tr><td class="num">${escapeHtml(String(d.qty))}</td><td>${escapeHtml(d.code)}</td><td style="white-space:pre-line"><b>${escapeHtml(d.name)}</b>${d.desc ? '\n' + escapeHtml(d.desc) : ''}</td><td class="num">${formatMoney(t.net * d.qty)}</td></tr></tbody></table>
+    <div class="kb-sec"><span>In the BOM — exploded, quantities × ${escapeHtml(String(d.qty))} kit${d.qty === 1 ? '' : 's'}${sys !== 1 ? ` × ${sys} systems` : ''}, no positions</span></div>
+    <table class="kb-tbl"><thead><tr><th class="num">Qty</th><th>Code</th><th>Description</th></tr></thead><tbody>
+      ${bomRows.map(b => `<tr><td class="num">${escapeHtml(String(b.qty))}</td><td>${escapeHtml(b.code || '')}</td><td>${escapeHtml(b.desc || '')}</td></tr>`).join('') || '<tr><td colspan="3">—</td></tr>'}</tbody></table>
+    <div class="kb-note">Excel "with margin": sheet 1 has the kit on one line, sheet 2 the kit exploded with the margin line by line.</div>`;
+}
+function kbAddFromRow(r){ KB.comps.push({row: r, qty: Number(rowQty(r)) || 0, qty0: Number(rowQty(r)) || 0, added: true}); }
+function kbAddNew(data, qty, src){
+  const same = KB.comps.find(c => !c.row && !c.removed && c.data.code && c.data.code === data.code && c.data.model === data.model);
+  if(same && src === 'catalog'){ same.qty += qty; return; }
+  KB.comps.push({data, qty, qty0: 0, added: true, src});
+}
+function kbAutoTexts(){
+  // a new kit with untouched texts takes them from its first component
+  if(KB.mode !== 'new' || !KB.autoTexts) return;
+  const first = KB.comps.find(c => !c.removed);
+  const v = first ? kbVals(first) : {model: '', code: '', desc: ''};
+  KB.name = v.model || ''; KB.code = v.code || ''; KB.desc = v.desc || '';
+}
+function kbParsePaste(text){
+  const lines = String(text || '').split(/\r?\n/).filter(l => l.trim());
+  const sep = lines.some(l => l.includes('\t')) ? '\t' : lines.some(l => l.includes(';')) ? ';' : '\t';
+  return parseSubBomRows(lines.map(l => l.split(sep)));
+}
+function kbWire(panel){
+  const d = KB, $ = s => panel.querySelector(s), $$ = s => panel.querySelectorAll(s);
+  $$('[data-close]').forEach(b => b.addEventListener('click', () => requestCloseKitPanel()));
+  $$('[data-tab]').forEach(b => b.addEventListener('click', () => { d.tab = b.dataset.tab; renderKitPanel(); }));
+  $('[data-apply]')?.addEventListener('click', applyKitPanel);
+  $('[data-next]')?.addEventListener('click', () => {
+    if(!d.comps.some(c => !c.removed)){ d.msg = 'Add at least one component.'; d.addOpen = true; renderKitPanel(); return; }
+    d.tab = 'data'; renderKitPanel(); setTimeout(() => { const n = document.getElementById('kbCode'); if(n){ n.focus(); n.select(); } }, 0);
+  });
+  $('[data-ungroup]')?.addEventListener('click', async () => {
+    const ok = await openAppDialog({title: 'Ungroup this kit?', message: 'The kit line goes away; its components stay in the chapter as normal lines.', buttons: [{label: 'Cancel', value: false}, {label: 'Ungroup', value: true, primary: true}]});
+    if(!ok || !KB) return;
+    const id = KB.kitId; closeKitPanel(); ungroupKit(id);
+  });
+  $('[data-salescode]')?.addEventListener('click', () => { const h = kbHeader(d.owner); closeKitPanel(); if(h) openSubBomImportDialog(h); });
+  // components
+  $$('[data-q]').forEach(inp => inp.addEventListener('input', () => { const c = d.comps[inp.dataset.q]; c.qty = Math.max(0, Number(inp.value) || 0); kbRenderSummary(); }));
+  $$('[data-inc]').forEach(b => b.addEventListener('click', () => { d.comps[b.dataset.inc].qty += 1; renderKitPanel(); }));
+  $$('[data-dec]').forEach(b => b.addEventListener('click', () => { const c = d.comps[b.dataset.dec]; c.qty = Math.max(0, c.qty - 1); renderKitPanel(); }));
+  $$('[data-rm]').forEach(b => b.addEventListener('click', () => {
+    const c = d.comps[b.dataset.rm];
+    if(c.row && !c.added) c.removed = true; else d.comps.splice(Number(b.dataset.rm), 1);
+    d.msg = ''; kbAutoTexts(); renderKitPanel();
+  }));
+  $$('[data-restore]').forEach(b => b.addEventListener('click', () => { d.comps[b.dataset.restore].removed = false; renderKitPanel(); }));
+  // reorder by dragging (native drag & drop inside the list)
+  let from = null;
+  $$('.kb-comp').forEach(el => {
+    el.addEventListener('dragstart', e => { from = Number(el.dataset.ci); e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain', String(from)); }catch(err){} });
+    el.addEventListener('dragover', e => { if(from === null) return; e.preventDefault(); el.classList.add('kb-over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('kb-over'));
+    el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('kb-over'); const to = Number(el.dataset.ci); if(from === null || from === to) return;
+      const [c] = d.comps.splice(from, 1); d.comps.splice(to > from ? to - 1 : to, 0, c); from = null; kbAutoTexts(); renderKitPanel(); });
+    el.addEventListener('dragend', () => { from = null; });
+  });
+  $('[data-addtoggle]')?.addEventListener('click', () => { d.addOpen = !d.addOpen; renderKitPanel(); });
+  $$('[data-addtab]').forEach(b => b.addEventListener('click', () => { d.addTab = b.dataset.addtab; d.imported = d.addTab === 'paste' ? kbParsePaste(d.pasteText) : null; d.importName = ''; renderKitPanel(); }));
+  $$('[data-row]').forEach(cb => cb.addEventListener('change', () => {
+    const r = d._rowList[Number(cb.dataset.row)];
+    const i = d.comps.findIndex(c => c.row === r);
+    if(cb.checked && i < 0) kbAddFromRow(r);
+    else if(!cb.checked && i >= 0){ if(d.comps[i].added) d.comps.splice(i, 1); else d.comps[i].removed = true; }
+    d.msg = ''; kbAutoTexts(); renderKitPanel();
+  }));
+  const catQ = $('#kbCatQ');
+  if(catQ){
+    catQ.addEventListener('input', () => { d.catQuery = catQ.value; renderKitPanel(); const n = document.getElementById('kbCatQ'); if(n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); } });
+  }
+  $$('[data-catgroup]').forEach(b => b.addEventListener('click', () => { d.catGroup = b.dataset.catgroup; renderKitPanel(); }));
+  $$('[data-cat]').forEach(b => b.addEventListener('click', () => {
+    const x = d._catRes[Number(b.dataset.cat)];
+    kbAddNew({model: x.model, code: x.code, desc: x.desc, gross: x.price, cost: x.cost, disc: 0, ext: !!x.ext}, 1, 'catalog');
+    d.msg = ''; kbAutoTexts(); renderKitPanel();
+  }));
+  $('#kbFile')?.addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    try{ d.imported = await readSubBomFile(f); d.importName = d.imported.length ? `${d.imported.length} rows read from "${f.name}"` : `No rows found in "${f.name}" — check the columns.`; }
+    catch(err){ d.imported = null; d.importName = `Could not read the file: ${err.message || err}`; }
+    renderKitPanel();
+  });
+  const pasteTa = $('#kbPaste');
+  if(pasteTa){
+    pasteTa.addEventListener('input', () => { d.pasteText = pasteTa.value; d.imported = kbParsePaste(d.pasteText); const box = document.getElementById('kbImp'); if(box){ box.innerHTML = kbImportHtml(); kbWireImport(panel); } });
+  }
+  kbWireImport(panel);
+  // kit data
+  const nm = $('#kbName'), cd = $('#kbCode'), qy = $('#kbQty'), ds = $('#kbDesc');
+  if(nm){
+    const typed = () => { d.autoTexts = false; const hn = document.getElementById('kbDataHint'); if(hn) hn.textContent = 'Price = sum of the components; the BOM lists only the components.'; kbSetDirtyBadge(); };
+    nm.addEventListener('input', () => { d.name = nm.value; typed(); });
+    cd.addEventListener('input', () => { d.code = cd.value; typed(); });
+    qy.addEventListener('input', () => { d.qty = Math.max(0, Number(qy.value) || 0); kbRenderSummary(); });
+    ds.addEventListener('input', () => { d.desc = ds.value; typed(); });
+    attachMultilineDescriptionEditor(ds);
+  }
+  $('[data-fromfirst]')?.addEventListener('click', () => { d.autoTexts = true; kbAutoTexts(); renderKitPanel(); });
+}
+function kbWireImport(panel){
+  const d = KB;
+  panel.querySelectorAll('input[name="kbPricing"]').forEach(r => r.addEventListener('change', () => { d.pricing = r.value; }));
+  const mk = panel.querySelector('#kbMarkup');
+  if(mk) mk.addEventListener('input', () => { d.markup = Number(mk.value) || 0; d.pricing = 'markup'; const rb = panel.querySelector('input[name="kbPricing"][value="markup"]'); if(rb) rb.checked = true; });
+  const btn = panel.querySelector('[data-import]');
+  if(btn) btn.addEventListener('click', () => {
+    const src = d.addTab === 'paste' ? 'paste' : 'excel';
+    (d.imported || []).forEach(it => {
+      const cat = kbCatalogByCode(it.code);
+      const gross = d.pricing === 'markup' ? Math.round((it.cost || 0) * (1 + d.markup / 100) * 100) / 100 : (cat ? cat.price : 0);
+      kbAddNew({model: cat ? cat.model : it.code, code: it.code, desc: it.desc || (cat ? cat.desc : ''), gross, cost: it.cost || (cat ? cat.cost : 0), disc: 0, ext: !!(cat && cat.ext)}, it.qty, src);
+    });
+    d.imported = null; d.importName = ''; d.pasteText = ''; d.msg = '';
+    kbAutoTexts(); renderKitPanel();
+  });
+}
+// Writes the draft into the offer.
+function applyKitPanel(){
+  const d = KB;
+  if(!d) return;
+  const panel = document.getElementById('kitPanel');
+  const act = d.comps.filter(c => !c.removed);
+  if(!act.length){
+    d.msg = d.mode === 'edit' ? 'A kit needs at least one component — to dissolve it use "Ungroup kit".' : 'Add at least one component.';
+    d.tab = 'comp'; renderKitPanel(); return;
+  }
+  if(!String(d.name).trim()){ d.tab = 'data'; renderKitPanel(); const n = document.getElementById('kbName'); if(n){ n.focus(); n.placeholder = 'The kit needs a name'; } return; }
+  const owner = d.owner;
+  const tot = bomBody.querySelector(`tr[data-kind="total"][data-group-of="${owner}"]`) || bomBody.querySelector(`tr[data-kind="delivery"][data-group-of="${owner}"]`);
+  const created = [], qtyBefore = new Map();
+  KIT_BULK++;
+  try{
+    act.forEach(c => {
+      if(!c.row){
+        c.row = addBomRow({kind: 'accessory', groupOf: owner, pos: '', qty: c.qty, model: c.data.model, code: c.data.code, desc: c.data.desc,
+          gross: c.data.gross, disc: c.data.disc, cost: c.data.cost, extSupplier: c.data.ext, manualEntry: true}, tot);
+        created.push(c.row);
+      } else {
+        const q = c.row.querySelector('.in-qty');
+        if(q && Number(q.value) !== c.qty){ qtyBefore.set(c.row, q.value); q.value = c.qty; q.dispatchEvent(new Event('input', {bubbles: true})); }
+      }
+    });
+  } finally { KIT_BULK--; }
+  const rows = act.map(c => c.row);
+  let kitId = d.kitId, parent = d.parent;
+  if(d.mode === 'new'){
+    // the components sit together, in the panel's order, where the first of them is now
+    const firstInDom = kbChapterRows(owner).find(r => rows.includes(r));
+    let anchor = firstInDom.previousElementSibling;
+    rows.forEach(r => { bomBody.insertBefore(r, anchor ? anchor.nextElementSibling : bomBody.firstElementChild); anchor = r; });
+    const res = createKit(rows, rows[0], {name: d.name.trim(), code: d.code.trim(), desc: d.desc.replace(/^\s+|\s+$/g, ''), qty: d.qty});
+    if(!res){ closeKitPanel(); return; }
+    kitId = res.kitId; parent = res.parent;
+    setKitLineTexts(parent, d.name.trim(), d.code.trim(), d.desc.replace(/^\s+|\s+$/g, ''));
+  } else {
+    setKitMembers(kitId, rows);
+    let anchor = parent;
+    rows.forEach(r => { if(anchor.nextElementSibling !== r) bomBody.insertBefore(r, anchor.nextElementSibling); anchor = r; });
+    setKitLineTexts(parent, d.name.trim(), d.code.trim(), d.desc.replace(/^\s+|\s+$/g, ''));
+    const q = parent.querySelector('.in-qty');
+    if(q && Number(q.value) !== d.qty){ q.value = d.qty; q.dispatchEvent(new Event('input', {bubbles: true})); }
+  }
+  rows.forEach(r => rowRecalcOutputs(r));
+  refreshKitsInChapter(owner);
+  bomRenumberChapter(owner);
+  recalcGroupTotal(owner);
+  if(typeof recalcProjectTotal === 'function') recalcProjectTotal();
+  const mode = d.mode, n = rows.length, kq = d.qty;
+  closeKitPanel();
+  if(parent) flashNewRow(parent);
+  showKitToast(mode === 'new' ? `Kit created · ${n} component${n === 1 ? '' : 's'}, ${kq} kit${kq === 1 ? '' : 's'}` : 'Kit saved',
+    mode === 'new' ? () => {
+      ungroupKit(kitId);
+      created.forEach(r => r.remove());
+      qtyBefore.forEach((v, r) => { const q = r.querySelector('.in-qty'); if(q){ q.value = v; q.dispatchEvent(new Event('input', {bubbles: true})); } });
+      bomRenumberChapter(owner); recalcGroupTotal(owner);
+      if(typeof recalcProjectTotal === 'function') recalcProjectTotal();
+    } : null);
+}
+let kbToastTimer = null;
+function showKitToast(text, undo){
+  document.getElementById('kbToast')?.remove();
+  const t = document.createElement('div'); t.className = 'kb-toast'; t.id = 'kbToast'; t.setAttribute('role', 'status');
+  t.innerHTML = `<span>${escapeHtml(text)}</span>${undo ? '<button type="button" data-undo>Undo</button>' : ''}<button type="button" data-x aria-label="Close">×</button>`;
+  document.body.appendChild(t);
+  const close = () => { t.remove(); clearTimeout(kbToastTimer); };
+  t.querySelector('[data-x]').addEventListener('click', close);
+  if(undo) t.querySelector('[data-undo]').addEventListener('click', () => { close(); undo(); });
+  clearTimeout(kbToastTimer); kbToastTimer = setTimeout(close, 8000);
+}
+// ---- tick boxes on the Offer Lines + action bar ----
+function kbEligible(r){
+  return !READ_ONLY && (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !r.dataset.kitId && !isServicesRow(r);
+}
+function kbSyncSelectors(){
+  if(typeof bomBody === 'undefined') return;
+  bomBody.querySelectorAll('tr[data-kind]').forEach(r => {
+    const has = r.querySelector('input.kb-sel');
+    if(kbEligible(r)){
+      if(!has){
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.className = 'kb-sel'; cb.title = 'Select — then "Create kit" in the bar at the bottom';
+        cb.setAttribute('aria-label', 'Select this line');
+        cb.addEventListener('change', kbUpdateSelBar);
+        cb.addEventListener('pointerdown', e => e.stopPropagation());
+        r.cells[0].prepend(cb);
+      }
+    } else if(has){ has.remove(); r.classList.remove('kb-selected'); }
+  });
+  kbUpdateSelBar();
+}
+function kbSelectedRows(){ return typeof bomBody === 'undefined' ? [] : [...bomBody.querySelectorAll('input.kb-sel:checked')].map(cb => cb.closest('tr')).filter(Boolean); }
+function kbClearSelection(){ if(typeof bomBody !== 'undefined') bomBody.querySelectorAll('input.kb-sel:checked').forEach(cb => { cb.checked = false; }); kbUpdateSelBar(); }
+function kbUpdateSelBar(){
+  if(typeof bomBody === 'undefined') return;
+  bomBody.querySelectorAll('tr.kb-selected').forEach(r => r.classList.remove('kb-selected'));
+  const sel = kbSelectedRows();
+  sel.forEach(r => r.classList.add('kb-selected'));
+  let bar = document.getElementById('kbSelBar');
+  if(!sel.length || KB){ if(bar) bar.remove(); return; }
+  if(!bar){ bar = document.createElement('div'); bar.className = 'kb-selbar'; bar.id = 'kbSelBar'; document.body.appendChild(bar); }
+  const owners = [...new Set(sel.map(r => r.dataset.groupOf))];
+  const one = owners.length === 1;
+  const kits = one ? [...new Set(kbChapterRows(owners[0]).filter(isKitParent).map(r => r.dataset.kitId))] : [];
+  let net = 0; sel.forEach(r => { const v = kitRowNet(r); net += v.net * v.qty; });
+  bar.innerHTML = `<span style="font-weight:600; margin-right:6px">${sel.length} line${sel.length === 1 ? '' : 's'} · ${formatMoney(net)}</span>
+    <button type="button" class="kb-pri" data-create${one ? '' : ' disabled title="The lines must be in the same chapter"'}>⊞ Create kit with these lines</button>
+    ${kits.length ? '<button type="button" data-addto>Add to kit ▾</button>' : ''}
+    ${one ? '' : '<span style="color:#F2B8B8; font-size:11.5px">lines of different chapters</span>'}
+    <button type="button" data-clear aria-label="Clear selection" style="border:none; width:34px; padding:0">×</button>`;
+  bar.querySelector('[data-create]').addEventListener('click', () => { if(one) openKitPanel({owner: owners[0], rows: sel}); });
+  bar.querySelector('[data-clear]').addEventListener('click', kbClearSelection);
+  const addto = bar.querySelector('[data-addto]');
+  if(addto) addto.addEventListener('click', e => {
+    e.stopPropagation();
+    let m = bar.querySelector('.kb-selmenu');
+    if(m){ m.remove(); return; }
+    m = document.createElement('div'); m.className = 'kb-selmenu';
+    m.innerHTML = kits.map(k => { const p = kitParentOf(k); return `<button type="button" data-kit="${escapeHtml(k)}">${escapeHtml((p.dataset.pos ? p.dataset.pos + ' · ' : '') + rowModelText(p).replace(/^↳\s*/, ''))}</button>`; }).join('');
+    bar.appendChild(m);
+    m.querySelectorAll('[data-kit]').forEach(b => b.addEventListener('click', () => openKitPanel({kitId: b.dataset.kit, addRows: sel})));
+  });
+}
+let kbSyncPending = false;
+function kbScheduleSync(){ if(kbSyncPending) return; kbSyncPending = true; requestAnimationFrame(() => { kbSyncPending = false; kbSyncSelectors(); }); }
+if(typeof bomBody !== 'undefined'){
+  new MutationObserver(kbScheduleSync).observe(bomBody, {childList: true, subtree: true, attributes: true, attributeFilter: ['data-kit-id', 'data-kit-parent', 'data-group-of']});
+  kbScheduleSync();
+}
+
 // Before "Generate Offer" rebuilds the lines: each kit as {chapter, kit line data, components}.
 function captureKitsForRegenerate(){
   const out = [];
@@ -10471,7 +11052,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.14';
+const CURRENT_VERSION = 'beta_6.15';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -10501,6 +11082,14 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.15', date:'2026-10-05', notes:[
+    'Kit Builder: un unico pannello laterale per creare, caricare e modificare i kit (sostituisce le finestre Kit / Edit / Lines). Si apre da ⊞ Kit sul capitolo, da ✎ sul kit o dalla barra in basso dopo aver spuntato le righe',
+    'Selezione righe: casella a sinistra di ogni riga libera delle Offer Lines; con righe dello stesso capitolo spuntate compare la barra "Create kit with these lines" / "Add to kit ▾"',
+    'Schede Components / Kit data / Print preview: componenti riordinabili trascinando, quantità per kit con − / +, ⊖ per togliere; "Next: kit data ›" porta a nome, codice, n. kit e descrizione (Alt+Invio); anteprima di come esce in offerta (una riga) e in BOM (esploso × n. kit)',
+    'Aggiungi componenti da: righe del capitolo, catalogo (batterie integrate + listino importato), file Excel, righe incollate da Excel; per i codici importati prezzo da listino oppure costo + ricarico %',
+    'Modifica kit: righe tolte barrate con "Restore", aggiunte in verde, contatore modifiche non salvate, prezzo / costo / margine prima e dopo, "Ungroup kit". Uscita con conferma se ci sono modifiche; "Undo" per 8 secondi dopo la creazione',
+    'Colonna Pos delle Offer Lines leggermente più larga per la casella di selezione',
+  ]},
   {version:'beta_6.14', date:'2026-10-05', notes:[
     'Save Configuration: i pulsanti ora sono "Salva" (solo JSON) e "Print report" (JSON + tutti i report / allegati nella cartella R<n>), più "Annulla". Testi nella lingua dello strumento',
   ]},

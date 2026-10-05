@@ -414,6 +414,9 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 .kb-addbtn{height:28px; padding:0 10px; border:1px solid var(--accent); background:#fff; color:var(--accent-dark); border-radius:7px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; flex:none;}
 .kb-addbtn.in{background:var(--accent-soft);}
 .kb-in{height:34px; border:1px solid var(--field-border); background:var(--field-bg); border-radius:8px; padding:0 10px; font:inherit; font-size:13px; color:var(--text); width:100%; box-sizing:border-box;}
+.kb-body.kb-dropping{outline:2px dashed var(--accent); outline-offset:-6px; background:#F5F9FF;}
+.kb-drop{display:flex; flex-direction:column; align-items:center; gap:3px; padding:14px 10px; border:2px dashed var(--accent); border-radius:10px; background:#fff; color:var(--accent-dark); font-size:12.5px; font-weight:600; cursor:pointer; text-align:center;}
+.kb-drop small{font-weight:400; color:#4B5260; font-size:11px;}
 .kb-strip{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; background:var(--bg);}
 .kb-data{display:flex; flex-direction:column; gap:8px; padding:10px; border:1px solid #BFD3F2; background:#F5F9FF; border-radius:10px;}
 .kb-grid{display:grid; grid-template-columns:minmax(0,1fr) 140px 80px; gap:8px;}
@@ -865,7 +868,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.15</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.16</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -5884,7 +5887,7 @@ function kbCompHtml(){
   return `<div class="kb-sec"><span>Components · drag to reorder</span><span>Per kit</span></div>
     ${items || '<div class="kb-note">No components yet — add them below: lines of this chapter, the catalog, an Excel file or rows pasted from Excel.</div>'}
     ${d.msg ? `<div class="kb-warn">${escapeHtml(d.msg)}</div>` : ''}
-    <button type="button" class="kb-add-toggle" data-addtoggle aria-expanded="${d.addOpen}">${d.addOpen ? '− Hide' : '+ Add components'} (chapter lines · catalog · Excel · paste)</button>
+    <button type="button" class="kb-add-toggle" data-addtoggle aria-expanded="${d.addOpen}">${d.addOpen ? '− Hide' : '+ Add components'} (chapter lines · catalog · Excel · paste) — or drop an Excel file here</button>
     ${d.addOpen ? kbAddHtml() : ''}`;
 }
 function kbAddHtml(){
@@ -5915,7 +5918,7 @@ function kbAddHtml(){
     const items = d.imported || [];
     body = (isPaste
       ? `<label class="kb-lab">Copy the cells in Excel (Qty · Code · Description · Cost) and paste them here<textarea class="kb-ta" id="kbPaste" style="font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; min-height:90px" placeholder="1\t519100001304\tAmpace battery cabinet\t13711,75">${escapeHtml(d.pasteText)}</textarea></label>`
-      : `<label class="kb-lab">Excel file with the columns quantity, code, description, cost (cost may be empty)<input type="file" id="kbFile" accept=".xlsx,.xls,.xlsm,.csv"></label>${d.importName ? `<div class="kb-note">${escapeHtml(d.importName)}</div>` : ''}`)
+      : `<label class="kb-drop">⤓ Drag an Excel BOM here, or click to choose it<small>columns: quantity · code · description · cost (cost may be empty; title and note rows are skipped)</small><input type="file" id="kbFile" accept=".xlsx,.xls,.xlsm,.csv" style="display:none"></label>${d.importName ? `<div class="kb-note">${escapeHtml(d.importName)}</div>` : ''}`)
       + `<div id="kbImp">${kbImportHtml()}</div>`;
   }
   return `<div class="kb-add"><div class="kb-subtabs">${st('rows', 'Chapter lines')}${st('cat', 'Catalog')}${st('excel', 'Excel')}${st('paste', 'Paste')}</div>${body}</div>`;
@@ -6024,6 +6027,18 @@ function kbWire(panel){
     el.addEventListener('dragend', () => { from = null; });
   });
   $('[data-addtoggle]')?.addEventListener('click', () => { d.addOpen = !d.addOpen; renderKitPanel(); });
+  // an Excel BOM dropped anywhere on the panel's body: read like the sales-code BOM (qty, code,
+  // description, cost) and shown in the Excel tab, ready to add
+  const body = $('.kb-body');
+  const isFileDrag = e => [...(e.dataTransfer?.types || [])].includes('Files');
+  body.addEventListener('dragover', e => { if(!isFileDrag(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; body.classList.add('kb-dropping'); });
+  body.addEventListener('dragleave', e => { if(e.target === body || !body.contains(e.relatedTarget)) body.classList.remove('kb-dropping'); });
+  body.addEventListener('drop', e => {
+    if(!isFileDrag(e)) return;
+    e.preventDefault(); body.classList.remove('kb-dropping');
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f) kbLoadExcel(f);
+  });
   $$('[data-addtab]').forEach(b => b.addEventListener('click', () => { d.addTab = b.dataset.addtab; d.imported = d.addTab === 'paste' ? kbParsePaste(d.pasteText) : null; d.importName = ''; renderKitPanel(); }));
   $$('[data-row]').forEach(cb => cb.addEventListener('change', () => {
     const r = d._rowList[Number(cb.dataset.row)];
@@ -6042,13 +6057,7 @@ function kbWire(panel){
     kbAddNew({model: x.model, code: x.code, desc: x.desc, gross: x.price, cost: x.cost, disc: 0, ext: !!x.ext}, 1, 'catalog');
     d.msg = ''; kbAutoTexts(); renderKitPanel();
   }));
-  $('#kbFile')?.addEventListener('change', async e => {
-    const f = e.target.files && e.target.files[0];
-    if(!f) return;
-    try{ d.imported = await readSubBomFile(f); d.importName = d.imported.length ? `${d.imported.length} rows read from "${f.name}"` : `No rows found in "${f.name}" — check the columns.`; }
-    catch(err){ d.imported = null; d.importName = `Could not read the file: ${err.message || err}`; }
-    renderKitPanel();
-  });
+  $('#kbFile')?.addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if(f) kbLoadExcel(f); });
   const pasteTa = $('#kbPaste');
   if(pasteTa){
     pasteTa.addEventListener('input', () => { d.pasteText = pasteTa.value; d.imported = kbParsePaste(d.pasteText); const box = document.getElementById('kbImp'); if(box){ box.innerHTML = kbImportHtml(); kbWireImport(panel); } });
@@ -6066,6 +6075,15 @@ function kbWire(panel){
   }
   $('[data-fromfirst]')?.addEventListener('click', () => { d.autoTexts = true; kbAutoTexts(); renderKitPanel(); });
 }
+async function kbLoadExcel(f){
+  const d = KB;
+  if(!d) return;
+  d.tab = 'comp'; d.addOpen = true; d.addTab = 'excel';
+  if(!/\.(xlsx|xlsm|xls|csv)$/i.test(f.name || '')){ d.imported = null; d.importName = `"${f.name}" is not an Excel file (.xlsx / .xls / .csv).`; renderKitPanel(); return; }
+  try{ d.imported = await readSubBomFile(f); d.importName = d.imported.length ? `${d.imported.length} rows read from "${f.name}" — check them, choose the selling price, then add` : `No rows found in "${f.name}" — the columns are quantity, code, description, cost.`; }
+  catch(err){ d.imported = null; d.importName = `Could not read the file: ${err.message || err}`; }
+  if(KB === d) renderKitPanel();
+}
 function kbWireImport(panel){
   const d = KB;
   panel.querySelectorAll('input[name="kbPricing"]').forEach(r => r.addEventListener('change', () => { d.pricing = r.value; }));
@@ -6077,7 +6095,7 @@ function kbWireImport(panel){
     (d.imported || []).forEach(it => {
       const cat = kbCatalogByCode(it.code);
       const gross = d.pricing === 'markup' ? Math.round((it.cost || 0) * (1 + d.markup / 100) * 100) / 100 : (cat ? cat.price : 0);
-      kbAddNew({model: cat ? cat.model : it.code, code: it.code, desc: it.desc || (cat ? cat.desc : ''), gross, cost: it.cost || (cat ? cat.cost : 0), disc: 0, ext: !!(cat && cat.ext)}, it.qty, src);
+      kbAddNew({model: cat ? cat.model : (it.code || it.desc), code: it.code, desc: it.desc || (cat ? cat.desc : ''), gross, cost: it.cost || (cat ? cat.cost : 0), disc: 0, ext: !!(cat && cat.ext)}, it.qty, src);
     });
     d.imported = null; d.importName = ''; d.pasteText = ''; d.msg = '';
     kbAutoTexts(); renderKitPanel();
@@ -11052,7 +11070,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.15';
+const CURRENT_VERSION = 'beta_6.16';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -11082,6 +11100,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.16', date:'2026-10-05', notes:[
+    'Kit Builder: si può trascinare un file Excel sul pannello (o su "+ Add components"): viene letto come la BOM del codice di vendita — colonne Q.tà, Codice, Descrizione, Costo; righe di titolo e note saltate, costo vuoto accettato — e mostrato nella scheda Excel, pronto da aggiungere al kit con i codici della BOM',
+  ]},
   {version:'beta_6.15', date:'2026-10-05', notes:[
     'Kit Builder: un unico pannello laterale per creare, caricare e modificare i kit (sostituisce le finestre Kit / Edit / Lines). Si apre da ⊞ Kit sul capitolo, da ✎ sul kit o dalla barra in basso dopo aver spuntato le righe',
     'Selezione righe: casella a sinistra di ogni riga libera delle Offer Lines; con righe dello stesso capitolo spuntate compare la barra "Create kit with these lines" / "Add to kit ▾"',

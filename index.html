@@ -381,6 +381,8 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 .sb-grid label.wide{grid-column:1 / -1;} .sb-grid input{font-size:13px; padding:7px 8px; border:1px solid var(--field-border); border-radius:6px; color:var(--text);}
 .kit-desc-view{white-space:pre-wrap; color:#1F4E9C; font-weight:500; margin-bottom:3px; padding-left:6px; border-left:2px solid #7FA6E0;}
 #bomBody tr.kit-has-desc .desc-text{color:var(--dim); font-size:11px;}
+.kit-pick tr.kit-pick-sep td{border-top:2px solid var(--panel-border);}
+.kit-out:hover{color:#B26A00; border-color:#B26A00;}
 .kit-desc-ta{flex:1; width:100%; font-family:inherit; font-size:13px; padding:7px 8px; border:1px solid var(--field-border); border-radius:6px; resize:vertical; min-height:34px; color:var(--text); line-height:1.4;}
 .kit-alt-hint{font-size:10.5px; color:#9AA3AF; font-weight:400;}
 .sb-out{font-size:13px; color:var(--text); padding:7px 0;}
@@ -545,6 +547,12 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   display:flex; justify-content:space-between; align-items:center; gap:12px;
 }
 .acc-modal-header h3{margin:0; font-size:15px; font-weight:600; color:var(--text);}
+/* movable windows: drag by the title bar; double-click it to put the window back in the middle */
+.settings-overlay .acc-modal-header, .acc-modal-overlay .acc-modal-header{cursor:move; touch-action:none; user-select:none;}
+.settings-overlay .acc-modal-header :is(button, input, select, textarea, a), .acc-modal-overlay .acc-modal-header :is(button, input, select, textarea, a){cursor:pointer;}
+.settings-overlay.dlg-dragging, .acc-modal-overlay.dlg-dragging{background:rgba(20,22,26,0.12) !important;}
+.dlg-dragging, .dlg-dragging *{cursor:move !important;}
+.dlg-moved{box-shadow:0 28px 72px rgba(20,22,26,0.36) !important;}
 .acc-modal-sub{font-size:11.5px; font-weight:300; color:var(--dim); margin:2px 0 0;}
 .acc-modal-close{
   background:none; border:none; font-size:20px; color:var(--dim);
@@ -779,7 +787,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.08</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.11</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -5256,7 +5264,7 @@ function rowRecalcOutputs(row){
 function clearKitLook(r){
   r.classList.remove('kit-head', 'kit-child', 'kit-member', 'kit-parent');
   r.style.display = '';
-  r.querySelectorAll('.kit-chip, .kit-ren').forEach(el => el.remove());
+  r.querySelectorAll('.kit-chip, .kit-ren, .kit-out').forEach(el => el.remove());
   if(!READ_ONLY) r.querySelectorAll('.in-gross, .in-disc, .in-cost').forEach(el => { if(r.dataset.kind !== 'delivery') el.disabled = false; });
 }
 function applyKitLook(parent, members){
@@ -5271,6 +5279,14 @@ function applyKitLook(parent, members){
     r.style.display = open ? '' : 'none';
     r.querySelectorAll('.kit-chip, .kit-ren').forEach(el => el.remove());
     const q = r.querySelector('.in-qty'); if(q) q.title = 'Quantity per kit';
+    if(!r.querySelector('.kit-out')){
+      const out = document.createElement('button');
+      out.type = 'button'; out.className = 'row-remove kit-out'; out.textContent = '⊖';
+      out.title = 'Take this line out of the kit (it stays in the chapter as a normal line)';
+      out.disabled = READ_ONLY;
+      out.addEventListener('click', e => { e.stopPropagation(); removeFromKit(r); });
+      r.querySelector('.bom-actions').prepend(out);
+    }
   });
   let chip = parent.querySelector('.kit-chip');
   if(!chip){
@@ -5389,6 +5405,88 @@ function createKit(rows, main, opts = {}){
   recalcGroupTotal(owner);
   return {kitId, parent};
 }
+// Changes the component lines of an existing kit: lines no longer ticked go back to being normal
+// lines of the chapter (right under the kit), newly ticked ones move under the kit line with
+// their quantity as quantity per kit. The kit line, its name/code/description and quantity stay.
+function setKitMembers(kitId, rows){
+  const parent = kitParentOf(kitId);
+  if(!parent) return false;
+  const owner = parent.dataset.groupOf;
+  const current = kitMembersOf(kitId);
+  const keep = rows.filter(Boolean);
+  if(!keep.length) return false;
+  const released = current.filter(r => !keep.includes(r));
+  const added = keep.filter(r => !current.includes(r));
+  KIT_BULK++;
+  released.forEach(r => { delete r.dataset.kitId; delete r.dataset.kitOpen; clearKitLook(r); });
+  added.forEach(r => {
+    r.dataset.kitId = kitId;
+    delete r.dataset.kitParent; delete r.dataset.kitHead; delete r.dataset.kitName; delete r.dataset.kitDesc;
+    if(r.dataset.groupOf !== owner){ const og = r.dataset.groupOf; r.dataset.groupOf = owner; KIT_BULK--; recalcGroupTotal(og); KIT_BULK++; }
+  });
+  KIT_BULK--;
+  refreshKitsInChapter(owner);
+  // released lines reappear right under the kit, in their previous order
+  const members = kitMembersOf(kitId);
+  let anchor = members.length ? members[members.length - 1] : parent;
+  released.forEach(r => { bomBody.insertBefore(r, anchor.nextElementSibling); anchor = r; });
+  bomRenumberChapter(owner);
+  recalcGroupTotal(owner);
+  added.concat(released).forEach(flashNewRow);
+  return true;
+}
+function removeFromKit(row){
+  if(READ_ONLY || !isKitMember(row)) return;
+  const kitId = row.dataset.kitId;
+  const rest = kitMembersOf(kitId).filter(r => r !== row);
+  if(!rest.length){ ungroupKit(kitId); return; }   // last line out: the kit goes away
+  setKitMembers(kitId, rest);
+}
+// Window to change a kit's lines: its current components (ticked) and the other lines of the
+// chapter (not in any kit), to add or remove in one go.
+function openKitLinesDialog(kitId){
+  if(READ_ONLY) return;
+  const parent = kitParentOf(kitId);
+  if(!parent) return;
+  const owner = parent.dataset.groupOf;
+  const members = kitMembersOf(kitId);
+  const others = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)]
+    .filter(r => (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !r.dataset.kitId);
+  const list = [...members, ...others];
+  const line = r => `${escapeHtml(rowModelText(r).replace(/^↳\s*/, '') || '')}${rowCodeText(r) ? ` <span class="kit-code">${escapeHtml(rowCodeText(r))}</span>` : ''}`;
+  const ov = document.createElement('div');
+  ov.className = 'settings-overlay';
+  ov.id = 'kitLinesOverlay';
+  ov.style.display = 'flex';
+  ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:760px;">
+    <div class="acc-modal-header"><h3>Kit lines — ${escapeHtml(rowModelText(parent).replace(/^↳\s*/, ''))}</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
+    <div style="padding:14px 18px; max-height:78vh; overflow:auto;">
+      <p class="pf-hint" style="margin-top:0;">Ticked = component of the kit (its quantity is per kit). Untick to take a line out — it stays in the chapter as a normal line; tick another line of the chapter to add it. The kit's name, code, description and quantity don't change.</p>
+      <table class="kit-pick"><thead><tr><th>In kit</th><th class="num">Qty</th><th>Line</th><th class="num">Total</th></tr></thead><tbody>
+        ${list.map((r, i) => { const v = kitRowNet(r); const inKit = members.includes(r);
+          return `<tr${!inKit && i === members.length ? ' class="kit-pick-sep"' : ''}><td><input type="checkbox" data-i="${i}"${inKit ? ' checked' : ''}></td><td class="num">${escapeHtml(String(rowQty(r)))}</td><td>${line(r)}${inKit ? '' : ' <span class="pf-hint">(not in a kit)</span>'}</td><td class="num">${formatMoney(v.net * v.qty)}</td></tr>`; }).join('')}
+      </tbody></table>
+      ${others.length ? '' : '<p class="pf-hint">No other free lines in this chapter — add one with "+ Accessory" / "+ Battery" / "+ Technology Integration", then tick it here.</p>'}
+      <p class="pf-hint" id="kitLinesMsg"></p>
+      <div class="pf-actions" style="justify-content:flex-end;">
+        <button type="button" class="btn-ghost act" data-close>Cancel</button>
+        <button type="button" class="act btn-primary" data-save>Save</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  ov.querySelector('[data-save]').addEventListener('click', () => {
+    const picked = [...ov.querySelectorAll('input[type="checkbox"]:checked')].map(cb => list[Number(cb.dataset.i)]);
+    if(!picked.length){
+      ov.querySelector('#kitLinesMsg').textContent = 'A kit needs at least one line — to dissolve it, use "Ungroup" in the Kit window.';
+      return;
+    }
+    setKitMembers(kitId, picked);
+    close();
+  });
+}
 function ungroupKit(kitId){
   const parent = kitParentOf(kitId);
   const members = kitMembersOf(kitId);
@@ -5420,6 +5518,7 @@ function openKitRenameDialog(kitId){
         <label class="wide">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea id="kitDescIn" rows="3" class="kit-desc-ta">${escapeHtml(rowDescText(parent))}</textarea></label>
       </div>
       <div class="pf-actions" style="justify-content:flex-end;">
+        <button type="button" class="btn-ghost act" data-lines style="margin-right:auto;">Lines… (add / remove)</button>
         ${defaults ? '<button type="button" class="btn-ghost act" data-reset>Use the main line</button>' : ''}
         <button type="button" class="btn-ghost act" data-close>Cancel</button>
         <button type="button" class="act btn-primary" data-save>Save</button>
@@ -5430,6 +5529,7 @@ function openKitRenameDialog(kitId){
   const close = () => ov.remove();
   ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  $('[data-lines]').addEventListener('click', () => { close(); openKitLinesDialog(kitId); });
   if($('[data-reset]')) $('[data-reset]').addEventListener('click', () => {
     $('#kitNameIn').value = defaults.model || ''; $('#kitCodeIn').value = defaults.code || ''; $('#kitDescIn').value = defaults.desc || '';
   });
@@ -5480,7 +5580,7 @@ function openKitDialog(header){
         <label>Kit quantity<input type="number" id="kitNewQty" min="1" step="1" value="1"></label>
         <label class="wide">Description in the offer (optional) <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea id="kitNewDesc" rows="1" class="kit-desc-ta" placeholder="empty = the main line's description"></textarea></label>
       </div>` : '<p class="pf-hint">All the lines of this chapter are already in a kit.</p>'}
-      ${kits.length ? `<h4 style="margin:14px 0 6px;">Kits of this chapter</h4>${kits.map(k => { const pr = kitParentOf(k); const m = kitMembersOf(k); return `<div class="kit-existing"><span>${line(pr)} <span class="pf-hint">— ${m.length} component line${m.length === 1 ? '' : 's'}</span></span><span style="display:flex; gap:6px;"><button type="button" class="btn-ghost act" data-rename="${k}">Edit…</button><button type="button" class="btn-ghost act" data-ungroup="${k}">Ungroup</button></span></div>`; }).join('')}` : ''}
+      ${kits.length ? `<h4 style="margin:14px 0 6px;">Kits of this chapter</h4>${kits.map(k => { const pr = kitParentOf(k); const m = kitMembersOf(k); return `<div class="kit-existing"><span>${line(pr)} <span class="pf-hint">— ${m.length} component line${m.length === 1 ? '' : 's'}</span></span><span style="display:flex; gap:6px;"><button type="button" class="btn-ghost act" data-rename="${k}">Edit…</button><button type="button" class="btn-ghost act" data-lines="${k}">Lines…</button><button type="button" class="btn-ghost act" data-ungroup="${k}">Ungroup</button></span></div>`; }).join('')}` : ''}
       <p class="pf-hint" id="kitMsg"></p>
       <div class="pf-actions" style="justify-content:flex-end;">
         <button type="button" class="btn-ghost act" data-close>Close</button>
@@ -5496,6 +5596,7 @@ function openKitDialog(header){
   }));
   ov.querySelectorAll('[data-ungroup]').forEach(b => b.addEventListener('click', () => { ungroupKit(b.dataset.ungroup); close(); openKitDialog(header); }));
   ov.querySelectorAll('[data-rename]').forEach(b => b.addEventListener('click', () => { close(); openKitRenameDialog(b.dataset.rename); }));
+  ov.querySelectorAll('[data-lines]').forEach(b => b.addEventListener('click', () => { close(); openKitLinesDialog(b.dataset.lines); }));
   ov.querySelector('[data-excel]').addEventListener('click', () => { close(); openSubBomImportDialog(header); });
   if(ov.querySelector('#kitNewDesc')) attachMultilineDescriptionEditor(ov.querySelector('#kitNewDesc'));
   const create = ov.querySelector('[data-create]');
@@ -6776,9 +6877,75 @@ document.getElementById('btnSaveProjectDetails').addEventListener('click', async
 // callers can finish their work first and just react to the answer whenever it comes.
 // buttons: [{label, value, primary}] — shown left to right, the primary one gets focus.
 let appDialogResolve = null;
+// ---- Movable windows: every pop-up (its title bar) can be dragged around the page, so what is
+// behind it stays visible; double-click the title bar to put it back in the middle. While dragging,
+// the dark backdrop fades so the page can be read. A window can't leave the browser page itself —
+// it stays reachable (title bar always on screen).
+(function(){
+  let drag = null, lastDown = null, swallowClickUntil = 0;
+  // the click that ends a drag or a double-click must not reach the backdrop (which closes windows)
+  document.addEventListener('click', e => {
+    if(Date.now() < swallowClickUntil && isOverlay(e.target)){ e.stopPropagation(); e.preventDefault(); }
+  }, true);
+  const isOverlay = el => el && (el.classList.contains('settings-overlay') || el.classList.contains('acc-modal-overlay'));
+  document.addEventListener('pointerdown', e => {
+    if(e.button !== 0) return;
+    const head = e.target.closest('.acc-modal-header');
+    if(!head || e.target.closest('button, input, select, textarea, a, label, [contenteditable="true"]')) return;
+    const box = head.closest('.settings-modal, .acc-modal');
+    if(!box || !isOverlay(box.parentElement)) return;
+    e.preventDefault();
+    // a second press on the same title bar within 400 ms = double-click → back to the middle
+    // (detected here: the browser's own dblclick doesn't fire once pointerdown is taken over)
+    const now = Date.now();
+    if(lastDown && lastDown.box === box && now - lastDown.t < 400 && Math.hypot(e.clientX - lastDown.x, e.clientY - lastDown.y) < 6){
+      lastDown = null; resetDialogPosition(box); swallowClickUntil = now + 500; return;
+    }
+    lastDown = {box, t: now, x: e.clientX, y: e.clientY};
+    drag = {box, ov: box.parentElement, head, sx: e.clientX, sy: e.clientY,
+            dx0: Number(box.dataset.dx) || 0, dy0: Number(box.dataset.dy) || 0, rect: box.getBoundingClientRect(), id: e.pointerId};
+    drag.ov.classList.add('dlg-dragging');
+    try{ head.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  document.addEventListener('pointermove', e => {
+    if(!drag || e.pointerId !== drag.id) return;
+    const r = drag.rect, keep = 80;
+    let mx = e.clientX - drag.sx, my = e.clientY - drag.sy;
+    // the title bar stays on screen: at least `keep` px of the window horizontally, top edge in view
+    mx = Math.min(Math.max(mx, keep - r.right), window.innerWidth - keep - r.left);
+    my = Math.min(Math.max(my, -r.top), window.innerHeight - 48 - r.top);
+    const dx = drag.dx0 + mx, dy = drag.dy0 + my;
+    drag.box.style.transform = `translate(${dx}px, ${dy}px)`;
+    drag.box.dataset.dx = dx; drag.box.dataset.dy = dy;
+    drag.box.classList.toggle('dlg-moved', !!(dx || dy));
+  });
+  const end = e => {
+    if(!drag || (e && e.pointerId !== undefined && e.pointerId !== drag.id)) return;
+    drag.ov.classList.remove('dlg-dragging');
+    swallowClickUntil = Date.now() + 300;
+    try{ drag.head.releasePointerCapture(drag.id); }catch(err){}
+    drag = null;
+  };
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', end);
+  document.addEventListener('dblclick', e => {
+    const head = e.target.closest('.acc-modal-header');
+    if(!head || e.target.closest('button, input, select, textarea, a')) return;
+    const box = head.closest('.settings-modal, .acc-modal');
+    if(!box || !isOverlay(box.parentElement)) return;
+    resetDialogPosition(box);
+  });
+})();
+function resetDialogPosition(box){
+  if(!box) return;
+  box.style.transform = '';
+  delete box.dataset.dx; delete box.dataset.dy;
+  box.classList.remove('dlg-moved');
+}
 function openAppDialog({title = '', message = '', question = '', buttons = [{label: 'OK', value: true, primary: true}]} = {}){
   if(appDialogResolve){ const prev = appDialogResolve; appDialogResolve = null; prev(null); } // a newer dialog replaces an unanswered one
   const overlay = document.getElementById('appDialogOverlay');
+  resetDialogPosition(overlay.querySelector('.settings-modal'));
   document.getElementById('appDialogTitle').textContent = title;
   document.getElementById('appDialogMessage').textContent = message;
   document.getElementById('appDialogMessage').style.display = message ? '' : 'none';
@@ -7719,7 +7886,8 @@ function offerFinalNet(){
     return Math.round(d.grandTotal * (1 - (Number(PROJECT_DISCOUNT) || 0) / 100) * (Number(CURRENCY_RATE) || 1) * 100) / 100;
   }catch(e){ return null; }
 }
-function collectOfferRows(){
+function collectOfferRows(opts = {}){
+  const explodeKits = !!opts.explodeKits;
   const groups = [];
   let current = null;
   let currentHeaderRow = null;
@@ -7733,9 +7901,19 @@ function collectOfferRows(){
       return;
     }
     if(kind === 'total' || !current) return;
-    // a kit is ONE offer line — its own line; the component lines are inside its price
-    if(isKitMember(r)) return;
-    const qty = rowQty(r);
+    // a kit is ONE offer line — its own line; the component lines are inside its price.
+    // explodeKits (internal margin sheet): the kit line is replaced by its components, each with
+    // quantity per kit × kit quantity, after a label line {kitLabel} carrying no figures.
+    if(explodeKits && isKitParent(r)){
+      current.lines.push({kitLabel: true, label: rowModelText(r).replace(/^↳\s*/, ''), code: rowCodeText(r), kitQty: Number(rowQty(r)) || 0});
+      return;
+    }
+    if(isKitMember(r) && !explodeKits) return;
+    let qty = rowQty(r);
+    if(isKitMember(r)){
+      const kp = kitParentOf(r.dataset.kitId);
+      qty = (Number(qty) || 0) * (kp ? (Number(rowQty(kp)) || 0) : 1);
+    }
     const model = rowModelText(r);
     const code = rowCodeText(r);
     const desc = String(rowDescText(r)).replace(/\r\n?/g, '\n');
@@ -8003,8 +8181,10 @@ function xlsxStylesXml(list){
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${numFmts.length ? `<numFmts count="${numFmts.length}">${numFmts.map((f, i) => `<numFmt numFmtId="${164 + i}" formatCode="${xlsxEsc(f)}"/>`).join('')}</numFmts>` : ''}<fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills><borders count="${borders.length}">${borders.join('')}</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
 }
-async function buildXlsxBlob(ws){
+// ws: one sheet or an array of sheets (one workbook, shared styles; each sheet may carry its logo)
+async function buildXlsxBlob(wsArg){
   if(typeof JSZip === 'undefined') throw new Error('the zip library did not load');
+  const sheets = Array.isArray(wsArg) ? wsArg : [wsArg];
   const styleKeys = [], styleList = [];
   const styleIndex = s => {
     if(!s) return 0;
@@ -8013,6 +8193,7 @@ async function buildXlsxBlob(ws){
     if(i < 0){ styleKeys.push(k); styleList.push(s); i = styleKeys.length - 1; }
     return i + 1;
   };
+  const sheetXmlOf = ws => {
   const rowsXml = [];
   for(let r = 1; r <= ws.maxRow; r++){
     const cells = [];
@@ -8038,12 +8219,14 @@ async function buildXlsxBlob(ws){
   }
   const lastRef = xlsxRef(Math.max(ws.maxRow, 1), Math.max(ws.maxCol, 1));
   const pane = ws.freezeRow ? `<pane ySplit="${ws.freezeRow}" topLeftCell="A${ws.freezeRow + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A${ws.freezeRow + 1}" sqref="A${ws.freezeRow + 1}"/>` : '';
-  const sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${lastRef}"/><sheetViews><sheetView workbookViewId="0" zoomScale="90" zoomScaleNormal="90">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>${ws.cols.length ? `<cols>${ws.cols.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols>` : ''}<sheetData>${rowsXml.join('')}</sheetData>${ws.merges.length ? `<mergeCells count="${ws.merges.length}">${ws.merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : ''}<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>${ws.image ? '<drawing r:id="rId1"/>' : ''}</worksheet>`;
 
+  };
+  const sheetXmls = sheets.map(sheetXmlOf);
   const zip = new JSZip();
   zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${ws.image ? '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' : ''}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`);
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((w, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((w, i) => w.image ? `<Override PartName="/xl/drawings/drawing${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>` : '').join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`);
   zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`);
   const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
@@ -8052,23 +8235,26 @@ async function buildXlsxBlob(ws){
   zip.file('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Microsoft Excel</Application></Properties>`);
   zip.file('xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${xlsxEsc(ws.name)}" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`);
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((w, i) => `<sheet name="${xlsxEsc(String(w.name).replace(/[\\/?*:\[\]]/g, ' ').slice(0, 31))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`);
   zip.file('xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
-  zip.file('xl/worksheets/sheet1.xml', sheetXml);
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((w, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+  sheetXmls.forEach((x, i) => zip.file(`xl/worksheets/sheet${i + 1}.xml`, x));
   zip.file('xl/styles.xml', xlsxStylesXml(styleList));
+  sheets.forEach((ws, si) => {
+  const n = si + 1;
   if(ws.image){
     const {dataUrl, heightPx} = ws.image;
     const {w, h} = xlsxPngSize(dataUrl);
     const cy = Math.round(heightPx * 9525), cx = Math.round(heightPx * (w / h) * 9525);
-    zip.file('xl/worksheets/_rels/sheet1.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>`);
-    zip.file('xl/drawings/_rels/drawing1.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/></Relationships>`);
-    zip.file('xl/drawings/drawing1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    zip.file(`xl/worksheets/_rels/sheet${n}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${n}.xml"/></Relationships>`);
+    zip.file(`xl/drawings/_rels/drawing${n}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${n}.png"/></Relationships>`);
+    zip.file(`xl/drawings/drawing${n}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>38100</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>38100</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`);
-    zip.file('xl/media/image1.png', String(dataUrl).split(',')[1], {base64: true});
+    zip.file(`xl/media/image${n}.png`, String(dataUrl).split(',')[1], {base64: true});
   }
+  });
   return zip.generateAsync({type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
 // Rough row height for wrapped text, since Excel doesn't re-measure rows of a generated file.
@@ -8084,13 +8270,13 @@ const XLSX_GRID = 'D9D9D9';
 // sum of the chapter totals, final price = project price × (1 − project discount). The margin
 // variant adds Unit Cost, Total Cost = Unit Cost × Qty and Margin % = (Net Total − Cost) / Net Total.
 // Every figure is written in the offer currency (EUR list prices × the current rate).
-function buildOfferWorksheet(withMargin){
+function buildOfferWorksheet(withMargin, opts = {}){
   const info = getProjectInfo();
-  const data = collectOfferRows();
+  const data = collectOfferRows({explodeKits: !!opts.explodeKits});
   const rate = Number(CURRENCY_RATE) || 1;
   const money = xlsxMoneyFormat();
   const nCols = withMargin ? 11 : 8;
-  const ws = createXlsxSheet('Offer');
+  const ws = createXlsxSheet(opts.sheetName || 'Offer');
   ws.cols = withMargin ? [7, 18, 16, 58, 14, 10, 14, 16, 13, 15, 10] : [7, 20, 18, 64, 15, 11, 15, 17];
   ws.image = {dataUrl: LOGO_B64, heightPx: 64};
 
@@ -8117,6 +8303,7 @@ function buildOfferWorksheet(withMargin){
     sumPct: {numFmt: '0.00%'},
     finalText: {font: {b: true, color: 'FFFFFF', sz: 13}, fill: '4472C4', align: {h: 'left', v: 'center'}},
     finalMoney: {font: {b: true, color: 'FFFFFF', sz: 13}, fill: '4472C4', numFmt: money, align: {h: 'right', v: 'center'}},
+    kitLabel: {font: {b: true, i: true, color: '404040'}, fill: 'EDEDED', border: XLSX_GRID, align: {h: 'left', v: 'center'}},
   };
 
   // header block: logo (top-left) + the red project info box on the right, as on the PDF
@@ -8132,7 +8319,7 @@ function buildOfferWorksheet(withMargin){
     xlsxMerge(ws, r, nCols - 1, r, nCols, {v: String(val ?? ''), s: S.infoValue});
     ws.heights[r] = 17;
   });
-  if(withMargin) xlsxSet(ws, 5, 1, {v: 'INTERNAL — includes cost & margin', s: S.internal});
+  if(withMargin) xlsxSet(ws, 5, 1, {v: 'INTERNAL — includes cost & margin' + (opts.explodeKits ? ' — kits exploded into their components' : ''), s: S.internal});
 
   const headRow = 7;
   const heads = ['Qty','Model','Code','Description','Standard List Price','Discount %','Net Unit Price','Net Total Price'];
@@ -8150,6 +8337,12 @@ function buildOfferWorksheet(withMargin){
     r++;
     const first = r;
     g.lines.forEach(l => {
+      if(l.kitLabel){
+        xlsxMerge(ws, r, 1, r, nCols, {v: `KIT × ${l.kitQty} — ${l.label}${l.code ? '  (' + l.code + ')' : ''}`, s: S.kitLabel});
+        ws.heights[r] = 18;
+        r++;
+        return;
+      }
       const gross = l.gross * rate, cost = l.cost * rate, disc = l.disc / 100;
       const net = gross * (1 - disc), tot = net * l.qty, tcost = cost * l.qty;
       xlsxSet(ws, r, 1, {v: Number(l.qty) || 0, s: S.qty});
@@ -8281,7 +8474,11 @@ function prepareOfferXlsxFile(withMargin){
   if(typeof JSZip === 'undefined'){
     return {filename: `${safeRef}_Offer_R${REVISION}${suffix}.xls`, blob: new Blob(['\ufeff', buildOfferHtmlDoc(withMargin)], {type:'application/vnd.ms-excel'})};
   }
-  return {filename: `${safeRef}_Offer_R${REVISION}${suffix}.xlsx`, ws: buildOfferWorksheet(withMargin)};
+  // with margin: sheet 1 = the offer as sent (kits as one line), sheet 2 = the kits exploded
+  const ws = withMargin
+    ? [buildOfferWorksheet(true, {sheetName: 'Offer (kit)'}), buildOfferWorksheet(true, {sheetName: 'Offer (kit exploded)', explodeKits: true})]
+    : buildOfferWorksheet(false);
+  return {filename: `${safeRef}_Offer_R${REVISION}${suffix}.xlsx`, ws};
 }
 function prepareBomXlsxFile(){
   const safeRef = (getProjectInfo().ref || 'draft').replace(/[^a-z0-9_-]/gi,'_');
@@ -10239,7 +10436,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.08';
+const CURRENT_VERSION = 'beta_6.11';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -10269,6 +10466,16 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.11', date:'2026-10-05', notes:[
+    'Excel "Offer with margin" su 2 fogli: "Offer (kit)" con i kit come voce unica (come in offerta) e "Offer (kit exploded)" con ogni kit esploso nei suoi componenti (quantità × n. kit, prezzo, costo e margine riga per riga), sotto una riga grigia col nome del kit. Totali, sconto progetto e Overall Margin con formule su entrambi i fogli',
+  ]},
+  {version:'beta_6.10', date:'2026-10-05', notes:[
+    'Finestre spostabili: tutte le finestre a pop-up si trascinano dalla barra del titolo per vedere la pagina sotto (durante lo spostamento lo sfondo scuro si schiarisce); doppio clic sulla barra del titolo le riporta al centro. Restano dentro la pagina del browser, con la barra del titolo sempre raggiungibile',
+  ]},
+  {version:'beta_6.09', date:'2026-09-30', notes:[
+    'Kit modificabili senza smontarli: "Lines… (add / remove)" nel ✎ del kit (o "Lines…" nella finestra Kit) mostra le righe del kit spuntate e le altre righe libere del capitolo: si spunta per aggiungere, si toglie la spunta per togliere. Nome, codice, descrizione e quantità del kit restano',
+    'Sulle righe del kit c\'è anche ⊖ per toglierne una al volo: torna una riga normale del capitolo, subito sotto il kit (togliendo l\'ultima il kit si scioglie)',
+  ]},
   {version:'beta_6.08', date:'2026-09-30', notes:[
     'BOM (PDF ed Excel) senza evidenza della nidificazione: la riga del kit e il codice di vendita da Excel non compaiono, al loro posto ci sono solo i componenti, ciascuno con la quantità totale (quantità per kit × numero di kit × sistemi). Tolta la colonna "Pos."; restano Qty / Model / Code / Description con i titoli dei capitoli',
     'Le posizioni 1.5 / 1.5.1 … restano nelle Offer Lines, dove servono per lavorare',

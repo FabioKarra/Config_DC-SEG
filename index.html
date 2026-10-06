@@ -147,6 +147,13 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 .rev-line{display:grid; grid-template-columns:110px 1fr; gap:8px; font-size:12.5px; padding:2px 0; line-height:1.45;}
 .rev-k{color:var(--dim);} .rev-files a{color:var(--accent-dark);}
 
+/* ---- ⟳ refresh from SharePoint (signed in only) ---- */
+.sp-refresh-btn{display:none; width:38px; height:38px; border-radius:10px; border:1px solid var(--panel-border); background:#fff; color:var(--accent-dark); align-items:center; justify-content:center; cursor:pointer;}
+.app-topbar:has(.signout-topright-btn.visible) .sp-refresh-btn{display:flex;}
+.sp-refresh-btn:hover{border-color:var(--accent); background:#EAF0FB;}
+.sp-refresh-btn.busy{pointer-events:none; opacity:.75;}
+.sp-refresh-btn.busy svg{animation:spRefreshSpin .9s linear infinite;}
+@keyframes spRefreshSpin{to{transform:rotate(360deg);}}
 /* ---- 🔔 my deadlines (offers in progress assigned to me) ---- */
 .deadline-bell{display:none; position:relative; width:38px; height:38px; border-radius:10px; border:1px solid var(--panel-border); background:#fff; font-size:16px; align-items:center; justify-content:center;}
 .app-topbar:has(.signout-topright-btn.visible) .deadline-bell{display:flex;}
@@ -859,6 +866,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         </select>
       </div>
       <button type="button" class="signin-topright-btn" id="btnOpenSpLogin"><span>🔐</span><span data-i18n="signIn">Sign-in</span></button>
+      <button type="button" class="sp-refresh-btn" id="btnTopRefresh" title="Refresh from SharePoint — reloads the project list, your deadlines and the open project's data without signing out" aria-label="Refresh from SharePoint"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></button>
       <button type="button" class="deadline-bell" id="btnDeadlines" title="My deadlines — offers in progress assigned to me">🔔<span class="deadline-badge" id="deadlineBadge"></span></button>
       <button type="button" class="signout-topright-btn" id="btnTopSignOut" title="Sign out">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -868,7 +876,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.16</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.17</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -1874,6 +1882,66 @@ async function performSignOut(){
 }
 document.getElementById('btnSpSignOut').addEventListener('click', performSignOut);
 document.getElementById('btnTopSignOut').addEventListener('click', performSignOut);
+
+// ⟳ in the top bar: everything that comes from SharePoint is read again with the current sign-in
+// (the token is renewed silently — no sign-out / sign-in): the project list (with owners and the
+// STD/SPECIAL choices), the 🔔 deadlines, the countries and — if a project is open — its Project
+// Details. Fields changed on this page and not yet saved keep the local value. The configuration and
+// the offer lines on the page are never touched.
+const PD_REFRESH_FIELDS = ['prjName', 'prjCountry', 'prjCustomer', 'prjDue', 'prjOwner', 'prjProduct', 'prjBattery', 'prjBatteryBrand', 'prjOfferType', 'prjStdSpecial'];
+const PD_REFRESH_LABELS = {prjName: 'Project Name', prjCountry: 'Country', prjCustomer: 'Customer', prjDue: 'Due Date', prjOwner: 'Pre-Sales Owner', prjProduct: 'Product', prjBattery: 'Battery', prjBatteryBrand: 'Battery Brand', prjOfferType: 'Offer Type', prjStdSpecial: 'STD/SPECIAL'};
+function pdSnapshot(){
+  const o = {};
+  PD_REFRESH_FIELDS.forEach(id => { const el = document.getElementById(id); if(el) o[id] = el.value; });
+  o._countryId = document.getElementById('prjCountry')?.dataset.countryId || '';
+  return o;
+}
+function pdRestore(snap, ids){
+  ids.forEach(id => { const el = document.getElementById(id); if(el) el.value = snap[id]; });
+  if(ids.includes('prjCountry')) document.getElementById('prjCountry').dataset.countryId = snap._countryId;
+}
+let spRefreshBusy = false;
+async function refreshFromSharePoint(){
+  if(spRefreshBusy) return;
+  if(!msalInstance || !msalAccount){ showExportToast('Sign in with Microsoft 365 first.', 'warn'); return; }
+  spRefreshBusy = true;
+  const btn = document.getElementById('btnTopRefresh');
+  if(btn) btn.classList.add('busy');
+  try{
+    await getGraphToken();   // renews the sign-in silently (a Microsoft window only if the session really expired)
+    const ref = document.getElementById('prjRef').value.trim();
+    const oldRec = ref ? PROGRESS.find(p => String(p.PRJ_ID) === ref) : null;
+    countryOptionsLoaded = false; countryOptionsLoadingPromise = null;   // new countries too
+    const ok = await fetchSharePointList();
+    if(!ok){ showExportToast('Refresh from SharePoint failed — see the SharePoint panel for the reason.', 'warn'); return; }
+    let detail = '';
+    const newRec = ref ? PROGRESS.find(p => String(p.PRJ_ID) === ref) : null;
+    if(newRec){
+      // what the page shows now, what the old record gave, what the new one gives: a field the
+      // person changed here (now ≠ old record) keeps their value
+      const now = pdSnapshot();
+      let before = now;
+      if(oldRec){ await fillProjectDetailsFromRecord(oldRec); before = pdSnapshot(); }
+      await fillProjectDetailsFromRecord(newRec);
+      const after = pdSnapshot();
+      const local = PD_REFRESH_FIELDS.filter(id => oldRec && now[id] !== before[id]);
+      pdRestore(now, local);
+      const changed = PD_REFRESH_FIELDS.filter(id => !local.includes(id) && now[id] !== after[id]);
+      detail = changed.length ? ` · project ${ref} updated: ${changed.map(id => PD_REFRESH_LABELS[id]).join(', ')}` : ` · project ${ref} unchanged`;
+      if(local.length) detail += ` (kept your unsaved ${local.map(id => PD_REFRESH_LABELS[id]).join(', ')})`;
+    } else if(ref && oldRec){
+      detail = ` · project ${ref} is no longer in the list`;
+    }
+    showExportToast(`✓ Updated from SharePoint at ${new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})} — ${PROGRESS.length} projects${detail}`, 'ok');
+  }catch(err){
+    console.error(err);
+    showExportToast(`Refresh from SharePoint failed: ${err.message || err}`, 'warn');
+  }finally{
+    spRefreshBusy = false;
+    if(btn) btn.classList.remove('busy');
+  }
+}
+document.getElementById('btnTopRefresh').addEventListener('click', refreshFromSharePoint);
 
 document.getElementById('btnSpRefresh').addEventListener('click', ()=>{
   if(!msalInstance || !msalAccount){
@@ -11070,7 +11138,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.16';
+const CURRENT_VERSION = 'beta_6.17';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -11100,6 +11168,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.17', date:'2026-10-06', notes:[
+    'Pulsante ⟳ in alto a destra (visibile quando sei connesso): ricarica da SharePoint lista progetti, owner, scelte STD/SPECIAL, scadenze 🔔, paesi e i Project Details del progetto aperto — senza disconnettersi. Il token viene rinnovato in automatico; i campi modificati sulla pagina e non ancora salvati restano come li hai lasciati; configurazione e Offer Lines non vengono toccate. Un avviso dice cosa è cambiato',
+  ]},
   {version:'beta_6.16', date:'2026-10-05', notes:[
     'Kit Builder: si può trascinare un file Excel sul pannello (o su "+ Add components"): viene letto come la BOM del codice di vendita — colonne Q.tà, Codice, Descrizione, Costo; righe di titolo e note saltate, costo vuoto accettato — e mostrato nella scheda Excel, pronto da aggiungere al kit con i codici della BOM',
   ]},

@@ -147,6 +147,42 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 .rev-line{display:grid; grid-template-columns:110px 1fr; gap:8px; font-size:12.5px; padding:2px 0; line-height:1.45;}
 .rev-k{color:var(--dim);} .rev-files a{color:var(--accent-dark);}
 
+/* ---- 🔍 project search ---- */
+.ps-modal{max-width:1040px !important; width:min(1040px, 96vw); display:flex; flex-direction:column; max-height:88vh;}
+.ps-header{flex-wrap:wrap; gap:10px;}
+.ps-tools{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; font-weight:400;}
+.ps-seg{display:inline-flex; border:1px solid var(--field-border); border-radius:8px; overflow:hidden;}
+.ps-seg button{height:30px; padding:0 11px; border:none; background:#fff; font:inherit; font-size:12px; cursor:pointer;}
+.ps-seg button.on{background:var(--accent-dark); color:#fff;}
+.ps-small{padding:6px 10px !important; font-size:12px !important;}
+.ps-grp{display:flex; align-items:center; gap:10px; width:100%; border:none; border-bottom:1px solid var(--panel-border); background:#F4F6FA; padding:8px 14px; font:inherit; font-size:13px; text-align:left; cursor:pointer;}
+.ps-grp:hover{background:#EBF0F8;}
+.ps-caret{width:12px; color:var(--accent-dark);}
+.ps-cnt{font-size:11px; font-weight:600; color:#1F4E9C; background:var(--accent-soft); border-radius:10px; padding:1px 8px;}
+.ps-ghint{margin-left:auto; font-size:11.5px;}
+.ps-child > .ps-ref{padding-left:20px;}
+.ps-loaded{color:var(--teal); font-size:10px;}
+.ps-new{border-color:var(--accent) !important; color:var(--accent-dark) !important;}
+.ps-open-btn{font-weight:500;}
+.ps-sub{margin:2px 0 0; font-size:11.5px; color:var(--dim); font-weight:400;}
+.ps-wrap{display:flex; flex-direction:column; min-height:0; flex:1; border-top:1px solid var(--panel-border);}
+.ps-row{display:grid; grid-template-columns:80px minmax(0,1.2fr) minmax(0,1.5fr) 92px minmax(0,0.9fr) 104px 110px; gap:8px; align-items:center; padding:7px 14px; font-size:12.5px;}
+.ps-head{background:var(--accent); color:#fff; padding-top:6px; padding-bottom:6px;}
+.ps-th{border:none; background:none; color:#fff; font:inherit; font-weight:600; font-size:11.5px; text-align:left; padding:0; cursor:pointer;}
+.ps-filters{background:var(--bg); border-bottom:1px solid var(--panel-border);}
+.ps-fi{height:28px; border:1px solid var(--field-border); border-radius:6px; font:inherit; font-size:11.5px; padding:0 6px; width:100%; box-sizing:border-box; background:#fff; min-width:0;}
+.ps-body{overflow:auto; flex:1; min-height:220px; max-height:52vh; outline:none;}
+.ps-item{border-bottom:1px solid #EEF0F3; cursor:pointer;}
+.ps-item:hover{background:#F5F8FD;}
+.ps-item.on{background:var(--accent-soft);}
+.ps-item > span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.ps-ref{color:var(--navy);}
+.ps-over{color:#A3001F; font-weight:600;} .ps-soon{color:#8A4B00; font-weight:600;}
+.ps-dim{color:var(--dim);}
+.ps-empty{padding:26px 14px; text-align:center; color:var(--dim); font-size:12.5px;}
+.ps-foot{display:flex; align-items:center; gap:14px; padding:10px 16px; border-top:1px solid var(--panel-border); font-size:12px;}
+.ps-actions{margin-left:auto; display:flex; gap:8px;}
+@media (max-width:760px){ .ps-row{grid-template-columns:70px minmax(0,1fr) minmax(0,1fr); } .ps-row > :nth-child(n+4){display:none;} }
 /* ---- ⟳ refresh from SharePoint (signed in only) ---- */
 .sp-refresh-btn{display:none; width:38px; height:38px; border-radius:10px; border:1px solid var(--panel-border); background:#fff; color:var(--accent-dark); align-items:center; justify-content:center; cursor:pointer;}
 .app-topbar:has(.signout-topright-btn.visible) .sp-refresh-btn{display:flex;}
@@ -424,6 +460,8 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 .kb-body.kb-dropping{outline:2px dashed var(--accent); outline-offset:-6px; background:#F5F9FF;}
 .kb-drop{display:flex; flex-direction:column; align-items:center; gap:3px; padding:14px 10px; border:2px dashed var(--accent); border-radius:10px; background:#fff; color:var(--accent-dark); font-size:12.5px; font-weight:600; cursor:pointer; text-align:center;}
 .kb-drop small{font-weight:400; color:#4B5260; font-size:11px;}
+.kb-price{display:grid; grid-template-columns:160px minmax(0,1fr); gap:10px; align-items:end;}
+.kb-price-hint{font-size:11.5px; color:#4B5260; padding-bottom:6px;}
 .kb-strip{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; background:var(--bg);}
 .kb-data{display:flex; flex-direction:column; gap:8px; padding:10px; border:1px solid #BFD3F2; background:#F5F9FF; border-radius:10px;}
 .kb-grid{display:grid; grid-template-columns:minmax(0,1fr) 140px 80px; gap:8px;}
@@ -852,7 +890,8 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <span class="autosave-status" id="autosaveStatus"></span>
       <div class="app-topbar-spacer"></div>
       <div class="new-offer-sticky-bar">
-        <button type="button" class="new-offer-sticky-btn" id="btnNewOfferConfirm"><span>🆕</span><span data-i18n="nav.newOfferConfirm">New Offer</span></button>
+        <button type="button" class="new-offer-sticky-btn ps-open-btn" id="btnOpenProjects" title="Open a project — or create a new offer (Ctrl+K)"><span>📁</span><span>Projects</span></button>
+        <button type="button" class="new-offer-sticky-btn" id="btnNewOfferConfirm" style="display:none"><span>🆕</span><span data-i18n="nav.newOfferConfirm">New Offer</span></button>
         <button type="button" class="new-offer-sticky-btn" id="btnResetOfferConfirm"><span>♻️</span><span data-i18n="nav.resetOfferConfirm">Reset Offer</span></button>
       </div>
       <div class="lang-fixed">
@@ -876,7 +915,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.17</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.22</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -897,8 +936,8 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
           <div class="field">
             <label for="prjRef" data-i18n="pd.projectRef">Project Reference</label>
             <div style="display:flex; gap:6px;">
-              <input list="prjList" id="prjRef" data-i18n-ph="pd.refPlaceholder" placeholder="e.g. 260005" style="flex:1; min-width:0;">
-              <button type="button" class="btn-ghost act" id="btnLoad" style="flex-shrink:0; padding:9px 12px; white-space:nowrap;" title="Look up this Project Reference and fill in the fields below"><span data-i18n="pd.load">↑ Load</span></button>
+              <input id="prjRef" readonly title="Choose the project with 📁 Projects (top bar)" placeholder="📁 Projects (top bar)" style="flex:1; min-width:0;">
+              <button type="button" class="btn-ghost act" id="btnLoad" style="display:none; flex-shrink:0; padding:9px 12px; white-space:nowrap;" title="Look up this Project Reference and fill in the fields below"><span data-i18n="pd.load">↑ Load</span></button>
               <button type="button" class="btn-ghost act" id="btnProjectFolder" style="flex-shrink:0; padding:9px 12px; white-space:nowrap;" title="Open this project's folder — on SharePoint or in File Explorer"><span data-i18n="pd.folder">📂 Folder</span></button>
               <button type="button" class="btn-ghost act" id="btnUploadFiles" style="flex-shrink:0; padding:9px 12px; white-space:nowrap; display:inline-flex; align-items:center; gap:6px;" title="Upload offer files to this project's SharePoint folder"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> <span data-i18n="pd.uploadFiles">Files</span></button>
             </div>
@@ -1290,11 +1329,11 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
 <script>
 const I18N = {
-  en: {"save.title": "Save configuration", "save.msg": "The configuration (JSON) is saved to SharePoint.", "save.q": "Save = JSON only.  Print report = JSON + all the offer reports / attachments (Offer, BOM, Excel…) in the {R} folder.", "save.cancel": "Cancel", "save.json": "Save", "save.reports": "Print report", "pd.folder": "📂 Folder", "nav.initReport": "Initialize Report", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Revision History", "nav.offerWord": "Offer — Word", "nav.techSummary": "Technical Summary", "pd.saveToSharePoint": "Save Project Data", "toast.created": "Project created:", "toast.sub": "It finished while the Create New Offer window was closed. Load it into Project Details?", "toast.load": "Load into Project Details", "toast.upload": "📎 Upload files", "toast.close": "Close — do nothing", "toast.loaded": "Loaded into Project Details:", "dlg.yes": "Yes", "dlg.no": "No", "closeOffer.title": "Offer closed", "closeOffer.followUpQuestion": "Enable an automatic follow-up reminder for this offer?", "closeOffer.followUpTitle": "Follow-up reminder", "closeOffer.followUpEnabled": "Follow-up reminder enabled", "closeOffer.followUpFailed": "Could not enable the follow-up reminder on SharePoint:", "spLoad.title": "Load Configuration", "spLoad.note": "Configurations saved in the project's \"02 OFFER\" folder on SharePoint, newest first.", "spLoad.ref": "Project Reference", "spLoad.showFiles": "Show files", "spLoad.fromComputer": "📂 From my computer…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "STD/SPECIAL column", "nav.resetOfferConfirm": "Reset Offer", "nav.newOfferConfirm": "New Offer", "newOffer.priority": "Priority", "newOffer.mapPriorityList": "Priority list name", "newOffer.mapPriorityCol": "Priority lookup column", "pd.offerType": "Offer Type", "newOffer.offerType": "Offer Type", "newOffer.mapOfferType": "Offer Type column", "newOffer.notifyTitle": "Project created", "newOffer.notifyBody": "click to upload files", "nav.cloneOffer": "Clone", "newOffer.uploadFilesTitle": "Upload Offer Files", "pd.uploadFiles": "Files", "newOffer.uploadIntro": "Optional — add any offer files you already have. They'll be saved to this project's SharePoint folder, in a \"01 RFQ\" subfolder.", "newOffer.skip": "Skip", "newOffer.uploadFiles": "Upload Files", "newOffer.createdPrefix": "New Project", "newOffer.createdSuffix": "Created", "newOffer.waitingSub": "Setting up the project in SharePoint — assigning the Project Reference and creating the folder structure…", "newOffer.title": "Create New Offer", "newOffer.projectName": "Project Name", "newOffer.customer": "Customer", "newOffer.country": "Country", "newOffer.dueDate": "Due Date", "newOffer.owner": "Pre-Sales Owner", "newOffer.product": "Product", "newOffer.battery": "Battery", "newOffer.batteryBrand": "Battery Brand", "newOffer.mappingToggle": "🔧 Advanced: SharePoint field mapping", "newOffer.mapProjectName": "Project Name column", "newOffer.mapCustomer": "Customer column", "newOffer.mapDueDate": "Due Date column", "newOffer.mapOwner": "Owner column", "newOffer.mapProduct": "Product column", "newOffer.mapBattery": "Battery column", "newOffer.mapBatteryBrand": "Battery Brand column", "newOffer.notSubmitted": "Not submitted yet.", "newOffer.creatingLabel": "Creating project…", "newOffer.newProjectCreated": "New Project Created", "newOffer.stopWaiting": "Stop waiting", "newOffer.submit": "✨ Create in SharePoint & Start Offer", "newRev.title": "Start New Revision", "newRev.description": "Revision description", "newRev.placeholder": "What changed in this revision?", "newRev.confirm": "Start Revision", "spLogin.title": "Sign in with MS 365", "spLogin.clientId": "Application (Client) ID", "spLogin.tenantId": "Tenant ID or domain", "spLogin.advancedSettings": "🔧 Advanced Settings", "spLogin.siteHost": "Site host", "spLogin.sitePath": "Site path", "spLogin.listName": "List name", "spLogin.notConnected": "Not connected.", "spLogin.signOut": "🚪 Sign Out", "spLogin.connected": "Connected", "spLogin.notAvailable": "Connection not available", "spLogin.close": "Close", "spLogin.refresh": "🔄 Refresh", "spLogin.connect": "🔐 Sign in with Microsoft", "common.qty": "Qty", "common.cost": "Cost", "common.extSupplier": "Ext. Supplier", "common.category": "Category", "common.addRow": "+ Add Row", "common.addToOffer": "Add to Offer", "common.addAccessories": "Add accessories", "common.addSelected": "Add Selected", "common.addServiceItems": "Add Service Items", "common.addBatteryTech": "Add Battery / Technology Integration", "common.addItem": "Add Item", "dyn.noRowsYet": "No rows generated yet. Configure the positions above and click \"Generate Offer\".", "dyn.projectTotal": "Project Total", "settings.conversionRate": "Conversion rate", "signIn": "Sign-in", "nav.dataSources": "Data Sources", "nav.documents": "Documents", "nav.revision": "Revision", "nav.settings": "Settings", "nav.importPriceList": "Import Price List", "nav.createNewOffer": "Create New Offer", "nav.previewBom": "Preview BOM", "nav.bomPdf": "BOM — PDF", "nav.bomExcel": "BOM — Excel", "nav.previewOffer": "Preview Offer", "nav.offerPdf": "Offer — PDF", "nav.offerExcel": "Offer — Excel", "nav.closeOffer": "Close Offer", "nav.saveConfig": "Save Configuration", "nav.loadConfig": "Load Configuration", "nav.offerSettings": "Offer Settings", "nav.resetPage": "Reset Page", "nav.newRevision": "New Revision", "header.eyebrow": "Pre-Sales · Data Center Power", "header.subtitle": "Select the project, define the required load, and generate the UPS architecture with its offer.", "status.noProjectData": "No project data loaded yet — sign in with MS 365 (top-right) to load it.", "status.noPriceList": "No price list imported — reference table + manual pricing.", "pd.title": "Project Details", "pd.projectRef": "Project Reference", "pd.projectName": "Project Name", "pd.country": "Country", "pd.customer": "Customer", "pd.dueDate": "Due Date", "pd.owner": "Pre-Sales Owner", "pd.product": "Product", "pd.battery": "Battery", "pd.batteryBrand": "Battery Brand", "pd.load": "↑ Load", "pd.refPlaceholder": "e.g. 260005", "pd.batteryBrandPlaceholder": "e.g. Hoppecke", "sc.title": "System Configuration", "sc.pos": "Pos.", "sc.qty": "Qty", "sc.upsSys": "UPS/Sys", "sc.loadsType": "Loads Type", "sc.pload": "Pload (kW)", "sc.redundancy": "Redundancy", "sc.nPM": "n.PM", "sc.model": "Model", "sc.connection": "Connection", "sc.configuration": "Configuration", "sc.ventilation": "Ventilation", "sc.batteries": "Batteries", "sc.hEff": "H.Eff", "sc.addPosition": "+ Add Position", "sc.generateOffer": "Generate Offer", "ol.title": "Offer Lines", "ol.pos": "Pos", "ol.qty": "Qty", "ol.model": "Model", "ol.code": "Code", "ol.description": "Description", "ol.grossPrice": "Gross Price", "ol.discount": "Discount %", "ol.netPrice": "Net Price", "ol.unitCost": "Unit Cost", "ol.totalCost": "Total Cost", "ol.totalPrice": "Total Price", "ol.margin": "Margin %", "ol.addProjectSection": "+ Add Project Section", "settings.title": "Offer Settings", "settings.displayCurrency": "Display Currency", "settings.customSymbol": "Custom symbol", "settings.projectDiscount": "Project Discount %", "settings.delivery": "Delivery %", "settings.cancel": "Cancel", "settings.apply": "Apply", "welcome.title": "Welcome", "welcome.note": "Sign in with Microsoft 365 to load the live Project List from SharePoint, or continue as a guest — you can still sign in later from the sidebar.", "welcome.signIn": "🔐 Sign in with Microsoft 365", "welcome.guest": "Continue as Guest →"},
-  it: {"save.title": "Salva configurazione", "save.msg": "La configurazione (JSON) viene salvata su SharePoint.", "save.q": "Salva = solo JSON.  Print report = JSON + tutti i report / allegati d'offerta (Offer, BOM, Excel…) nella cartella {R}.", "save.cancel": "Annulla", "save.json": "Salva", "save.reports": "Print report", "pd.folder": "📂 Cartella", "nav.initReport": "Inizializza report", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Storico revisioni", "nav.offerWord": "Offerta — Word", "nav.techSummary": "Scheda tecnica", "pd.saveToSharePoint": "Salva Dati Progetto", "toast.created": "Progetto creato:", "toast.sub": "La creazione è terminata mentre la finestra Create New Offer era chiusa. Caricarlo nei Project Details?", "toast.load": "Carica in Project Details", "toast.upload": "📎 Carica file", "toast.close": "Chiudi — nessuna azione", "toast.loaded": "Caricato nei Project Details:", "dlg.yes": "Sì", "dlg.no": "No", "closeOffer.title": "Offerta chiusa", "closeOffer.followUpQuestion": "Attivare un promemoria di follow-up automatico per questa offerta?", "closeOffer.followUpTitle": "Promemoria di follow-up", "closeOffer.followUpEnabled": "Promemoria di follow-up attivato", "closeOffer.followUpFailed": "Impossibile attivare il promemoria di follow-up su SharePoint:", "spLoad.title": "Carica Configurazione", "spLoad.note": "Configurazioni salvate nella cartella \"02 OFFER\" del progetto su SharePoint, dalla più recente.", "spLoad.ref": "Riferimento Progetto", "spLoad.showFiles": "Mostra file", "spLoad.fromComputer": "📂 Dal mio computer…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "Colonna STD/SPECIAL", "nav.resetOfferConfirm": "Reset Offerta", "nav.newOfferConfirm": "Nuova Offerta", "newOffer.priority": "Priorità", "newOffer.mapPriorityList": "Nome lista Priorità", "newOffer.mapPriorityCol": "Colonna lookup Priorità", "pd.offerType": "Tipo Offerta", "newOffer.offerType": "Tipo Offerta", "newOffer.mapOfferType": "Colonna Tipo Offerta", "newOffer.notifyTitle": "Progetto creato", "newOffer.notifyBody": "clicca per caricare i file", "nav.cloneOffer": "Clona", "newOffer.uploadFilesTitle": "Carica File Offerta", "pd.uploadFiles": "File", "newOffer.uploadIntro": "Facoltativo — aggiungi eventuali file dell'offerta che hai già. Verranno salvati nella cartella SharePoint di questo progetto, in una sottocartella \"01 RFQ\".", "newOffer.skip": "Salta", "newOffer.uploadFiles": "Carica File", "newOffer.createdPrefix": "Nuovo Progetto", "newOffer.createdSuffix": "Creato", "newOffer.waitingSub": "Creazione del progetto su SharePoint — assegnazione del Riferimento Progetto e creazione della struttura cartelle…", "newOffer.title": "Crea Nuova Offerta", "newOffer.projectName": "Nome Progetto", "newOffer.customer": "Cliente", "newOffer.country": "Paese", "newOffer.dueDate": "Scadenza", "newOffer.owner": "Responsabile Pre-Vendita", "newOffer.product": "Prodotto", "newOffer.battery": "Batteria", "newOffer.batteryBrand": "Marca Batteria", "newOffer.mappingToggle": "🔧 Avanzate: mappatura campi SharePoint", "newOffer.mapProjectName": "Colonna Nome Progetto", "newOffer.mapCustomer": "Colonna Cliente", "newOffer.mapDueDate": "Colonna Scadenza", "newOffer.mapOwner": "Colonna Responsabile", "newOffer.mapProduct": "Colonna Prodotto", "newOffer.mapBattery": "Colonna Batteria", "newOffer.mapBatteryBrand": "Colonna Marca Batteria", "newOffer.notSubmitted": "Non ancora inviato.", "newOffer.creatingLabel": "Creazione progetto…", "newOffer.newProjectCreated": "Nuovo Progetto Creato", "newOffer.stopWaiting": "Interrompi attesa", "newOffer.submit": "✨ Crea su SharePoint e Avvia Offerta", "newRev.title": "Avvia Nuova Revisione", "newRev.description": "Descrizione revisione", "newRev.placeholder": "Cosa è cambiato in questa revisione?", "newRev.confirm": "Avvia Revisione", "spLogin.title": "Accedi con MS 365", "spLogin.clientId": "ID Applicazione (Client)", "spLogin.tenantId": "ID Tenant o dominio", "spLogin.advancedSettings": "🔧 Impostazioni Avanzate", "spLogin.siteHost": "Host del sito", "spLogin.sitePath": "Percorso del sito", "spLogin.listName": "Nome della lista", "spLogin.notConnected": "Non connesso.", "spLogin.signOut": "🚪 Esci", "spLogin.connected": "Connesso", "spLogin.notAvailable": "Connessione non disponibile", "spLogin.close": "Chiudi", "spLogin.refresh": "🔄 Aggiorna", "spLogin.connect": "🔐 Accedi con Microsoft", "common.qty": "Q.tà", "common.cost": "Costo", "common.extSupplier": "Fornitore Est.", "common.category": "Categoria", "common.addRow": "+ Aggiungi Riga", "common.addToOffer": "Aggiungi all'Offerta", "common.addAccessories": "Aggiungi Accessori", "common.addSelected": "Aggiungi Selezionati", "common.addServiceItems": "Aggiungi Voci di Servizio", "common.addBatteryTech": "Aggiungi Batteria / Technology Integration", "common.addItem": "Aggiungi Voce", "dyn.noRowsYet": "Nessuna riga generata ancora. Configura le posizioni sopra e clicca \"Genera Offerta\".", "dyn.projectTotal": "Totale Progetto", "settings.conversionRate": "Tasso di cambio", "signIn": "Accedi", "nav.dataSources": "Origine Dati", "nav.documents": "Documenti", "nav.revision": "Revisione", "nav.settings": "Impostazioni", "nav.importPriceList": "Importa Listino Prezzi", "nav.createNewOffer": "Crea Nuova Offerta", "nav.previewBom": "Anteprima Distinta Base", "nav.bomPdf": "Distinta Base — PDF", "nav.bomExcel": "Distinta Base — Excel", "nav.previewOffer": "Anteprima Offerta", "nav.offerPdf": "Offerta — PDF", "nav.offerExcel": "Offerta — Excel", "nav.closeOffer": "Chiudi Offerta", "nav.saveConfig": "Salva Configurazione", "nav.loadConfig": "Carica Configurazione", "nav.offerSettings": "Impostazioni Offerta", "nav.resetPage": "Reimposta Pagina", "nav.newRevision": "Nuova Revisione", "header.eyebrow": "Pre-Vendita · Data Center Power", "header.subtitle": "Seleziona il progetto, definisci il carico richiesto e genera l'architettura UPS con la relativa offerta.", "status.noProjectData": "Nessun dato progetto ancora caricato — accedi con MS 365 (in alto a destra) per caricarlo.", "status.noPriceList": "Nessun listino importato — tabella di riferimento + prezzi manuali.", "pd.title": "Dettagli Progetto", "pd.projectRef": "Riferimento Progetto", "pd.projectName": "Nome Progetto", "pd.country": "Paese", "pd.customer": "Cliente", "pd.dueDate": "Scadenza", "pd.owner": "Responsabile Pre-Vendita", "pd.product": "Prodotto", "pd.battery": "Batteria", "pd.batteryBrand": "Marca Batteria", "pd.load": "↑ Carica", "pd.refPlaceholder": "es. 260005", "pd.batteryBrandPlaceholder": "es. Hoppecke", "sc.title": "Configurazione Sistema", "sc.pos": "Pos.", "sc.qty": "Q.tà", "sc.upsSys": "UPS/Sist", "sc.loadsType": "Tipo Carico", "sc.pload": "P.Carico (kW)", "sc.redundancy": "Ridondanza", "sc.nPM": "n.PM", "sc.model": "Modello", "sc.connection": "Connessione", "sc.configuration": "Configurazione", "sc.ventilation": "Ventilazione", "sc.batteries": "Batterie", "sc.hEff": "H.Eff", "sc.addPosition": "+ Aggiungi Posizione", "sc.generateOffer": "Genera Offerta", "ol.title": "Righe Offerta", "ol.pos": "Pos", "ol.qty": "Q.tà", "ol.model": "Modello", "ol.code": "Codice", "ol.description": "Descrizione", "ol.grossPrice": "Prezzo Lordo", "ol.discount": "Sconto %", "ol.netPrice": "Prezzo Netto", "ol.unitCost": "Costo Unitario", "ol.totalCost": "Costo Totale", "ol.totalPrice": "Prezzo Totale", "ol.margin": "Margine %", "ol.addProjectSection": "+ Aggiungi Sezione Progetto", "settings.title": "Impostazioni Offerta", "settings.displayCurrency": "Valuta Visualizzata", "settings.customSymbol": "Simbolo personalizzato", "settings.projectDiscount": "Sconto Progetto %", "settings.delivery": "Trasporto %", "settings.cancel": "Annulla", "settings.apply": "Applica", "welcome.title": "Benvenuto", "welcome.note": "Accedi con Microsoft 365 per caricare la Lista Progetti in tempo reale da SharePoint, oppure continua come ospite — potrai comunque accedere più tardi dalla barra laterale.", "welcome.signIn": "🔐 Accedi con Microsoft 365", "welcome.guest": "Continua come Ospite →"},
-  de: {"save.title": "Konfiguration speichern", "save.msg": "Die Konfiguration (JSON) wird in SharePoint gespeichert.", "save.q": "Speichern = nur JSON.  Print report = JSON + alle Angebotsberichte / Anlagen (Offer, BOM, Excel…) im Ordner {R}.", "save.cancel": "Abbrechen", "save.json": "Speichern", "save.reports": "Print report", "pd.folder": "📂 Ordner", "nav.initReport": "Bericht vorbereiten", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Revisionsverlauf", "nav.offerWord": "Angebot — Word", "nav.techSummary": "Technische Übersicht", "pd.saveToSharePoint": "Projektdaten speichern", "toast.created": "Projekt erstellt:", "toast.sub": "Die Erstellung wurde abgeschlossen, während das Fenster „Create New Offer“ geschlossen war. In die Projektdetails laden?", "toast.load": "In Projektdetails laden", "toast.upload": "📎 Dateien hochladen", "toast.close": "Schließen — keine Aktion", "toast.loaded": "In Projektdetails geladen:", "dlg.yes": "Ja", "dlg.no": "Nein", "closeOffer.title": "Angebot abgeschlossen", "closeOffer.followUpQuestion": "Automatische Follow-up-Erinnerung für dieses Angebot aktivieren?", "closeOffer.followUpTitle": "Follow-up-Erinnerung", "closeOffer.followUpEnabled": "Follow-up-Erinnerung aktiviert", "closeOffer.followUpFailed": "Die Follow-up-Erinnerung konnte in SharePoint nicht aktiviert werden:", "spLoad.title": "Konfiguration laden", "spLoad.note": "Im Ordner \"02 OFFER\" des Projekts auf SharePoint gespeicherte Konfigurationen, neueste zuerst.", "spLoad.ref": "Projektreferenz", "spLoad.showFiles": "Dateien anzeigen", "spLoad.fromComputer": "📂 Von meinem Computer…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "Spalte STD/SPECIAL", "nav.resetOfferConfirm": "Angebot zurücksetzen", "nav.newOfferConfirm": "Neues Angebot", "newOffer.priority": "Priorität", "newOffer.mapPriorityList": "Name der Prioritätsliste", "newOffer.mapPriorityCol": "Prioritäts-Lookup-Spalte", "pd.offerType": "Angebotstyp", "newOffer.offerType": "Angebotstyp", "newOffer.mapOfferType": "Angebotstyp-Spalte", "newOffer.notifyTitle": "Projekt erstellt", "newOffer.notifyBody": "klicken, um Dateien hochzuladen", "nav.cloneOffer": "Klonen", "newOffer.uploadFilesTitle": "Angebotsdateien hochladen", "pd.uploadFiles": "Dateien", "newOffer.uploadIntro": "Optional — fügen Sie vorhandene Angebotsdateien hinzu. Sie werden im SharePoint-Ordner dieses Projekts, in einem Unterordner \"01 RFQ\", gespeichert.", "newOffer.skip": "Überspringen", "newOffer.uploadFiles": "Dateien hochladen", "newOffer.createdPrefix": "Neues Projekt", "newOffer.createdSuffix": "erstellt", "newOffer.waitingSub": "Projekt wird in SharePoint eingerichtet — Projektreferenz wird zugewiesen und die Ordnerstruktur erstellt…", "newOffer.title": "Neues Angebot erstellen", "newOffer.projectName": "Projektname", "newOffer.customer": "Kunde", "newOffer.country": "Land", "newOffer.dueDate": "Fälligkeitsdatum", "newOffer.owner": "Vertriebsverantwortlicher", "newOffer.product": "Produkt", "newOffer.battery": "Batterie", "newOffer.batteryBrand": "Batteriemarke", "newOffer.mappingToggle": "🔧 Erweitert: SharePoint-Feldzuordnung", "newOffer.mapProjectName": "Spalte Projektname", "newOffer.mapCustomer": "Spalte Kunde", "newOffer.mapDueDate": "Spalte Fälligkeitsdatum", "newOffer.mapOwner": "Spalte Verantwortlicher", "newOffer.mapProduct": "Spalte Produkt", "newOffer.mapBattery": "Spalte Batterie", "newOffer.mapBatteryBrand": "Spalte Batteriemarke", "newOffer.notSubmitted": "Noch nicht gesendet.", "newOffer.creatingLabel": "Projekt wird erstellt…", "newOffer.newProjectCreated": "Neues Projekt erstellt", "newOffer.stopWaiting": "Warten beenden", "newOffer.submit": "✨ In SharePoint erstellen & Angebot starten", "newRev.title": "Neue Revision starten", "newRev.description": "Revisionsbeschreibung", "newRev.placeholder": "Was hat sich in dieser Revision geändert?", "newRev.confirm": "Revision starten", "spLogin.title": "Mit MS 365 anmelden", "spLogin.clientId": "Anwendungs-ID (Client)", "spLogin.tenantId": "Mandanten-ID oder Domäne", "spLogin.advancedSettings": "🔧 Erweiterte Einstellungen", "spLogin.siteHost": "Site-Host", "spLogin.sitePath": "Site-Pfad", "spLogin.listName": "Listenname", "spLogin.notConnected": "Nicht verbunden.", "spLogin.signOut": "🚪 Abmelden", "spLogin.connected": "Verbunden", "spLogin.notAvailable": "Verbindung nicht verfügbar", "spLogin.close": "Schließen", "spLogin.refresh": "🔄 Aktualisieren", "spLogin.connect": "🔐 Mit Microsoft anmelden", "common.qty": "Menge", "common.cost": "Kosten", "common.extSupplier": "Externer Lieferant", "common.category": "Kategorie", "common.addRow": "+ Zeile hinzufügen", "common.addToOffer": "Zum Angebot hinzufügen", "common.addAccessories": "Zubehör hinzufügen", "common.addSelected": "Auswahl hinzufügen", "common.addServiceItems": "Serviceposten hinzufügen", "common.addBatteryTech": "Batterie/Technologieintegration hinzufügen", "common.addItem": "Element hinzufügen", "dyn.noRowsYet": "Noch keine Zeilen erstellt. Konfigurieren Sie oben die Positionen und klicken Sie auf \"Angebot erstellen\".", "dyn.projectTotal": "Projektgesamtsumme", "settings.conversionRate": "Wechselkurs", "signIn": "Anmelden", "nav.dataSources": "Datenquellen", "nav.documents": "Dokumente", "nav.revision": "Revision", "nav.settings": "Einstellungen", "nav.importPriceList": "Preisliste importieren", "nav.createNewOffer": "Neues Angebot erstellen", "nav.previewBom": "Stückliste – Vorschau", "nav.bomPdf": "Stückliste — PDF", "nav.bomExcel": "Stückliste — Excel", "nav.previewOffer": "Angebot – Vorschau", "nav.offerPdf": "Angebot — PDF", "nav.offerExcel": "Angebot — Excel", "nav.closeOffer": "Angebot abschließen", "nav.saveConfig": "Konfiguration speichern", "nav.loadConfig": "Konfiguration laden", "nav.offerSettings": "Angebotseinstellungen", "nav.resetPage": "Seite zurücksetzen", "nav.newRevision": "Neue Revision", "header.eyebrow": "Vertrieb · Data Center Power", "header.subtitle": "Wählen Sie das Projekt aus, definieren Sie die erforderliche Last und erstellen Sie die USV-Architektur mit dem zugehörigen Angebot.", "status.noProjectData": "Noch keine Projektdaten geladen — melden Sie sich mit MS 365 an (oben rechts), um sie zu laden.", "status.noPriceList": "Keine Preisliste importiert — Referenztabelle + manuelle Preisgestaltung.", "pd.title": "Projektdetails", "pd.projectRef": "Projektreferenz", "pd.projectName": "Projektname", "pd.country": "Land", "pd.customer": "Kunde", "pd.dueDate": "Fälligkeitsdatum", "pd.owner": "Vertriebsverantwortlicher", "pd.product": "Produkt", "pd.battery": "Batterie", "pd.batteryBrand": "Batteriemarke", "pd.load": "↑ Laden", "pd.refPlaceholder": "z.B. 260005", "pd.batteryBrandPlaceholder": "z.B. Hoppecke", "sc.title": "Systemkonfiguration", "sc.pos": "Pos.", "sc.qty": "Menge", "sc.upsSys": "USV/Sys", "sc.loadsType": "Lasttyp", "sc.pload": "P.Last (kW)", "sc.redundancy": "Redundanz", "sc.nPM": "n.PM", "sc.model": "Modell", "sc.connection": "Anschluss", "sc.configuration": "Konfiguration", "sc.ventilation": "Belüftung", "sc.batteries": "Batterien", "sc.hEff": "H.Eff", "sc.addPosition": "+ Position hinzufügen", "sc.generateOffer": "Angebot erstellen", "ol.title": "Angebotspositionen", "ol.pos": "Pos", "ol.qty": "Menge", "ol.model": "Modell", "ol.code": "Code", "ol.description": "Beschreibung", "ol.grossPrice": "Bruttopreis", "ol.discount": "Rabatt %", "ol.netPrice": "Nettopreis", "ol.unitCost": "Stückkosten", "ol.totalCost": "Gesamtkosten", "ol.totalPrice": "Gesamtpreis", "ol.margin": "Marge %", "ol.addProjectSection": "+ Projektabschnitt hinzufügen", "settings.title": "Angebotseinstellungen", "settings.displayCurrency": "Anzeigewährung", "settings.customSymbol": "Benutzerdefiniertes Symbol", "settings.projectDiscount": "Projektrabatt %", "settings.delivery": "Lieferung %", "settings.cancel": "Abbrechen", "settings.apply": "Anwenden", "welcome.title": "Willkommen", "welcome.note": "Melden Sie sich mit Microsoft 365 an, um die Live-Projektliste aus SharePoint zu laden, oder fahren Sie als Gast fort — Sie können sich später jederzeit über die Seitenleiste anmelden.", "welcome.signIn": "🔐 Mit Microsoft 365 anmelden", "welcome.guest": "Als Gast fortfahren →"},
-  fr: {"save.title": "Enregistrer la configuration", "save.msg": "La configuration (JSON) est enregistrée sur SharePoint.", "save.q": "Enregistrer = JSON seul.  Print report = JSON + tous les rapports / annexes de l'offre (Offer, BOM, Excel…) dans le dossier {R}.", "save.cancel": "Annuler", "save.json": "Enregistrer", "save.reports": "Print report", "pd.folder": "📂 Dossier", "nav.initReport": "Initialiser le rapport", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Historique des révisions", "nav.offerWord": "Offre — Word", "nav.techSummary": "Synthèse technique", "pd.saveToSharePoint": "Enregistrer les données du projet", "toast.created": "Projet créé :", "toast.sub": "La création s'est terminée pendant que la fenêtre Create New Offer était fermée. Le charger dans les détails du projet ?", "toast.load": "Charger dans les détails du projet", "toast.upload": "📎 Téléverser des fichiers", "toast.close": "Fermer — aucune action", "toast.loaded": "Chargé dans les détails du projet :", "dlg.yes": "Oui", "dlg.no": "Non", "closeOffer.title": "Offre clôturée", "closeOffer.followUpQuestion": "Activer un rappel de suivi automatique pour cette offre ?", "closeOffer.followUpTitle": "Rappel de suivi", "closeOffer.followUpEnabled": "Rappel de suivi activé", "closeOffer.followUpFailed": "Impossible d'activer le rappel de suivi dans SharePoint :", "spLoad.title": "Charger une configuration", "spLoad.note": "Configurations enregistrées dans le dossier \"02 OFFER\" du projet sur SharePoint, les plus récentes en premier.", "spLoad.ref": "Référence du projet", "spLoad.showFiles": "Afficher les fichiers", "spLoad.fromComputer": "📂 Depuis mon ordinateur…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "Colonne STD/SPECIAL", "nav.resetOfferConfirm": "Réinitialiser l'offre", "nav.newOfferConfirm": "Nouvelle Offre", "newOffer.priority": "Priorité", "newOffer.mapPriorityList": "Nom de la liste Priorité", "newOffer.mapPriorityCol": "Colonne de recherche Priorité", "pd.offerType": "Type d'offre", "newOffer.offerType": "Type d'offre", "newOffer.mapOfferType": "Colonne Type d'offre", "newOffer.notifyTitle": "Projet créé", "newOffer.notifyBody": "cliquez pour téléverser des fichiers", "nav.cloneOffer": "Cloner", "newOffer.uploadFilesTitle": "Téléverser les fichiers de l'offre", "pd.uploadFiles": "Fichiers", "newOffer.uploadIntro": "Facultatif — ajoutez les fichiers d'offre que vous avez déjà. Ils seront enregistrés dans le dossier SharePoint de ce projet, dans un sous-dossier \"01 RFQ\".", "newOffer.skip": "Ignorer", "newOffer.uploadFiles": "Téléverser les fichiers", "newOffer.createdPrefix": "Nouveau projet", "newOffer.createdSuffix": "créé", "newOffer.waitingSub": "Configuration du projet dans SharePoint — attribution de la référence de projet et création de la structure de dossiers…", "newOffer.title": "Créer une nouvelle offre", "newOffer.projectName": "Nom du projet", "newOffer.customer": "Client", "newOffer.country": "Pays", "newOffer.dueDate": "Date d'échéance", "newOffer.owner": "Responsable avant-vente", "newOffer.product": "Produit", "newOffer.battery": "Batterie", "newOffer.batteryBrand": "Marque de batterie", "newOffer.mappingToggle": "🔧 Avancé : mappage des champs SharePoint", "newOffer.mapProjectName": "Colonne Nom du projet", "newOffer.mapCustomer": "Colonne Client", "newOffer.mapDueDate": "Colonne Date d'échéance", "newOffer.mapOwner": "Colonne Responsable", "newOffer.mapProduct": "Colonne Produit", "newOffer.mapBattery": "Colonne Batterie", "newOffer.mapBatteryBrand": "Colonne Marque de batterie", "newOffer.notSubmitted": "Pas encore envoyé.", "newOffer.creatingLabel": "Création du projet…", "newOffer.newProjectCreated": "Nouveau projet créé", "newOffer.stopWaiting": "Arrêter l'attente", "newOffer.submit": "✨ Créer dans SharePoint et démarrer l'offre", "newRev.title": "Démarrer une nouvelle révision", "newRev.description": "Description de la révision", "newRev.placeholder": "Qu'est-ce qui a changé dans cette révision ?", "newRev.confirm": "Démarrer la révision", "spLogin.title": "Se connecter avec MS 365", "spLogin.clientId": "ID de l'application (client)", "spLogin.tenantId": "ID du locataire ou domaine", "spLogin.advancedSettings": "🔧 Paramètres avancés", "spLogin.siteHost": "Hôte du site", "spLogin.sitePath": "Chemin du site", "spLogin.listName": "Nom de la liste", "spLogin.notConnected": "Non connecté.", "spLogin.signOut": "🚪 Déconnexion", "spLogin.connected": "Connecté", "spLogin.notAvailable": "Connexion non disponible", "spLogin.close": "Fermer", "spLogin.refresh": "🔄 Actualiser", "spLogin.connect": "🔐 Se connecter avec Microsoft", "common.qty": "Qté", "common.cost": "Coût", "common.extSupplier": "Fournisseur ext.", "common.category": "Catégorie", "common.addRow": "+ Ajouter une ligne", "common.addToOffer": "Ajouter à l'offre", "common.addAccessories": "Ajouter des accessoires", "common.addSelected": "Ajouter la sélection", "common.addServiceItems": "Ajouter des éléments de service", "common.addBatteryTech": "Ajouter batterie / intégration technologique", "common.addItem": "Ajouter un élément", "dyn.noRowsYet": "Aucune ligne générée pour l'instant. Configurez les positions ci-dessus et cliquez sur \"Générer l'offre\".", "dyn.projectTotal": "Total du projet", "settings.conversionRate": "Taux de conversion", "signIn": "Connexion", "nav.dataSources": "Sources de données", "nav.documents": "Documents", "nav.revision": "Révision", "nav.settings": "Paramètres", "nav.importPriceList": "Importer la liste de prix", "nav.createNewOffer": "Créer une nouvelle offre", "nav.previewBom": "Aperçu de la nomenclature", "nav.bomPdf": "Nomenclature — PDF", "nav.bomExcel": "Nomenclature — Excel", "nav.previewOffer": "Aperçu de l'offre", "nav.offerPdf": "Offre — PDF", "nav.offerExcel": "Offre — Excel", "nav.closeOffer": "Clôturer l'offre", "nav.saveConfig": "Enregistrer la configuration", "nav.loadConfig": "Charger la configuration", "nav.offerSettings": "Paramètres de l'offre", "nav.resetPage": "Réinitialiser la page", "nav.newRevision": "Nouvelle révision", "header.eyebrow": "Avant-vente · Data Center Power", "header.subtitle": "Sélectionnez le projet, définissez la charge requise et générez l'architecture UPS avec son offre.", "status.noProjectData": "Aucune donnée de projet chargée pour l'instant — connectez-vous avec MS 365 (en haut à droite) pour la charger.", "status.noPriceList": "Aucune liste de prix importée — tableau de référence + tarification manuelle.", "pd.title": "Détails du projet", "pd.projectRef": "Référence du projet", "pd.projectName": "Nom du projet", "pd.country": "Pays", "pd.customer": "Client", "pd.dueDate": "Date d'échéance", "pd.owner": "Responsable avant-vente", "pd.product": "Produit", "pd.battery": "Batterie", "pd.batteryBrand": "Marque de batterie", "pd.load": "↑ Charger", "pd.refPlaceholder": "ex. 260005", "pd.batteryBrandPlaceholder": "ex. Hoppecke", "sc.title": "Configuration du système", "sc.pos": "Pos.", "sc.qty": "Qté", "sc.upsSys": "UPS/Sys", "sc.loadsType": "Type de charge", "sc.pload": "P.Charge (kW)", "sc.redundancy": "Redondance", "sc.nPM": "n.PM", "sc.model": "Modèle", "sc.connection": "Connexion", "sc.configuration": "Configuration", "sc.ventilation": "Ventilation", "sc.batteries": "Batteries", "sc.hEff": "H.Eff", "sc.addPosition": "+ Ajouter une position", "sc.generateOffer": "Générer l'offre", "ol.title": "Lignes de l'offre", "ol.pos": "Pos", "ol.qty": "Qté", "ol.model": "Modèle", "ol.code": "Code", "ol.description": "Description", "ol.grossPrice": "Prix brut", "ol.discount": "Remise %", "ol.netPrice": "Prix net", "ol.unitCost": "Coût unitaire", "ol.totalCost": "Coût total", "ol.totalPrice": "Prix total", "ol.margin": "Marge %", "ol.addProjectSection": "+ Ajouter une section de projet", "settings.title": "Paramètres de l'offre", "settings.displayCurrency": "Devise d'affichage", "settings.customSymbol": "Symbole personnalisé", "settings.projectDiscount": "Remise projet %", "settings.delivery": "Livraison %", "settings.cancel": "Annuler", "settings.apply": "Appliquer", "welcome.title": "Bienvenue", "welcome.note": "Connectez-vous avec Microsoft 365 pour charger la liste de projets en direct depuis SharePoint, ou continuez en tant qu'invité — vous pourrez toujours vous connecter plus tard depuis la barre latérale.", "welcome.signIn": "🔐 Se connecter avec Microsoft 365", "welcome.guest": "Continuer en tant qu'invité →"},
-  es: {"save.title": "Guardar configuración", "save.msg": "La configuración (JSON) se guarda en SharePoint.", "save.q": "Guardar = solo JSON.  Print report = JSON + todos los informes / anexos de la oferta (Offer, BOM, Excel…) en la carpeta {R}.", "save.cancel": "Cancelar", "save.json": "Guardar", "save.reports": "Print report", "pd.folder": "📂 Carpeta", "nav.initReport": "Inicializar informe", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Historial de revisiones", "nav.offerWord": "Oferta — Word", "nav.techSummary": "Resumen técnico", "pd.saveToSharePoint": "Guardar datos del proyecto", "toast.created": "Proyecto creado:", "toast.sub": "La creación terminó mientras la ventana Create New Offer estaba cerrada. ¿Cargarlo en los detalles del proyecto?", "toast.load": "Cargar en detalles del proyecto", "toast.upload": "📎 Subir archivos", "toast.close": "Cerrar — sin acción", "toast.loaded": "Cargado en detalles del proyecto:", "dlg.yes": "Sí", "dlg.no": "No", "closeOffer.title": "Oferta cerrada", "closeOffer.followUpQuestion": "¿Activar un recordatorio de seguimiento automático para esta oferta?", "closeOffer.followUpTitle": "Recordatorio de seguimiento", "closeOffer.followUpEnabled": "Recordatorio de seguimiento activado", "closeOffer.followUpFailed": "No se pudo activar el recordatorio de seguimiento en SharePoint:", "spLoad.title": "Cargar configuración", "spLoad.note": "Configuraciones guardadas en la carpeta \"02 OFFER\" del proyecto en SharePoint, las más recientes primero.", "spLoad.ref": "Referencia del proyecto", "spLoad.showFiles": "Mostrar archivos", "spLoad.fromComputer": "📂 Desde mi ordenador…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "Columna STD/SPECIAL", "nav.resetOfferConfirm": "Restablecer oferta", "nav.newOfferConfirm": "Nueva Oferta", "newOffer.priority": "Prioridad", "newOffer.mapPriorityList": "Nombre de la lista Prioridad", "newOffer.mapPriorityCol": "Columna de búsqueda Prioridad", "pd.offerType": "Tipo de oferta", "newOffer.offerType": "Tipo de oferta", "newOffer.mapOfferType": "Columna Tipo de oferta", "newOffer.notifyTitle": "Proyecto creado", "newOffer.notifyBody": "haz clic para subir archivos", "nav.cloneOffer": "Clonar", "newOffer.uploadFilesTitle": "Subir archivos de la oferta", "pd.uploadFiles": "Archivos", "newOffer.uploadIntro": "Opcional — añade los archivos de la oferta que ya tengas. Se guardarán en la carpeta de SharePoint de este proyecto, en una subcarpeta \"01 RFQ\".", "newOffer.skip": "Omitir", "newOffer.uploadFiles": "Subir archivos", "newOffer.createdPrefix": "Nuevo proyecto", "newOffer.createdSuffix": "creado", "newOffer.waitingSub": "Configurando el proyecto en SharePoint — asignando la referencia del proyecto y creando la estructura de carpetas…", "newOffer.title": "Crear nueva oferta", "newOffer.projectName": "Nombre del proyecto", "newOffer.customer": "Cliente", "newOffer.country": "País", "newOffer.dueDate": "Fecha límite", "newOffer.owner": "Responsable de preventa", "newOffer.product": "Producto", "newOffer.battery": "Batería", "newOffer.batteryBrand": "Marca de batería", "newOffer.mappingToggle": "🔧 Avanzado: mapeo de campos de SharePoint", "newOffer.mapProjectName": "Columna Nombre del proyecto", "newOffer.mapCustomer": "Columna Cliente", "newOffer.mapDueDate": "Columna Fecha límite", "newOffer.mapOwner": "Columna Responsable", "newOffer.mapProduct": "Columna Producto", "newOffer.mapBattery": "Columna Batería", "newOffer.mapBatteryBrand": "Columna Marca de batería", "newOffer.notSubmitted": "Aún no enviado.", "newOffer.creatingLabel": "Creando proyecto…", "newOffer.newProjectCreated": "Nuevo proyecto creado", "newOffer.stopWaiting": "Dejar de esperar", "newOffer.submit": "✨ Crear en SharePoint e iniciar oferta", "newRev.title": "Iniciar nueva revisión", "newRev.description": "Descripción de la revisión", "newRev.placeholder": "¿Qué cambió en esta revisión?", "newRev.confirm": "Iniciar revisión", "spLogin.title": "Iniciar sesión con MS 365", "spLogin.clientId": "ID de aplicación (cliente)", "spLogin.tenantId": "ID de inquilino o dominio", "spLogin.advancedSettings": "🔧 Configuración avanzada", "spLogin.siteHost": "Host del sitio", "spLogin.sitePath": "Ruta del sitio", "spLogin.listName": "Nombre de la lista", "spLogin.notConnected": "No conectado.", "spLogin.signOut": "🚪 Cerrar sesión", "spLogin.connected": "Conectado", "spLogin.notAvailable": "Conexión no disponible", "spLogin.close": "Cerrar", "spLogin.refresh": "🔄 Actualizar", "spLogin.connect": "🔐 Iniciar sesión con Microsoft", "common.qty": "Cant.", "common.cost": "Costo", "common.extSupplier": "Proveedor externo", "common.category": "Categoría", "common.addRow": "+ Añadir fila", "common.addToOffer": "Añadir a la oferta", "common.addAccessories": "Añadir accesorios", "common.addSelected": "Añadir seleccionados", "common.addServiceItems": "Añadir elementos de servicio", "common.addBatteryTech": "Añadir batería / integración tecnológica", "common.addItem": "Añadir elemento", "dyn.noRowsYet": "Aún no se han generado filas. Configure las posiciones anteriores y haga clic en \"Generar oferta\".", "dyn.projectTotal": "Total del proyecto", "settings.conversionRate": "Tipo de cambio", "signIn": "Iniciar sesión", "nav.dataSources": "Fuentes de datos", "nav.documents": "Documentos", "nav.revision": "Revisión", "nav.settings": "Configuración", "nav.importPriceList": "Importar lista de precios", "nav.createNewOffer": "Crear nueva oferta", "nav.previewBom": "Vista previa de lista de materiales", "nav.bomPdf": "Lista de materiales — PDF", "nav.bomExcel": "Lista de materiales — Excel", "nav.previewOffer": "Vista previa de la oferta", "nav.offerPdf": "Oferta — PDF", "nav.offerExcel": "Oferta — Excel", "nav.closeOffer": "Cerrar oferta", "nav.saveConfig": "Guardar configuración", "nav.loadConfig": "Cargar configuración", "nav.offerSettings": "Configuración de la oferta", "nav.resetPage": "Restablecer página", "nav.newRevision": "Nueva revisión", "header.eyebrow": "Preventa · Data Center Power", "header.subtitle": "Seleccione el proyecto, defina la carga requerida y genere la arquitectura UPS con su oferta.", "status.noProjectData": "Aún no se han cargado datos del proyecto — inicie sesión con MS 365 (arriba a la derecha) para cargarlos.", "status.noPriceList": "No se ha importado ninguna lista de precios — tabla de referencia + precios manuales.", "pd.title": "Detalles del proyecto", "pd.projectRef": "Referencia del proyecto", "pd.projectName": "Nombre del proyecto", "pd.country": "País", "pd.customer": "Cliente", "pd.dueDate": "Fecha límite", "pd.owner": "Responsable de preventa", "pd.product": "Producto", "pd.battery": "Batería", "pd.batteryBrand": "Marca de batería", "pd.load": "↑ Cargar", "pd.refPlaceholder": "ej. 260005", "pd.batteryBrandPlaceholder": "ej. Hoppecke", "sc.title": "Configuración del sistema", "sc.pos": "Pos.", "sc.qty": "Cant.", "sc.upsSys": "UPS/Sist", "sc.loadsType": "Tipo de carga", "sc.pload": "P.Carga (kW)", "sc.redundancy": "Redundancia", "sc.nPM": "n.PM", "sc.model": "Modelo", "sc.connection": "Conexión", "sc.configuration": "Configuración", "sc.ventilation": "Ventilación", "sc.batteries": "Baterías", "sc.hEff": "H.Eff", "sc.addPosition": "+ Añadir posición", "sc.generateOffer": "Generar oferta", "ol.title": "Líneas de la oferta", "ol.pos": "Pos", "ol.qty": "Cant.", "ol.model": "Modelo", "ol.code": "Código", "ol.description": "Descripción", "ol.grossPrice": "Precio bruto", "ol.discount": "Descuento %", "ol.netPrice": "Precio neto", "ol.unitCost": "Costo unitario", "ol.totalCost": "Costo total", "ol.totalPrice": "Precio total", "ol.margin": "Margen %", "ol.addProjectSection": "+ Añadir sección de proyecto", "settings.title": "Configuración de la oferta", "settings.displayCurrency": "Moneda de visualización", "settings.customSymbol": "Símbolo personalizado", "settings.projectDiscount": "Descuento del proyecto %", "settings.delivery": "Entrega %", "settings.cancel": "Cancelar", "settings.apply": "Aplicar", "welcome.title": "Bienvenido", "welcome.note": "Inicie sesión con Microsoft 365 para cargar la lista de proyectos en vivo desde SharePoint, o continúe como invitado — aún podrá iniciar sesión más tarde desde la barra lateral.", "welcome.signIn": "🔐 Iniciar sesión con Microsoft 365", "welcome.guest": "Continuar como invitado →"},
+  en: {"save.title": "Save configuration", "save.msg": "The configuration is saved to SharePoint.", "save.q": "Save = saves your work.  Print report = saves your work and also creates all the offer reports / attachments (Offer, BOM, Excel…) in the {R} folder.", "save.cancel": "Cancel", "save.json": "Save", "save.reports": "Print report", "pd.folder": "📂 Folder", "nav.initReport": "Initialize Report", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Revision History", "nav.offerWord": "Offer — Word", "nav.techSummary": "Technical Summary", "pd.saveToSharePoint": "Save Project Data", "toast.created": "Project created:", "toast.sub": "It finished while the Create New Offer window was closed. Load it into Project Details?", "toast.load": "Load into Project Details", "toast.upload": "📎 Upload files", "toast.close": "Close — do nothing", "toast.loaded": "Loaded into Project Details:", "dlg.yes": "Yes", "dlg.no": "No", "closeOffer.title": "Offer closed", "closeOffer.followUpQuestion": "Enable an automatic follow-up reminder for this offer?", "closeOffer.followUpTitle": "Follow-up reminder", "closeOffer.followUpEnabled": "Follow-up reminder enabled", "closeOffer.followUpFailed": "Could not enable the follow-up reminder on SharePoint:", "spLoad.title": "Load Configuration", "spLoad.note": "Configurations saved in the project's \"02 OFFER\" folder on SharePoint, newest first.", "spLoad.ref": "Project Reference", "spLoad.showFiles": "Show files", "spLoad.fromComputer": "📂 From my computer…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "STD/SPECIAL column", "nav.resetOfferConfirm": "Reset Offer", "nav.newOfferConfirm": "New Offer", "newOffer.priority": "Priority", "newOffer.mapPriorityList": "Priority list name", "newOffer.mapPriorityCol": "Priority lookup column", "pd.offerType": "Offer Type", "newOffer.offerType": "Offer Type", "newOffer.mapOfferType": "Offer Type column", "newOffer.notifyTitle": "Project created", "newOffer.notifyBody": "click to upload files", "nav.cloneOffer": "Clone", "newOffer.uploadFilesTitle": "Upload Offer Files", "pd.uploadFiles": "Files", "newOffer.uploadIntro": "Optional — add any offer files you already have. They'll be saved to this project's SharePoint folder, in a \"01 RFQ\" subfolder.", "newOffer.skip": "Skip", "newOffer.uploadFiles": "Upload Files", "newOffer.createdPrefix": "New Project", "newOffer.createdSuffix": "Created", "newOffer.waitingSub": "Setting up the project in SharePoint — assigning the Project Reference and creating the folder structure…", "newOffer.title": "Create New Offer", "newOffer.projectName": "Project Name", "newOffer.customer": "Customer", "newOffer.country": "Country", "newOffer.dueDate": "Due Date", "newOffer.owner": "Pre-Sales Owner", "newOffer.product": "Product", "newOffer.battery": "Battery", "newOffer.batteryBrand": "Battery Brand", "newOffer.mappingToggle": "🔧 Advanced: SharePoint field mapping", "newOffer.mapProjectName": "Project Name column", "newOffer.mapCustomer": "Customer column", "newOffer.mapDueDate": "Due Date column", "newOffer.mapOwner": "Owner column", "newOffer.mapProduct": "Product column", "newOffer.mapBattery": "Battery column", "newOffer.mapBatteryBrand": "Battery Brand column", "newOffer.notSubmitted": "Not submitted yet.", "newOffer.creatingLabel": "Creating project…", "newOffer.newProjectCreated": "New Project Created", "newOffer.stopWaiting": "Stop waiting", "newOffer.submit": "✨ Create in SharePoint & Start Offer", "newRev.title": "Start New Revision", "newRev.description": "Revision description", "newRev.placeholder": "What changed in this revision?", "newRev.confirm": "Start Revision", "spLogin.title": "Sign in with MS 365", "spLogin.clientId": "Application (Client) ID", "spLogin.tenantId": "Tenant ID or domain", "spLogin.advancedSettings": "🔧 Advanced Settings", "spLogin.siteHost": "Site host", "spLogin.sitePath": "Site path", "spLogin.listName": "List name", "spLogin.notConnected": "Not connected.", "spLogin.signOut": "🚪 Sign Out", "spLogin.connected": "Connected", "spLogin.notAvailable": "Connection not available", "spLogin.close": "Close", "spLogin.refresh": "🔄 Refresh", "spLogin.connect": "🔐 Sign in with Microsoft", "common.qty": "Qty", "common.cost": "Cost", "common.extSupplier": "Ext. Supplier", "common.category": "Category", "common.addRow": "+ Add Row", "common.addToOffer": "Add to Offer", "common.addAccessories": "Add accessories", "common.addSelected": "Add Selected", "common.addServiceItems": "Add Service Items", "common.addBatteryTech": "Add Battery / Technology Integration", "common.addItem": "Add Item", "dyn.noRowsYet": "No rows generated yet. Configure the positions above and click \"Generate Offer\".", "dyn.projectTotal": "Project Total", "settings.conversionRate": "Conversion rate", "signIn": "Sign-in", "nav.dataSources": "Data Sources", "nav.documents": "Documents", "nav.revision": "Revision", "nav.settings": "Settings", "nav.importPriceList": "Import Price List", "nav.createNewOffer": "Create New Offer", "nav.previewBom": "Preview BOM", "nav.bomPdf": "BOM — PDF", "nav.bomExcel": "BOM — Excel", "nav.previewOffer": "Preview Offer", "nav.offerPdf": "Offer — PDF", "nav.offerExcel": "Offer — Excel", "nav.closeOffer": "Close Offer", "nav.saveConfig": "Save Configuration", "nav.loadConfig": "Load Configuration", "nav.offerSettings": "Offer Settings", "nav.resetPage": "Reset Page", "nav.newRevision": "New Revision", "header.eyebrow": "Pre-Sales · Data Center Power", "header.subtitle": "Select the project, define the required load, and generate the UPS architecture with its offer.", "status.noProjectData": "No project data loaded yet — sign in with MS 365 (top-right) to load it.", "status.noPriceList": "No price list imported — reference table + manual pricing.", "pd.title": "Project Details", "pd.projectRef": "Project Reference", "pd.projectName": "Project Name", "pd.country": "Country", "pd.customer": "Customer", "pd.dueDate": "Due Date", "pd.owner": "Pre-Sales Owner", "pd.product": "Product", "pd.battery": "Battery", "pd.batteryBrand": "Battery Brand", "pd.load": "↑ Load", "pd.refPlaceholder": "e.g. 260005", "pd.batteryBrandPlaceholder": "e.g. Hoppecke", "sc.title": "System Configuration", "sc.pos": "Pos.", "sc.qty": "Qty", "sc.upsSys": "UPS/Sys", "sc.loadsType": "Loads Type", "sc.pload": "Pload (kW)", "sc.redundancy": "Redundancy", "sc.nPM": "n.PM", "sc.model": "Model", "sc.connection": "Connection", "sc.configuration": "Configuration", "sc.ventilation": "Ventilation", "sc.batteries": "Batteries", "sc.hEff": "H.Eff", "sc.addPosition": "+ Add Position", "sc.generateOffer": "Generate Offer", "ol.title": "Offer Lines", "ol.pos": "Pos", "ol.qty": "Qty", "ol.model": "Model", "ol.code": "Code", "ol.description": "Description", "ol.grossPrice": "Gross Price", "ol.discount": "Discount %", "ol.netPrice": "Net Price", "ol.unitCost": "Unit Cost", "ol.totalCost": "Total Cost", "ol.totalPrice": "Total Price", "ol.margin": "Margin %", "ol.addProjectSection": "+ Add Project Section", "settings.title": "Offer Settings", "settings.displayCurrency": "Display Currency", "settings.customSymbol": "Custom symbol", "settings.projectDiscount": "Project Discount %", "settings.delivery": "Delivery %", "settings.cancel": "Cancel", "settings.apply": "Apply", "welcome.title": "Welcome", "welcome.note": "Sign in with Microsoft 365 to load the live Project List from SharePoint, or continue as a guest — you can still sign in later from the sidebar.", "welcome.signIn": "🔐 Sign in with Microsoft 365", "welcome.guest": "Continue as Guest →"},
+  it: {"save.title": "Salva configurazione", "save.msg": "La configurazione viene salvata su SharePoint.", "save.q": "Salva = salva il lavoro.  Print report = salva il lavoro e crea anche tutti i report / allegati d'offerta (Offer, BOM, Excel…) nella cartella {R}.", "save.cancel": "Annulla", "save.json": "Salva", "save.reports": "Print report", "pd.folder": "📂 Cartella", "nav.initReport": "Inizializza report", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Storico revisioni", "nav.offerWord": "Offerta — Word", "nav.techSummary": "Scheda tecnica", "pd.saveToSharePoint": "Salva Dati Progetto", "toast.created": "Progetto creato:", "toast.sub": "La creazione è terminata mentre la finestra Create New Offer era chiusa. Caricarlo nei Project Details?", "toast.load": "Carica in Project Details", "toast.upload": "📎 Carica file", "toast.close": "Chiudi — nessuna azione", "toast.loaded": "Caricato nei Project Details:", "dlg.yes": "Sì", "dlg.no": "No", "closeOffer.title": "Offerta chiusa", "closeOffer.followUpQuestion": "Attivare un promemoria di follow-up automatico per questa offerta?", "closeOffer.followUpTitle": "Promemoria di follow-up", "closeOffer.followUpEnabled": "Promemoria di follow-up attivato", "closeOffer.followUpFailed": "Impossibile attivare il promemoria di follow-up su SharePoint:", "spLoad.title": "Carica Configurazione", "spLoad.note": "Configurazioni salvate nella cartella \"02 OFFER\" del progetto su SharePoint, dalla più recente.", "spLoad.ref": "Riferimento Progetto", "spLoad.showFiles": "Mostra file", "spLoad.fromComputer": "📂 Dal mio computer…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "Colonna STD/SPECIAL", "nav.resetOfferConfirm": "Reset Offerta", "nav.newOfferConfirm": "Nuova Offerta", "newOffer.priority": "Priorità", "newOffer.mapPriorityList": "Nome lista Priorità", "newOffer.mapPriorityCol": "Colonna lookup Priorità", "pd.offerType": "Tipo Offerta", "newOffer.offerType": "Tipo Offerta", "newOffer.mapOfferType": "Colonna Tipo Offerta", "newOffer.notifyTitle": "Progetto creato", "newOffer.notifyBody": "clicca per caricare i file", "nav.cloneOffer": "Clona", "newOffer.uploadFilesTitle": "Carica File Offerta", "pd.uploadFiles": "File", "newOffer.uploadIntro": "Facoltativo — aggiungi eventuali file dell'offerta che hai già. Verranno salvati nella cartella SharePoint di questo progetto, in una sottocartella \"01 RFQ\".", "newOffer.skip": "Salta", "newOffer.uploadFiles": "Carica File", "newOffer.createdPrefix": "Nuovo Progetto", "newOffer.createdSuffix": "Creato", "newOffer.waitingSub": "Creazione del progetto su SharePoint — assegnazione del Riferimento Progetto e creazione della struttura cartelle…", "newOffer.title": "Crea Nuova Offerta", "newOffer.projectName": "Nome Progetto", "newOffer.customer": "Cliente", "newOffer.country": "Paese", "newOffer.dueDate": "Scadenza", "newOffer.owner": "Responsabile Pre-Vendita", "newOffer.product": "Prodotto", "newOffer.battery": "Batteria", "newOffer.batteryBrand": "Marca Batteria", "newOffer.mappingToggle": "🔧 Avanzate: mappatura campi SharePoint", "newOffer.mapProjectName": "Colonna Nome Progetto", "newOffer.mapCustomer": "Colonna Cliente", "newOffer.mapDueDate": "Colonna Scadenza", "newOffer.mapOwner": "Colonna Responsabile", "newOffer.mapProduct": "Colonna Prodotto", "newOffer.mapBattery": "Colonna Batteria", "newOffer.mapBatteryBrand": "Colonna Marca Batteria", "newOffer.notSubmitted": "Non ancora inviato.", "newOffer.creatingLabel": "Creazione progetto…", "newOffer.newProjectCreated": "Nuovo Progetto Creato", "newOffer.stopWaiting": "Interrompi attesa", "newOffer.submit": "✨ Crea su SharePoint e Avvia Offerta", "newRev.title": "Avvia Nuova Revisione", "newRev.description": "Descrizione revisione", "newRev.placeholder": "Cosa è cambiato in questa revisione?", "newRev.confirm": "Avvia Revisione", "spLogin.title": "Accedi con MS 365", "spLogin.clientId": "ID Applicazione (Client)", "spLogin.tenantId": "ID Tenant o dominio", "spLogin.advancedSettings": "🔧 Impostazioni Avanzate", "spLogin.siteHost": "Host del sito", "spLogin.sitePath": "Percorso del sito", "spLogin.listName": "Nome della lista", "spLogin.notConnected": "Non connesso.", "spLogin.signOut": "🚪 Esci", "spLogin.connected": "Connesso", "spLogin.notAvailable": "Connessione non disponibile", "spLogin.close": "Chiudi", "spLogin.refresh": "🔄 Aggiorna", "spLogin.connect": "🔐 Accedi con Microsoft", "common.qty": "Q.tà", "common.cost": "Costo", "common.extSupplier": "Fornitore Est.", "common.category": "Categoria", "common.addRow": "+ Aggiungi Riga", "common.addToOffer": "Aggiungi all'Offerta", "common.addAccessories": "Aggiungi Accessori", "common.addSelected": "Aggiungi Selezionati", "common.addServiceItems": "Aggiungi Voci di Servizio", "common.addBatteryTech": "Aggiungi Batteria / Technology Integration", "common.addItem": "Aggiungi Voce", "dyn.noRowsYet": "Nessuna riga generata ancora. Configura le posizioni sopra e clicca \"Genera Offerta\".", "dyn.projectTotal": "Totale Progetto", "settings.conversionRate": "Tasso di cambio", "signIn": "Accedi", "nav.dataSources": "Origine Dati", "nav.documents": "Documenti", "nav.revision": "Revisione", "nav.settings": "Impostazioni", "nav.importPriceList": "Importa Listino Prezzi", "nav.createNewOffer": "Crea Nuova Offerta", "nav.previewBom": "Anteprima Distinta Base", "nav.bomPdf": "Distinta Base — PDF", "nav.bomExcel": "Distinta Base — Excel", "nav.previewOffer": "Anteprima Offerta", "nav.offerPdf": "Offerta — PDF", "nav.offerExcel": "Offerta — Excel", "nav.closeOffer": "Chiudi Offerta", "nav.saveConfig": "Salva Configurazione", "nav.loadConfig": "Carica Configurazione", "nav.offerSettings": "Impostazioni Offerta", "nav.resetPage": "Reimposta Pagina", "nav.newRevision": "Nuova Revisione", "header.eyebrow": "Pre-Vendita · Data Center Power", "header.subtitle": "Seleziona il progetto, definisci il carico richiesto e genera l'architettura UPS con la relativa offerta.", "status.noProjectData": "Nessun dato progetto ancora caricato — accedi con MS 365 (in alto a destra) per caricarlo.", "status.noPriceList": "Nessun listino importato — tabella di riferimento + prezzi manuali.", "pd.title": "Dettagli Progetto", "pd.projectRef": "Riferimento Progetto", "pd.projectName": "Nome Progetto", "pd.country": "Paese", "pd.customer": "Cliente", "pd.dueDate": "Scadenza", "pd.owner": "Responsabile Pre-Vendita", "pd.product": "Prodotto", "pd.battery": "Batteria", "pd.batteryBrand": "Marca Batteria", "pd.load": "↑ Carica", "pd.refPlaceholder": "es. 260005", "pd.batteryBrandPlaceholder": "es. Hoppecke", "sc.title": "Configurazione Sistema", "sc.pos": "Pos.", "sc.qty": "Q.tà", "sc.upsSys": "UPS/Sist", "sc.loadsType": "Tipo Carico", "sc.pload": "P.Carico (kW)", "sc.redundancy": "Ridondanza", "sc.nPM": "n.PM", "sc.model": "Modello", "sc.connection": "Connessione", "sc.configuration": "Configurazione", "sc.ventilation": "Ventilazione", "sc.batteries": "Batterie", "sc.hEff": "H.Eff", "sc.addPosition": "+ Aggiungi Posizione", "sc.generateOffer": "Genera Offerta", "ol.title": "Righe Offerta", "ol.pos": "Pos", "ol.qty": "Q.tà", "ol.model": "Modello", "ol.code": "Codice", "ol.description": "Descrizione", "ol.grossPrice": "Prezzo Lordo", "ol.discount": "Sconto %", "ol.netPrice": "Prezzo Netto", "ol.unitCost": "Costo Unitario", "ol.totalCost": "Costo Totale", "ol.totalPrice": "Prezzo Totale", "ol.margin": "Margine %", "ol.addProjectSection": "+ Aggiungi Sezione Progetto", "settings.title": "Impostazioni Offerta", "settings.displayCurrency": "Valuta Visualizzata", "settings.customSymbol": "Simbolo personalizzato", "settings.projectDiscount": "Sconto Progetto %", "settings.delivery": "Trasporto %", "settings.cancel": "Annulla", "settings.apply": "Applica", "welcome.title": "Benvenuto", "welcome.note": "Accedi con Microsoft 365 per caricare la Lista Progetti in tempo reale da SharePoint, oppure continua come ospite — potrai comunque accedere più tardi dalla barra laterale.", "welcome.signIn": "🔐 Accedi con Microsoft 365", "welcome.guest": "Continua come Ospite →"},
+  de: {"save.title": "Konfiguration speichern", "save.msg": "Die Konfiguration wird in SharePoint gespeichert.", "save.q": "Speichern = speichert die Arbeit.  Print report = speichert die Arbeit und erstellt zusätzlich alle Angebotsberichte / Anlagen (Offer, BOM, Excel…) im Ordner {R}.", "save.cancel": "Abbrechen", "save.json": "Speichern", "save.reports": "Print report", "pd.folder": "📂 Ordner", "nav.initReport": "Bericht vorbereiten", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Revisionsverlauf", "nav.offerWord": "Angebot — Word", "nav.techSummary": "Technische Übersicht", "pd.saveToSharePoint": "Projektdaten speichern", "toast.created": "Projekt erstellt:", "toast.sub": "Die Erstellung wurde abgeschlossen, während das Fenster „Create New Offer“ geschlossen war. In die Projektdetails laden?", "toast.load": "In Projektdetails laden", "toast.upload": "📎 Dateien hochladen", "toast.close": "Schließen — keine Aktion", "toast.loaded": "In Projektdetails geladen:", "dlg.yes": "Ja", "dlg.no": "Nein", "closeOffer.title": "Angebot abgeschlossen", "closeOffer.followUpQuestion": "Automatische Follow-up-Erinnerung für dieses Angebot aktivieren?", "closeOffer.followUpTitle": "Follow-up-Erinnerung", "closeOffer.followUpEnabled": "Follow-up-Erinnerung aktiviert", "closeOffer.followUpFailed": "Die Follow-up-Erinnerung konnte in SharePoint nicht aktiviert werden:", "spLoad.title": "Konfiguration laden", "spLoad.note": "Im Ordner \"02 OFFER\" des Projekts auf SharePoint gespeicherte Konfigurationen, neueste zuerst.", "spLoad.ref": "Projektreferenz", "spLoad.showFiles": "Dateien anzeigen", "spLoad.fromComputer": "📂 Von meinem Computer…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "Spalte STD/SPECIAL", "nav.resetOfferConfirm": "Angebot zurücksetzen", "nav.newOfferConfirm": "Neues Angebot", "newOffer.priority": "Priorität", "newOffer.mapPriorityList": "Name der Prioritätsliste", "newOffer.mapPriorityCol": "Prioritäts-Lookup-Spalte", "pd.offerType": "Angebotstyp", "newOffer.offerType": "Angebotstyp", "newOffer.mapOfferType": "Angebotstyp-Spalte", "newOffer.notifyTitle": "Projekt erstellt", "newOffer.notifyBody": "klicken, um Dateien hochzuladen", "nav.cloneOffer": "Klonen", "newOffer.uploadFilesTitle": "Angebotsdateien hochladen", "pd.uploadFiles": "Dateien", "newOffer.uploadIntro": "Optional — fügen Sie vorhandene Angebotsdateien hinzu. Sie werden im SharePoint-Ordner dieses Projekts, in einem Unterordner \"01 RFQ\", gespeichert.", "newOffer.skip": "Überspringen", "newOffer.uploadFiles": "Dateien hochladen", "newOffer.createdPrefix": "Neues Projekt", "newOffer.createdSuffix": "erstellt", "newOffer.waitingSub": "Projekt wird in SharePoint eingerichtet — Projektreferenz wird zugewiesen und die Ordnerstruktur erstellt…", "newOffer.title": "Neues Angebot erstellen", "newOffer.projectName": "Projektname", "newOffer.customer": "Kunde", "newOffer.country": "Land", "newOffer.dueDate": "Fälligkeitsdatum", "newOffer.owner": "Vertriebsverantwortlicher", "newOffer.product": "Produkt", "newOffer.battery": "Batterie", "newOffer.batteryBrand": "Batteriemarke", "newOffer.mappingToggle": "🔧 Erweitert: SharePoint-Feldzuordnung", "newOffer.mapProjectName": "Spalte Projektname", "newOffer.mapCustomer": "Spalte Kunde", "newOffer.mapDueDate": "Spalte Fälligkeitsdatum", "newOffer.mapOwner": "Spalte Verantwortlicher", "newOffer.mapProduct": "Spalte Produkt", "newOffer.mapBattery": "Spalte Batterie", "newOffer.mapBatteryBrand": "Spalte Batteriemarke", "newOffer.notSubmitted": "Noch nicht gesendet.", "newOffer.creatingLabel": "Projekt wird erstellt…", "newOffer.newProjectCreated": "Neues Projekt erstellt", "newOffer.stopWaiting": "Warten beenden", "newOffer.submit": "✨ In SharePoint erstellen & Angebot starten", "newRev.title": "Neue Revision starten", "newRev.description": "Revisionsbeschreibung", "newRev.placeholder": "Was hat sich in dieser Revision geändert?", "newRev.confirm": "Revision starten", "spLogin.title": "Mit MS 365 anmelden", "spLogin.clientId": "Anwendungs-ID (Client)", "spLogin.tenantId": "Mandanten-ID oder Domäne", "spLogin.advancedSettings": "🔧 Erweiterte Einstellungen", "spLogin.siteHost": "Site-Host", "spLogin.sitePath": "Site-Pfad", "spLogin.listName": "Listenname", "spLogin.notConnected": "Nicht verbunden.", "spLogin.signOut": "🚪 Abmelden", "spLogin.connected": "Verbunden", "spLogin.notAvailable": "Verbindung nicht verfügbar", "spLogin.close": "Schließen", "spLogin.refresh": "🔄 Aktualisieren", "spLogin.connect": "🔐 Mit Microsoft anmelden", "common.qty": "Menge", "common.cost": "Kosten", "common.extSupplier": "Externer Lieferant", "common.category": "Kategorie", "common.addRow": "+ Zeile hinzufügen", "common.addToOffer": "Zum Angebot hinzufügen", "common.addAccessories": "Zubehör hinzufügen", "common.addSelected": "Auswahl hinzufügen", "common.addServiceItems": "Serviceposten hinzufügen", "common.addBatteryTech": "Batterie/Technologieintegration hinzufügen", "common.addItem": "Element hinzufügen", "dyn.noRowsYet": "Noch keine Zeilen erstellt. Konfigurieren Sie oben die Positionen und klicken Sie auf \"Angebot erstellen\".", "dyn.projectTotal": "Projektgesamtsumme", "settings.conversionRate": "Wechselkurs", "signIn": "Anmelden", "nav.dataSources": "Datenquellen", "nav.documents": "Dokumente", "nav.revision": "Revision", "nav.settings": "Einstellungen", "nav.importPriceList": "Preisliste importieren", "nav.createNewOffer": "Neues Angebot erstellen", "nav.previewBom": "Stückliste – Vorschau", "nav.bomPdf": "Stückliste — PDF", "nav.bomExcel": "Stückliste — Excel", "nav.previewOffer": "Angebot – Vorschau", "nav.offerPdf": "Angebot — PDF", "nav.offerExcel": "Angebot — Excel", "nav.closeOffer": "Angebot abschließen", "nav.saveConfig": "Konfiguration speichern", "nav.loadConfig": "Konfiguration laden", "nav.offerSettings": "Angebotseinstellungen", "nav.resetPage": "Seite zurücksetzen", "nav.newRevision": "Neue Revision", "header.eyebrow": "Vertrieb · Data Center Power", "header.subtitle": "Wählen Sie das Projekt aus, definieren Sie die erforderliche Last und erstellen Sie die USV-Architektur mit dem zugehörigen Angebot.", "status.noProjectData": "Noch keine Projektdaten geladen — melden Sie sich mit MS 365 an (oben rechts), um sie zu laden.", "status.noPriceList": "Keine Preisliste importiert — Referenztabelle + manuelle Preisgestaltung.", "pd.title": "Projektdetails", "pd.projectRef": "Projektreferenz", "pd.projectName": "Projektname", "pd.country": "Land", "pd.customer": "Kunde", "pd.dueDate": "Fälligkeitsdatum", "pd.owner": "Vertriebsverantwortlicher", "pd.product": "Produkt", "pd.battery": "Batterie", "pd.batteryBrand": "Batteriemarke", "pd.load": "↑ Laden", "pd.refPlaceholder": "z.B. 260005", "pd.batteryBrandPlaceholder": "z.B. Hoppecke", "sc.title": "Systemkonfiguration", "sc.pos": "Pos.", "sc.qty": "Menge", "sc.upsSys": "USV/Sys", "sc.loadsType": "Lasttyp", "sc.pload": "P.Last (kW)", "sc.redundancy": "Redundanz", "sc.nPM": "n.PM", "sc.model": "Modell", "sc.connection": "Anschluss", "sc.configuration": "Konfiguration", "sc.ventilation": "Belüftung", "sc.batteries": "Batterien", "sc.hEff": "H.Eff", "sc.addPosition": "+ Position hinzufügen", "sc.generateOffer": "Angebot erstellen", "ol.title": "Angebotspositionen", "ol.pos": "Pos", "ol.qty": "Menge", "ol.model": "Modell", "ol.code": "Code", "ol.description": "Beschreibung", "ol.grossPrice": "Bruttopreis", "ol.discount": "Rabatt %", "ol.netPrice": "Nettopreis", "ol.unitCost": "Stückkosten", "ol.totalCost": "Gesamtkosten", "ol.totalPrice": "Gesamtpreis", "ol.margin": "Marge %", "ol.addProjectSection": "+ Projektabschnitt hinzufügen", "settings.title": "Angebotseinstellungen", "settings.displayCurrency": "Anzeigewährung", "settings.customSymbol": "Benutzerdefiniertes Symbol", "settings.projectDiscount": "Projektrabatt %", "settings.delivery": "Lieferung %", "settings.cancel": "Abbrechen", "settings.apply": "Anwenden", "welcome.title": "Willkommen", "welcome.note": "Melden Sie sich mit Microsoft 365 an, um die Live-Projektliste aus SharePoint zu laden, oder fahren Sie als Gast fort — Sie können sich später jederzeit über die Seitenleiste anmelden.", "welcome.signIn": "🔐 Mit Microsoft 365 anmelden", "welcome.guest": "Als Gast fortfahren →"},
+  fr: {"save.title": "Enregistrer la configuration", "save.msg": "La configuration est enregistrée sur SharePoint.", "save.q": "Enregistrer = enregistre le travail.  Print report = enregistre le travail et crée aussi tous les rapports / annexes de l'offre (Offer, BOM, Excel…) dans le dossier {R}.", "save.cancel": "Annuler", "save.json": "Enregistrer", "save.reports": "Print report", "pd.folder": "📂 Dossier", "nav.initReport": "Initialiser le rapport", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Historique des révisions", "nav.offerWord": "Offre — Word", "nav.techSummary": "Synthèse technique", "pd.saveToSharePoint": "Enregistrer les données du projet", "toast.created": "Projet créé :", "toast.sub": "La création s'est terminée pendant que la fenêtre Create New Offer était fermée. Le charger dans les détails du projet ?", "toast.load": "Charger dans les détails du projet", "toast.upload": "📎 Téléverser des fichiers", "toast.close": "Fermer — aucune action", "toast.loaded": "Chargé dans les détails du projet :", "dlg.yes": "Oui", "dlg.no": "Non", "closeOffer.title": "Offre clôturée", "closeOffer.followUpQuestion": "Activer un rappel de suivi automatique pour cette offre ?", "closeOffer.followUpTitle": "Rappel de suivi", "closeOffer.followUpEnabled": "Rappel de suivi activé", "closeOffer.followUpFailed": "Impossible d'activer le rappel de suivi dans SharePoint :", "spLoad.title": "Charger une configuration", "spLoad.note": "Configurations enregistrées dans le dossier \"02 OFFER\" du projet sur SharePoint, les plus récentes en premier.", "spLoad.ref": "Référence du projet", "spLoad.showFiles": "Afficher les fichiers", "spLoad.fromComputer": "📂 Depuis mon ordinateur…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "Colonne STD/SPECIAL", "nav.resetOfferConfirm": "Réinitialiser l'offre", "nav.newOfferConfirm": "Nouvelle Offre", "newOffer.priority": "Priorité", "newOffer.mapPriorityList": "Nom de la liste Priorité", "newOffer.mapPriorityCol": "Colonne de recherche Priorité", "pd.offerType": "Type d'offre", "newOffer.offerType": "Type d'offre", "newOffer.mapOfferType": "Colonne Type d'offre", "newOffer.notifyTitle": "Projet créé", "newOffer.notifyBody": "cliquez pour téléverser des fichiers", "nav.cloneOffer": "Cloner", "newOffer.uploadFilesTitle": "Téléverser les fichiers de l'offre", "pd.uploadFiles": "Fichiers", "newOffer.uploadIntro": "Facultatif — ajoutez les fichiers d'offre que vous avez déjà. Ils seront enregistrés dans le dossier SharePoint de ce projet, dans un sous-dossier \"01 RFQ\".", "newOffer.skip": "Ignorer", "newOffer.uploadFiles": "Téléverser les fichiers", "newOffer.createdPrefix": "Nouveau projet", "newOffer.createdSuffix": "créé", "newOffer.waitingSub": "Configuration du projet dans SharePoint — attribution de la référence de projet et création de la structure de dossiers…", "newOffer.title": "Créer une nouvelle offre", "newOffer.projectName": "Nom du projet", "newOffer.customer": "Client", "newOffer.country": "Pays", "newOffer.dueDate": "Date d'échéance", "newOffer.owner": "Responsable avant-vente", "newOffer.product": "Produit", "newOffer.battery": "Batterie", "newOffer.batteryBrand": "Marque de batterie", "newOffer.mappingToggle": "🔧 Avancé : mappage des champs SharePoint", "newOffer.mapProjectName": "Colonne Nom du projet", "newOffer.mapCustomer": "Colonne Client", "newOffer.mapDueDate": "Colonne Date d'échéance", "newOffer.mapOwner": "Colonne Responsable", "newOffer.mapProduct": "Colonne Produit", "newOffer.mapBattery": "Colonne Batterie", "newOffer.mapBatteryBrand": "Colonne Marque de batterie", "newOffer.notSubmitted": "Pas encore envoyé.", "newOffer.creatingLabel": "Création du projet…", "newOffer.newProjectCreated": "Nouveau projet créé", "newOffer.stopWaiting": "Arrêter l'attente", "newOffer.submit": "✨ Créer dans SharePoint et démarrer l'offre", "newRev.title": "Démarrer une nouvelle révision", "newRev.description": "Description de la révision", "newRev.placeholder": "Qu'est-ce qui a changé dans cette révision ?", "newRev.confirm": "Démarrer la révision", "spLogin.title": "Se connecter avec MS 365", "spLogin.clientId": "ID de l'application (client)", "spLogin.tenantId": "ID du locataire ou domaine", "spLogin.advancedSettings": "🔧 Paramètres avancés", "spLogin.siteHost": "Hôte du site", "spLogin.sitePath": "Chemin du site", "spLogin.listName": "Nom de la liste", "spLogin.notConnected": "Non connecté.", "spLogin.signOut": "🚪 Déconnexion", "spLogin.connected": "Connecté", "spLogin.notAvailable": "Connexion non disponible", "spLogin.close": "Fermer", "spLogin.refresh": "🔄 Actualiser", "spLogin.connect": "🔐 Se connecter avec Microsoft", "common.qty": "Qté", "common.cost": "Coût", "common.extSupplier": "Fournisseur ext.", "common.category": "Catégorie", "common.addRow": "+ Ajouter une ligne", "common.addToOffer": "Ajouter à l'offre", "common.addAccessories": "Ajouter des accessoires", "common.addSelected": "Ajouter la sélection", "common.addServiceItems": "Ajouter des éléments de service", "common.addBatteryTech": "Ajouter batterie / intégration technologique", "common.addItem": "Ajouter un élément", "dyn.noRowsYet": "Aucune ligne générée pour l'instant. Configurez les positions ci-dessus et cliquez sur \"Générer l'offre\".", "dyn.projectTotal": "Total du projet", "settings.conversionRate": "Taux de conversion", "signIn": "Connexion", "nav.dataSources": "Sources de données", "nav.documents": "Documents", "nav.revision": "Révision", "nav.settings": "Paramètres", "nav.importPriceList": "Importer la liste de prix", "nav.createNewOffer": "Créer une nouvelle offre", "nav.previewBom": "Aperçu de la nomenclature", "nav.bomPdf": "Nomenclature — PDF", "nav.bomExcel": "Nomenclature — Excel", "nav.previewOffer": "Aperçu de l'offre", "nav.offerPdf": "Offre — PDF", "nav.offerExcel": "Offre — Excel", "nav.closeOffer": "Clôturer l'offre", "nav.saveConfig": "Enregistrer la configuration", "nav.loadConfig": "Charger la configuration", "nav.offerSettings": "Paramètres de l'offre", "nav.resetPage": "Réinitialiser la page", "nav.newRevision": "Nouvelle révision", "header.eyebrow": "Avant-vente · Data Center Power", "header.subtitle": "Sélectionnez le projet, définissez la charge requise et générez l'architecture UPS avec son offre.", "status.noProjectData": "Aucune donnée de projet chargée pour l'instant — connectez-vous avec MS 365 (en haut à droite) pour la charger.", "status.noPriceList": "Aucune liste de prix importée — tableau de référence + tarification manuelle.", "pd.title": "Détails du projet", "pd.projectRef": "Référence du projet", "pd.projectName": "Nom du projet", "pd.country": "Pays", "pd.customer": "Client", "pd.dueDate": "Date d'échéance", "pd.owner": "Responsable avant-vente", "pd.product": "Produit", "pd.battery": "Batterie", "pd.batteryBrand": "Marque de batterie", "pd.load": "↑ Charger", "pd.refPlaceholder": "ex. 260005", "pd.batteryBrandPlaceholder": "ex. Hoppecke", "sc.title": "Configuration du système", "sc.pos": "Pos.", "sc.qty": "Qté", "sc.upsSys": "UPS/Sys", "sc.loadsType": "Type de charge", "sc.pload": "P.Charge (kW)", "sc.redundancy": "Redondance", "sc.nPM": "n.PM", "sc.model": "Modèle", "sc.connection": "Connexion", "sc.configuration": "Configuration", "sc.ventilation": "Ventilation", "sc.batteries": "Batteries", "sc.hEff": "H.Eff", "sc.addPosition": "+ Ajouter une position", "sc.generateOffer": "Générer l'offre", "ol.title": "Lignes de l'offre", "ol.pos": "Pos", "ol.qty": "Qté", "ol.model": "Modèle", "ol.code": "Code", "ol.description": "Description", "ol.grossPrice": "Prix brut", "ol.discount": "Remise %", "ol.netPrice": "Prix net", "ol.unitCost": "Coût unitaire", "ol.totalCost": "Coût total", "ol.totalPrice": "Prix total", "ol.margin": "Marge %", "ol.addProjectSection": "+ Ajouter une section de projet", "settings.title": "Paramètres de l'offre", "settings.displayCurrency": "Devise d'affichage", "settings.customSymbol": "Symbole personnalisé", "settings.projectDiscount": "Remise projet %", "settings.delivery": "Livraison %", "settings.cancel": "Annuler", "settings.apply": "Appliquer", "welcome.title": "Bienvenue", "welcome.note": "Connectez-vous avec Microsoft 365 pour charger la liste de projets en direct depuis SharePoint, ou continuez en tant qu'invité — vous pourrez toujours vous connecter plus tard depuis la barre latérale.", "welcome.signIn": "🔐 Se connecter avec Microsoft 365", "welcome.guest": "Continuer en tant qu'invité →"},
+  es: {"save.title": "Guardar configuración", "save.msg": "La configuración se guarda en SharePoint.", "save.q": "Guardar = guarda el trabajo.  Print report = guarda el trabajo y crea también todos los informes / anexos de la oferta (Offer, BOM, Excel…) en la carpeta {R}.", "save.cancel": "Cancelar", "save.json": "Guardar", "save.reports": "Print report", "pd.folder": "📂 Carpeta", "nav.initReport": "Inicializar informe", "nav.techNote": "Technical Note — Word", "nav.revHistory": "Historial de revisiones", "nav.offerWord": "Oferta — Word", "nav.techSummary": "Resumen técnico", "pd.saveToSharePoint": "Guardar datos del proyecto", "toast.created": "Proyecto creado:", "toast.sub": "La creación terminó mientras la ventana Create New Offer estaba cerrada. ¿Cargarlo en los detalles del proyecto?", "toast.load": "Cargar en detalles del proyecto", "toast.upload": "📎 Subir archivos", "toast.close": "Cerrar — sin acción", "toast.loaded": "Cargado en detalles del proyecto:", "dlg.yes": "Sí", "dlg.no": "No", "closeOffer.title": "Oferta cerrada", "closeOffer.followUpQuestion": "¿Activar un recordatorio de seguimiento automático para esta oferta?", "closeOffer.followUpTitle": "Recordatorio de seguimiento", "closeOffer.followUpEnabled": "Recordatorio de seguimiento activado", "closeOffer.followUpFailed": "No se pudo activar el recordatorio de seguimiento en SharePoint:", "spLoad.title": "Cargar configuración", "spLoad.note": "Configuraciones guardadas en la carpeta \"02 OFFER\" del proyecto en SharePoint, las más recientes primero.", "spLoad.ref": "Referencia del proyecto", "spLoad.showFiles": "Mostrar archivos", "spLoad.fromComputer": "📂 Desde mi ordenador…", "pd.stdSpecial": "STD/SPECIAL", "newOffer.stdSpecial": "STD/SPECIAL", "newOffer.mapStdSpecial": "Columna STD/SPECIAL", "nav.resetOfferConfirm": "Restablecer oferta", "nav.newOfferConfirm": "Nueva Oferta", "newOffer.priority": "Prioridad", "newOffer.mapPriorityList": "Nombre de la lista Prioridad", "newOffer.mapPriorityCol": "Columna de búsqueda Prioridad", "pd.offerType": "Tipo de oferta", "newOffer.offerType": "Tipo de oferta", "newOffer.mapOfferType": "Columna Tipo de oferta", "newOffer.notifyTitle": "Proyecto creado", "newOffer.notifyBody": "haz clic para subir archivos", "nav.cloneOffer": "Clonar", "newOffer.uploadFilesTitle": "Subir archivos de la oferta", "pd.uploadFiles": "Archivos", "newOffer.uploadIntro": "Opcional — añade los archivos de la oferta que ya tengas. Se guardarán en la carpeta de SharePoint de este proyecto, en una subcarpeta \"01 RFQ\".", "newOffer.skip": "Omitir", "newOffer.uploadFiles": "Subir archivos", "newOffer.createdPrefix": "Nuevo proyecto", "newOffer.createdSuffix": "creado", "newOffer.waitingSub": "Configurando el proyecto en SharePoint — asignando la referencia del proyecto y creando la estructura de carpetas…", "newOffer.title": "Crear nueva oferta", "newOffer.projectName": "Nombre del proyecto", "newOffer.customer": "Cliente", "newOffer.country": "País", "newOffer.dueDate": "Fecha límite", "newOffer.owner": "Responsable de preventa", "newOffer.product": "Producto", "newOffer.battery": "Batería", "newOffer.batteryBrand": "Marca de batería", "newOffer.mappingToggle": "🔧 Avanzado: mapeo de campos de SharePoint", "newOffer.mapProjectName": "Columna Nombre del proyecto", "newOffer.mapCustomer": "Columna Cliente", "newOffer.mapDueDate": "Columna Fecha límite", "newOffer.mapOwner": "Columna Responsable", "newOffer.mapProduct": "Columna Producto", "newOffer.mapBattery": "Columna Batería", "newOffer.mapBatteryBrand": "Columna Marca de batería", "newOffer.notSubmitted": "Aún no enviado.", "newOffer.creatingLabel": "Creando proyecto…", "newOffer.newProjectCreated": "Nuevo proyecto creado", "newOffer.stopWaiting": "Dejar de esperar", "newOffer.submit": "✨ Crear en SharePoint e iniciar oferta", "newRev.title": "Iniciar nueva revisión", "newRev.description": "Descripción de la revisión", "newRev.placeholder": "¿Qué cambió en esta revisión?", "newRev.confirm": "Iniciar revisión", "spLogin.title": "Iniciar sesión con MS 365", "spLogin.clientId": "ID de aplicación (cliente)", "spLogin.tenantId": "ID de inquilino o dominio", "spLogin.advancedSettings": "🔧 Configuración avanzada", "spLogin.siteHost": "Host del sitio", "spLogin.sitePath": "Ruta del sitio", "spLogin.listName": "Nombre de la lista", "spLogin.notConnected": "No conectado.", "spLogin.signOut": "🚪 Cerrar sesión", "spLogin.connected": "Conectado", "spLogin.notAvailable": "Conexión no disponible", "spLogin.close": "Cerrar", "spLogin.refresh": "🔄 Actualizar", "spLogin.connect": "🔐 Iniciar sesión con Microsoft", "common.qty": "Cant.", "common.cost": "Costo", "common.extSupplier": "Proveedor externo", "common.category": "Categoría", "common.addRow": "+ Añadir fila", "common.addToOffer": "Añadir a la oferta", "common.addAccessories": "Añadir accesorios", "common.addSelected": "Añadir seleccionados", "common.addServiceItems": "Añadir elementos de servicio", "common.addBatteryTech": "Añadir batería / integración tecnológica", "common.addItem": "Añadir elemento", "dyn.noRowsYet": "Aún no se han generado filas. Configure las posiciones anteriores y haga clic en \"Generar oferta\".", "dyn.projectTotal": "Total del proyecto", "settings.conversionRate": "Tipo de cambio", "signIn": "Iniciar sesión", "nav.dataSources": "Fuentes de datos", "nav.documents": "Documentos", "nav.revision": "Revisión", "nav.settings": "Configuración", "nav.importPriceList": "Importar lista de precios", "nav.createNewOffer": "Crear nueva oferta", "nav.previewBom": "Vista previa de lista de materiales", "nav.bomPdf": "Lista de materiales — PDF", "nav.bomExcel": "Lista de materiales — Excel", "nav.previewOffer": "Vista previa de la oferta", "nav.offerPdf": "Oferta — PDF", "nav.offerExcel": "Oferta — Excel", "nav.closeOffer": "Cerrar oferta", "nav.saveConfig": "Guardar configuración", "nav.loadConfig": "Cargar configuración", "nav.offerSettings": "Configuración de la oferta", "nav.resetPage": "Restablecer página", "nav.newRevision": "Nueva revisión", "header.eyebrow": "Preventa · Data Center Power", "header.subtitle": "Seleccione el proyecto, defina la carga requerida y genere la arquitectura UPS con su oferta.", "status.noProjectData": "Aún no se han cargado datos del proyecto — inicie sesión con MS 365 (arriba a la derecha) para cargarlos.", "status.noPriceList": "No se ha importado ninguna lista de precios — tabla de referencia + precios manuales.", "pd.title": "Detalles del proyecto", "pd.projectRef": "Referencia del proyecto", "pd.projectName": "Nombre del proyecto", "pd.country": "País", "pd.customer": "Cliente", "pd.dueDate": "Fecha límite", "pd.owner": "Responsable de preventa", "pd.product": "Producto", "pd.battery": "Batería", "pd.batteryBrand": "Marca de batería", "pd.load": "↑ Cargar", "pd.refPlaceholder": "ej. 260005", "pd.batteryBrandPlaceholder": "ej. Hoppecke", "sc.title": "Configuración del sistema", "sc.pos": "Pos.", "sc.qty": "Cant.", "sc.upsSys": "UPS/Sist", "sc.loadsType": "Tipo de carga", "sc.pload": "P.Carga (kW)", "sc.redundancy": "Redundancia", "sc.nPM": "n.PM", "sc.model": "Modelo", "sc.connection": "Conexión", "sc.configuration": "Configuración", "sc.ventilation": "Ventilación", "sc.batteries": "Baterías", "sc.hEff": "H.Eff", "sc.addPosition": "+ Añadir posición", "sc.generateOffer": "Generar oferta", "ol.title": "Líneas de la oferta", "ol.pos": "Pos", "ol.qty": "Cant.", "ol.model": "Modelo", "ol.code": "Código", "ol.description": "Descripción", "ol.grossPrice": "Precio bruto", "ol.discount": "Descuento %", "ol.netPrice": "Precio neto", "ol.unitCost": "Costo unitario", "ol.totalCost": "Costo total", "ol.totalPrice": "Precio total", "ol.margin": "Margen %", "ol.addProjectSection": "+ Añadir sección de proyecto", "settings.title": "Configuración de la oferta", "settings.displayCurrency": "Moneda de visualización", "settings.customSymbol": "Símbolo personalizado", "settings.projectDiscount": "Descuento del proyecto %", "settings.delivery": "Entrega %", "settings.cancel": "Cancelar", "settings.apply": "Aplicar", "welcome.title": "Bienvenido", "welcome.note": "Inicie sesión con Microsoft 365 para cargar la lista de proyectos en vivo desde SharePoint, o continúe como invitado — aún podrá iniciar sesión más tarde desde la barra lateral.", "welcome.signIn": "🔐 Iniciar sesión con Microsoft 365", "welcome.guest": "Continuar como invitado →"},
 };
 
 // ---- i18n — language dictionary + apply/switch logic. Covers the daily-use interface (sidebar,
@@ -1812,6 +1851,7 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
       document.getElementById('spFormFields').style.display = 'none';
       document.getElementById('spSuccessState').style.display = 'block';
       setTimeout(closeSpLogin, 1300);
+      setTimeout(openProjectSearch, 1400);   // signed in: straight to the project list
       // A sensible default, not an override — only fills Owner in if the field is empty (e.g. no
       // project loaded yet, or the loaded one genuinely has none set), never replaces a value that
       // "↑ Load" already brought in from AssignedTo0.
@@ -3293,7 +3333,7 @@ document.getElementById('btnCloneOffer').addEventListener('click', ()=>{
     return;
   }
   ['prjRef','prjName','prjCountry','prjCustomer','prjDue','prjOwner','prjOfferType','prjStdSpecial'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('prjRef').readOnly = false;
+  document.getElementById('prjRef').readOnly = true;   // the project is chosen with 📁 Projects
 
   REVISION = 0;
   REVISION_CLOSED = false;
@@ -3555,7 +3595,7 @@ function resetAll(){
   setPrjAutoLoadStatus('');
   autoLoadSeq++; // a lookup still running for the old project must not land on the fresh page
   ['prjName','prjCountry','prjCustomer','prjDue','prjOwner','prjRef','prjBatteryBrand','prjOfferType','prjStdSpecial'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('prjRef').readOnly = false;
+  document.getElementById('prjRef').readOnly = true;   // the project is chosen with 📁 Projects
   document.getElementById('prjProduct').selectedIndex = 0;
   document.getElementById('prjBattery').selectedIndex = 0;
   cfgBody.innerHTML='';
@@ -3595,7 +3635,11 @@ priceListInput.addEventListener('change', (e)=>{
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
     processCatalog(rows, file.name);
-    if(CATALOG_LOADED) saveCatalogForSession(rows, file.name);
+    if(CATALOG_LOADED && !CATALOG_IS_BUILTIN){
+      saveCatalogForSession(rows, file.name);
+      const u = updateOfferPricesFromCatalog();
+      if(u.updated || u.missing) showExportToast(`Price list imported — prices and costs updated on ${u.updated} offer line${u.updated === 1 ? '' : 's'}${u.missing ? ` (${u.missing} line${u.missing === 1 ? '' : 's'} with a code not in the list kept as they were)` : ''}.`, 'ok');
+    }
     priceListInput.value = '';
   };
   reader.readAsArrayBuffer(file);
@@ -3632,6 +3676,121 @@ function parseCatalogModelString(modelStr){
   return {baseModel, connection, configuration, ventFlag, pmax:Number(m[2])};
 }
 
+// ---- Built-in price list (beta_6.22): the full list of models, modules and accessories with codes
+// and descriptions, but no prices — the tool starts with it, so offers already carry the right codes.
+// "Import Price List" then brings prices and costs, and updates the lines already in the offer. ----
+const BUILTIN_PRICE_LIST_NAME = 'built-in list (codes & descriptions, no prices)';
+const BUILTIN_PRICE_LIST = [
+  {"FAM": "ALL", "TYPE": "PM", "Model": "MP2 67 PM", "Code": "UMP2K67M1A00RUA", "Description": "67 kVA - 67 kW Power module", "Price": "", "Cost": ""},
+  {"FAM": "ALL", "TYPE": "PM", "Model": "MP2 67 PM BLUE", "Code": "UMP2K67M1B00RUA", "Description": "67 kVA - 67 kW Power module - BLUE VERSION", "Price": "", "Cost": ""},
+  {"FAM": "ALL", "TYPE": "PM", "Model": "M2X 15 PM", "Code": "UM2XK15M1A00RUA", "Description": "15 kVA - 15 kW Power module", "Price": "", "Cost": ""},
+  {"FAM": "ALL", "TYPE": "PM", "Model": "M2X 15 PM BLUE", "Code": "UM2XK15M1B00RUA", "Description": "15 kVA - 15 kW Power module - BLUE VERSION", "Price": "", "Cost": ""},
+  {"FAM": "ALL", "TYPE": "PM", "Model": "M2X 30 PM BLUE", "Code": "UM2XK30M1B00RUA", "Description": "30 kVA - 30 kW Power module - BLUE VERSION", "Price": "", "Cost": ""},
+  {"FAM": "M2X", "TYPE": "UPS", "Model": "M2X 120 PCS", "Code": "UM2XM1240000RUA", "Description": "Power cabinet 120 kW, for up to 5x M2X 15 PM or 4+1 M2X 30 PM BLUE (not included), complete with bypass module and main input / bypass / manual bypass / output switches", "Price": "", "Cost": ""},
+  {"FAM": "MP2", "TYPE": "UPS", "Model": "MP2 300 PCM", "Code": "UMP2M3010000RUA", "Description": "Power cabinet 300 kW, for up to 5x MP2 67 PM or PM BLUE (not included), complete with manual bypass switch", "Price": "", "Cost": ""},
+  {"FAM": "MP2", "TYPE": "UPS", "Model": "MP2 500 PCM", "Code": "UMP2M5010000RUB", "Description": "Power cabinet 500 kW, for up to 8x MP2 67 PM or PM BLUE (not included), complete with manual bypass switch", "Price": "", "Cost": ""},
+  {"FAM": "MP2", "TYPE": "UPS", "Model": "MP2 600 PC0", "Code": "UMP2M6000000RUA", "Description": "Power cabinet 600 kW, for up to 9x MP2 67 PM or PM BLUE (not included), without switches, with front-rear ventilation", "Price": "", "Cost": ""},
+  {"FAM": "MP2", "TYPE": "UPS", "Model": "MP2 600 PC0 VE", "Code": "UMP2M60000VERUA", "Description": "Power cabinet 600 kW, for up to 9x MP2 67 PM or PM BLUE only (not included), without switches, with vertical exhaust.", "Price": "", "Cost": ""},
+  {"FAM": "MP2", "TYPE": "UPS", "Model": "MP2 600 PCS VE", "Code": "UMP2M60400VERUA", "Description": "Power cabinet 600 kW, for up to 9x MP2 67 PM or PM BLUE only (not included), with main input / bypass / manual bypass / output switches and vertical exhaust.", "Price": "", "Cost": ""},
+  {"FAM": "MP2", "TYPE": "UPS", "Model": "MP2 600 CT4 VE", "Code": "UMP2M60K00VERUA", "Description": "Power cabinet 600 kW, for up to 9x MP2 67 PM BLUE only (not included), with main input / bypass / manual bypass / output switches, backfeed protection device and vertical exhaust.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1000 PC0", "Code": "UM2ST1000000RUB", "Description": "Power Cabinet 1000kW, for up to 16x MP2 67 PM or PM BLUE (not included; 15 x PM needed for full power, extra module for redundancy), without switches and without backfeed protection.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1000 PCS", "Code": "UM2ST1040000RUB", "Description": "Power Cabinet 1000kW (no PMs). As M2S 1000 PC0, with main input / bypass / manual bypass / output switches. No backfeed protection. Double input only.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1000 CT0", "Code": "UM2ST10H0000RUB", "Description": "M2S Power Cabinet 1000kW (no PMs) as M2S 1000 PC0,  with backfeed protection device, no switches. Single input and top cable entry only.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1000 CT2", "Code": "UM2ST10I0000RUB", "Description": "M2S Power Cabinet 1000kW (no PMs) as M2S 1000 PC0, with backfeed protection device and input and output switches. \nSingle input only.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1250 PC0", "Code": "UM2ST1300000RUA", "Description": "Power Cabinet 1250kW, for up to 20x MP2 67 PM or PM BLUE (not included; 19 x PM needed for full power, extra module for redundancy), without switches and without backfeed protection.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1250 PCS", "Code": "UM2ST1340000RUA", "Description": "Power Cabinet 1250kW (no PMs). As M2S 1250 PC0, with main input / bypass / manual bypass / output switches. No backfeed protection. Double input only.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1250 CT0", "Code": "UM2ST13H0000RUA", "Description": "M2S Power Cabinet 1250kW (no PMs) as M2S 1250 PC0,  with backfeed protection device, no switches. Single input and top cable entry only.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1250 CT2", "Code": "UM2ST13I0000RUA", "Description": "M2S Power Cabinet 1250kW (no PMs) as M2S 1250 PC0, with backfeed protection device and input and output switches. \nSingle input only.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1600 PC0", "Code": "UM2ST1600000RUA", "Description": "Power Cabinet 1600kW, for up to 30x MP2 67 PM or PM BLUE (not included; 24 x PM needed for full power, extra modules for redundancy), without switches and without backfeed protection.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1600 PCS", "Code": "UM2ST1640000RUA", "Description": "Power Cabinet 1600kW (no PMs). As M2S 1600 PC0, with main input / bypass / manual bypass / output switches. No backfeed protection. Double input only.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1600 CT0", "Code": "UM2ST16H0000RUA", "Description": "M2S Power Cabinet 1600kW (no PMs) as M2S 1600 PC0,  with backfeed protection device, no switches. Single input and top cable entry only.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1600 CT2", "Code": "UM2ST16I0000RUA", "Description": "M2S Power Cabinet 1600kW (no PMs) as M2S 1600 PC0, with backfeed protection device and input and output switches. \nSingle input only.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1000 PC0 F", "Code": "UM2ST1000F00RUB", "Description": "Power Cabinet 1000kW, for up to 16x MP2 67 PM or PM BLUE (not included; 15 x PM needed for full power, extra module for redundancy), without switches and without backfeed protection device. Single input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1000 CT0 F", "Code": "UM2ST10H0F00RUB", "Description": "M2S Power Cabinet 1000kW (no PMs) as M2S 1000 PC0 F,  with backfeed protection device, no switches. Single input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1000 CT1 F", "Code": "UM2ST10J0F00RUB", "Description": "M2S Power Cabinet 1000kW (no PMs) as M2S 1000 PC0 F, with backfeed protection device and input  switch. \nSingle input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1000 CT2 F", "Code": "UM2ST10I0F00RUB", "Description": "M2S Power Cabinet 1000kW (no PMs) as M2S 1000 PC0 F, with backfeed protection device and input and output switches. Single input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1250 PC0 F", "Code": "UM2ST1300F00RUA", "Description": "Power Cabinet 1250kW, for up to 20x MP2 67 PM or PM BLUE (not included; 19 x PM needed for full power, extra module for redundancy), without switches and without backfeed protection device. Single input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1250 CT0 F", "Code": "UM2ST13H0F00RUA", "Description": "M2S Power Cabinet 1250kW (no PMs) as M2S 1250 PC0 F,  with backfeed protection device, no switches. Single input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1250 CT1 F", "Code": "UM2ST13J0F00RUA", "Description": "M2S Power Cabinet 1250kW (no PMs) as M2S 1250 PC0 F, with backfeed protection device and input  switch. \nSingle input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1250 CT2 F", "Code": "UM2ST13I0F00RUA", "Description": "M2S Power Cabinet 1250kW (no PMs) as M2S 1250 PC0 F, with backfeed protection device and input and output switches. Single input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1600 PC0 F", "Code": "UM2ST1600F00RUA", "Description": "Power Cabinet 1600kW, for up to 30x MP2 67 PM or PM BLUE (not included; 24 x PM needed for full power, extra modules for redundancy), without switches and without backfeed protection device. Single input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1600 CT0 F", "Code": "UM2ST16H0F00RUA", "Description": "M2S Power Cabinet 1600kW (no PMs) as M2S 1600 PC0 F,  with backfeed protection device, no switches. Single input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 1600 CT1 F", "Code": "UM2ST16J0F00RUA", "Description": "M2S Power Cabinet 1600kW (no PMs) as M2S 1600 PC0 F, with backfeed protection device and input  switch. \nSingle input and flanges for AC connections.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "UPS", "Model": "M2S 2000 PC0 F VE", "Code": "UM2ST2000FVERUA", "Description": "Power Cabinet 2000kW, for up to 30x MP2 67 PM BLUE only (not included), without switches and without backfeed protection device. Single input, flanges for AC connections and front to top ventilation (Vertical Exhaust)", "Price": "", "Cost": ""},
+  {"FAM": "MP2 300", "TYPE": "AUX", "Model": "MP2 TN-C KIT 300 PCM", "Code": "YMP2E25F", "Description": "TN-C kit adaptation for MP2 300 PCM", "Price": "", "Cost": ""},
+  {"FAM": "ALL", "TYPE": "AUX", "Model": "M2U PARALLEL KIT", "Code": "YM2UP00B", "Description": "Suitable for MP2 300 PCM or M2X. Including 10 m ethernet communication cables (one kit for each UPS). Not compatible with optical fiber kit.", "Price": "", "Cost": ""},
+  {"FAM": "MP2 300 / M2X", "TYPE": "AUX", "Model": "M2X Cold Start Kit *", "Code": "YM2XCSTA", "Description": "Kit to enable cold start operation for MP2 300 and all M2X models. It can be installed on the field.", "Price": "", "Cost": ""},
+  {"FAM": "MP2 300", "TYPE": "AUX", "Model": "MP2 300 Top Vent Kit", "Code": "YMP2M06A", "Description": "Only for MP2 300 PCM, only with MP2 67 PM BLUE modules", "Price": "", "Cost": ""},
+  {"FAM": "MP2 300", "TYPE": "AUX", "Model": "MP2 300 Air Filter Kit", "Code": "YMP2S42A", "Description": "Only for MP2 300 PCM and M2X 120 CBC 6", "Price": "", "Cost": ""},
+  {"FAM": "MP2 300", "TYPE": "AUX", "Model": "M2U 140 TCE", "Code": "YM2UM07A", "Description": "Side Empty Top Cable Entry only for MP2 300 PCM / M2U 140 PC0.", "Price": "", "Cost": ""},
+  {"FAM": "MP2 300", "TYPE": "AUX", "Model": "MP2 300 I/O 4SW", "Code": "YMP2M09A", "Description": "Side Top/Bottom Cable Entry with main input, bypass, manual bypass and output switches, only for MP2 300 PCM. Connection cables to the UPS not supplied.", "Price": "", "Cost": ""},
+  {"FAM": "MP2 300", "TYPE": "AUX", "Model": "M2X Seismic Kit", "Code": "YM2XS40A", "Description": "On site installation Seismic kit for MP2 300 PCM, M2X and M2U series", "Price": "", "Cost": ""},
+  {"FAM": "MP2 500/600", "TYPE": "AUX", "Model": "MP2 500 BCE", "Code": "YMP2M05A", "Description": "Empty side cabinet for bottom cable entry for MP2 500 PCM and MP2 600 PC0", "Price": "", "Cost": ""},
+  {"FAM": "MP2 500/600", "TYPE": "AUX", "Model": "MP2 TN-C KIT 500 PCM M12", "Code": "YMP2E25B", "Description": "TN-C kit adaptation for MP2 500 PCM cod. xxxxRUB (bars with M12 holes connection)", "Price": "", "Cost": ""},
+  {"FAM": "MP2 500/600", "TYPE": "AUX", "Model": "MP2 TN-C KIT 600 PC0", "Code": "YMP2E25C", "Description": "TN-C kit adaptation for MP2 600 PC0", "Price": "", "Cost": ""},
+  {"FAM": "MP2 500/600", "TYPE": "AUX", "Model": "MP2 PARALLEL KIT", "Code": "YMP2P00A", "Description": "Parallel kit for communication loop between any Multi Power2 units (up to 4 - all MP2 or all M2S).   Including 10 m ethernet communication cables and dedicated fixing accessories (one kit for each UPS).", "Price": "", "Cost": ""},
+  {"FAM": "MP2 500/600", "TYPE": "AUX", "Model": "MP2 FIB OPT KIT 25M", "Code": "YMP2P04A", "Description": "Optical fiber kit, L 25 meters. To be ordered with YMP2P00A (one kit for each UPS).", "Price": "", "Cost": ""},
+  {"FAM": "MP2 500/600", "TYPE": "AUX", "Model": "MP2 FIB OPT KIT 50M", "Code": "YMP2P05A", "Description": "Optical fiber kit, L 50 meters. To be ordered with YMP2P00A (one kit for each UPS).", "Price": "", "Cost": ""},
+  {"FAM": "MP2 500/600", "TYPE": "AUX", "Model": "MP2 COLD START KIT *", "Code": "YMP2CSTA", "Description": "Kit to enable cold start operation - MP2 500 & 600 and all M2S. It can be installed on the field.", "Price": "", "Cost": ""},
+  {"FAM": "MP2 500/600", "TYPE": "AUX", "Model": "MP2 500-600 Seismic Kit", "Code": "YMP2S41A", "Description": "On site installation Seismic kit for MP2 500 PCM and MP2 600 PC0 models.", "Price": "", "Cost": ""},
+  {"FAM": "MP2", "TYPE": "AUX", "Model": "Cold Start option CST**", "Code": "fifth to last = \"CS\"", "Description": "Extra price for cold start operation - all cabinets MP2/M2S", "Price": "", "Cost": ""},
+  {"FAM": "MP2", "TYPE": "AUX", "Model": "MP2 TEMP SENSOR KIT", "Code": "YMP2TEMA", "Description": "Temperature sensor kit for external conventional battery cabinet, compatible with MP2 and M2S.", "Price": "", "Cost": ""},
+  {"FAM": "ALL", "TYPE": "AUX", "Model": "Multicom 392", "Code": "YSKCMC9A", "Description": "3 input, 8 programmable output card", "Price": "", "Cost": ""},
+  {"FAM": "ALL", "TYPE": "AUX", "Model": "EnergyManager 2", "Code": "YSKCC06A", "Description": "Battery management card (slot version) to be used for Li-Ion battery and/or dynamic peak shaving function.  Subject to confirmation of the application by our pre-sales Technical Service.", "Price": "", "Cost": ""},
+  {"FAM": "MP2", "TYPE": "AUX", "Model": "MP2 Demo Starter Kit", "Code": "YMP2DSKA", "Description": "Auxiliary power supply allowing to start a standard unit as DEMO unit", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "AUX", "Model": "Single Input Kit M2S PC0", "Code": "YM2SE24A", "Description": "Single input kit, available for PC0 units only", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "AUX", "Model": "DC Coupling 1250", "Code": "YM2SE26A", "Description": "DC coupling kit for M2S 1000 or M2S 1250 units in all the configurations available", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "AUX", "Model": "DC Coupling 1600", "Code": "YM2SE27A", "Description": "DC coupling kit for M2S 1600 units in all the configurations available", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "AUX", "Model": "Top Ventilation *\n(1000-1250 kVA)", "Code": "fifth to last =\"VE\"", "Description": "Top ventilation for M2S 1000 or M2S 1250 units with BLUE modules only.\nThe total height of the unit is increased by 250 mm.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "AUX", "Model": "Top Ventilation *\n(1600 kVA)", "Code": "fifth to last =\"VE\"", "Description": "Top ventilation for M2S 1600 units with BLUE modules only.\nThe total height of the unit is increased by 250 mm.", "Price": "", "Cost": ""},
+  {"FAM": "M2S", "TYPE": "AUX", "Model": "MP2 PARALLEL KIT", "Code": "YMP2P00A", "Description": "Including 10 m ethernet communication cables and dedicated fixing accessories (one kit for each UPS).", "Price": "", "Cost": ""},
+  {"FAM": "ALL", "TYPE": "BAT_P", "Model": "B. SWC 1600A 2P", "Code": "YMP2E28A", "Description": "Battery Switch Module 1600 A - main module", "Price": "", "Cost": ""},
+  {"FAM": "ALL", "TYPE": "BAT_P", "Model": "B. SWC 1600A 2P EXP", "Code": "YMP2E29A", "Description": "Battery Switch Module 1600 A - Expansion second or third module to reach up to 3200 A or 4800 A", "Price": "", "Cost": ""},
+  {"FAM": "M2X", "TYPE": "AUX", "Model": "M2X Seismic Kit", "Code": "YM2XS40A", "Description": "On site installation Seismic kit for MP2 300 PCM, M2X and M2U cabinets", "Price": "", "Cost": ""}
+];
+let CATALOG_IS_BUILTIN = false;
+function loadBuiltinPriceList(){
+  processCatalog(BUILTIN_PRICE_LIST, BUILTIN_PRICE_LIST_NAME);
+  CATALOG_IS_BUILTIN = true;
+  const el = document.getElementById('catalogStatus');
+  if(el){ el.className = 'catalog-status'; el.innerHTML = `Price list: <b>built-in</b> (codes &amp; descriptions, no prices) — <i>Import Price List</i> to get prices and costs.`; }
+}
+// After a price list is imported: every line of the offer whose code is in the list gets the list's
+// selling price and cost (only the values the list actually has). Kits follow their components.
+function updateOfferPricesFromCatalog(){
+  if(typeof bomBody === 'undefined') return {updated: 0, missing: 0};
+  const byCode = new Map();
+  const add = (code, price, cost) => {
+    const k = String(code || '').replace(/\s+/g, '').toUpperCase();
+    if(!k || !/^[A-Z0-9._-]+$/.test(k)) return;
+    if(!byCode.has(k) || (!(byCode.get(k).price > 0) && price > 0)) byCode.set(k, {price: Number(price) || 0, cost: Number(cost) || 0});
+  };
+  Object.values(CATALOG_LOOKUP || {}).forEach(e => add(e.code, e.price, e.cost));
+  (CATALOG_PM || []).forEach(e => add(e.code, e.price, e.cost));
+  (CATALOG_AUX || []).forEach(e => add(e.code, e.price, e.cost));
+  let updated = 0, missing = 0;
+  const owners = new Set();
+  [...bomBody.querySelectorAll('tr[data-kind="line"], tr[data-kind="accessory"]')].forEach(r => {
+    if(isKitParent(r)) return;
+    const code = rowCodeText(r).replace(/\s+/g, '').toUpperCase();
+    if(!code) return;
+    const hit = byCode.get(code);
+    if(!hit){ missing++; return; }
+    if(!(hit.price > 0) && !(hit.cost > 0)) return;
+    const g = r.querySelector('.in-gross'), c = r.querySelector('.in-cost');
+    let changed = false;
+    if(hit.price > 0 && g && Number(g.value) !== hit.price){ g.value = hit.price.toFixed(2); changed = true; }
+    if(hit.cost > 0 && c && Number(c.value) !== hit.cost){ c.value = hit.cost.toFixed(2); changed = true; }
+    if(changed){ updated++; rowRecalcOutputs(r); if(r.dataset.groupOf) owners.add(r.dataset.groupOf); }
+  });
+  if(owners.size){
+    refreshAllKits();
+    owners.forEach(o => recalcGroupTotal(o));
+    if(typeof updateDeliveryRow === 'function') updateDeliveryRow();
+    if(typeof recalcProjectTotal === 'function') recalcProjectTotal();
+  }
+  return {updated, missing};
+}
 function processCatalog(rows, filename){
   const typeOf = r => String(r.TYPE||'').trim().toUpperCase();
   const upsRows = rows.filter(r=>typeOf(r)==='UPS');
@@ -3712,6 +3871,7 @@ function processCatalog(rows, filename){
   statusEl.removeAttribute('data-i18n'); // real content now — a language switch must not reset it to "No price list imported"
   statusEl.className = 'catalog-status loaded';
   statusEl.innerHTML = `Price list: <b>${escapeHtml(filename)}</b> — ${newArch.length} models · ${CATALOG_PM.length} module row(s) · ${CATALOG_AUX.length} accessories · ${moduleKw}&nbsp;kW module.`;
+  CATALOG_IS_BUILTIN = false;
 }
 
 function accessoryFamMatches(fam, baseModel){
@@ -5438,6 +5598,24 @@ function applyKitLook(parent, members){
   parent.classList.add('kit-member', 'kit-parent');
   parent.classList.remove('kit-child');
   parent.querySelectorAll('.in-gross, .in-disc, .in-cost').forEach(el => { el.disabled = true; el.title = 'Kit: sum of its component lines (per kit)'; });
+  // the kit's selling price can be typed: its components follow in proportion
+  const kitGross = parent.querySelector('.in-gross');
+  if(kitGross && !READ_ONLY){
+    kitGross.disabled = false;
+    kitGross.title = 'Kit selling price per kit — type a new one: the components\' prices are adjusted in proportion';
+    if(!kitGross.dataset.kitPriceWired){
+      kitGross.dataset.kitPriceWired = '1';
+      kitGross.addEventListener('change', () => {
+        const kid = parent.dataset.kitId, owner = parent.dataset.groupOf;
+        if(!kid || parent.dataset.kitParent !== 'true') return;
+        scaleKitPrice(kid, kitGross.value);
+        kitGross.blur();
+        refreshKitsInChapter(owner); recalcGroupTotal(owner);
+        if(typeof recalcProjectTotal === 'function') recalcProjectTotal();
+      });
+      kitGross.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); kitGross.dispatchEvent(new Event('change', {bubbles: true})); } });
+    }
+  }
   if(!READ_ONLY) { const q = parent.querySelector('.in-qty'); if(q) q.disabled = false; }
   members.forEach(r => {
     r.classList.add('kit-member', 'kit-child');
@@ -5504,7 +5682,44 @@ function insertKitParent(kitId, before, owner, pd, qty = 1, open = false){
 // under it (they follow it if it is dragged elsewhere), its price/cost are the sum of the
 // components; a kit line with no components left is removed, components without a kit line are
 // released. While a chapter or a file is rebuilt line by line (KIT_BULK > 0) nothing is checked.
-var KIT_BULK = 0;   // var: read by recalcGroupTotal, which can run before this line is reached
+var KIT_BULK = 0;
+// A kit's selling price typed by hand: the components' selling prices are changed in the same
+// proportion so that their sum is the new kit price (net × quantity per kit). Components with no
+// price yet share it by their cost (or quantity). Prices are rounded to the cent; the leftover cents
+// go to a component with quantity 1 (else the largest), so the kit lands on the typed price.
+function scaleKitPrice(kitId, target){
+  const members = kitMembersOf(kitId);
+  if(!members.length) return false;
+  const T = Math.max(0, Number(target) || 0);
+  const vals = members.map(r => Object.assign({r}, kitRowNet(r)));
+  const S = vals.reduce((a, v) => a + v.net * v.qty, 0);
+  let nets;
+  if(S > 0){ const f = T / S; nets = vals.map(v => v.net * f); }
+  else {
+    let w = vals.map(v => v.cost * v.qty);
+    if(!w.some(x => x > 0)) w = vals.map(v => v.qty);
+    const W = w.reduce((a, b) => a + b, 0) || 1;
+    nets = vals.map((v, i) => v.qty > 0 ? T * w[i] / W / v.qty : 0);
+  }
+  nets = nets.map(n => Math.round(n * 100) / 100);
+  const diff = Math.round((T - vals.reduce((a, v, i) => a + nets[i] * v.qty, 0)) * 100) / 100;
+  if(Math.abs(diff) >= 0.01){
+    let i = vals.findIndex(v => v.qty === 1);
+    if(i < 0) i = nets.indexOf(Math.max(...nets));
+    if(vals[i] && vals[i].qty > 0) nets[i] = Math.max(0, Math.round((nets[i] + diff / vals[i].qty) * 100) / 100);
+  }
+  KIT_BULK++;
+  try{
+    vals.forEach((v, i) => {
+      const g = v.r.querySelector('.in-gross'), dsc = v.r.querySelector('.in-disc');
+      let disc = v.disc;
+      if(disc >= 100){ disc = 0; if(dsc) dsc.value = 0; }
+      if(g) g.value = disc ? (nets[i] / (1 - disc / 100)).toFixed(4).replace(/0{1,2}$/, '') : nets[i].toFixed(2);
+      rowRecalcOutputs(v.r);
+    });
+  } finally { KIT_BULK--; }
+  return true;
+}   // var: read by recalcGroupTotal, which can run before this line is reached
 function refreshKitsInChapter(owner){
   if(KIT_BULK || !owner || typeof bomBody === 'undefined') return;
   const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => r.dataset.kind === 'line' || r.dataset.kind === 'accessory');
@@ -5539,7 +5754,7 @@ function refreshKitsInChapter(owner){
     let net = 0, cost = 0;
     members.forEach(r => { const v = kitRowNet(r); net += v.net * v.qty; cost += v.cost * v.qty; });
     const g = parent.querySelector('.in-gross'), d = parent.querySelector('.in-disc'), c = parent.querySelector('.in-cost');
-    if(g) g.value = net.toFixed(2);
+    if(g && document.activeElement !== g) g.value = net.toFixed(2);   // not while the kit price is being typed
     if(d) d.value = 0;
     if(c) c.value = cost.toFixed(2);
     rowRecalcOutputs(parent);
@@ -5816,15 +6031,18 @@ function kbVals(c){
   const d = c.data;
   return {model: d.model, code: d.code, desc: d.desc, net: (Number(d.gross) || 0) * (1 - (Number(d.disc) || 0) / 100), cost: Number(d.cost) || 0};
 }
-function kbTotals(comps){
+function kbTotals(comps, target){
   let net = 0, cost = 0;
   comps.filter(c => !c.removed).forEach(c => { const v = kbVals(c); net += v.net * c.qty; cost += v.cost * c.qty; });
-  return {net, cost, margin: net > 0 ? (net - cost) / net * 100 : 0};
+  const sum = net;
+  if(target != null && target !== '' && isFinite(Number(target))) net = Math.max(0, Number(target));
+  return {net, cost, sum, margin: net > 0 ? (net - cost) / net * 100 : 0};
 }
 function kbChanges(){
   if(!KB) return 0;
   let n = 0;
   KB.comps.forEach(c => { if(c.removed || c.added || c.qty !== c.qty0) n++; });
+  if(KB.priceTarget != null) n++;
   if(KB.mode === 'edit'){
     const o = KB.orig;
     if(KB.name !== o.name || KB.code !== o.code || KB.desc !== o.desc || KB.qty !== o.qty) n++;
@@ -5898,7 +6116,7 @@ function kbSetDirtyBadge(){
 function kbRenderSummary(){
   const el = document.getElementById('kbSum');
   if(!el || !KB) return;
-  const t = kbTotals(KB.comps), q = KB.qty;
+  const t = kbTotals(KB.comps, KB.priceTarget), q = KB.qty;
   const o = KB.mode === 'edit' ? KB.orig.totals : null;
   const was = (now, before, fmt) => (o && Math.abs(now - before) > 0.005) ? `<s>${fmt(before)}</s>` : '';
   const pct = v => `${v.toFixed(1)} %`;
@@ -6017,6 +6235,8 @@ function kbDataHtml(){
       <label>Code<input type="text" class="kb-in" id="kbCode" value="${escapeHtml(d.code)}" placeholder="e.g. KIT-PU100-08"></label>
       <label>No. of kits<input type="number" class="kb-in" id="kbQty" min="0" step="1" value="${escapeHtml(String(d.qty))}"></label>
     </div>
+    ${(() => { const t = kbTotals(d.comps, d.priceTarget); return `<div class="kb-price"><label class="kb-lab">Selling price / kit<input type="number" class="kb-in" id="kbPrice" min="0" step="0.01" value="${t.net.toFixed(2)}"></label>
+      <span class="kb-price-hint" id="kbPriceHint">${d.priceTarget != null ? `Set by hand — the components' prices are adjusted in proportion (their sum now: ${formatMoney(t.sum)}). <button type="button" class="kb-link" data-pricereset>↺ Back to the sum</button>` : 'Sum of the components. Type a different price: the components\' prices are adjusted in proportion.'}</span></div>`; })()}
     <label class="kb-lab">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea class="kb-ta" id="kbDesc" rows="2" placeholder="What the offer says about this kit">${escapeHtml(d.desc)}</textarea></label>
     <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:11.5px; color:#4B5260"><span id="kbDataHint">${d.mode === 'new' && d.autoTexts ? 'Proposed from the first component — overwrite as you like.' : 'Price = sum of the components; the BOM lists only the components.'}</span>
     ${d.comps.length ? `<button type="button" class="kb-link" data-fromfirst>From the first component</button>` : ''}</div></div>`;
@@ -6024,7 +6244,7 @@ function kbDataHtml(){
 function kbPreviewHtml(){
   const d = KB, h = kbHeader(d.owner);
   const sys = h ? (Number(configQtyFor(h)) || 1) : 1;
-  const t = kbTotals(d.comps);
+  const t = kbTotals(d.comps, d.priceTarget);
   const act = d.comps.filter(c => !c.removed);
   const round = n => Math.round(n * 1000) / 1000;
   const bomRows = [];
@@ -6138,6 +6358,18 @@ function kbWire(panel){
     nm.addEventListener('input', () => { d.name = nm.value; typed(); });
     cd.addEventListener('input', () => { d.code = cd.value; typed(); });
     qy.addEventListener('input', () => { d.qty = Math.max(0, Number(qy.value) || 0); kbRenderSummary(); });
+    const pr = $('#kbPrice');
+    if(pr){
+      pr.addEventListener('input', () => {
+        const v = pr.value.trim();
+        const sum = kbTotals(d.comps).sum;
+        d.priceTarget = v === '' || Math.abs(Number(v) - sum) < 0.005 ? null : Math.max(0, Number(v) || 0);
+        const hint = document.getElementById('kbPriceHint');
+        if(hint) hint.textContent = d.priceTarget != null ? `Set by hand — the components' prices are adjusted in proportion (their sum now: ${formatMoney(sum)}).` : 'Sum of the components.';
+        kbRenderSummary();
+      });
+    }
+    $('[data-pricereset]')?.addEventListener('click', () => { d.priceTarget = null; renderKitPanel(); });
     ds.addEventListener('input', () => { d.desc = ds.value; typed(); });
     attachMultilineDescriptionEditor(ds);
   }
@@ -6216,6 +6448,7 @@ function applyKitPanel(){
     if(q && Number(q.value) !== d.qty){ q.value = d.qty; q.dispatchEvent(new Event('input', {bubbles: true})); }
   }
   rows.forEach(r => rowRecalcOutputs(r));
+  if(d.priceTarget != null && kitId) scaleKitPrice(kitId, d.priceTarget);   // kit price typed by hand
   refreshKitsInChapter(owner);
   bomRenumberChapter(owner);
   recalcGroupTotal(owner);
@@ -7251,7 +7484,303 @@ async function openProjectFolderDialog(){
     msg('Back to the suggested folder.');
   });
 }
-document.getElementById('btnProjectFolder').addEventListener('click', () => openProjectFolderDialog());
+// "📂 Folder": straight to File Explorer on this PC (through the "ups-folder" helper), no window in
+// between. The path is also copied, and a small notice offers the folder settings / SharePoint in
+// case nothing opens (helper not installed, or the synced folder is somewhere else).
+async function openProjectFolderDirect(){
+  const ref = document.getElementById('prjRef').value.trim();
+  if(!ref){ alert('Enter or load a Project Reference first.'); return; }
+  const btn = document.getElementById('btnProjectFolder');
+  if(btn) btn.disabled = true;
+  try{
+    await loadWindowsUserFromAd();
+    const rel = await projectFolderRelPath();
+    if(!rel){ alert('Could not work out this project\'s folder.'); return; }
+    try{ await navigator.clipboard.writeText(localPathFor(rel)); }catch(e){}
+    openFolderProtocol(localPathForHelper(rel));
+    showFolderToast(rel, ref);
+  }finally{ if(btn) btn.disabled = false; }
+}
+let folderToastTimer = null;
+function showFolderToast(rel, ref){
+  document.getElementById('folderToast')?.remove();
+  const t = document.createElement('div'); t.className = 'kb-toast'; t.id = 'folderToast'; t.setAttribute('role', 'status');
+  t.style.flexWrap = 'wrap'; t.style.maxWidth = 'min(560px, calc(100vw - 44px))';
+  t.innerHTML = `<span>📂 Opening <b>${escapeHtml(ref)}</b> in File Explorer… <span style="opacity:.75">(path copied — if nothing opens, paste it with Win+E, Ctrl+L)</span></span>
+    <button type="button" data-settings>Folder settings…</button><button type="button" data-sp>SharePoint</button><button type="button" data-x aria-label="Close">×</button>`;
+  document.body.appendChild(t);
+  const close = () => { t.remove(); clearTimeout(folderToastTimer); };
+  t.querySelector('[data-x]').addEventListener('click', close);
+  t.querySelector('[data-settings]').addEventListener('click', () => { close(); openProjectFolderDialog(); });
+  t.querySelector('[data-sp]').addEventListener('click', () => { close(); window.open(sharePointUrlFor(rel), '_blank', 'noopener'); });
+  clearTimeout(folderToastTimer); folderToastTimer = setTimeout(close, 9000);
+}
+// ---- Projects window (beta_6.20): opens by itself after signing in, and from "📁 Projects" in the
+// top bar (or Ctrl+K). The SharePoint project list as a table with a filter under every column —
+// reference, customer, project (text) and country, owner, due date, status (choice) — sortable by
+// clicking a column title, grouped by customer (default), by country or not at all: a click on a
+// group opens / closes its projects. "Open …" (or a double click / Enter) loads the selected
+// project, "📂 Folder" opens its folder on this PC, "✨ Create New Offer" starts a new one. It can
+// be closed without choosing anything. Moving to another project with unsaved work on the page
+// asks first whether to save it (Save / Print report / Don't save). ----
+const PS_PREF_KEY = 'upsConfigurator.projectsWindow.v1';
+const PS = {sort: {key: 'due', dir: 1}, f: {ref: '', customer: '', name: '', country: '', owner: '', due: '', status: 'open'}, sel: null,
+  group: (() => { try{ return (JSON.parse(localStorage.getItem(PS_PREF_KEY) || '{}') || {}).group || 'customer'; }catch(e){ return 'customer'; } })(),
+  open: new Set(), allOpen: false};
+function psSavePrefs(){ try{ localStorage.setItem(PS_PREF_KEY, JSON.stringify({group: PS.group})); }catch(e){} }
+function psRows(){
+  return (PROGRESS || []).map(r => {
+    const due = r['Due date'] ? new Date(r['Due date']) : null;
+    const days = due && !isNaN(due) ? Math.round((dayStart(due) - dayStart(new Date())) / 86400000) : null;
+    return {rec: r, ref: String(r.PRJ_ID || ''), customer: String(r.Customer || ''), name: String(r['Project Name'] || ''),
+      country: String(r['Country.lookupValue'] || ''), owner: String(r['Created By.title'] || ''), status: String(r.Status || ''),
+      due, days, open: isOfferInProgress(r.Status)};
+  });
+}
+function psFiltered(all){
+  const f = PS.f, has = (v, q) => !q || v.toLowerCase().includes(q.trim().toLowerCase());
+  let rows = all.filter(x => has(x.ref, f.ref) && has(x.customer, f.customer) && has(x.name, f.name)
+    && (!f.country || x.country === f.country)
+    && (!f.owner || (f.owner === '__me' ? isMeName(x.owner) : x.owner === f.owner))
+    && (!f.status || (f.status === 'open' ? x.open : f.status === 'closed' ? !x.open : x.status === f.status))
+    && (!f.due || (f.due === 'over' ? (x.days != null && x.days < 0) : f.due === 'none' ? x.days == null : (x.days != null && x.days >= 0 && x.days <= Number(f.due)))));
+  const k = PS.sort.key, dir = PS.sort.dir;
+  const val = x => k === 'due' ? (x.due && !isNaN(x.due) ? x.due.getTime() : Infinity) : String(x[k] || '').toLowerCase();
+  rows.sort((a, b) => { const va = val(a), vb = val(b); return (va < vb ? -1 : va > vb ? 1 : 0) * dir || b.ref.localeCompare(a.ref); });
+  return rows;
+}
+function psDueCell(x){
+  if(!x.due || isNaN(x.due)) return '<span class="ps-dim">—</span>';
+  const d = fmtDate(x.due.toISOString());
+  if(x.open && x.days < 0) return `<span class="ps-over">${escapeHtml(d)} !</span>`;
+  if(x.open && x.days <= 7) return `<span class="ps-soon">${escapeHtml(d)}</span>`;
+  return escapeHtml(d);
+}
+function psGroupHint(items){
+  const open = items.filter(x => x.open && x.days != null);
+  const over = open.filter(x => x.days < 0).length;
+  if(over) return `<span class="ps-over">${over} overdue</span>`;
+  const next = open.sort((a, b) => a.days - b.days)[0];
+  if(!next) return '';
+  if(next.days <= 7) return `<span class="ps-soon">due in ${next.days} day${next.days === 1 ? '' : 's'}</span>`;
+  return `<span class="ps-dim">next ${escapeHtml(fmtDate(next.due.toISOString()))}</span>`;
+}
+// Is there work on the page that was changed since the last save (by hand or autosave)?
+function workIsUnsaved(){
+  try{
+    if(READ_ONLY) return false;
+    if(!bomHasRows() && configurationIsPristine()) return false;
+    return autosaveSignature() !== autosaveBaseline;
+  }catch(e){ return false; }
+}
+// Before leaving the project on the page: unsaved work → Save / Print report / Don't save / Cancel.
+// Resolves true when it is fine to go on.
+async function confirmLeaveCurrentProject(nextLabel){
+  if(!workIsUnsaved()) return true;
+  const ref = document.getElementById('prjRef').value.trim();
+  const signed = !!(msalInstance && msalAccount);
+  const ans = await openAppDialog({title: 'Save the current project?',
+    message: `${ref ? 'Project ' + ref : 'The offer on this page'} has changes that are not saved.\nSave them before ${nextLabel}?`,
+    question: signed ? t('save.q').replace('{R}', `R${READ_ONLY ? REVISION : workingRevision()}`) : '',
+    buttons: [{label: t('save.cancel'), value: 'cancel'}, {label: "Don't save", value: 'discard'}, {label: t('save.json'), value: 'json', primary: true}, ...(signed ? [{label: t('save.reports'), value: 'reports'}] : [])]});
+  if(ans === 'discard') return true;
+  if(ans !== 'json' && ans !== 'reports') return false;
+  return await saveConfigurationFlow(ans, {quiet: true});
+}
+// Loads another project of the list: the page is cleared first (after the save question), so the
+// project's own saved offer comes in. With no project on the page (e.g. after "Clone"), the work on
+// the page is kept and attached to the chosen project, as "↑ Load" always did.
+async function switchToProject(ref){
+  const cur = document.getElementById('prjRef').value.trim();
+  if(cur && cur === ref) return true;
+  if(cur){
+    if(!(await confirmLeaveCurrentProject(`opening ${ref}`))) return false;
+    resetAll();
+  }
+  document.getElementById('prjRef').value = ref;
+  await loadProjectByRef(ref);
+  return true;
+}
+let psAll = [], psShown = [];
+function psSelected(){ return psShown.find(x => x.ref === PS.sel) || null; }
+function psItemHtml(x, grouped){
+  const loaded = x.ref === document.getElementById('prjRef')?.value.trim();
+  return `<div class="ps-row ps-item${x.ref === PS.sel ? ' on' : ''}${grouped ? ' ps-child' : ''}" data-ref="${escapeHtml(x.ref)}">
+    <b class="ps-ref">${escapeHtml(x.ref)}${loaded ? ' <span class="ps-loaded" title="Open on this page">●</span>' : ''}</b><span>${grouped && PS.group === 'customer' ? '' : escapeHtml(x.customer)}</span><span>${escapeHtml(x.name)}</span><span>${grouped && PS.group === 'country' ? '' : escapeHtml(x.country)}</span><span>${escapeHtml(x.owner)}</span><span>${psDueCell(x)}</span><span>${escapeHtml(x.status || (x.open ? 'Open' : ''))}</span></div>`;
+}
+function openProjectSearch(){
+  if(document.getElementById('projectSearchOverlay')) return;
+  const ov = document.createElement('div');
+  ov.className = 'settings-overlay'; ov.id = 'projectSearchOverlay'; ov.style.display = 'flex';
+  psAll = psRows();
+  const opts = (key) => [...new Set(psAll.map(x => x[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const sel = (id, list, cur) => `<select class="ps-fi" data-f="${id}" aria-label="Filter ${id}">${list.map(([v, l]) => `<option value="${escapeHtml(v)}"${cur === v ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>`;
+  const th = (key, label) => `<button type="button" class="ps-th" data-sort="${key}">${label}<span class="ps-arrow" data-arrow="${key}"></span></button>`;
+  ov.innerHTML = `<div class="settings-modal ps-modal" role="dialog" aria-modal="true" aria-label="Projects">
+    <div class="acc-modal-header ps-header"><div><h3>Projects</h3><p class="ps-sub">Filter under each column · click a customer to open its projects · double click (or Enter) opens a project</p></div>
+      <span class="ps-tools"><span class="ps-dim">Group</span><span class="ps-seg" role="group" aria-label="Group the projects"><button type="button" data-group="none">None</button><button type="button" data-group="customer">By customer</button><button type="button" data-group="country">By country</button></span>
+      <button type="button" class="btn-ghost act ps-small" data-all>Expand all</button><button type="button" class="btn-ghost act ps-small" data-export>Export Excel</button><button type="button" class="acc-modal-close" data-close aria-label="Close">×</button></span></div>
+    <div class="ps-wrap">
+      <div class="ps-row ps-head">${th('ref', 'Ref.')}${th('customer', 'Customer')}${th('name', 'Project')}${th('country', 'Country')}${th('owner', 'Owner')}${th('due', 'Due date')}${th('status', 'Status')}</div>
+      <div class="ps-row ps-filters">
+        <input class="ps-fi" data-f="ref" type="search" placeholder="ref…" value="${escapeHtml(PS.f.ref)}" aria-label="Filter reference">
+        <input class="ps-fi" data-f="customer" type="search" placeholder="customer…" value="${escapeHtml(PS.f.customer)}" aria-label="Filter customer">
+        <input class="ps-fi" data-f="name" type="search" placeholder="project…" value="${escapeHtml(PS.f.name)}" aria-label="Filter project">
+        ${sel('country', [['', 'All'], ...opts('country').map(v => [v, v])], PS.f.country)}
+        ${sel('owner', [['', 'All'], ['__me', 'Me'], ...opts('owner').map(v => [v, v])], PS.f.owner)}
+        ${sel('due', [['', 'All'], ['over', 'Overdue'], ['7', 'Next 7 days'], ['30', 'Next 30 days'], ['none', 'No due date']], PS.f.due)}
+        ${sel('status', [['', 'All'], ['open', 'Open'], ['closed', 'Not open'], ...opts('status').map(v => [v, v])], PS.f.status)}
+      </div>
+      <div class="ps-body" id="psBody" tabindex="0"></div>
+    </div>
+    <div class="ps-foot"><button type="button" class="btn-ghost act ps-new" data-new>✨ Create New Offer</button><span id="psCount" class="ps-dim"></span><button type="button" class="kb-link" data-reset>Clear filters</button>
+      <span class="ps-actions"><button type="button" class="btn-ghost act" data-folder disabled>📂 Folder</button><button type="button" class="act btn-primary" data-open disabled>Open project</button></span></div>
+  </div>`;
+  document.body.appendChild(ov);
+  const $ = s => ov.querySelector(s);
+  const close = () => { ov.remove(); document.removeEventListener('keydown', onKey, true); };
+  const updateButtons = () => {
+    const x = psSelected();
+    $('[data-open]').disabled = $('[data-folder]').disabled = !x;
+    $('[data-open]').textContent = x ? (x.ref === document.getElementById('prjRef').value.trim() ? `Back to ${x.ref}` : `Open ${x.ref}`) : 'Open project';
+  };
+  const gkey = () => PS.group === 'country' ? 'country' : 'customer';
+  const render = () => {
+    psShown = psFiltered(psAll);
+    if(PS.sel && !psShown.some(x => x.ref === PS.sel)) PS.sel = null;
+    if(!PS.sel && psShown.length === 1) PS.sel = psShown[0].ref;
+    ov.querySelectorAll('[data-group]').forEach(b => b.classList.toggle('on', b.dataset.group === PS.group));
+    $('[data-all]').style.display = PS.group === 'none' ? 'none' : '';
+    $('[data-all]').textContent = PS.allOpen ? 'Collapse all' : 'Expand all';
+    let html;
+    if(!psAll.length){
+      html = `<div class="ps-empty">${msalInstance && msalAccount ? 'The project list is empty — try ⟳ (refresh from SharePoint).' : 'Sign in with Microsoft 365 to load the project list from SharePoint.'}</div>`;
+    } else if(!psShown.length){
+      html = '<div class="ps-empty">No project matches these filters.</div>';
+    } else if(PS.group === 'none'){
+      const cap = psShown.slice(0, 400);
+      html = cap.map(x => psItemHtml(x, false)).join('') + (psShown.length > cap.length ? `<div class="ps-empty">${psShown.length - cap.length} more — narrow the filters</div>` : '');
+    } else {
+      const key = gkey(), groups = new Map();
+      psShown.forEach(x => { const g = x[key] || '—'; if(!groups.has(g)) groups.set(g, []); groups.get(g).push(x); });
+      const typing = !!(PS.f.ref.trim() || PS.f.customer.trim() || PS.f.name.trim());
+      html = [...groups].map(([g, items]) => {
+        const open = PS.allOpen || typing || PS.open.has(g) || groups.size === 1;
+        const countries = key === 'customer' ? [...new Set(items.map(x => x.country).filter(Boolean))].join(' · ') : '';
+        return `<button type="button" class="ps-grp" data-g="${escapeHtml(g)}" aria-expanded="${open}"><span class="ps-caret">${open ? '▾' : '▸'}</span><b>${escapeHtml(g)}</b><span class="ps-cnt">${items.length}</span>${countries ? `<span class="ps-dim">${escapeHtml(countries)}</span>` : ''}<span class="ps-ghint">${psGroupHint(items.slice())}</span></button>`
+          + (open ? items.map(x => psItemHtml(x, true)).join('') : '');
+      }).join('');
+    }
+    $('#psBody').innerHTML = html;
+    $('#psCount').textContent = !psAll.length ? '' : PS.group === 'none' ? `${psShown.length} of ${psAll.length} projects`
+      : `${psShown.length} projects · ${new Set(psShown.map(x => x[gkey()] || '—')).size} ${PS.group === 'country' ? 'countries' : 'customers'}`;
+    ov.querySelectorAll('[data-arrow]').forEach(a => { a.textContent = a.dataset.arrow === PS.sort.key ? (PS.sort.dir > 0 ? ' ▴' : ' ▾') : ''; });
+    ov.querySelectorAll('.ps-item').forEach(el => {
+      el.addEventListener('click', () => { PS.sel = el.dataset.ref; ov.querySelectorAll('.ps-item.on').forEach(o => o.classList.remove('on')); el.classList.add('on'); updateButtons(); });
+      el.addEventListener('dblclick', () => { PS.sel = el.dataset.ref; doOpen(); });
+    });
+    ov.querySelectorAll('.ps-grp').forEach(b => b.addEventListener('click', () => {
+      const g = b.dataset.g;
+      if(b.getAttribute('aria-expanded') === 'true'){ PS.open.delete(g); PS.allOpen = false; } else PS.open.add(g);
+      render();
+    }));
+    updateButtons();
+  };
+  const doOpen = async () => {
+    const x = psSelected(); if(!x) return;
+    close();
+    const ok = await switchToProject(x.ref);
+    if(!ok) openProjectSearch();   // cancelled at the save question: back to the list
+  };
+  const doFolder = () => { const x = psSelected(); if(x) openFolderForRecord(x.rec); };
+  const doNew = async () => {
+    close();
+    if(document.getElementById('prjRef').value.trim() || bomHasRows() || !configurationIsPristine()){
+      if(!(await confirmLeaveCurrentProject('starting a new offer'))){ openProjectSearch(); return; }
+      resetAll();
+    }
+    document.getElementById('btnNewOffer').click();
+  };
+  ov.querySelectorAll('input.ps-fi').forEach(i => i.addEventListener('input', () => { PS.f[i.dataset.f] = i.value; render(); }));
+  ov.querySelectorAll('select.ps-fi').forEach(s => s.addEventListener('change', () => { PS.f[s.dataset.f] = s.value; render(); }));
+  ov.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => {
+    PS.sort = PS.sort.key === b.dataset.sort ? {key: b.dataset.sort, dir: -PS.sort.dir} : {key: b.dataset.sort, dir: 1}; render();
+  }));
+  ov.querySelectorAll('[data-group]').forEach(b => b.addEventListener('click', () => { PS.group = b.dataset.group; PS.open.clear(); PS.allOpen = false; psSavePrefs(); render(); }));
+  $('[data-all]').addEventListener('click', () => { PS.allOpen = !PS.allOpen; if(!PS.allOpen) PS.open.clear(); render(); });
+  $('[data-reset]').addEventListener('click', () => {
+    PS.f = {ref: '', customer: '', name: '', country: '', owner: '', due: '', status: ''};
+    ov.querySelectorAll('.ps-fi').forEach(el => { el.value = ''; }); render();
+  });
+  $('[data-open]').addEventListener('click', doOpen);
+  $('[data-folder]').addEventListener('click', doFolder);
+  $('[data-new]').addEventListener('click', doNew);
+  $('[data-close]').addEventListener('click', close);
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  $('[data-export]').addEventListener('click', async () => {
+    try{
+      const ws = createXlsxSheet('Projects');
+      ws.cols = [10, 30, 40, 14, 22, 12, 16];
+      const head = {font: {b: true, color: 'FFFFFF'}, fill: '4472C4'};
+      ['Ref.', 'Customer', 'Project', 'Country', 'Owner', 'Due date', 'Status'].forEach((h, i) => xlsxSet(ws, 1, i + 1, {v: h, s: head}));
+      ws.freezeRow = 1;
+      psFiltered(psAll).forEach((x, i) => [x.ref, x.customer, x.name, x.country, x.owner, x.due && !isNaN(x.due) ? fmtDate(x.due.toISOString()) : '', x.status].forEach((v, c) => xlsxSet(ws, i + 2, c + 1, {v})));
+      saveBlob(await buildXlsxBlob(ws), `Projects_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }catch(err){ showExportToast(`Export failed: ${err.message || err}`, 'warn'); }
+  });
+  function onKey(e){
+    if(!document.body.contains(ov)) return;
+    if(getComputedStyle(document.getElementById('appDialogOverlay')).display !== 'none') return;
+    if(e.key === 'Escape'){ e.preventDefault(); close(); return; }
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      const items = [...ov.querySelectorAll('.ps-item')].map(el => el.dataset.ref);
+      if(!items.length) return;
+      e.preventDefault();
+      const i = items.indexOf(PS.sel);
+      PS.sel = items[Math.max(0, Math.min(items.length - 1, i < 0 ? 0 : i + (e.key === 'ArrowDown' ? 1 : -1)))];
+      ov.querySelectorAll('.ps-item').forEach(el => el.classList.toggle('on', el.dataset.ref === PS.sel));
+      ov.querySelector(`.ps-item[data-ref="${CSS.escape(PS.sel)}"]`)?.scrollIntoView({block: 'nearest'});
+      updateButtons();
+    } else if(e.key === 'Enter' && PS.sel && !(e.target && /^(SELECT|BUTTON)$/.test(e.target.tagName))){ e.preventDefault(); doOpen(); }
+  }
+  document.addEventListener('keydown', onKey, true);
+  render();
+  setTimeout(() => $('[data-f="customer"]')?.focus(), 0);
+}
+// The folder of any project of the list (not only the one loaded): from SharePoint when signed in,
+// otherwise rebuilt from the list record — then straight to File Explorer like "📂 Folder".
+async function openFolderForRecord(rec){
+  const ref = String(rec.PRJ_ID || '');
+  await loadWindowsUserFromAd();
+  let rel = null;
+  if(msalInstance && msalAccount){
+    try{ const {targetPath} = await resolveProjectOfferFolder(ref); if(targetPath) rel = targetPath.replace(/\/02 OFFER$/i, ''); }
+    catch(err){ console.info('Folder from SharePoint not available — rebuilding the name:', err && (err.message || err)); }
+  }
+  if(!rel){
+    const cv = String(rec['Country.lookupValue'] || '').trim();
+    const cc = countryDisplay(cv).code || (/^[A-Z]{2}$/.test(cv) ? cv : '');
+    const name = buildFolderName(ref, rec.Customer || '', rec['Project Name'] || '', cc, rec['STD/SPECIAL'] || '');
+    const yy = ref.slice(0, 2);
+    rel = /^\d{2}$/.test(yy) ? `01_DTBS Offer/20${yy}/${name}` : name;
+  }
+  try{ await navigator.clipboard.writeText(localPathFor(rel)); }catch(e){}
+  openFolderProtocol(localPathForHelper(rel));
+  showFolderToast(rel, ref);
+}
+document.getElementById('btnOpenProjects').addEventListener('click', openProjectSearch);
+document.addEventListener('keydown', e => {
+  if((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 'k' || e.key === 'K')){
+    if(document.getElementById('projectSearchOverlay') || document.getElementById('kitPanel')) return;
+    if([...document.querySelectorAll('.settings-overlay, .acc-modal-overlay')].some(el => getComputedStyle(el).display !== 'none')) return;
+    e.preventDefault(); openProjectSearch();
+  }
+});
+
+document.getElementById('btnProjectFolder').addEventListener('click', e => {
+  // Shift+click (or Alt+click) still opens the folder window with the Windows user / synced-folder settings
+  if(e.shiftKey || e.altKey) openProjectFolderDialog(); else openProjectFolderDirect();
+});
 
 document.getElementById('btnUploadFiles').addEventListener('click', async ()=>{
   if(typeof msal === 'undefined'){
@@ -8078,16 +8607,19 @@ document.getElementById('btnRevisionHistory').addEventListener('click', openRevi
 // save (Close Offer then writes "<PRJ_ID>_R<n>.json" and removes the ongoing one). After a revision
 // has been closed, further work is saved as the next revision's ongoing file (open, editable); a
 // closed revision opened read-only is re-saved under its own closed name.
-document.getElementById('btnSaveFile').addEventListener('click', async ()=>{
+document.getElementById('btnSaveFile').addEventListener('click', () => saveConfigurationFlow());
+// preset: 'json' | 'reports' skips the question; quiet: a short notice instead of the result window
+// (used when saving on the way to another project). Resolves true when the configuration was saved.
+async function saveConfigurationFlow(preset, {quiet = false} = {}){
   // signed in (the reports would go to SharePoint R<n>): ask first whether to make them too —
   // "No" saves only the JSON, closing the window cancels the save
-  let withReports = false;
-  if(msalInstance && msalAccount){
+  let withReports = preset === 'reports';
+  if(msalInstance && msalAccount && !preset){
     const ans = await openAppDialog({title: t('save.title'),
       message: t('save.msg'),
       question: t('save.q').replace('{R}', `R${READ_ONLY ? REVISION : workingRevision()}`),
       buttons: [{label: t('save.cancel'), value: 'cancel'}, {label: t('save.json'), value: 'json', primary: true}, {label: t('save.reports'), value: 'reports'}]});
-    if(ans !== 'json' && ans !== 'reports') return;
+    if(ans !== 'json' && ans !== 'reports') return false;
     withReports = ans === 'reports';
   }
   const state = buildConfigState();
@@ -8101,24 +8633,33 @@ document.getElementById('btnSaveFile').addEventListener('click', async ()=>{
     state.closed = false;
     filename = `${ref}_R${rev}_ongoing.json`;
   }
-  if(msalInstance && msalAccount && !(await resolveOfferConflictBeforeWrite(filename))) return;
+  if(msalInstance && msalAccount && !(await resolveOfferConflictBeforeWrite(filename))) return false;
   const saved = await saveConfigurationSmart(state, filename);
   if(saved.where === 'sharepoint'){
     markAutosaveBaseline();
     setAutosaveStatus(`✓ Saved ${fmtStamp(new Date().toISOString()).slice(-5)}`);
     if(!withReports){
       setPrjAutoLoadStatus('Configuration saved to SharePoint (no reports generated).', 'loaded');
-      openAppDialog({title: 'Saved to SharePoint', message: `Configuration:\n${saved.path}\n\nNo reports generated (JSON only).`});
-      return;
+      if(quiet) showExportToast(`✓ ${ref} saved to SharePoint`, 'ok');
+      else openAppDialog({title: 'Saved to SharePoint', message: `Configuration:\n${saved.path}\n\nNo reports generated.`});
+      return true;
     }
     setPrjAutoLoadStatus(`Saving the offer documents to SharePoint (R${rev})…`);
     const docs = await saveOfferDocumentsToRevisionFolder(rev);
     setPrjAutoLoadStatus(docs.uploaded.length ? `Saved to SharePoint — configuration + ${docs.uploaded.length} offer document(s) in R${rev}.` : 'Configuration saved to SharePoint.', 'loaded');
-    openAppDialog({title: 'Saved to SharePoint', message: `Configuration:\n${saved.path}\n\n${describeOfferDocumentsResult(docs)}`});
-  } else if(saved.where === 'local' && msalInstance && msalAccount){
-    openAppDialog({title: 'Saved to this computer', message: `Saved as ${saved.name} (${saved.reason}).`});
+    if(quiet) showExportToast(`✓ ${ref} saved to SharePoint, with ${docs.uploaded.length} report(s) in R${rev}`, docs.uploaded.length ? 'ok' : 'warn');
+    else openAppDialog({title: 'Saved to SharePoint', message: `Configuration:\n${saved.path}\n\n${describeOfferDocumentsResult(docs)}`});
+    return true;
+  } else if(saved.where === 'local'){
+    markAutosaveBaseline();
+    if(msalInstance && msalAccount){
+      if(quiet) showExportToast(`Saved to this computer as ${saved.name} (${saved.reason})`, 'warn');
+      else openAppDialog({title: 'Saved to this computer', message: `Saved as ${saved.name} (${saved.reason}).`});
+    }
+    return true;
   }
-});
+  return false;
+}
 
 // ---- Load configuration from a local .json file ----
 const fileInput = document.getElementById('fileInput');
@@ -11138,7 +11679,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.17';
+const CURRENT_VERSION = 'beta_6.22';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -11168,6 +11709,26 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.22', date:'2026-10-10', notes:[
+    'Listino integrato: lo strumento parte già con l\'elenco completo di modelli, moduli e accessori (codici e descrizioni, senza prezzi), così le offerte hanno subito i codici giusti',
+    '"Import Price List": oltre a caricare il listino, aggiorna prezzi di vendita e costi di tutte le righe dell\'offerta il cui codice è nel listino (i kit seguono i loro componenti); un avviso dice quante righe sono state aggiornate',
+  ]},
+  {version:'beta_6.21', date:'2026-10-09', notes:[
+    'Kit: il prezzo di vendita del kit si può scrivere — nella riga del kit delle Offer Lines (campo prezzo, poi Invio) o nel Kit Builder (scheda Kit data, "Selling price / kit"). I prezzi di vendita dei componenti vengono riproporzionati in automatico in modo che la loro somma sia il nuovo prezzo del kit (componenti senza prezzo: ripartito in base al costo). "↺ Back to the sum" nel Kit Builder torna alla somma dei componenti',
+  ]},
+  {version:'beta_6.20', date:'2026-10-09', notes:[
+    'Finestra Projects: si apre da sola dopo il Sign-in (si può chiudere senza scegliere) e dal nuovo pulsante "📁 Projects" nella barra in alto (o Ctrl+K), che sostituisce "New Offer". Tabella con un filtro sotto ogni colonna, raggruppata per cliente (o per paese / nessuno): clic sul cliente per aprire i suoi progetti; la riga del cliente mostra quanti progetti ha e la scadenza più urgente',
+    'Pulsanti: "Open …" (anche doppio clic / Invio), "📂 Folder", e "✨ Create New Offer" per un\'offerta nuova. Il Project Reference non si scrive più a mano: si sceglie dalla finestra Projects',
+    'Cambio progetto (o nuova offerta) con modifiche non salvate: lo strumento chiede prima se salvare — Save / Print report (salva e crea anche i report) / Don\'t save / Cancel — come Save Configuration',
+    'Messaggi di salvataggio senza riferimenti al JSON: "Save" salva il lavoro, "Print report" salva e crea anche tutti i report / allegati nella cartella R<n>',
+  ]},
+  {version:'beta_6.19', date:'2026-10-09', notes:[
+    'Ricerca progetti: pulsante 🔍 accanto a Project Reference (o Ctrl+K). Tabella della lista SharePoint con un filtro sotto ogni colonna — Rif., Cliente, Progetto (testo) e Paese, Owner (anche "Me"), Scadenza (scadute / 7 / 30 giorni / senza data), Stato (aperti di default). Clic sul titolo per ordinare, scadenze vicine/scadute evidenziate',
+    'Selezionata una riga: "Open project" la carica come ↑ Load (anche doppio clic o Invio, frecce ↑ ↓ per scorrere), "📂 Folder" apre la sua cartella sul PC. "Export Excel" esporta i risultati filtrati',
+  ]},
+  {version:'beta_6.18', date:'2026-10-09', notes:[
+    '"📂 Folder" apre direttamente la cartella del progetto in Esplora file (helper ups-folder), senza la finestra di scelta del percorso. Il percorso viene anche copiato; un piccolo avviso offre "Folder settings…" (utente Windows / cartella sincronizzata) e "SharePoint" se non si apre nulla. Maiusc+clic apre ancora la finestra delle impostazioni',
+  ]},
   {version:'beta_6.17', date:'2026-10-06', notes:[
     'Pulsante ⟳ in alto a destra (visibile quando sei connesso): ricarica da SharePoint lista progetti, owner, scelte STD/SPECIAL, scadenze 🔔, paesi e i Project Details del progetto aperto — senza disconnettersi. Il token viene rinnovato in automatico; i campi modificati sulla pagina e non ancora salvati restano come li hai lasciati; configurazione e Offer Lines non vengono toccate. Un avviso dice cosa è cambiato',
   ]},
@@ -11545,6 +12106,7 @@ function restoreWorkFromSession(){
     const cat = JSON.parse(sessionGet(SESSION_KEYS.catalog) || 'null');
     if(cat && Array.isArray(cat.rows) && cat.rows.length) processCatalog(cat.rows, cat.filename || 'price list');
   }catch(e){ console.warn('Could not restore the imported price list:', e); }
+  if(!CATALOG_LOADED){ try{ loadBuiltinPriceList(); }catch(e){ console.warn('Built-in price list not loaded:', e); } }
 
   if(saved && saved.state && Array.isArray(saved.state.positions)){
     try{
@@ -11581,6 +12143,8 @@ async function restoreSignInSilently(){
     document.getElementById('btnTopSignOut').classList.add('visible');
     updateSpStatus(`Signed in as ${msalAccount.username}.`, 'loaded');
     await fetchSharePointList();
+    // back after a reload with no project on the page: the project list, as after signing in
+    if(!document.getElementById('prjRef').value.trim() && !bomHasRows()) setTimeout(openProjectSearch, 300);
     return true;
   }catch(err){
     console.info('No silent sign-in after reload — the welcome screen stays:', err && (err.errorCode || err.message) || err);

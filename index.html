@@ -150,6 +150,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 /* ---- 🔍 project search ---- */
 .ps-modal{max-width:1040px !important; width:min(1040px, 96vw); display:flex; flex-direction:column; max-height:88vh;}
 .ps-header{flex-wrap:wrap; gap:10px;}
+.ps-hscroll{overflow-x:auto;}
+.ps-inner .ps-row{grid-template-columns:var(--ps-cols) !important;}
+.ps-inner .ps-body{overflow-x:hidden;}
 .ps-tools{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; font-weight:400;}
 .ps-seg{display:inline-flex; border:1px solid var(--field-border); border-radius:8px; overflow:hidden;}
 .ps-seg button{height:30px; padding:0 11px; border:none; background:#fff; font:inherit; font-size:12px; cursor:pointer;}
@@ -915,7 +918,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.22</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.23</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -1640,6 +1643,7 @@ function processProjectList(rows, filename){
     if(!rec['Created By.title'] && r.__graphCreatedByName){
       rec['Created By.title'] = r.__graphCreatedByName;
     }
+    rec._raw = r;   // every column of the list, for the Projects window
     return rec;
   }).filter(rec => String(rec.PRJ_ID||'').trim() !== '');
 
@@ -7528,24 +7532,73 @@ const PS = {sort: {key: 'due', dir: 1}, f: {ref: '', customer: '', name: '', cou
   group: (() => { try{ return (JSON.parse(localStorage.getItem(PS_PREF_KEY) || '{}') || {}).group || 'customer'; }catch(e){ return 'customer'; } })(),
   open: new Set(), allOpen: false};
 function psSavePrefs(){ try{ localStorage.setItem(PS_PREF_KEY, JSON.stringify({group: PS.group})); }catch(e){} }
+// Country is a lookup: Graph may give only its id — shown as "IT-Italy" through the country list.
+function psCountry(r){
+  const v = String(r['Country.lookupValue'] ?? '').trim();
+  const id = r._countryLookupId;
+  if(id != null && id !== '' && (!v || /^\d+$/.test(v))){
+    const m = (countryOptions || []).find(c => String(c.id) === String(id));
+    if(m) return formatCountryLabel(m.code, m.title);
+  }
+  if(/^\d+$/.test(v)){
+    const m = (countryOptions || []).find(c => String(c.id) === v);
+    if(m) return formatCountryLabel(m.code, m.title);
+  }
+  return v;
+}
+// Every other column of the SharePoint list (those not already shown as Ref. / Customer / Project /
+// Country / Owner / Due date / Status), named as SharePoint names them — to be trimmed later.
+const PS_SKIP_KEYS = new Set(['@odata.etag', '__graphcreatedbyname', '__assignedtoname']);
+function psMainRawKeys(){
+  const al = [...PROGRESS_FIELD_ALIASES.PRJ_ID, ...PROGRESS_FIELD_ALIASES.Customer, ...PROGRESS_FIELD_ALIASES['Project Name'],
+    ...PROGRESS_FIELD_ALIASES['Country.lookupValue'], ...PROGRESS_FIELD_ALIASES['Created By.title'], ...PROGRESS_FIELD_ALIASES['Due date'], ...PROGRESS_FIELD_ALIASES.Status];
+  const set = new Set(al.map(normalizeKey));
+  al.forEach(a => set.add(normalizeKey(a + 'LookupId')));
+  return set;
+}
+function psExtraKeys(){
+  const main = psMainRawKeys(), seen = new Set(), out = [];
+  (PROGRESS || []).forEach(r => Object.keys(r._raw || {}).forEach(k => {
+    if(seen.has(k)) return; seen.add(k);
+    if(PS_SKIP_KEYS.has(k.toLowerCase()) || main.has(normalizeKey(k))) return;
+    out.push(k);
+  }));
+  return out;
+}
+function psFieldLabel(k){ return String(k).replace(/_x([0-9a-f]{4})_/gi, (m, h) => String.fromCharCode(parseInt(h, 16))).replace(/LookupId$/, ' (id)'); }
+function psFormat(v, key){
+  if(v === null || v === undefined) return '';
+  if(typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if(Array.isArray(v)) return v.map(x => psFormat(x, key)).filter(Boolean).join(', ');
+  if(typeof v === 'object') return String(extractDisplayValue(v) ?? '') || JSON.stringify(v);
+  const s = String(v);
+  if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)){ const d = new Date(s); if(!isNaN(d)) return fmtDate(s); }
+  if(/LookupId$/.test(key || '') && /^AssignedTo|Author|Editor/i.test(key)){ const u = typeof siteUserById === 'function' ? siteUserById(s) : null; if(u) return u.name; }
+  return s;
+}
 function psRows(){
+  const extra = psExtraKeys();
   return (PROGRESS || []).map(r => {
     const due = r['Due date'] ? new Date(r['Due date']) : null;
     const days = due && !isNaN(due) ? Math.round((dayStart(due) - dayStart(new Date())) / 86400000) : null;
+    const x = {};
+    extra.forEach(k => { x[k] = psFormat((r._raw || {})[k], k); });
     return {rec: r, ref: String(r.PRJ_ID || ''), customer: String(r.Customer || ''), name: String(r['Project Name'] || ''),
-      country: String(r['Country.lookupValue'] || ''), owner: String(r['Created By.title'] || ''), status: String(r.Status || ''),
-      due, days, open: isOfferInProgress(r.Status)};
+      country: psCountry(r), owner: String(r['Created By.title'] || ''), status: String(r.Status || ''),
+      due, days, open: isOfferInProgress(r.Status), x};
   });
 }
 function psFiltered(all){
   const f = PS.f, has = (v, q) => !q || v.toLowerCase().includes(q.trim().toLowerCase());
+  const xf = Object.entries(f.x || {}).filter(([, q]) => q);
   let rows = all.filter(x => has(x.ref, f.ref) && has(x.customer, f.customer) && has(x.name, f.name)
+    && xf.every(([k, q]) => q.startsWith('=') ? (x.x[k] || '') === q.slice(1) : has(x.x[k] || '', q))
     && (!f.country || x.country === f.country)
     && (!f.owner || (f.owner === '__me' ? isMeName(x.owner) : x.owner === f.owner))
     && (!f.status || (f.status === 'open' ? x.open : f.status === 'closed' ? !x.open : x.status === f.status))
     && (!f.due || (f.due === 'over' ? (x.days != null && x.days < 0) : f.due === 'none' ? x.days == null : (x.days != null && x.days >= 0 && x.days <= Number(f.due)))));
   const k = PS.sort.key, dir = PS.sort.dir;
-  const val = x => k === 'due' ? (x.due && !isNaN(x.due) ? x.due.getTime() : Infinity) : String(x[k] || '').toLowerCase();
+  const val = x => k === 'due' ? (x.due && !isNaN(x.due) ? x.due.getTime() : Infinity) : String((k.startsWith('x:') ? x.x[k.slice(2)] : x[k]) || '').toLowerCase();
   rows.sort((a, b) => { const va = val(a), vb = val(b); return (va < vb ? -1 : va > vb ? 1 : 0) * dir || b.ref.localeCompare(a.ref); });
   return rows;
 }
@@ -7606,22 +7659,34 @@ function psSelected(){ return psShown.find(x => x.ref === PS.sel) || null; }
 function psItemHtml(x, grouped){
   const loaded = x.ref === document.getElementById('prjRef')?.value.trim();
   return `<div class="ps-row ps-item${x.ref === PS.sel ? ' on' : ''}${grouped ? ' ps-child' : ''}" data-ref="${escapeHtml(x.ref)}">
-    <b class="ps-ref">${escapeHtml(x.ref)}${loaded ? ' <span class="ps-loaded" title="Open on this page">●</span>' : ''}</b><span>${grouped && PS.group === 'customer' ? '' : escapeHtml(x.customer)}</span><span>${escapeHtml(x.name)}</span><span>${grouped && PS.group === 'country' ? '' : escapeHtml(x.country)}</span><span>${escapeHtml(x.owner)}</span><span>${psDueCell(x)}</span><span>${escapeHtml(x.status || (x.open ? 'Open' : ''))}</span></div>`;
+    <b class="ps-ref">${escapeHtml(x.ref)}${loaded ? ' <span class="ps-loaded" title="Open on this page">●</span>' : ''}</b><span>${grouped && PS.group === 'customer' ? '' : escapeHtml(x.customer)}</span><span>${escapeHtml(x.name)}</span><span>${grouped && PS.group === 'country' ? '' : escapeHtml(x.country)}</span><span>${escapeHtml(x.owner)}</span><span>${psDueCell(x)}</span><span>${escapeHtml(x.status || (x.open ? 'Open' : ''))}</span>${(PS.extra || []).map(k => `<span title="${escapeHtml(x.x[k] || '')}">${escapeHtml(x.x[k] || '')}</span>`).join('')}</div>`;
 }
 function openProjectSearch(){
   if(document.getElementById('projectSearchOverlay')) return;
   const ov = document.createElement('div');
   ov.className = 'settings-overlay'; ov.id = 'projectSearchOverlay'; ov.style.display = 'flex';
   psAll = psRows();
+  PS.extra = psExtraKeys();
+  PS.f.x = PS.f.x || {};
   const opts = (key) => [...new Set(psAll.map(x => x[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  // an extra column with few different values gets a choice list, otherwise a text filter
+  const xFilter = k => {
+    const vals = [...new Set(psAll.map(x => x.x[k]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const cur = PS.f.x[k] || '';
+    return vals.length && vals.length <= 25
+      ? `<select class="ps-fi" data-fx="${escapeHtml(k)}" aria-label="Filter ${escapeHtml(psFieldLabel(k))}"><option value="">All</option>${vals.map(v => `<option value="=${escapeHtml(v)}"${cur === '=' + v ? ' selected' : ''}>${escapeHtml(v.length > 40 ? v.slice(0, 40) + '…' : v)}</option>`).join('')}</select>`
+      : `<input class="ps-fi" data-fx="${escapeHtml(k)}" type="search" placeholder="…" value="${escapeHtml(cur)}" aria-label="Filter ${escapeHtml(psFieldLabel(k))}">`;
+  };
+  const cols = `86px minmax(150px,1.2fr) minmax(170px,1.5fr) 110px minmax(130px,0.9fr) 104px 110px${PS.extra.map(() => ' 140px').join('')}`;
+  const minW = 86 + 150 + 170 + 110 + 130 + 104 + 110 + PS.extra.length * 140 + (7 + PS.extra.length) * 8 + 28;
   const sel = (id, list, cur) => `<select class="ps-fi" data-f="${id}" aria-label="Filter ${id}">${list.map(([v, l]) => `<option value="${escapeHtml(v)}"${cur === v ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>`;
   const th = (key, label) => `<button type="button" class="ps-th" data-sort="${key}">${label}<span class="ps-arrow" data-arrow="${key}"></span></button>`;
   ov.innerHTML = `<div class="settings-modal ps-modal" role="dialog" aria-modal="true" aria-label="Projects">
     <div class="acc-modal-header ps-header"><div><h3>Projects</h3><p class="ps-sub">Filter under each column · click a customer to open its projects · double click (or Enter) opens a project</p></div>
       <span class="ps-tools"><span class="ps-dim">Group</span><span class="ps-seg" role="group" aria-label="Group the projects"><button type="button" data-group="none">None</button><button type="button" data-group="customer">By customer</button><button type="button" data-group="country">By country</button></span>
       <button type="button" class="btn-ghost act ps-small" data-all>Expand all</button><button type="button" class="btn-ghost act ps-small" data-export>Export Excel</button><button type="button" class="acc-modal-close" data-close aria-label="Close">×</button></span></div>
-    <div class="ps-wrap">
-      <div class="ps-row ps-head">${th('ref', 'Ref.')}${th('customer', 'Customer')}${th('name', 'Project')}${th('country', 'Country')}${th('owner', 'Owner')}${th('due', 'Due date')}${th('status', 'Status')}</div>
+    <div class="ps-wrap ps-hscroll"><div class="ps-inner" style="--ps-cols:${cols}; min-width:${minW}px;">
+      <div class="ps-row ps-head">${th('ref', 'Ref.')}${th('customer', 'Customer')}${th('name', 'Project')}${th('country', 'Country')}${th('owner', 'Owner')}${th('due', 'Due date')}${th('status', 'Status')}${PS.extra.map(k => th('x:' + k, escapeHtml(psFieldLabel(k)))).join('')}</div>
       <div class="ps-row ps-filters">
         <input class="ps-fi" data-f="ref" type="search" placeholder="ref…" value="${escapeHtml(PS.f.ref)}" aria-label="Filter reference">
         <input class="ps-fi" data-f="customer" type="search" placeholder="customer…" value="${escapeHtml(PS.f.customer)}" aria-label="Filter customer">
@@ -7630,9 +7695,10 @@ function openProjectSearch(){
         ${sel('owner', [['', 'All'], ['__me', 'Me'], ...opts('owner').map(v => [v, v])], PS.f.owner)}
         ${sel('due', [['', 'All'], ['over', 'Overdue'], ['7', 'Next 7 days'], ['30', 'Next 30 days'], ['none', 'No due date']], PS.f.due)}
         ${sel('status', [['', 'All'], ['open', 'Open'], ['closed', 'Not open'], ...opts('status').map(v => [v, v])], PS.f.status)}
+        ${PS.extra.map(xFilter).join('')}
       </div>
       <div class="ps-body" id="psBody" tabindex="0"></div>
-    </div>
+    </div></div>
     <div class="ps-foot"><button type="button" class="btn-ghost act ps-new" data-new>✨ Create New Offer</button><span id="psCount" class="ps-dim"></span><button type="button" class="kb-link" data-reset>Clear filters</button>
       <span class="ps-actions"><button type="button" class="btn-ghost act" data-folder disabled>📂 Folder</button><button type="button" class="act btn-primary" data-open disabled>Open project</button></span></div>
   </div>`;
@@ -7701,15 +7767,16 @@ function openProjectSearch(){
     }
     document.getElementById('btnNewOffer').click();
   };
-  ov.querySelectorAll('input.ps-fi').forEach(i => i.addEventListener('input', () => { PS.f[i.dataset.f] = i.value; render(); }));
-  ov.querySelectorAll('select.ps-fi').forEach(s => s.addEventListener('change', () => { PS.f[s.dataset.f] = s.value; render(); }));
+  const setF = (el, v) => { if(el.dataset.fx != null) PS.f.x[el.dataset.fx] = v; else PS.f[el.dataset.f] = v; render(); };
+  ov.querySelectorAll('input.ps-fi').forEach(i => i.addEventListener('input', () => setF(i, i.value)));
+  ov.querySelectorAll('select.ps-fi').forEach(s => s.addEventListener('change', () => setF(s, s.value)));
   ov.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => {
     PS.sort = PS.sort.key === b.dataset.sort ? {key: b.dataset.sort, dir: -PS.sort.dir} : {key: b.dataset.sort, dir: 1}; render();
   }));
   ov.querySelectorAll('[data-group]').forEach(b => b.addEventListener('click', () => { PS.group = b.dataset.group; PS.open.clear(); PS.allOpen = false; psSavePrefs(); render(); }));
   $('[data-all]').addEventListener('click', () => { PS.allOpen = !PS.allOpen; if(!PS.allOpen) PS.open.clear(); render(); });
   $('[data-reset]').addEventListener('click', () => {
-    PS.f = {ref: '', customer: '', name: '', country: '', owner: '', due: '', status: ''};
+    PS.f = {ref: '', customer: '', name: '', country: '', owner: '', due: '', status: '', x: {}};
     ov.querySelectorAll('.ps-fi').forEach(el => { el.value = ''; }); render();
   });
   $('[data-open]').addEventListener('click', doOpen);
@@ -7720,11 +7787,11 @@ function openProjectSearch(){
   $('[data-export]').addEventListener('click', async () => {
     try{
       const ws = createXlsxSheet('Projects');
-      ws.cols = [10, 30, 40, 14, 22, 12, 16];
+      ws.cols = [10, 30, 40, 14, 22, 12, 16, ...PS.extra.map(() => 18)];
       const head = {font: {b: true, color: 'FFFFFF'}, fill: '4472C4'};
-      ['Ref.', 'Customer', 'Project', 'Country', 'Owner', 'Due date', 'Status'].forEach((h, i) => xlsxSet(ws, 1, i + 1, {v: h, s: head}));
+      ['Ref.', 'Customer', 'Project', 'Country', 'Owner', 'Due date', 'Status', ...PS.extra.map(psFieldLabel)].forEach((h, i) => xlsxSet(ws, 1, i + 1, {v: h, s: head}));
       ws.freezeRow = 1;
-      psFiltered(psAll).forEach((x, i) => [x.ref, x.customer, x.name, x.country, x.owner, x.due && !isNaN(x.due) ? fmtDate(x.due.toISOString()) : '', x.status].forEach((v, c) => xlsxSet(ws, i + 2, c + 1, {v})));
+      psFiltered(psAll).forEach((x, i) => [x.ref, x.customer, x.name, x.country, x.owner, x.due && !isNaN(x.due) ? fmtDate(x.due.toISOString()) : '', x.status, ...PS.extra.map(k => x.x[k] || '')].forEach((v, c) => xlsxSet(ws, i + 2, c + 1, {v})));
       saveBlob(await buildXlsxBlob(ws), `Projects_${new Date().toISOString().slice(0, 10)}.xlsx`);
     }catch(err){ showExportToast(`Export failed: ${err.message || err}`, 'warn'); }
   });
@@ -7746,6 +7813,13 @@ function openProjectSearch(){
   document.addEventListener('keydown', onKey, true);
   render();
   setTimeout(() => $('[data-f="customer"]')?.focus(), 0);
+  // countries known only by id: load the country list once, then show the window again with names
+  if(typeof countryOptionsLoaded !== 'undefined' && !countryOptionsLoaded && msalInstance && msalAccount && (PROGRESS || []).some(r => r._countryLookupId != null && r._countryLookupId !== '')){
+    ensureCountryOptionsLoaded().then(() => {
+      if(!document.body.contains(ov)) return;
+      const keepSel = PS.sel; close(); PS.sel = keepSel; openProjectSearch();
+    }).catch(err => console.info('Country list not available — countries stay as SharePoint gives them:', err && (err.message || err)));
+  }
 }
 // The folder of any project of the list (not only the one loaded): from SharePoint when signed in,
 // otherwise rebuilt from the list record — then straight to File Explorer like "📂 Folder".
@@ -11679,7 +11753,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.22';
+const CURRENT_VERSION = 'beta_6.23';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -11709,6 +11783,10 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.23', date:'2026-10-10', notes:[
+    'Finestra Projects: corretto il filtro Country — il paese arriva da SharePoint come lookup (a volte solo il numero): ora viene mostrato e filtrato come "IT-Italy" tramite la lista paesi',
+    'Finestra Projects: oltre alle 7 colonne principali mostra tutte le altre colonne della lista SharePoint (con i nomi di SharePoint), ognuna con il suo filtro (scelta se ha pochi valori, testo altrimenti) e ordinabile; la tabella scorre in orizzontale. Export Excel le include',
+  ]},
   {version:'beta_6.22', date:'2026-10-10', notes:[
     'Listino integrato: lo strumento parte già con l\'elenco completo di modelli, moduli e accessori (codici e descrizioni, senza prezzi), così le offerte hanno subito i codici giusti',
     '"Import Price List": oltre a caricare il listino, aggiorna prezzi di vendita e costi di tutte le righe dell\'offerta il cui codice è nel listino (i kit seguono i loro componenti); un avviso dice quante righe sono state aggiornate',

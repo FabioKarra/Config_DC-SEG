@@ -46,11 +46,16 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 /* ---- app shell / sidebar ---- */
 .app-shell{display:flex; align-items:stretch; min-height:100vh;}
 .sidebar{
-  width:var(--sidebar-w); flex-shrink:0; background:#fff; border-right:1px solid var(--panel-border);
-  display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto;
-  transition:margin-left .18s ease;
+  width:var(--sidebar-w); flex-shrink:0; border-right:1px solid var(--panel-border);
+  display:flex; flex-direction:column; overflow-y:auto;
+  /* beta_6.34: the menu floats over the page (translucent), so the page keeps the same width open or closed */
+  position:fixed; top:0; left:0; height:100vh; height:100dvh; z-index:150;
+  background:rgba(255,255,255,.88); -webkit-backdrop-filter:blur(10px) saturate(1.2); backdrop-filter:blur(10px) saturate(1.2);
+  box-shadow:0 18px 48px rgba(20,22,26,.22);
+  transition:transform .2s ease, visibility .2s;
 }
-.sidebar.collapsed{margin-left:calc(-1 * var(--sidebar-w));}
+.sidebar.collapsed{transform:translateX(-100%); visibility:hidden; box-shadow:none;}
+@media (prefers-reduced-motion: reduce){ .sidebar{transition:none;} }
 .sidebar-backdrop{display:none;}
 .sidebar-header{
   padding:22px 18px 18px; display:flex; align-items:center; justify-content:space-between;
@@ -881,10 +886,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
 /* ---- mobile phone layout ---- */
 @media (max-width:760px){
-  .sidebar{
-    position:fixed; top:0; left:0; height:100dvh; z-index:150;
-    transition:margin-left .18s ease;
-  }
+  .sidebar{background:#fff;}
   .sidebar-backdrop{
     display:none; position:fixed; inset:0; z-index:140; background:rgba(20,22,26,.45);
   }
@@ -1005,7 +1007,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header u10">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.33</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.34</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -1582,8 +1584,19 @@ function setSidebarCollapsed(collapsed){
 document.getElementById('btnHideSidebar').addEventListener('click', ()=>setSidebarCollapsed(true));
 showSidebarBtn.addEventListener('click', ()=>setSidebarCollapsed(false));
 sidebarBackdrop.addEventListener('click', ()=>setSidebarCollapsed(true));
-// on a phone screen, start with the menu tucked away so it doesn't eat the whole viewport
-if(isMobileViewport()) setSidebarCollapsed(true);
+// beta_6.34: the menu starts hidden; once opened it stays open until the person goes back to work on
+// the page (a click, tap or keyboard focus outside the menu, or Esc) — then it closes by itself.
+setSidebarCollapsed(true);
+function closeSidebarIfOutside(e){
+  if(sidebarEl.classList.contains('collapsed')) return;
+  const tgt = e.target;
+  if(!tgt || !tgt.closest) return;
+  if(tgt.closest('#sidebar, #btnShowSidebar')) return;
+  setSidebarCollapsed(true);
+}
+document.addEventListener('pointerdown', closeSidebarIfOutside, true);
+document.addEventListener('focusin', closeSidebarIfOutside, true);
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !sidebarEl.classList.contains('collapsed')) setSidebarCollapsed(true); });
 
 // ---- collapsible nav groups (accordion) — all start collapsed ----
 document.querySelectorAll('.nav-group').forEach(group=>group.classList.add('collapsed'));
@@ -12186,7 +12199,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.33';
+const CURRENT_VERSION = 'beta_6.34';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12216,6 +12229,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.34', date:'2026-10-12', notes:[
+    'Menu laterale nascosto all\'avvio (si apre con ☰ in alto a sinistra). Aperto, resta sopra la pagina in trasparenza — la pagina mantiene la stessa larghezza aperto o chiuso — e si richiude da solo appena si torna a lavorare sulla pagina (clic, tocco o tasto fuori dal menu, oppure Esc)',
+  ]},
   {version:'beta_6.33', date:'2026-10-12', notes:[
     'Nuova intestazione (grafica U10): titolo compatto e barra di stato unica con tre parti — progetti (numero, origine, colonne mancanti), listino, revisione — ognuna con la sua azione rapida (Aggiorna / Accedi, Importa prezzi, Storico; "New Revision" quando la revisione è chiusa)',
     'Barra in alto: dopo l\'accesso compare il chip utente con il nome (es. "Francesco Carraro"); con il ruolo Costs.Read sotto il nome c\'è "Costs & margins" e la moneta dorata, senza ruolo il chip è grigio con il solo nome. Clic sul chip = pannello Microsoft 365 (aggiorna / esci)',

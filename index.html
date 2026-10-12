@@ -408,6 +408,22 @@ button.act:active{transform:translateY(1px);}
 .sp-load-file .sp-load-tag{display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; font-size:11px; background:var(--teal); color:#fff; font-weight:600;}
 
 
+/* ---- beta_6.36: collapsible main sections with a summary ---- */
+.panel.pnl-c > .panel-title{cursor:pointer; user-select:none;}
+.pnl-tools{display:flex; align-items:center; gap:10px; min-width:0; margin-left:auto; text-transform:none; letter-spacing:0;}
+.pnl-sum{display:none; font-size:13px; font-weight:400; color:var(--text); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.pnl-sum .ps-k{color:var(--dim);}
+.pnl-sum b{font-weight:600; color:var(--navy,#00257A);}
+.panel.pnl-collapsed .pnl-sum{display:block;}
+.pnl-tog{flex:none; display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 10px; border:1px solid var(--panel-border); border-radius:8px; background:#fff; font-family:'Work Sans',sans-serif; font-size:12px; font-weight:500; color:var(--dim); cursor:pointer; text-transform:none; letter-spacing:0;}
+.pnl-tog:hover{border-color:var(--accent); color:var(--accent);}
+.pnl-tog .chev{display:inline-block; transition:transform .15s;}
+.panel.pnl-collapsed .pnl-tog .chev{transform:rotate(-90deg);}
+.panel.pnl-collapsed{padding-top:14px; padding-bottom:14px;}
+.panel.pnl-collapsed > .panel-title{margin-bottom:0;}
+.panel.pnl-collapsed > :not(.panel-title){display:none !important;}
+.panel-title-left{flex:none;}
+@media (max-width: 760px){ .pnl-tog .lbl{display:none;} }
 /* ---- beta_6.33: header + status bar (design U10) and user chip (R1) ---- */
 .page-header.u10{border-bottom:none; padding-bottom:0; margin-bottom:14px;}
 .page-header.u10 .brand-eyebrow, .page-header.u10 .subtitle{display:none;}
@@ -1007,7 +1023,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header u10">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.35</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.36</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -1035,7 +1051,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
 
       <!-- PROJECT DETAILS -->
-      <section class="panel">
+      <section class="panel" id="pnlProject">
         <p class="panel-title"><span class="panel-title-left"><span class="dot"></span><span data-i18n="pd.title">Project Details</span></span></p>
         <!-- No project open: a 3-step guide instead of the empty form (beta_6.26) -->
         <div id="pdGuide" class="pd-guide" style="display:none;">
@@ -1108,7 +1124,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       </section>
 
       <!-- SYSTEM CONFIGURATION -->
-      <section class="panel">
+      <section class="panel" id="pnlConfig">
         <p class="panel-title"><span class="panel-title-left"><span class="dot"></span><span data-i18n="sc.title">System Configuration</span></span></p>
         <div class="cfg-wrap">
           <table class="cfg">
@@ -1127,7 +1143,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       </section>
 
       <!-- OFFER / BOM -->
-      <section class="panel">
+      <section class="panel" id="pnlOffer">
         <p class="panel-title"><span class="panel-title-left"><span class="dot"></span><span data-i18n="ol.title">Offer Lines</span></span></p>
         <div class="cfg-wrap">
           <table class="bom">
@@ -8068,6 +8084,88 @@ function scheduleStatusBar(){ if(!_stRaf) _stRaf = requestAnimationFrame(() => {
   renderStatusBar();
 })();
 
+
+// ---- beta_6.36: collapsible main sections — a collapsed section shows a one-line summary ----
+const PNL_KEY = 'upsConfigurator.collapsedPanels.v1';
+const PNL_TXT = {
+  en: {collapse: 'Collapse', expand: 'Expand', noProject: 'No project open', due: 'due', positions: n => `${n} position${n === 1 ? '' : 's'}`, kw: 'kW total',
+       lines: n => `${n} line${n === 1 ? '' : 's'}`, sections: n => `${n} section${n === 1 ? '' : 's'}`, noLines: 'No lines yet — click Generate Offer', total: 'Total', margin: 'margin'},
+  it: {collapse: 'Comprimi', expand: 'Espandi', noProject: 'Nessun progetto aperto', due: 'scad.', positions: n => `${n} posizion${n === 1 ? 'e' : 'i'}`, kw: 'kW totali',
+       lines: n => `${n} rig${n === 1 ? 'a' : 'he'}`, sections: n => `${n} sezion${n === 1 ? 'e' : 'i'}`, noLines: 'Nessuna riga — clicca Genera Offerta', total: 'Totale', margin: 'margine'}
+};
+function pnlT(){ return PNL_TXT[LANG] || PNL_TXT.en; }
+function pnlLoad(){ try{ return new Set(JSON.parse(localStorage.getItem(PNL_KEY) || '[]')); }catch(e){ return new Set(); } }
+function pnlSave(set){ try{ localStorage.setItem(PNL_KEY, JSON.stringify([...set])); }catch(e){} }
+const pnlEsc = v => escapeHtml(String(v == null ? "" : v));
+function pnlSummary(id){
+  const T = pnlT(), v = x => (document.getElementById(x)?.value || '').trim();
+  if(id === 'pnlProject'){
+    const ref = v('prjRef');
+    if(!ref) return `<span class="ps-k">${pnlEsc(T.noProject)}</span>`;
+    const parts = [`<b>${pnlEsc(ref)}</b>`, v('prjCustomer'), v('prjName'), v('prjCountry'), v('prjDue') ? `${T.due} ${v('prjDue')}` : '', v('prjOwner')].filter(Boolean);
+    return parts.map((p, i) => i ? pnlEsc(p) : p).join(' <span class="ps-k">·</span> ');
+  }
+  if(id === 'pnlConfig'){
+    const rows = [...cfgBody.querySelectorAll(':scope > tr')];
+    let kw = 0;
+    const items = rows.map(tr => {
+      const g = c => tr.querySelector(c);
+      const lt = g('.f-loadtype')?.value === '...' ? (g('.f-loadtype-other')?.value || 'Loads') : (g('.f-loadtype')?.value || '');
+      const pl = Number(g('.f-pload')?.value) || 0; kw += pl;
+      const qty = Number(g('.f-qty')?.value) || 0;
+      return `${String(tr.dataset.pos || '').padStart(2, '0')} ${lt}${pl ? ' ' + pl + ' kW' : ''} · ${qty}× ${g('.f-model')?.value || ''} ${g('.f-red')?.value || ''}`.trim();
+    });
+    return `<b>${pnlEsc(T.positions(rows.length))}</b>${kw ? ` <span class="ps-k">·</span> ${pnlEsc(kw + ' ' + T.kw)}` : ''}${items.length ? ' <span class="ps-k">—</span> ' + items.map(pnlEsc).join(' <span class="ps-k">|</span> ') : ''}`;
+  }
+  if(id === 'pnlOffer'){
+    if(typeof bomHasRows === 'function' && !bomHasRows()) return `<span class="ps-k">${pnlEsc(T.noLines)}</span>`;
+    const lines = bomBody.querySelectorAll('tr[data-kind="line"], tr[data-kind="accessory"]').length;
+    const heads = [...bomBody.querySelectorAll('tr[data-kind="header"]')];
+    let price = 0, cost = 0;
+    heads.forEach(h => { const t = computeGroupTotal(h); price += t.price; cost += t.cost; });
+    const m = price > 0 && typeof costsAllowed === 'function' && costsAllowed() ? ` <span class="ps-k">·</span> ${pnlEsc(T.margin)} ${((price - cost) / price * 100).toFixed(1)} %` : '';
+    return `<b>${pnlEsc(T.total)} ${pnlEsc(formatMoney(price))}</b> <span class="ps-k">·</span> ${pnlEsc(T.lines(lines))} <span class="ps-k">·</span> ${pnlEsc(T.sections(heads.length))}${m}`;
+  }
+  return '';
+}
+function pnlRender(){
+  const T = pnlT();
+  document.querySelectorAll('.panel.pnl-c').forEach(sec => {
+    const col = sec.classList.contains('pnl-collapsed');
+    const btn = sec.querySelector('.pnl-tog');
+    btn.setAttribute('aria-expanded', String(!col));
+    btn.querySelector('.lbl').textContent = col ? T.expand : T.collapse;
+    if(col){ const sum = sec.querySelector('.pnl-sum'); const h = pnlSummary(sec.id); if(sum.__h !== h){ sum.innerHTML = h; sum.__h = h; sum.title = sum.textContent; } }
+  });
+}
+function setPanelCollapsed(id, col){
+  const sec = document.getElementById(id); if(!sec) return;
+  sec.classList.toggle('pnl-collapsed', !!col);
+  const set = pnlLoad(); if(col) set.add(id); else set.delete(id); pnlSave(set);
+  if(col) sec.querySelector('.pnl-sum').__h = null;
+  pnlRender();
+}
+(function(){
+  const saved = pnlLoad();
+  ['pnlProject', 'pnlConfig', 'pnlOffer'].forEach(id => {
+    const sec = document.getElementById(id); if(!sec) return;
+    const title = sec.querySelector(':scope > .panel-title');
+    sec.classList.add('pnl-c');
+    const tools = document.createElement('span');
+    tools.className = 'pnl-tools';
+    tools.innerHTML = '<span class="pnl-sum"></span><button type="button" class="pnl-tog" aria-expanded="true"><span class="chev" aria-hidden="true">▾</span><span class="lbl"></span></button>';
+    title.appendChild(tools);
+    title.addEventListener('click', e => {
+      if(e.target.closest('a, input, select')) return;
+      setPanelCollapsed(id, !sec.classList.contains('pnl-collapsed'));
+    });
+    if(saved.has(id)) sec.classList.add('pnl-collapsed');
+  });
+  document.getElementById('langSelect')?.addEventListener('change', () => setTimeout(() => { document.querySelectorAll('.pnl-sum').forEach(x => x.__h = null); pnlRender(); }, 0));
+  setInterval(pnlRender, 1000);   // keeps the summaries of collapsed sections up to date
+  pnlRender();
+})();
+
 // Project Details: with no project on the page, the 3-step guide replaces the empty form.
 function updateProjectDetailsView(){
   const ref = document.getElementById('prjRef'), g = document.getElementById('pdGuide'), f = document.getElementById('pdForm');
@@ -12199,7 +12297,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.35';
+const CURRENT_VERSION = 'beta_6.36';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12229,6 +12327,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.36', date:'2026-10-12', notes:[
+    'Project Details, System Configuration e Offer Lines si possono comprimere (clic sul titolo della sezione o sul pulsante Comprimi / Espandi a destra). Compressa, la sezione mostra un riassunto su una riga: progetto (rif., cliente, nome, paese, scadenza, owner), configurazione (posizioni, kW totali, modello e ridondanza di ogni posizione), offerta (totale, righe, sezioni e margine per chi ha Costs.Read). Lo stato resta memorizzato nel browser',
+  ]},
   {version:'beta_6.35', date:'2026-10-12', notes:[
     'Menu laterale più trasparente (sfondo bianco al 55% e sfocatura leggera): la pagina sotto si vede meglio',
   ]},

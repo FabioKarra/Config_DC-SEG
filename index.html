@@ -403,6 +403,38 @@ button.act:active{transform:translateY(1px);}
 .sp-load-file .sp-load-tag{display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; font-size:11px; background:var(--teal); color:#fff; font-weight:600;}
 
 
+/* ---- beta_6.33: header + status bar (design U10) and user chip (R1) ---- */
+.page-header.u10{border-bottom:none; padding-bottom:0; margin-bottom:14px;}
+.page-header.u10 .brand-eyebrow, .page-header.u10 .subtitle{display:none;}
+.page-header.u10 h1{font-size:28px; font-weight:700; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
+.page-header.u10 .version-badge{background:none; border:none; padding:0; margin:0; color:#6B7280; font-weight:400; font-size:12px; letter-spacing:0;}
+.status-row.st-bar{display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:0; background:#fff; border:1px solid var(--panel-border); border-radius:14px; margin-bottom:18px;}
+.st-cell{display:flex; align-items:center; gap:12px; padding:13px 18px; min-width:0;}
+.st-cell + .st-cell{border-left:1px solid var(--panel-border);}
+.st-cell > .catalog-status{display:none !important;}
+.st-dot{flex:none; width:10px; height:10px; border-radius:50%; background:#9AA1AD;}
+.st-dot.ok{background:#2F9E5B;} .st-dot.info{background:#2F5597;} .st-dot.err{background:#C0392B;} .st-dot.warn{background:#D99A00;}
+.st-txt{flex:1; min-width:0; font-size:12.5px; color:var(--dim); line-height:1.45;}
+.st-title{display:block; font-size:14px; font-weight:600; color:var(--text); overflow-wrap:anywhere;}
+.st-detail{display:block;}
+.st-detail.warn{color:#8A5A00;} .st-detail.err{color:#A6303D;}
+.st-acts{flex:none; display:flex; gap:6px;}
+.st-act{height:34px; padding:0 12px; border:1px solid #CBD3DF; border-radius:8px; background:#fff; font-family:'Work Sans',sans-serif; font-size:12.5px; color:var(--accent); cursor:pointer; white-space:nowrap;}
+.st-act:hover{border-color:var(--accent); background:#F7FAFE;}
+.st-act-strong{background:var(--accent); border-color:var(--accent); color:#fff; align-items:center;}
+.st-act-strong:hover{background:var(--accent-dark,#1F4E9C);}
+@media (max-width: 900px){ .status-row.st-bar{grid-template-columns:1fr;} .st-cell + .st-cell{border-left:none; border-top:1px solid var(--panel-border);} }
+.user-chip{display:none; align-items:center; gap:10px; height:44px; padding:0 6px 0 14px; border:1px solid var(--panel-border); border-radius:22px; background:#fff; font-family:'Work Sans',sans-serif; cursor:pointer; color:var(--text);}
+.app-topbar:has(.signout-topright-btn.visible) .user-chip{display:flex;}
+.user-chip .uc-txt{display:flex; flex-direction:column; align-items:flex-end; line-height:1.15;}
+.user-chip #ucName{font-size:13px; font-weight:600;}
+.user-chip #ucRole{font-size:11px; color:#8A5A00;}
+.user-chip .uc-coin{width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#F6E7C1; color:#8A5A00;}
+.user-chip:not(.costs) #ucRole{display:none;}
+.user-chip:not(.costs) .uc-coin{background:#F1F3F6; color:#9AA1AD;}
+.user-chip:not(.costs) #ucName{color:#4B5260; font-weight:500;}
+.user-chip:hover{border-color:var(--accent);}
+@media (max-width: 760px){ .user-chip .uc-txt{display:none;} .user-chip{padding:0 4px; height:38px;} }
 /* ---- beta_6.32: no Costs.Read role → costs and margins hidden ---- */
 body.no-costs .cc{display:none !important;}
 /* ---- beta_6.29: System Configuration as one card per position (design Q3) ---- */
@@ -962,6 +994,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
         </select>
       </div>
       <button type="button" class="signin-topright-btn" id="btnOpenSpLogin"><span>🔐</span><span data-i18n="signIn">Sign-in</span></button>
+      <button type="button" class="user-chip" id="userChip" title="Your Microsoft 365 account"><span class="uc-txt"><b id="ucName"></b><span id="ucRole"></span></span><span class="uc-coin" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 6.5c-1-1.5-3-2.5-5-2.5-2.8 0-5 1.5-5 4s2.2 3.5 5 4 5 1.5 5 4-2.2 4-5 4c-2 0-4-1-5-2.5"></path></svg></span></button>
       <button type="button" class="sp-refresh-btn" id="btnTopRefresh" title="Refresh from SharePoint — reloads the project list, your deadlines and the open project's data without signing out" aria-label="Refresh from SharePoint"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></button>
       <button type="button" class="deadline-bell" id="btnDeadlines" title="My deadlines — offers in progress assigned to me">🔔<span class="deadline-badge" id="deadlineBadge"></span></button>
       <button type="button" class="signout-topright-btn" id="btnTopSignOut" title="Sign out">
@@ -970,18 +1003,31 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
     </div>
     <div class="wrap">
 
-      <div class="page-header">
+      <div class="page-header u10">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.32</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.33</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
-      <div class="status-row">
-        <p class="catalog-status" id="projectListStatus" data-i18n="status.noProjectData">No project data loaded yet — sign in with MS 365 (top-right) to load it.</p>
-        <p class="catalog-status" id="catalogStatus" data-i18n="status.noPriceList">No price list imported — reference table + manual pricing.</p>
-        <div class="catalog-status" id="revisionStatus" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-          <span id="revisionStatusText">Revision: <b>R0</b> — open, editable.</span>
-          <button type="button" id="btnNewRevision" class="btn-add" style="display:none; white-space:nowrap; padding:6px 10px; font-size:11.5px;">🔓 New Revision</button>
+      <!-- beta_6.33: status bar (design U10) — each status with its quick action. The original status texts
+           stay in the page (hidden) and are summarised into the cells by renderStatusBar(). -->
+      <div class="status-row st-bar" id="statusBar">
+        <div class="st-cell" id="stProj">
+          <span class="st-dot"></span><span class="st-txt"><b class="st-title"></b><span class="st-detail"></span></span>
+          <span class="st-acts"><button type="button" class="st-act" data-st-act="proj"></button></span>
+          <p class="catalog-status" id="projectListStatus" data-i18n="status.noProjectData">No project data loaded yet — sign in with MS 365 (top-right) to load it.</p>
+        </div>
+        <div class="st-cell" id="stPrice">
+          <span class="st-dot"></span><span class="st-txt"><b class="st-title"></b><span class="st-detail"></span></span>
+          <span class="st-acts"><button type="button" class="st-act" data-st-act="price"></button></span>
+          <p class="catalog-status" id="catalogStatus" data-i18n="status.noPriceList">No price list imported — reference table + manual pricing.</p>
+        </div>
+        <div class="st-cell" id="stRev">
+          <span class="st-dot"></span><span class="st-txt"><b class="st-title"></b><span class="st-detail"></span></span>
+          <span class="st-acts"><button type="button" id="btnNewRevision" class="st-act st-act-strong" style="display:none;">🔓 New Revision</button><button type="button" class="st-act" data-st-act="rev"></button></span>
+          <div class="catalog-status" id="revisionStatus">
+            <span id="revisionStatusText">Revision: <b>R0</b> — open, editable.</span>
+          </div>
         </div>
       </div>
 
@@ -1735,6 +1781,7 @@ function processProjectList(rows, filename){
   }).filter(rec => String(rec.PRJ_ID||'').trim() !== '');
 
   refreshProjectDatalist();
+  window.PROJ_META = {source: String(filename || ''), unmapped: unmapped.slice()};   // for the status bar
 
   const statusEl = document.getElementById('projectListStatus');
   statusEl.removeAttribute('data-i18n'); // real content now — a language switch must not reset it
@@ -7921,6 +7968,93 @@ function applyCostVisibility(){
   applyCostVisibility();
 })();
 
+
+// ---- beta_6.33: status bar (U10) + user chip (R1) ----
+const ST_TXT = {
+  en: {projFrom: n => `${n} projects from SharePoint`, projFromFile: (n, f) => `${n} projects from ${f}`, missing: c => `${c} not found, left blank`, missingN: n => `${n} columns not found, left blank`, live: 'live connection', allCols: 'all columns matched',
+       noProj: 'No project data', noProjD: 'Sign in with Microsoft 365 to load the list', projList: 'Project list', projErr: 'Project list not loaded',
+       refresh: 'Refresh', signIn: 'Sign in', builtin: 'Built-in price list', builtinD: 'codes and descriptions, no prices', importPrices: 'Import prices',
+       noPl: 'No price list', noPlD: 'reference table and manual pricing', importPl: 'Import price list', changePl: 'Change',
+       rev: r => `Revision R${r}`, open: 'open, editable', closedRo: 'closed, read only', closedNext: r => `closed — saves go to R${r}`, history: 'History', costs: 'Costs & margins'},
+  it: {projFrom: n => `${n} progetti da SharePoint`, projFromFile: (n, f) => `${n} progetti da ${f}`, missing: c => `${c} non trovata, lasciata vuota`, missingN: n => `${n} colonne non trovate, lasciate vuote`, live: 'connessione attiva', allCols: 'tutte le colonne trovate',
+       noProj: 'Nessun dato progetto', noProjD: 'Accedi con Microsoft 365 per caricare la lista', projList: 'Lista progetti', projErr: 'Lista progetti non caricata',
+       refresh: 'Aggiorna', signIn: 'Accedi', builtin: 'Listino integrato', builtinD: 'codici e descrizioni, senza prezzi', importPrices: 'Importa prezzi',
+       noPl: 'Nessun listino', noPlD: 'tabella di riferimento e prezzi manuali', importPl: 'Importa listino', changePl: 'Cambia',
+       rev: r => `Revisione R${r}`, open: 'aperta, modificabile', closedRo: 'chiusa, sola lettura', closedNext: r => `chiusa — si salva su R${r}`, history: 'Storico', costs: 'Costi e margini'}
+};
+function stT(){ return ST_TXT[LANG] || ST_TXT.en; }
+function stSet(id, o){
+  const c = document.getElementById(id); if(!c) return;
+  c.querySelector('.st-dot').className = 'st-dot' + (o.dot ? ' ' + o.dot : '');
+  const tt = c.querySelector('.st-title'); tt.textContent = o.title; tt.title = o.title;
+  const d = c.querySelector('.st-detail'); d.textContent = o.detail || ''; d.className = 'st-detail' + (o.tone ? ' ' + o.tone : ''); d.title = o.tip || o.detail || '';
+  const a = c.querySelector('[data-st-act]'); if(a) a.textContent = o.act;
+}
+function signedIn(){ try{ return !!(msalInstance && msalAccount); }catch(e){ return false; } }
+function renderStatusBar(){
+  const T = stT();
+  // project data
+  const pl = document.getElementById('projectListStatus');
+  const n = (typeof PROGRESS !== 'undefined' && PROGRESS) ? PROGRESS.length : 0;
+  const meta = window.PROJ_META || {source: '', unmapped: []};
+  if(n){
+    const sp = /sharepoint/i.test(meta.source);
+    const miss = (meta.unmapped || []);
+    stSet('stProj', {dot: 'ok', title: sp ? T.projFrom(n) : T.projFromFile(n, meta.source),
+      detail: miss.length > 2 ? T.missingN(miss.length) : miss.length ? T.missing(miss.join(', ')) : (sp ? T.live : T.allCols), tip: miss.join(', '), tone: miss.length ? 'warn' : '', act: signedIn() ? T.refresh : T.signIn});
+  } else if(pl && pl.classList.contains('error')){
+    stSet('stProj', {dot: 'err', title: T.projErr, detail: pl.textContent.trim(), tone: 'err', act: signedIn() ? T.refresh : T.signIn});
+  } else if(signedIn()){
+    stSet('stProj', {dot: '', title: T.projList, detail: pl ? pl.textContent.trim() : '', act: T.refresh});
+  } else {
+    stSet('stProj', {dot: '', title: T.noProj, detail: T.noProjD, act: T.signIn});
+  }
+  // price list
+  const cs = document.getElementById('catalogStatus');
+  if(typeof CATALOG_IS_BUILTIN !== 'undefined' && CATALOG_IS_BUILTIN){
+    stSet('stPrice', {dot: '', title: T.builtin, detail: T.builtinD, act: T.importPrices});
+  } else if(typeof CATALOG_LOADED !== 'undefined' && CATALOG_LOADED){
+    const fname = (cs && cs.querySelector('b') ? cs.querySelector('b').textContent : '').trim();
+    const rest = cs ? cs.textContent.split('—').slice(1).join('—').trim().replace(/\.$/, '') : '';
+    stSet('stPrice', {dot: 'ok', title: fname || 'Price list', detail: rest, act: T.changePl});
+  } else {
+    stSet('stPrice', {dot: '', title: T.noPl, detail: T.noPlD, act: T.importPl});
+  }
+  // revision
+  const ro = typeof READ_ONLY !== 'undefined' && READ_ONLY, cl = typeof REVISION_CLOSED !== 'undefined' && REVISION_CLOSED, r = typeof REVISION !== 'undefined' ? REVISION : 0;
+  stSet('stRev', {dot: ro || cl ? '' : 'info', title: T.rev(r), detail: ro ? T.closedRo : cl ? T.closedNext(r + 1) : T.open, act: T.history});
+  // user chip
+  const chip = document.getElementById('userChip');
+  if(chip){
+    let name = '';
+    try{ name = (msalAccount && (msalAccount.name || msalAccount.username)) || ''; }catch(e){}
+    if(/,/.test(name)){ const [last, first] = name.split(',').map(x => x.trim()); name = `${first} ${last}`.trim(); }
+    document.getElementById('ucName').textContent = name;
+    document.getElementById('ucRole').textContent = T.costs;
+    const ok = typeof costsAllowed === 'function' ? costsAllowed() : true;
+    chip.classList.toggle('costs', ok);
+    chip.title = name + (ok ? ' — ' + T.costs : '');
+  }
+}
+let _stRaf = 0;
+function scheduleStatusBar(){ if(!_stRaf) _stRaf = requestAnimationFrame(() => { _stRaf = 0; renderStatusBar(); }); }
+(function(){
+  ['projectListStatus', 'catalogStatus', 'revisionStatus'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) new MutationObserver(scheduleStatusBar).observe(el, {childList: true, subtree: true, characterData: true, attributes: true});
+  });
+  document.querySelectorAll('[data-st-act]').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.stAct;
+    if(k === 'proj') document.getElementById(signedIn() ? 'btnTopRefresh' : 'btnOpenSpLogin').click();
+    else if(k === 'price') document.getElementById('btnImportPriceList').click();
+    else if(k === 'rev') document.getElementById('btnRevisionHistory').click();
+  }));
+  document.getElementById('userChip')?.addEventListener('click', () => document.getElementById('btnOpenSpLogin').click());
+  document.getElementById('langSelect')?.addEventListener('change', () => setTimeout(scheduleStatusBar, 0));
+  setInterval(renderStatusBar, 1500);   // follows sign-in / sign-out and the revision state
+  renderStatusBar();
+})();
+
 // Project Details: with no project on the page, the 3-step guide replaces the empty form.
 function updateProjectDetailsView(){
   const ref = document.getElementById('prjRef'), g = document.getElementById('pdGuide'), f = document.getElementById('pdForm');
@@ -12052,7 +12186,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.32';
+const CURRENT_VERSION = 'beta_6.33';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12082,6 +12216,10 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.33', date:'2026-10-12', notes:[
+    'Nuova intestazione (grafica U10): titolo compatto e barra di stato unica con tre parti — progetti (numero, origine, colonne mancanti), listino, revisione — ognuna con la sua azione rapida (Aggiorna / Accedi, Importa prezzi, Storico; "New Revision" quando la revisione è chiusa)',
+    'Barra in alto: dopo l\'accesso compare il chip utente con il nome (es. "Francesco Carraro"); con il ruolo Costs.Read sotto il nome c\'è "Costs & margins" e la moneta dorata, senza ruolo il chip è grigio con il solo nome. Clic sul chip = pannello Microsoft 365 (aggiorna / esci)',
+  ]},
   {version:'beta_6.32', date:'2026-10-12', notes:[
     'Costi e margini legati al ruolo Azure "Costs.Read" (App role dell\'app, letto dal token di accesso Microsoft): chi non ce l\'ha non vede Unit Cost / Total Cost / Margin %, costi e margini di Kit Builder, schede e finestre di inserimento, e non genera le versioni "with margin" di Offer PDF / Excel (né in Print report)',
     'Se il token non contiene ruoli (ruoli non ancora creati su Azure) i costi restano visibili; in Admin c\'è lo stato del ruolo dell\'utente e l\'opzione "Richiedi sempre il ruolo Costs.Read"',

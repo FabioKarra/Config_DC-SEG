@@ -946,7 +946,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <div class="app-topbar-spacer"></div>
       <div class="new-offer-sticky-bar">
         <button type="button" class="new-offer-sticky-btn ps-open-btn" id="btnOpenProjects" title="Open a project — or create a new offer (Ctrl+K)"><span>📁</span><span>Projects</span></button>
-        <button type="button" class="new-offer-sticky-btn" id="btnNewOfferConfirm" title="New offer — creates it in SharePoint (asks to save the current one first)"><span>✨</span><span data-i18n="nav.newOfferConfirm">New Offer</span></button>
+        <button type="button" class="new-offer-sticky-btn" id="btnNewOfferConfirm" title="New offer — clears the page: project, configuration and offer lines (asks to save first). Nothing is created in SharePoint."><span>🆕</span><span data-i18n="nav.newOfferConfirm">New Offer</span></button>
         <button type="button" class="new-offer-sticky-btn" id="btnResetOfferConfirm"><span>♻️</span><span data-i18n="nav.resetOfferConfirm">Reset Offer</span></button>
       </div>
       <div class="lang-fixed">
@@ -970,7 +970,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.29</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.30</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3385,12 +3385,11 @@ async function fillProjectDetailsFromRecord(rec){
 
 // "New Offer" — same underlying clear as "Reset Page", but asks first, since starting fresh with
 // unsaved work open is the one mistake this button exists to prevent.
-// beta_6.28: top-bar "New Offer" = Create New Offer of the Projects window: save question if there is
-// unsaved work, then a clean page and the Create New Offer window.
+// beta_6.30: top-bar "New Offer" = a clean page (project, configuration, offer lines). It does NOT
+// create anything in SharePoint (that is "Create New Offer"). Unsaved work → the save question first.
 document.getElementById('btnNewOfferConfirm').addEventListener('click', async ()=>{
   if(!(await confirmLeaveCurrentProject('starting a new offer'))) return;
   resetAll();
-  document.getElementById('btnNewOffer').click();
 });
 document.getElementById('btnReset').addEventListener('click', resetAll);
 
@@ -11982,7 +11981,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.29';
+const CURRENT_VERSION = 'beta_6.30';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12012,6 +12011,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.30', date:'2026-10-12', notes:[
+    'Pulsante "New Offer" in alto: pulisce la pagina (progetto caricato, configurazione, righe d\'offerta) e NON crea niente su SharePoint; se c\'è lavoro non salvato chiede prima se salvarlo. Per creare l\'offerta su SharePoint resta "Create New Offer" (Data Sources, guida e finestra Projects)',
+  ]},
   {version:'beta_6.29', date:'2026-10-12', notes:[
     'System Configuration a schede (grafica Q3): ogni posizione UPS è una scheda con tipo di carico, kW in grande, scelte (modello, ridondanza, connessione, configurazione, batterie) e le sue righe d\'offerta con il totale della posizione',
     'Clic su una scheda = si apre con i campi da modificare (le altre restano chiuse in riepilogo); clic sul titolo della scheda aperta = si chiude. "+ Add Position" è una scheda tratteggiata: la nuova posizione si apre già pronta, con il campo kW da compilare',

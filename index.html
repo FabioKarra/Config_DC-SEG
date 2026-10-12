@@ -50,7 +50,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
   display:flex; flex-direction:column; overflow-y:auto;
   /* beta_6.34: the menu floats over the page (translucent), so the page keeps the same width open or closed */
   position:fixed; top:0; left:0; height:100vh; height:100dvh; z-index:150;
-  background:rgba(255,255,255,.88); -webkit-backdrop-filter:blur(10px) saturate(1.2); backdrop-filter:blur(10px) saturate(1.2);
+  background:rgba(255,255,255,.55); -webkit-backdrop-filter:blur(5px) saturate(1.15); backdrop-filter:blur(5px) saturate(1.15);
   box-shadow:0 18px 48px rgba(20,22,26,.22);
   transition:transform .2s ease, visibility .2s;
 }
@@ -1007,7 +1007,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header u10">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.34</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.35</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -12199,7 +12199,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.34';
+const CURRENT_VERSION = 'beta_6.35';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12229,6 +12229,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.35', date:'2026-10-12', notes:[
+    'Menu laterale più trasparente (sfondo bianco al 55% e sfocatura leggera): la pagina sotto si vede meglio',
+  ]},
   {version:'beta_6.34', date:'2026-10-12', notes:[
     'Menu laterale nascosto all\'avvio (si apre con ☰ in alto a sinistra). Aperto, resta sopra la pagina in trasparenza — la pagina mantiene la stessa larghezza aperto o chiuso — e si richiude da solo appena si torna a lavorare sulla pagina (clic, tocco o tasto fuori dal menu, oppure Esc)',
   ]},

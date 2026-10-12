@@ -403,6 +403,8 @@ button.act:active{transform:translateY(1px);}
 .sp-load-file .sp-load-tag{display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; font-size:11px; background:var(--teal); color:#fff; font-weight:600;}
 
 
+/* ---- beta_6.32: no Costs.Read role → costs and margins hidden ---- */
+body.no-costs .cc{display:none !important;}
 /* ---- beta_6.29: System Configuration as one card per position (design Q3) ---- */
 .cfg-wrap.cfg-cards{overflow:visible; display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; align-items:start;}
 .cfg-cards table.cfg, .cfg-cards table.cfg tbody{display:contents;}
@@ -970,7 +972,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.30</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.32</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -1338,6 +1340,12 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
           <p class="acc-modal-sub" style="margin:4px 0 0">Funzioni in prova, visibili solo dopo il login Admin (in questa scheda, anche dopo F5) — non fanno parte del log versioni.</p></div>
         <ul id="adminBetaList" style="margin:8px 0 0 18px; padding:0; font-size:12.5px; line-height:1.5;"></ul>
         <button type="button" class="btn-ghost act" id="btnAdminLockBeta" style="margin-top:8px;">🔒 Nascondi le beta functions</button>
+      </div>
+      <div class="beta-fn-panel" id="costRolePanel">
+        <div><b>Costi e margini</b> <span class="beta-fn-badge" style="margin-left:6px">Azure · Costs.Read</span>
+          <p class="acc-modal-sub" style="margin:4px 0 0">Chi ha il ruolo dell'app <b>Costs.Read</b> (Entra ID → Enterprise applications → Users and groups) vede costi e margini; chi non ce l'ha no. Se il token non contiene ruoli (ruoli non ancora creati su Azure), i costi restano visibili — a meno di attivare l'opzione sotto.</p></div>
+        <p class="acc-modal-sub" id="costRoleStatus" style="margin:8px 0 0"></p>
+        <label style="display:flex; gap:8px; align-items:center; margin-top:8px; font-size:12.5px;"><input type="checkbox" id="costRoleRequired"> Richiedi sempre il ruolo Costs.Read (anche per gli ospiti e per i token senza ruoli) — impostazione di questo browser</label>
       </div>
       <table class="batt-table" id="adminChangelogTable">
         <thead><tr><th style="width:110px;">Versione</th><th style="width:110px;">Data</th><th>Modifiche</th></tr></thead>
@@ -3000,13 +3008,13 @@ async function buildOfferDocumentSet(rev = REVISION){
     if(typeof window.jspdf !== 'undefined'){
       add('BOM PDF', ()=>{ const {doc, filename} = buildBomPdfDoc(); return {filename, blob: doc.output('blob')}; });
       add('Offer PDF', ()=>{ const {doc, filename} = buildOfferPdfDoc(false); return {filename, blob: doc.output('blob')}; });
-      add('Offer PDF with margin', ()=>{ const {doc, filename} = buildOfferPdfDoc(true); return {filename, blob: doc.output('blob')}; });
+      if(costsAllowed()) add('Offer PDF with margin', ()=>{ const {doc, filename} = buildOfferPdfDoc(true); return {filename, blob: doc.output('blob')}; });
     } else {
       problems.push('PDF files: the PDF library did not load');
     }
     add('BOM Excel', ()=>prepareBomXlsxFile());
     add('Offer Excel', ()=>prepareOfferXlsxFile(false));
-    add('Offer Excel with margin', ()=>prepareOfferXlsxFile(true));
+    if(costsAllowed()) add('Offer Excel with margin', ()=>prepareOfferXlsxFile(true));
     if(typeof JSZip !== 'undefined'){
       add('Offer Word', ()=>prepareOfferDocxFile());
       add('Technical Summary', ()=>prepareTechSummaryFile());
@@ -5521,7 +5529,7 @@ function openSubBomImportDialog(header, replaceRow){
         <label class="wide">Model / name in the offer<input type="text" id="sbName" value="${escapeHtml(cur.name)}" placeholder="empty = the sales code"></label>
         <label class="wide">Description in the offer <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea id="sbDesc" rows="1" class="kit-desc-ta">${escapeHtml(cur.desc)}</textarea></label>
         <label>Selling price per unit<input type="number" id="sbPrice" min="0" step="0.01" value="${escapeHtml(String(cur.price))}"></label>
-        <label>Margin<output id="sbMargin" class="sb-out">—</output></label>
+        <label class="cc">Margin<output id="sbMargin" class="sb-out">—</output></label>
       </div>
       <p class="pf-hint" id="sbMsg"></p>
       <div class="pf-actions" style="justify-content:flex-end;">
@@ -6206,9 +6214,9 @@ function kbRenderSummary(){
   const was = (now, before, fmt) => (o && Math.abs(now - before) > 0.005) ? `<s>${fmt(before)}</s>` : '';
   const pct = v => `${v.toFixed(1)} %`;
   el.innerHTML = `<div>Price / kit${was(t.net, o && o.net, formatMoney)}<b>${formatMoney(t.net)}</b></div>
-    <div>Cost / kit${was(t.cost, o && o.cost, formatMoney)}<b>${formatMoney(t.cost)}</b></div>
+    <div class="cc">Cost / kit${was(t.cost, o && o.cost, formatMoney)}<b>${formatMoney(t.cost)}</b></div>
     <div>Total × ${escapeHtml(String(q))}${o && q !== KB.orig.qty ? `<s>× ${escapeHtml(String(KB.orig.qty))}</s>` : ''}<b>${formatMoney(t.net * q)}</b></div>
-    <div>Margin${was(t.margin, o && o.margin, pct)}<b class="kb-m${t.margin < 0 ? ' neg' : ''}">${pct(t.margin)}</b></div>`;
+    <div class="cc">Margin${was(t.margin, o && o.margin, pct)}<b class="kb-m${t.margin < 0 ? ' neg' : ''}">${pct(t.margin)}</b></div>`;
   kbSetDirtyBadge();
 }
 function renderKitPanel(){
@@ -7801,7 +7809,7 @@ const CFG_CARDS = (function(){
     if(L && L.items.length){
       lines = L.items.slice(0, 4).map(i => `<div class="cl"><span title="${escapeHtml(i.t)}">${escapeHtml(i.t)}</span><b>${escapeHtml(money(i.v))}</b></div>`).join('')
         + (L.items.length > 4 ? `<div class="cl more"><span>+ ${L.items.length - 4} more lines</span></div>` : '')
-        + `<div class="cl tot"><span>Position total${L.margin != null ? ' · ' + L.margin.toFixed(0) + ' %' : ''}</span><b>${escapeHtml(money(L.price))}</b></div>`;
+        + `<div class="cl tot"><span>Position total${L.margin != null && costsAllowed() ? ' · ' + L.margin.toFixed(0) + ' %' : ''}</span><b>${escapeHtml(money(L.price))}</b></div>`;
     }
     const isNew = !kw && !L;
     return `<div class="card-head"><span class="ch-pos">${escapeHtml(String(tr.dataset.pos || '').padStart(2, '0'))}</span><span class="ch-load">${escapeHtml(lt)}</span><span class="ch-qty">× ${qty} system${qty === 1 ? '' : 's'}</span></div>`
@@ -7837,6 +7845,15 @@ const CFG_CARDS = (function(){
     if(tr.classList.contains('card-open')){ if(e.target.closest('.card-head')) open(null); return; }
     open(tr);
   });
+  // beta_6.31: a click anywhere outside the open card closes it (deselects it)
+  document.addEventListener('click', e => {
+    if(!e.isTrusted) return;
+    if(!cfgBody.querySelector(':scope > tr.card-open')) return;
+    const tgt = e.target;
+    if(!tgt || !tgt.isConnected || !tgt.closest) return;          // e.g. a node removed by the click itself
+    if(tgt.closest('#cfgBody > tr.card-open, #btnAddRow')) return;
+    open(null);
+  });
   cfgBody.addEventListener('input', schedule);
   cfgBody.addEventListener('change', schedule);
   new MutationObserver(muts => {
@@ -7850,6 +7867,58 @@ const CFG_CARDS = (function(){
   document.addEventListener('input', e => { if(e.target.closest && e.target.closest('#bomBody')) schedule(); });
   schedule();
   return {render: schedule, open};
+})();
+
+
+// ---- beta_6.32: costs & margins only for the Azure app role "Costs.Read" ----
+// The role arrives in the Microsoft sign-in token (idTokenClaims.roles). No roles in the token at all
+// (roles not created on Azure yet) = costs visible, unless the Admin option "always require" is on.
+const COST_ROLE = 'Costs.Read';
+const COST_ROLE_KEY = 'upsConfigurator.requireCostsRole';
+function costRoleRequired(){ try{ return localStorage.getItem(COST_ROLE_KEY) === '1'; }catch(e){ return false; } }
+function tokenRoles(){
+  try{ const r = msalAccount && msalAccount.idTokenClaims && msalAccount.idTokenClaims.roles; return Array.isArray(r) ? r : null; }catch(e){ return null; }
+}
+function costsAllowed(){
+  const roles = tokenRoles();
+  if(roles) return roles.includes(COST_ROLE);
+  return !costRoleRequired();
+}
+const COST_HEAD_RX = /^(unit\s*)?cost\b|^total\s*cost|^margin|^mrg\b|^cost\s*\/|^costo|^margine|^marge|^margen|kosten$|^coût/i;
+function markCostColumns(){
+  document.querySelectorAll('table').forEach(tb => {
+    const head = tb.tHead && tb.tHead.rows[0];
+    if(!head) return;
+    const idx = [];
+    [...head.cells].forEach((c, i) => { if(COST_HEAD_RX.test(c.textContent.trim())){ idx.push(i); c.classList.add('cc'); } });
+    if(!idx.length) return;
+    const n = head.cells.length;
+    [...tb.tBodies].forEach(b => [...b.rows].forEach(r => { if(r.cells.length === n) idx.forEach(i => r.cells[i].classList.add('cc')); }));
+    if(tb.tFoot) [...tb.tFoot.rows].forEach(r => { if(r.cells.length === n) idx.forEach(i => r.cells[i].classList.add('cc')); });
+  });
+  document.querySelectorAll('label').forEach(l => { if(!l.closest('#costRolePanel') && COST_HEAD_RX.test((l.firstChild && l.firstChild.textContent || '').trim()) && l.querySelector('input, output')) l.classList.add('cc'); });
+}
+let _costMarkRaf = 0, _costLast = null;
+function applyCostVisibility(){
+  const ok = costsAllowed();
+  document.body.classList.toggle('no-costs', !ok);
+  if(!ok && !_costMarkRaf) _costMarkRaf = requestAnimationFrame(() => { _costMarkRaf = 0; markCostColumns(); });
+  if(_costLast !== ok){ _costLast = ok; try{ CFG_CARDS && CFG_CARDS.render(); }catch(e){} }
+  const st = document.getElementById('costRoleStatus');
+  if(st){
+    const roles = tokenRoles();
+    st.innerHTML = !(msalInstance && msalAccount) ? 'Ora: ospite (non connesso) — costi ' + (ok ? '<b>visibili</b>' : '<b>nascosti</b>') + '.'
+      : roles ? `Ora: ${escapeHtml(msalAccount.name || msalAccount.username || '')} — ruoli nel token: <b>${escapeHtml(roles.join(', ') || '—')}</b> → costi ${ok ? '<b>visibili</b>' : '<b>nascosti</b>'}.`
+      : `Ora: ${escapeHtml(msalAccount.name || msalAccount.username || '')} — nessun ruolo nel token → costi ${ok ? '<b>visibili</b>' : '<b>nascosti</b>'}.`;
+  }
+}
+(function(){
+  const cb = document.getElementById('costRoleRequired');
+  if(cb){ cb.checked = costRoleRequired(); cb.addEventListener('change', () => { try{ localStorage.setItem(COST_ROLE_KEY, cb.checked ? '1' : '0'); }catch(e){} applyCostVisibility(); }); }
+  new MutationObserver(() => { if(document.body.classList.contains('no-costs') && !_costMarkRaf) _costMarkRaf = requestAnimationFrame(() => { _costMarkRaf = 0; markCostColumns(); }); })
+    .observe(document.body, {childList: true, subtree: true});
+  setInterval(applyCostVisibility, 1500);   // follows sign-in / sign-out / silent restore without hooking each of them
+  applyCostVisibility();
 })();
 
 // Project Details: with no project on the page, the 3-step guide replaces the empty form.
@@ -9639,8 +9708,9 @@ async function exportOfferPdf(){
   if(typeof window.jspdf === 'undefined'){ alert('The PDF library failed to load (no internet access?).'); return; }
   if(!bomHasRows()){ alert('Generate the Offer first — there are no lines to export.'); return; }
   const std = buildOfferPdfDoc(false);
-  const withM = buildOfferPdfDoc(true);
   const stdBlob = std.doc.output('blob');
+  if(!costsAllowed()){ await deliverExportFiles([{filename: std.filename, blob: stdBlob}]); return; }   // no Costs.Read: no margin version
+  const withM = buildOfferPdfDoc(true);
   const withMBlob = withM.doc.output('blob');
   // bundled into one zip so the browser doesn't challenge downloading two files at once
   const safeRef = (getProjectInfo().ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
@@ -11927,6 +11997,7 @@ async function exportOfferXlsx(){
   if(!bomHasRows()){ alert('Generate the Offer first — there are no lines to export.'); return; }
   const safeRef = (getProjectInfo().ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
   const std = await buildOfferXlsxFile(false);
+  if(!costsAllowed()){ await deliverExportFiles([std]); return; }   // no Costs.Read: no margin version
   const withM = await buildOfferXlsxFile(true);
   await deliverExportFiles([std, withM], `${safeRef}_Offer_R${REVISION}.zip`);
 }
@@ -11981,7 +12052,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.30';
+const CURRENT_VERSION = 'beta_6.32';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12011,6 +12082,13 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.32', date:'2026-10-12', notes:[
+    'Costi e margini legati al ruolo Azure "Costs.Read" (App role dell\'app, letto dal token di accesso Microsoft): chi non ce l\'ha non vede Unit Cost / Total Cost / Margin %, costi e margini di Kit Builder, schede e finestre di inserimento, e non genera le versioni "with margin" di Offer PDF / Excel (né in Print report)',
+    'Se il token non contiene ruoli (ruoli non ancora creati su Azure) i costi restano visibili; in Admin c\'è lo stato del ruolo dell\'utente e l\'opzione "Richiedi sempre il ruolo Costs.Read"',
+  ]},
+  {version:'beta_6.31', date:'2026-10-12', notes:[
+    'System Configuration: cliccando fuori dalla scheda aperta, la scheda si richiude (deselezionata)',
+  ]},
   {version:'beta_6.30', date:'2026-10-12', notes:[
     'Pulsante "New Offer" in alto: pulisce la pagina (progetto caricato, configurazione, righe d\'offerta) e NON crea niente su SharePoint; se c\'è lavoro non salvato chiede prima se salvarlo. Per creare l\'offerta su SharePoint resta "Create New Offer" (Data Sources, guida e finestra Projects)',
   ]},

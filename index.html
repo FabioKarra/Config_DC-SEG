@@ -415,15 +415,18 @@ button.act:active{transform:translateY(1px);}
 .pnl-sum .ps-k{color:var(--dim);}
 .pnl-sum b{font-weight:600; color:var(--navy,#00257A);}
 .panel.pnl-collapsed .pnl-sum{display:block;}
-.pnl-tog{flex:none; display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 10px; border:1px solid var(--panel-border); border-radius:8px; background:#fff; font-family:'Work Sans',sans-serif; font-size:12px; font-weight:500; color:var(--dim); cursor:pointer; text-transform:none; letter-spacing:0;}
-.pnl-tog:hover{border-color:var(--accent); color:var(--accent);}
-.pnl-tog .chev{display:inline-block; transition:transform .15s;}
-.panel.pnl-collapsed .pnl-tog .chev{transform:rotate(-90deg);}
+/* beta_6.37: round icon button (design V10) — navy with chevron up when open, outlined with chevron down when collapsed */
+.pnl-tog{flex:none; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; padding:0; border:1.5px solid #00257A; border-radius:50%; background:#00257A; color:#fff; cursor:pointer; transition:background .15s, color .15s, border-color .15s;}
+.pnl-tog:hover{background:#1F4E9C; border-color:#1F4E9C;}
+.pnl-tog:focus-visible{outline:2px solid #4472C4; outline-offset:2px;}
+.pnl-tog svg{display:block; transition:transform .2s;}
+.panel.pnl-collapsed .pnl-tog{background:#fff; color:#00257A;}
+.panel.pnl-collapsed .pnl-tog:hover{background:#EEF3FB; color:#00257A; border-color:#00257A;}
+.panel.pnl-collapsed .pnl-tog svg{transform:rotate(180deg);}
 .panel.pnl-collapsed{padding-top:14px; padding-bottom:14px;}
 .panel.pnl-collapsed > .panel-title{margin-bottom:0;}
 .panel.pnl-collapsed > :not(.panel-title){display:none !important;}
 .panel-title-left{flex:none;}
-@media (max-width: 760px){ .pnl-tog .lbl{display:none;} }
 /* ---- beta_6.33: header + status bar (design U10) and user chip (R1) ---- */
 .page-header.u10{border-bottom:none; padding-bottom:0; margin-bottom:14px;}
 .page-header.u10 .brand-eyebrow, .page-header.u10 .subtitle{display:none;}
@@ -1023,7 +1026,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header u10">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.36</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.37</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -8134,7 +8137,8 @@ function pnlRender(){
     const col = sec.classList.contains('pnl-collapsed');
     const btn = sec.querySelector('.pnl-tog');
     btn.setAttribute('aria-expanded', String(!col));
-    btn.querySelector('.lbl').textContent = col ? T.expand : T.collapse;
+    const lbl = col ? T.expand : T.collapse;
+    if(btn.getAttribute('aria-label') !== lbl){ btn.setAttribute('aria-label', lbl); btn.title = lbl; }
     if(col){ const sum = sec.querySelector('.pnl-sum'); const h = pnlSummary(sec.id); if(sum.__h !== h){ sum.innerHTML = h; sum.__h = h; sum.title = sum.textContent; } }
   });
 }
@@ -8153,7 +8157,7 @@ function setPanelCollapsed(id, col){
     sec.classList.add('pnl-c');
     const tools = document.createElement('span');
     tools.className = 'pnl-tools';
-    tools.innerHTML = '<span class="pnl-sum"></span><button type="button" class="pnl-tog" aria-expanded="true"><span class="chev" aria-hidden="true">▾</span><span class="lbl"></span></button>';
+    tools.innerHTML = '<span class="pnl-sum"></span><button type="button" class="pnl-tog" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>';
     title.appendChild(tools);
     title.addEventListener('click', e => {
       if(e.target.closest('a, input, select')) return;
@@ -12297,7 +12301,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.36';
+const CURRENT_VERSION = 'beta_6.37';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12327,6 +12331,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.37', date:'2026-10-12', notes:[
+    'Pulsante Comprimi / Espandi sostituito da un\'icona (grafica V10): cerchio blu con freccia in su quando la sezione è aperta, cerchio bianco bordato con freccia in giù quando è compressa. Il nome dell\'azione compare al passaggio del mouse',
+  ]},
   {version:'beta_6.36', date:'2026-10-12', notes:[
     'Project Details, System Configuration e Offer Lines si possono comprimere (clic sul titolo della sezione o sul pulsante Comprimi / Espandi a destra). Compressa, la sezione mostra un riassunto su una riga: progetto (rif., cliente, nome, paese, scadenza, owner), configurazione (posizioni, kW totali, modello e ridondanza di ogni posizione), offerta (totale, righe, sezioni e margine per chi ha Costs.Read). Lo stato resta memorizzato nel browser',
   ]},

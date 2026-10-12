@@ -149,7 +149,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled{
 
 /* ---- 🔍 project search ---- */
 .ps-modal{max-width:1040px !important; width:min(1040px, 96vw); display:flex; flex-direction:column; max-height:88vh;}
-.ps-header{flex-wrap:wrap; gap:10px;}
+.ps-header{flex-wrap:wrap; gap:10px; position:relative; padding-right:60px !important;}
+.ps-header [data-close]{position:absolute; top:14px; right:16px; margin:0;}
 .ps-hscroll{overflow-x:auto;}
 .ps-inner .ps-row{grid-template-columns:var(--ps-cols) !important;}
 .ps-inner .ps-body{overflow-x:hidden;}
@@ -400,6 +401,43 @@ button.act:active{transform:translateY(1px);}
 .sp-load-file .sp-load-name{font-weight:600; word-break:break-all;}
 .sp-load-file .sp-load-meta{color:var(--dim); font-size:12px; white-space:nowrap;}
 .sp-load-file .sp-load-tag{display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; font-size:11px; background:var(--teal); color:#fff; font-weight:600;}
+
+
+/* ---- beta_6.29: System Configuration as one card per position (design Q3) ---- */
+.cfg-wrap.cfg-cards{overflow:visible; display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; align-items:start;}
+.cfg-cards table.cfg, .cfg-cards table.cfg tbody{display:contents;}
+.cfg-cards table.cfg thead{display:none;}
+.cfg-cards #cfgBody > tr{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; position:relative; background:#fff; border:1px solid var(--panel-border); border-radius:16px; padding:16px 18px; cursor:pointer; transition:box-shadow .15s, border-color .15s; min-width:0;}
+.cfg-cards #cfgBody > tr:hover{border-color:#B7C6DE;}
+.cfg-cards #cfgBody > tr.card-open{border:2px solid #4472C4; box-shadow:0 8px 24px rgba(47,85,151,.14); cursor:default; padding:15px 17px;}
+.cfg-cards #cfgBody > tr > td{display:block; padding:0; min-width:0;}
+.cfg-cards #cfgBody > tr > td[data-label]::before{content:attr(data-label); display:block; font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--dim); margin-bottom:3px;}
+.cfg-cards #cfgBody > tr > td:first-child{grid-column:1 / -1;}
+.cfg-cards #cfgBody > tr > td:last-child{position:absolute; top:12px; right:12px;}
+.cfg-cards #cfgBody > tr input:not([type=checkbox]), .cfg-cards #cfgBody > tr select{width:100% !important; box-sizing:border-box;}
+.cfg-cards #cfgBody > tr:not(.card-open) > td:not(:first-child):not(:last-child){display:none;}
+.cfg-cards .pos-badge{display:none;}
+.card-head{display:flex; align-items:center; gap:8px; padding-right:28px;}
+.card-head .ch-pos{font-weight:700; color:#4472C4;}
+.card-head .ch-load{font-size:15.5px; font-weight:600; color:var(--text);}
+.card-head .ch-qty{margin-left:auto; font-size:12px; color:var(--dim); white-space:nowrap;}
+.card-kw{font-size:34px; font-weight:700; color:var(--navy,#00257A); line-height:1.05; margin:8px 0 4px;}
+.card-kw small{font-size:16px; font-weight:600;}
+.card-kw.empty{font-size:15px; font-weight:500; color:#9AA1AD;}
+.card-tags{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 2px;}
+.card-tags span{font-size:11.5px; border-radius:12px; padding:3px 9px; background:#F1F3F6; color:#3A4150;}
+.card-lines{margin-top:10px;}
+.card-lines .cl{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:6px 0; border-top:1px solid #EEF0F3;}
+.card-lines .cl span{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.card-lines .cl b{white-space:nowrap; font-weight:600;}
+.card-lines .cl.tot{color:var(--navy,#00257A); font-weight:600;}
+.card-lines .cl.more{color:var(--dim);}
+.card-hint{font-size:12px; color:var(--dim); background:#F4F7FC; border-radius:10px; padding:9px 11px; margin-top:8px;}
+.cfg-cards #cfgBody > tr.card-open .card-tags{display:none;}
+#btnAddRow.cfg-add-card{min-height:140px; border:2px dashed #9AB0DA; border-radius:16px; background:transparent; color:var(--accent); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:15px; font-weight:600; width:100%; cursor:pointer;}
+#btnAddRow.cfg-add-card:hover{background:#F7FAFE;}
+#btnAddRow.cfg-add-card .plus{font-size:40px; line-height:1; font-weight:400;}
+#btnAddRow.cfg-add-card .sub{font-size:12.5px; font-weight:400; color:var(--dim);}
 
 /* ---- config table ---- */
 .cfg-wrap{overflow-x:auto;}
@@ -855,9 +893,9 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <div class="nav-group">
         <button type="button" class="nav-group-header"><span class="nav-group-title" data-i18n="nav.dataSources">Data Sources</span><span class="nav-group-chevron">▾</span></button>
         <div class="nav-group-body">
+        <button class="nav-btn" id="btnNewOffer"><span class="icon">✨</span><span data-i18n="nav.createNewOffer">Create New Offer</span></button>
         <button class="nav-btn" id="btnImportPriceList"><span class="icon">📑</span><span data-i18n="nav.importPriceList">Import Price List</span></button>
         <input type="file" id="priceListInput" accept=".xlsx,.xls" style="display:none">
-        <button class="nav-btn" id="btnNewOffer"><span class="icon">✨</span><span data-i18n="nav.createNewOffer">Create New Offer</span></button>
         <button class="nav-btn" id="btnCloneOffer"><span class="icon">🧬</span><span data-i18n="nav.cloneOffer">Clone</span></button>
         </div>
       </div>
@@ -908,7 +946,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
       <div class="app-topbar-spacer"></div>
       <div class="new-offer-sticky-bar">
         <button type="button" class="new-offer-sticky-btn ps-open-btn" id="btnOpenProjects" title="Open a project — or create a new offer (Ctrl+K)"><span>📁</span><span>Projects</span></button>
-        <button type="button" class="new-offer-sticky-btn" id="btnNewOfferConfirm" style="display:none"><span>🆕</span><span data-i18n="nav.newOfferConfirm">New Offer</span></button>
+        <button type="button" class="new-offer-sticky-btn" id="btnNewOfferConfirm" title="New offer — creates it in SharePoint (asks to save the current one first)"><span>✨</span><span data-i18n="nav.newOfferConfirm">New Offer</span></button>
         <button type="button" class="new-offer-sticky-btn" id="btnResetOfferConfirm"><span>♻️</span><span data-i18n="nav.resetOfferConfirm">Reset Offer</span></button>
       </div>
       <div class="lang-fixed">
@@ -932,7 +970,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.26</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.29</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -1896,7 +1934,7 @@ document.getElementById('btnSpConnect').addEventListener('click', async ()=>{
       document.getElementById('spFormFields').style.display = 'none';
       document.getElementById('spSuccessState').style.display = 'block';
       setTimeout(closeSpLogin, 1300);
-      setTimeout(openProjectSearch, 1400);   // signed in: straight to the project list
+      // beta_6.27: no automatic Projects window after sign-in — the Project Details guide offers Open project
       // A sensible default, not an override — only fills Owner in if the field is empty (e.g. no
       // project loaded yet, or the loaded one genuinely has none set), never replaces a value that
       // "↑ Load" already brought in from AssignedTo0.
@@ -3347,9 +3385,12 @@ async function fillProjectDetailsFromRecord(rec){
 
 // "New Offer" — same underlying clear as "Reset Page", but asks first, since starting fresh with
 // unsaved work open is the one mistake this button exists to prevent.
-document.getElementById('btnNewOfferConfirm').addEventListener('click', ()=>{
-  const proceed = confirm('Have you saved the current offer? Starting a new one clears everything on this page — Project Details, System Configuration and Offer Lines.\n\nClick OK to clear and start a new offer, or Cancel to go back and save first.');
-  if(proceed) resetAll();
+// beta_6.28: top-bar "New Offer" = Create New Offer of the Projects window: save question if there is
+// unsaved work, then a clean page and the Create New Offer window.
+document.getElementById('btnNewOfferConfirm').addEventListener('click', async ()=>{
+  if(!(await confirmLeaveCurrentProject('starting a new offer'))) return;
+  resetAll();
+  document.getElementById('btnNewOffer').click();
 });
 document.getElementById('btnReset').addEventListener('click', resetAll);
 
@@ -7712,6 +7753,106 @@ function psItemHtml(x, grouped){
   return `<div class="ps-row ps-item${x.ref === PS.sel ? ' on' : ''}${grouped ? ' ps-child' : ''}" data-ref="${escapeHtml(x.ref)}">
     <b class="ps-ref">${escapeHtml(x.ref)}${loaded ? ' <span class="ps-loaded" title="Open on this page">●</span>' : ''}</b><span>${grouped && PS.group === 'customer' ? '' : escapeHtml(x.customer)}</span><span>${escapeHtml(x.name)}</span><span>${grouped && PS.group === 'country' ? '' : escapeHtml(x.country)}</span><span>${escapeHtml(x.status || (x.open ? 'Open' : ''))}</span><span>${escapeHtml(x.owner)}</span></div>`;
 }
+
+// ---- beta_6.29: System Configuration shown as one card per position (design Q3) ----
+// The table rows stay exactly as they were (same fields, same logic): CSS lays every row out as a
+// card and this code adds the card's summary (load, kW, choices, its offer lines) in the first cell.
+const CFG_CARDS = (function(){
+  const wrap = document.querySelector('#cfgBody').closest('.cfg-wrap');
+  if(!wrap) return null;
+  wrap.classList.add('cfg-cards');
+  const add = document.getElementById('btnAddRow');
+  if(add){
+    add.classList.add('cfg-add-card');
+    add.removeAttribute('data-i18n');   // the label moves to the inner span, so a language switch keeps the card layout
+    add.innerHTML = '<span data-i18n="sc.addPosition">' + escapeHtml(t('sc.addPosition')) + '</span><span class="sub">a new UPS system</span>';
+    const bar = add.parentNode;
+    wrap.appendChild(add);
+    if(bar) bar.style.justifyContent = 'flex-end';
+  }
+  let raf = 0;
+  const money = v => { try{ return formatMoney(v); }catch(e){ return String(v); } };
+  function labels(){
+    const ths = [...document.querySelectorAll('table.cfg thead th')].map(th => th.textContent.trim());
+    return ths;
+  }
+  function linesFor(tr){
+    if(typeof bomBody === 'undefined' || !bomBody) return null;
+    const h = [...bomBody.querySelectorAll('tr[data-kind="header"][data-cfg-pos]')].find(x => x.dataset.cfgPos === tr.dataset.pos);
+    if(!h) return null;
+    const own = h.dataset.rowId;
+    const rows = [...bomBody.querySelectorAll(`tr[data-group-of="${own}"]`)].filter(r => (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !(typeof isKitMember === 'function' && isKitMember(r)));
+    const items = rows.map(r => {
+      const qty = rowQty(r);
+      const gross = Number(r.querySelector('.in-gross')?.value) || 0, disc = Number(r.querySelector('.in-disc')?.value) || 0;
+      const desc = (r.querySelector('.desc-text')?.textContent || r.cells[4]?.textContent || '').trim();
+      return {t: `${qty} × ${desc}`, v: gross * (1 - disc / 100) * qty};
+    });
+    const tot = computeGroupTotal(h);
+    return {items, price: tot.price, margin: tot.price ? (tot.price - tot.cost) / tot.price * 100 : null};
+  }
+  function summary(tr){
+    const v = sel => tr.querySelector(sel);
+    const lt = v('.f-loadtype')?.value === '...' ? (v('.f-loadtype-other')?.value || 'Loads') : (v('.f-loadtype')?.value || '');
+    const qty = Number(v('.f-qty')?.value) || 0;
+    const kw = v('.f-pload')?.value;
+    const tags = [v('.f-model')?.value, v('.f-red')?.value, v('.f-conn')?.value, v('.f-config')?.value, v('.f-batt')?.value, v('.f-higheff')?.checked ? 'H.Eff' : ''].filter(x => x && x !== 'n.d.');
+    const L = linesFor(tr);
+    let lines = '';
+    if(L && L.items.length){
+      lines = L.items.slice(0, 4).map(i => `<div class="cl"><span title="${escapeHtml(i.t)}">${escapeHtml(i.t)}</span><b>${escapeHtml(money(i.v))}</b></div>`).join('')
+        + (L.items.length > 4 ? `<div class="cl more"><span>+ ${L.items.length - 4} more lines</span></div>` : '')
+        + `<div class="cl tot"><span>Position total${L.margin != null ? ' · ' + L.margin.toFixed(0) + ' %' : ''}</span><b>${escapeHtml(money(L.price))}</b></div>`;
+    }
+    const isNew = !kw && !L;
+    return `<div class="card-head"><span class="ch-pos">${escapeHtml(String(tr.dataset.pos || '').padStart(2, '0'))}</span><span class="ch-load">${escapeHtml(lt)}</span><span class="ch-qty">× ${qty} system${qty === 1 ? '' : 's'}</span></div>`
+      + (kw ? `<div class="card-kw">${escapeHtml(kw)} <small>kW</small></div>` : `<div class="card-kw empty">enter the load (kW)</div>`)
+      + `<div class="card-tags">${tags.map(x => `<span>${escapeHtml(x)}</span>`).join('')}</div>`
+      + (isNew && tr.classList.contains('card-open') ? '<div class="card-hint">New position: enter the load in kW, then <b>Generate Offer</b> fills its lines. The model is proposed from the load.</div>' : '')
+      + (lines ? `<div class="card-lines">${lines}</div>` : '');
+  }
+  function render(){
+    raf = 0;
+    const lab = labels();
+    const rows = [...cfgBody.querySelectorAll(':scope > tr')];
+    if(rows.length && !rows.some(r => r.classList.contains('card-open')) && !render.userClosed) rows[0].classList.add('card-open');
+    rows.forEach(tr => {
+      [...tr.children].forEach((td, i) => { if(i > 0 && i < tr.children.length - 1 && lab[i]) td.dataset.label = lab[i]; });
+      const td0 = tr.children[0]; if(!td0) return;
+      let box = td0.querySelector('.card-sum');
+      if(!box){ box = document.createElement('div'); box.className = 'card-sum'; td0.appendChild(box); }
+      const html = summary(tr);
+      if(box.__html !== html){ box.innerHTML = html; box.__html = html; }
+    });
+  }
+  function schedule(){ if(!raf) raf = requestAnimationFrame(render); }
+  function open(tr){
+    cfgBody.querySelectorAll(':scope > tr.card-open').forEach(r => { if(r !== tr) r.classList.remove('card-open'); });
+    if(tr) tr.classList.add('card-open');
+    render.userClosed = !tr;
+    schedule();
+  }
+  cfgBody.addEventListener('click', e => {
+    const tr = e.target.closest('#cfgBody > tr'); if(!tr) return;
+    if(e.target.closest('input, select, button, label, textarea, option')) return;
+    if(tr.classList.contains('card-open')){ if(e.target.closest('.card-head')) open(null); return; }
+    open(tr);
+  });
+  cfgBody.addEventListener('input', schedule);
+  cfgBody.addEventListener('change', schedule);
+  new MutationObserver(muts => {
+    const added = [];
+    muts.forEach(m => m.addedNodes.forEach(n => { if(n.nodeType === 1 && n.tagName === 'TR' && n.parentNode === cfgBody) added.push(n); }));
+    const removed = muts.some(m => [...m.removedNodes].some(n => n.nodeType === 1 && n.tagName === 'TR'));
+    if(added.length) open(removed ? added[0] : added[added.length - 1]);   // a new position opens; a reloaded set opens its first
+    schedule();
+  }).observe(cfgBody, {childList: true});
+  if(typeof bomBody !== 'undefined' && bomBody) new MutationObserver(schedule).observe(bomBody, {childList: true, subtree: true, attributes: true, attributeFilter: ['value', 'data-cfg-pos']});
+  document.addEventListener('input', e => { if(e.target.closest && e.target.closest('#bomBody')) schedule(); });
+  schedule();
+  return {render: schedule, open};
+})();
+
 // Project Details: with no project on the page, the 3-step guide replaces the empty form.
 function updateProjectDetailsView(){
   const ref = document.getElementById('prjRef'), g = document.getElementById('pdGuide'), f = document.getElementById('pdForm');
@@ -11841,7 +11982,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.26';
+const CURRENT_VERSION = 'beta_6.29';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -11871,6 +12012,17 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.29', date:'2026-10-12', notes:[
+    'System Configuration a schede (grafica Q3): ogni posizione UPS è una scheda con tipo di carico, kW in grande, scelte (modello, ridondanza, connessione, configurazione, batterie) e le sue righe d\'offerta con il totale della posizione',
+    'Clic su una scheda = si apre con i campi da modificare (le altre restano chiuse in riepilogo); clic sul titolo della scheda aperta = si chiude. "+ Add Position" è una scheda tratteggiata: la nuova posizione si apre già pronta, con il campo kW da compilare',
+  ]},
+  {version:'beta_6.28', date:'2026-10-12', notes:[
+    'Finestra Projects: la X di chiusura è sempre in alto a destra',
+    'Tornato il pulsante "✨ New Offer" nella barra in alto: se c\'è lavoro non salvato chiede prima se salvarlo, poi pulisce la pagina e apre la creazione della nuova offerta. "Create New Offer" è ora la prima voce di Data Sources (lì la creazione può continuare in sottofondo mentre si lavora su un altro progetto, come prima)',
+  ]},
+  {version:'beta_6.27', date:'2026-10-12', notes:[
+    'La finestra Projects non si apre più da sola all\'avvio né dopo l\'accesso: si apre da "Open project" nella guida di Project Details, dal pulsante Projects in alto o con Ctrl+K',
+  ]},
   {version:'beta_6.26', date:'2026-10-12', notes:[
     'Project Details: se non è aperto nessun progetto, al posto del modulo vuoto compare la guida in 3 passi (Scegli il progetto → Configura il sistema → Genera l\'offerta) con i pulsanti Apri progetto e Crea nuova offerta; appena si apre un progetto torna il modulo',
   ]},
@@ -12320,8 +12472,6 @@ async function restoreSignInSilently(){
     document.getElementById('btnTopSignOut').classList.add('visible');
     updateSpStatus(`Signed in as ${msalAccount.username}.`, 'loaded');
     await fetchSharePointList();
-    // back after a reload with no project on the page: the project list, as after signing in
-    if(!document.getElementById('prjRef').value.trim() && !bomHasRows()) setTimeout(openProjectSearch, 300);
     return true;
   }catch(err){
     console.info('No silent sign-in after reload — the welcome screen stays:', err && (err.errorCode || err.message) || err);

@@ -427,6 +427,44 @@ button.act:active{transform:translateY(1px);}
 .panel.pnl-collapsed > .panel-title{margin-bottom:0;}
 .panel.pnl-collapsed > :not(.panel-title){display:none !important;}
 .panel-title-left{flex:none;}
+/* ---- beta_6.38: Office-style ribbon (Home / Documents / Prices / Settings), collapsible to the tab row ---- */
+body.has-ribbon #btnShowSidebar, body.has-ribbon .new-offer-sticky-bar, body.has-ribbon #sidebar{display:none !important;}
+.rb-tabs{display:flex; align-items:center; gap:2px; height:38px; margin-left:-6px;}
+.rb-tab{height:36px; padding:0 14px; border:none; background:transparent; border-radius:8px; font-family:'Work Sans',sans-serif; font-size:13.5px; font-weight:500; color:var(--text); cursor:pointer; position:relative;}
+.rb-tab:hover{background:#EEF3FB;}
+.rb-tab.on{color:#2F5597; font-weight:600;}
+.rb-tab.on::after{content:''; position:absolute; left:12px; right:12px; bottom:1px; height:3px; border-radius:2px; background:#2F5597;}
+body.rb-collapsed:not(.rb-peek) .rb-tab.on{color:var(--text); font-weight:500;}
+body.rb-collapsed:not(.rb-peek) .rb-tab.on::after{display:none;}
+.rb-panel{flex:0 0 calc(100% + 60px); order:99; margin:10px -30px -12px; background:#fff; border-top:1px solid var(--panel-border); display:flex; align-items:stretch; height:104px; padding:6px 46px 4px 16px; box-sizing:border-box; position:relative; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin;}
+body.rb-collapsed .rb-panel{display:none;}
+body.rb-collapsed.rb-peek .rb-panel{display:flex; position:absolute; left:0; right:0; top:100%; margin:0; border-bottom:1px solid var(--panel-border); box-shadow:0 16px 32px rgba(20,22,26,.16); z-index:95;}
+.rb-grp{display:flex; flex-direction:column; justify-content:space-between; padding:0 10px; border-right:1px solid #E4E7EC; flex:none; min-width:0;}
+.rb-grp:last-of-type{border-right:none;}
+.rb-items{display:flex; gap:2px; flex:1; align-items:flex-start; min-height:0;}
+.rb-lab{font-size:11px; color:#6B7280; text-align:center; padding-top:2px; white-space:nowrap; flex:none;}
+.rb-big{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:70px; max-width:118px; min-height:62px; padding:6px 8px 4px; border:none; background:transparent; border-radius:8px; font-family:'Work Sans',sans-serif; font-size:12px; color:var(--text); cursor:pointer; line-height:1.15; text-align:center;}
+.rb-big svg, .rb-sm svg{color:#2F5597; flex:none;}
+.rb-big > span{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; hyphens:manual; overflow-wrap:normal;}
+.rb-big.pri{background:#EEF3FB;}
+.rb-big:hover:not(:disabled), .rb-sm:hover:not(:disabled){background:#E3EBF8;}
+.rb-big:disabled, .rb-sm:disabled{opacity:.38; cursor:default;}
+.rb-col{display:flex; flex-direction:column; gap:1px; padding-top:2px;}
+.rb-sm{display:flex; align-items:center; gap:7px; height:23px; padding:0 8px; border:none; background:transparent; border-radius:6px; font-family:'Work Sans',sans-serif; font-size:12.5px; color:var(--text); cursor:pointer; white-space:nowrap;}
+.rb-red, .rb-red svg{color:#A3001F !important;}
+.rb-pin{position:absolute; right:10px; bottom:6px; width:30px; height:26px; border:none; background:transparent; border-radius:6px; cursor:pointer; color:#4B5260; display:flex; align-items:center; justify-content:center;}
+.rb-pin:hover{background:#EEF3FB; color:#2F5597;}
+@media (max-width: 760px){ .rb-tab{padding:0 9px; font-size:12.5px;} .rb-panel{overflow-x:auto;} }
+/* ---- beta_6.38: offer status as a path next to the title (from the SharePoint Status of the open project) ---- */
+.page-header.u10{display:flex; align-items:center; gap:16px;}
+.st-pipe{margin-left:auto; display:flex; padding-left:8px; flex:none;}
+.st-pipe span{height:32px; padding:0 18px 0 24px; display:inline-flex; align-items:center; font-family:'Work Sans',sans-serif; font-size:12.5px; font-weight:600; margin-left:-7px; clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%); background:#E9ECF1; color:#6B7280; white-space:nowrap;}
+.st-pipe span:first-child{margin-left:0; padding-left:16px; clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); border-radius:6px 0 0 6px;}
+.st-pipe .done{background:#DCE6F7; color:#2F5597;}
+.st-pipe .on{background:#2F5597; color:#fff;}
+.st-pipe .won{background:#2F9E5B; color:#fff;}
+.st-pipe .lost{background:#B4232A; color:#fff;}
+@media (max-width: 900px){ .st-pipe{display:none;} }
 /* ---- beta_6.33: header + status bar (design U10) and user chip (R1) ---- */
 .page-header.u10{border-bottom:none; padding-bottom:0; margin-bottom:14px;}
 .page-header.u10 .brand-eyebrow, .page-header.u10 .subtitle{display:none;}
@@ -914,6 +952,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   .main-content{width:100%; padding:20px 14px 50px;}
   .wrap{max-width:100%;}
   .app-topbar{margin:-20px -14px 14px; padding:8px 14px; gap:6px;}
+  .rb-panel{flex-basis:calc(100% + 28px); margin:8px -14px -8px; padding-left:8px;}
   .app-topbar .sidebar-show-btn{width:34px; height:34px;}
   .app-topbar .signin-topright-btn{padding:7px 10px; font-size:12.5px;}
   .app-topbar .signout-topright-btn{width:34px; height:34px;}
@@ -1026,7 +1065,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header u10">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.37</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.38</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3489,8 +3528,7 @@ document.getElementById('btnResetOfferConfirm').addEventListener('click', ()=>{
   if(!proceed) return;
   cfgBody.innerHTML = '';
   posCounter = 0;
-  buildRow();
-  clearBom();
+  clearBom();          // beta_6.38: System Configuration starts empty — the person adds the first position
 });
 
 // "Clone" — starts a brand new project from the currently loaded configuration's positions, BOM/
@@ -3772,8 +3810,7 @@ function resetAll(){
   document.getElementById('prjBattery').selectedIndex = 0;
   cfgBody.innerHTML='';
   posCounter = 0;
-  buildRow();
-  clearBom();
+  clearBom();          // beta_6.38: no default position
   REVISION = 0;
   REVISION_CLOSED = false;
   REVISION_DESCRIPTION = '';
@@ -7930,7 +7967,7 @@ const CFG_CARDS = (function(){
     if(!cfgBody.querySelector(':scope > tr.card-open')) return;
     const tgt = e.target;
     if(!tgt || !tgt.isConnected || !tgt.closest) return;          // e.g. a node removed by the click itself
-    if(tgt.closest('#cfgBody > tr.card-open, #btnAddRow')) return;
+    if(tgt.closest('#cfgBody > tr.card-open, #btnAddRow, #appTopbar')) return;   // beta_6.38: ribbon clicks (e.g. Add position) keep the card open
     open(null);
   });
   cfgBody.addEventListener('input', schedule);
@@ -8168,6 +8205,240 @@ function setPanelCollapsed(id, col){
   document.getElementById('langSelect')?.addEventListener('change', () => setTimeout(() => { document.querySelectorAll('.pnl-sum').forEach(x => x.__h = null); pnlRender(); }, 0));
   setInterval(pnlRender, 1000);   // keeps the summaries of collapsed sections up to date
   pnlRender();
+})();
+
+// ---- beta_6.38: Office-style ribbon. The tabs sit in the top bar; the ribbon under them can be collapsed
+// to the tab row (button at its right end, double-click on a tab, or Ctrl+F1). Collapsed, a click on a tab
+// opens the ribbon over the page until a command is chosen or you click elsewhere. Every command runs
+// the same code as before (the old menu buttons stay in the page, hidden, and are clicked for you). ----
+const RIBBON = (function(){
+  const KEY = 'upsConfigurator.ribbon.v1';
+  const ICO = {
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',
+    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    reset: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+    save: '<path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8V3M7 21v-7h10v7"/>',
+    print: '<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+    history: '<path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+    upload: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
+    addpos: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>',
+    bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M8.5 16v-4h1.5a1.3 1.3 0 0 1 0 2.6H8.5"/>',
+    xls: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 12l4 5M13 12l-4 5"/>',
+    doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M8 13h8M8 17h6"/>',
+    ruler: '<path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>',
+    tag: '<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.4"/>',
+    gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+    shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+    up: '<path d="M6 15l6-6 6 6"/>',
+    pin: '<path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/>'
+  };
+  const svg = (n, s) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${s > 20 ? 1.6 : 1.9}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
+  const TX = {
+    en: {home: 'Home', documents: 'Documents', prices: 'Price list', settings: 'Settings', collapse: 'Collapse the ribbon (Ctrl+F1)', pin: 'Keep the ribbon open (Ctrl+F1)',
+      g_project: 'Project', projects: 'Projects', newOffer: 'New offer', createSp: 'Create in SharePoint', clone: 'Clone offer', resetOffer: 'Reset offer',
+      g_rev: 'Revision', save: 'Save', report: 'Print report', close: 'Close offer', newRev: 'New revision', history: 'Revision history', load: 'Load configuration',
+      g_cfg: 'Configuration', addPos: 'Add position', generate: 'Generate offer',
+      g_prev: 'Preview', prevOffer: 'Preview offer', prevBom: 'Preview BOM', g_offer: 'Offer', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_tech: 'Technical', techSum: 'Technical summary', techNote: 'Technical note (Word)', initRep: 'Initialize report',
+      g_pl: 'Price list', importPl: 'Import price list', refreshSp: 'Refresh from SharePoint', g_off: 'Offer', offerSet: 'Offer settings',
+      g_page: 'Page', resetPage: 'Reset page', g_admin: 'Administration', admin: 'Admin', g_acc: 'Account', account: 'Microsoft 365 account'},
+    it: {home: 'Home', documents: 'Documenti', prices: 'Listino', settings: 'Impostazioni', collapse: 'Comprimi la barra (Ctrl+F1)', pin: 'Tieni aperta la barra (Ctrl+F1)',
+      g_project: 'Progetto', projects: 'Progetti', newOffer: 'Nuova offerta', createSp: 'Crea in SharePoint', clone: 'Clona offerta', resetOffer: 'Reset offerta',
+      g_rev: 'Revisione', save: 'Salva', report: 'Stampa report', close: 'Chiudi offerta', newRev: 'Nuova revisione', history: 'Storico revisioni', load: 'Carica configurazione',
+      g_cfg: 'Configurazione', addPos: 'Aggiungi posizione', generate: 'Genera offerta',
+      g_prev: 'Anteprima', prevOffer: 'Anteprima offerta', prevBom: 'Anteprima BOM', g_offer: 'Offerta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_tech: 'Tecnico', techSum: 'Technical summary', techNote: 'Nota tecnica (Word)', initRep: 'Inizializza report',
+      g_pl: 'Listino', importPl: 'Importa listino', refreshSp: 'Aggiorna da SharePoint', g_off: 'Offerta', offerSet: 'Impostazioni offerta',
+      g_page: 'Pagina', resetPage: 'Reset pagina', g_admin: 'Amministrazione', admin: 'Admin', g_acc: 'Account', account: 'Account Microsoft 365'},
+    de: {home: 'Start', documents: 'Dokumente', prices: 'Preisliste', settings: 'Einstellungen', collapse: 'Menüband reduzieren (Strg+F1)', pin: 'Menüband fixieren (Strg+F1)',
+      g_project: 'Projekt', projects: 'Projekte', newOffer: 'Neues Angebot', createSp: 'In SharePoint anlegen', clone: 'Angebot klonen', resetOffer: 'Angebot zurücksetzen',
+      g_rev: 'Revision', save: 'Speichern', report: 'Bericht drucken', close: 'Angebot schließen', newRev: 'Neue Revision', history: 'Revisionsverlauf', load: 'Konfiguration laden',
+      g_cfg: 'Konfiguration', addPos: 'Position hinzufügen', generate: 'Angebot erstellen',
+      g_prev: 'Vorschau', prevOffer: 'Angebots\u00ADvorschau', prevBom: 'BOM-Vorschau', g_offer: 'Angebot', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_tech: 'Technik', techSum: 'Technical summary', techNote: 'Technische Notiz (Word)', initRep: 'Bericht initialisieren',
+      g_pl: 'Preisliste', importPl: 'Preisliste importieren', refreshSp: 'Aus SharePoint aktualisieren', g_off: 'Angebot', offerSet: 'Angebots\u00ADeinstellungen',
+      g_page: 'Seite', resetPage: 'Seite zurücksetzen', g_admin: 'Administration', admin: 'Admin', g_acc: 'Konto', account: 'Microsoft 365-Konto'},
+    fr: {home: 'Accueil', documents: 'Documents', prices: 'Tarif', settings: 'Paramètres', collapse: 'Réduire le ruban (Ctrl+F1)', pin: 'Épingler le ruban (Ctrl+F1)',
+      g_project: 'Projet', projects: 'Projets', newOffer: 'Nouvelle offre', createSp: 'Créer dans SharePoint', clone: "Cloner l'offre", resetOffer: "Réinitialiser l'offre",
+      g_rev: 'Révision', save: 'Enregistrer', report: 'Imprimer le rapport', close: "Clôturer l'offre", newRev: 'Nouvelle révision', history: 'Historique des révisions', load: 'Charger une configuration',
+      g_cfg: 'Configuration', addPos: 'Ajouter une position', generate: "Générer l'offre",
+      g_prev: 'Aperçu', prevOffer: "Aperçu de l'offre", prevBom: 'Aperçu BOM', g_offer: 'Offre', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_tech: 'Technique', techSum: 'Technical summary', techNote: 'Note technique (Word)', initRep: 'Initialiser le rapport',
+      g_pl: 'Tarif', importPl: 'Importer le tarif', refreshSp: 'Actualiser depuis SharePoint', g_off: 'Offre', offerSet: "Paramètres de l'offre",
+      g_page: 'Page', resetPage: 'Réinitialiser la page', g_admin: 'Administration', admin: 'Admin', g_acc: 'Compte', account: 'Compte Microsoft 365'},
+    es: {home: 'Inicio', documents: 'Documentos', prices: 'Tarifa', settings: 'Ajustes', collapse: 'Contraer la cinta (Ctrl+F1)', pin: 'Fijar la cinta (Ctrl+F1)',
+      g_project: 'Proyecto', projects: 'Proyectos', newOffer: 'Nueva oferta', createSp: 'Crear en SharePoint', clone: 'Clonar oferta', resetOffer: 'Restablecer oferta',
+      g_rev: 'Revisión', save: 'Guardar', report: 'Imprimir informe', close: 'Cerrar oferta', newRev: 'Nueva revisión', history: 'Historial de revisiones', load: 'Cargar configuración',
+      g_cfg: 'Configuración', addPos: 'Añadir posición', generate: 'Generar oferta',
+      g_prev: 'Vista previa', prevOffer: 'Vista previa oferta', prevBom: 'Vista previa BOM', g_offer: 'Oferta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_tech: 'Técnico', techSum: 'Technical summary', techNote: 'Nota técnica (Word)', initRep: 'Inicializar informe',
+      g_pl: 'Tarifa', importPl: 'Importar tarifa', refreshSp: 'Actualizar desde SharePoint', g_off: 'Oferta', offerSet: 'Ajustes de la oferta',
+      g_page: 'Página', resetPage: 'Restablecer página', g_admin: 'Administración', admin: 'Admin', g_acc: 'Cuenta', account: 'Cuenta Microsoft 365'}
+  };
+  const T = () => TX[LANG] || TX.en;
+  const big = (icon, key, target, o = {}) => Object.assign({type: 'big', icon, key, target}, o);
+  const sm = (icon, key, target, o = {}) => Object.assign({type: 'sm', icon, key, target}, o);
+  const col = (...items) => ({type: 'col', items});
+  const TABS = {
+    home: [
+      ['g_project', [big('folder', 'projects', 'btnOpenProjects'), big('plus', 'newOffer', 'btnNewOfferConfirm'),
+        col(sm('spark', 'createSp', 'btnNewOffer'), sm('copy', 'clone', 'btnCloneOffer'), sm('reset', 'resetOffer', 'btnResetOfferConfirm', {red: 1}))]],
+      ['g_rev', [big('save', 'save', 'btnSaveFile', {pri: 1, run: () => saveConfigurationFlow('json')}), big('print', 'report', 'btnSaveFile', {run: () => saveConfigurationFlow('reports')}),
+        big('lock', 'close', 'btnCloseOffer'),
+        col(sm('refresh', 'newRev', 'btnNewRevision', {when: () => REVISION_CLOSED}), sm('history', 'history', 'btnRevisionHistory'), sm('upload', 'load', 'btnLoadFile'))]],
+      ['g_cfg', [big('addpos', 'addPos', 'btnAddRow'), big('bolt', 'generate', 'btnGenerate')]]
+    ],
+    documents: [
+      ['g_prev', [big('eye', 'prevOffer', 'btnPreviewOffer'), big('eye', 'prevBom', 'btnPreviewBom')]],
+      ['g_offer', [big('pdf', 'pdf', 'btnExportOfferPdf'), big('xls', 'excel', 'btnExportOfferXlsx'), big('doc', 'word', 'btnExportOfferDocx')]],
+      ['g_bom', [big('pdf', 'pdf', 'btnExportBomPdf'), big('xls', 'excel', 'btnExportBomXlsx')]],
+      ['g_tech', [big('ruler', 'techSum', 'btnExportTechSummary'), col(sm('doc', 'techNote', 'btnTechNote'), sm('pdf', 'initRep', 'btnInitReport'))]]
+    ],
+    prices: [
+      ['g_pl', [big('tag', 'importPl', 'btnImportPriceList'), big('refresh', 'refreshSp', 'btnTopRefresh')]],
+      ['g_off', [big('gear', 'offerSet', 'btnOpenSettings')]]
+    ],
+    settings: [
+      ['g_off', [big('gear', 'offerSet', 'btnOpenSettings')]],
+      ['g_page', [big('reset', 'resetPage', 'btnReset', {red: 1})]],
+      ['g_acc', [big('user', 'account', 'btnOpenSpLogin')]],
+      ['g_admin', [big('shield', 'admin', 'lnkAdmin')]]
+    ]
+  };
+  let st = {tab: 'home', collapsed: false};
+  try{ st = Object.assign(st, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
+  if(!TABS[st.tab]) st.tab = 'home';
+  const saveSt = () => { try{ localStorage.setItem(KEY, JSON.stringify({tab: st.tab, collapsed: st.collapsed})); }catch(e){} };
+  const tb = document.getElementById('appTopbar');
+  if(!tb) return null;
+  document.body.classList.add('has-ribbon');
+  const tabs = document.createElement('nav'); tabs.className = 'rb-tabs'; tabs.setAttribute('aria-label', 'Ribbon');
+  tb.insertBefore(tabs, tb.firstChild);
+  const panel = document.createElement('div'); panel.className = 'rb-panel'; panel.id = 'ribbonPanel'; panel.setAttribute('role', 'toolbar');
+  tb.appendChild(panel);
+  let reg = [];
+  function itemHtml(it){
+    if(it.type === 'col') return `<div class="rb-col">${it.items.map(itemHtml).join('')}</div>`;
+    const lab = escapeHtml(T()[it.key] || it.key);
+    reg.push(it);
+    return `<button type="button" class="${it.type === 'big' ? 'rb-big' : 'rb-sm'}${it.pri ? ' pri' : ''}${it.red ? ' rb-red' : ''}" data-rb="${reg.length - 1}" data-cmd="${it.key}" title="${lab}">${svg(it.icon, it.type === 'big' ? 24 : 15)}<span>${lab}</span></button>`;
+  }
+  let tabsLang = null;
+  function render(){
+    const L = T();
+    if(tabsLang !== LANG){   // the tab buttons are built once per language: replacing them under the mouse would swallow double-clicks
+      tabs.innerHTML = Object.keys(TABS).map(k => `<button type="button" class="rb-tab" data-tab="${k}">${escapeHtml(L[k])}</button>`).join('');
+      tabsLang = LANG;
+    }
+    tabs.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === st.tab));
+    reg = [];
+    const peek = document.body.classList.contains('rb-peek');
+    panel.innerHTML = TABS[st.tab].map(([g, items]) => `<div class="rb-grp"><div class="rb-items">${items.map(itemHtml).join('')}</div><div class="rb-lab">${escapeHtml(L[g])}</div></div>`).join('') +
+      `<button type="button" class="rb-pin" data-pin title="${escapeHtml(st.collapsed ? L.pin : L.collapse)}" aria-label="${escapeHtml(st.collapsed ? L.pin : L.collapse)}">${svg(st.collapsed ? 'pin' : 'up', 16)}</button>`;
+    document.body.classList.toggle('rb-collapsed', !!st.collapsed);
+    syncDisabled();
+  }
+  function syncDisabled(){
+    panel.querySelectorAll('[data-rb]').forEach(b => {
+      const it = reg[+b.dataset.rb];
+      const el = typeof it.target === 'string' ? document.getElementById(it.target) : null;
+      b.disabled = !el || el.disabled || (it.when ? !it.when() : false);
+    });
+  }
+  const closePeek = () => { if(document.body.classList.contains('rb-peek')){ document.body.classList.remove('rb-peek'); render(); } };
+  function setCollapsed(c){ st.collapsed = !!c; document.body.classList.remove('rb-peek'); saveSt(); render(); }
+  tabs.addEventListener('click', e => {
+    const b = e.target.closest('[data-tab]'); if(!b) return;
+    if(st.collapsed){
+      const open = document.body.classList.contains('rb-peek');
+      if(open && st.tab === b.dataset.tab){ closePeek(); return; }
+      st.tab = b.dataset.tab; document.body.classList.add('rb-peek');
+    } else {
+      if(st.tab === b.dataset.tab) return;
+      st.tab = b.dataset.tab;
+    }
+    saveSt(); render();
+  });
+  tabs.addEventListener('dblclick', e => { if(e.target.closest('[data-tab]')) setCollapsed(!st.collapsed); });
+  panel.addEventListener('click', e => {
+    if(e.target.closest('[data-pin]')){ setCollapsed(!st.collapsed); return; }
+    const b = e.target.closest('[data-rb]'); if(!b || b.disabled) return;
+    const it = reg[+b.dataset.rb];
+    closePeek();
+    if(it.run) it.run(); else document.getElementById(it.target)?.click();
+  });
+  document.addEventListener('pointerdown', e => { if(!tb.contains(e.target)) closePeek(); }, true);
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') closePeek();
+    if(e.key === 'F1' && e.ctrlKey){ e.preventDefault(); setCollapsed(!st.collapsed); }
+  });
+  document.getElementById('langSelect')?.addEventListener('change', () => setTimeout(render, 0));
+  setInterval(() => { if(tabsLang !== LANG) render(); else syncDisabled(); }, 700);   // also follows a language change made in code
+  render();
+  return {render, setCollapsed, sync: syncDisabled, state: () => Object.assign({}, st, {peek: document.body.classList.contains('rb-peek')})};
+})();
+
+// ---- beta_6.38: the offer status as a path next to the title — New → In progress → Offer review → Won / Lost —
+// read from the SharePoint Status of the open project (a closed revision counts as Offer review) ----
+const STATUS_PIPE = (function(){
+  const h = document.querySelector('.page-header'); if(!h) return null;
+  const el = document.createElement('div'); el.className = 'st-pipe'; el.id = 'statusPipeline'; h.appendChild(el);
+  const TXP = {en: ['New', 'In progress', 'Offer review', 'Won / Lost', 'Won', 'Lost', 'SharePoint status'], it: ['Nuova', 'In corso', 'In revisione', 'Vinta / Persa', 'Vinta', 'Persa', 'Stato SharePoint'],
+    de: ['Neu', 'In Bearbeitung', 'Angebotsprüfung', 'Gewonnen / Verloren', 'Gewonnen', 'Verloren', 'SharePoint-Status'], fr: ['Nouvelle', 'En cours', "Revue d'offre", 'Gagnée / Perdue', 'Gagnée', 'Perdue', 'Statut SharePoint'],
+    es: ['Nueva', 'En curso', 'Revisión de oferta', 'Ganada / Perdida', 'Ganada', 'Perdida', 'Estado SharePoint']};
+  function stageOf(s){
+    s = String(s || '').trim();
+    if(!s || /^new$|draft|not started|to do/i.test(s)) return 0;
+    if(/^offer review$/i.test(s)) return 2;
+    if(/won|award|order|vint/i.test(s)) return 3;
+    if(/lost|cancel|declin|pers/i.test(s)) return 4;
+    return 1;
+  }
+  let last = '';
+  function render(){
+    const ref = (document.getElementById('prjRef')?.value || '').trim();
+    if(!ref){ if(last !== 'none'){ el.style.display = 'none'; el.innerHTML = ''; last = 'none'; } return; }
+    const rec = (PROGRESS || []).find(p => String(p.PRJ_ID) === ref);
+    const status = rec ? rec.Status : '';
+    let sg = stageOf(status);
+    if(REVISION_CLOSED && sg < 2) sg = 2;
+    const L = TXP[LANG] || TXP.en;
+    const names = [L[0], L[1], L[2], sg === 3 ? L[4] : sg === 4 ? L[5] : L[3]];
+    const cur = Math.min(sg, 3);
+    const html = names.map((n, i) => `<span class="${i < cur ? 'done' : i === cur ? (sg === 3 ? 'won' : sg === 4 ? 'lost' : 'on') : ''}">${escapeHtml(n)}</span>`).join('');
+    const key = html + status;
+    if(key === last) return;
+    last = key; el.style.display = ''; el.innerHTML = html; el.title = `${L[6]}: ${status || '—'}`;
+  }
+  setInterval(render, 1000); render();
+  return {render};
+})();
+
+// ---- beta_6.38: System Configuration starts empty — only the "+ Add Position" card; Generate Offer waits for
+// the first position ----
+(function(){
+  const gen = document.getElementById('btnGenerate'), add = document.getElementById('btnAddRow');
+  const HINT = {en: 'Add a position first', it: 'Aggiungi prima una posizione', de: 'Zuerst eine Position hinzufügen', fr: "Ajoutez d'abord une position", es: 'Añada primero una posición'};
+  const SUB = {en: ['the first UPS system', 'a new UPS system'], it: ['il primo sistema UPS', 'un nuovo sistema UPS'], de: ['das erste USV-System', 'ein neues USV-System'], fr: ['le premier système ASI', 'un nouveau système ASI'], es: ['el primer sistema SAI', 'un nuevo sistema SAI']};
+  function upd(){
+    const none = !cfgBody.querySelector(':scope > tr');
+    const hint = HINT[LANG] || HINT.en;
+    if(none){ gen.disabled = true; gen.title = hint; gen.dataset.noPos = '1'; }
+    else if(gen.dataset.noPos){ delete gen.dataset.noPos; gen.disabled = !!READ_ONLY; gen.title = ''; }
+    const sub = add && add.querySelector('.sub');
+    if(sub){ const t = (SUB[LANG] || SUB.en)[none ? 0 : 1]; if(sub.textContent !== t) sub.textContent = t; }
+    if(typeof RIBBON !== 'undefined' && RIBBON) RIBBON.sync();   // the ribbon's Generate offer follows at once
+  }
+  new MutationObserver(upd).observe(cfgBody, {childList: true});
+  setInterval(upd, 1000);
+  upd();
 })();
 
 // Project Details: with no project on the page, the 3-step guide replaces the empty form.
@@ -9567,11 +9838,7 @@ function applyLoadedState(state){
 
     cfgBody.innerHTML = '';
     posCounter = 0;
-    if(state.positions.length){
-      state.positions.forEach(pos=>buildRow(pos));
-    } else {
-      buildRow();
-    }
+    state.positions.forEach(pos=>buildRow(pos));   // beta_6.38: no default position when the file has none
 
     bomBody.innerHTML = '';
     bomRowCounter = 0;
@@ -12291,7 +12558,7 @@ document.getElementById('btnWelcomeSignIn').addEventListener('click', ()=>{
 
 // init
 updateBomHeaders();
-buildRow();
+// beta_6.38: System Configuration starts empty (only the "+ Add Position" card)
 // What System Configuration looks like on a freshly opened page — used to tell "nothing on the page
 // yet" (safe to auto-load a saved offer over it) from real work that must not be silently replaced.
 const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
@@ -12301,7 +12568,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.37';
+const CURRENT_VERSION = 'beta_6.38';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12331,6 +12598,12 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.38', date:'2026-10-14', notes:[
+    'Nuova barra dei comandi in stile Microsoft Office (ribbon) al posto del menu ☰ e dei pulsanti Projects / New Offer / Reset Offer: schede Home (Progetto: Projects, New offer, Create in SharePoint, Clone, Reset offer · Revisione: Save, Print report, Close offer, New revision, History, Load · Configurazione: Add position, Generate offer), Documents (anteprime, Offer e BOM in PDF / Excel / Word, Technical summary, nota tecnica), Price list (importa listino, aggiorna da SharePoint, impostazioni offerta) e Settings (impostazioni offerta, reset pagina, account, Admin). I pulsanti non disponibili sono disattivati; etichette in 5 lingue',
+    'Il ribbon si comprime alla sola riga delle schede (freccia a destra del ribbon, doppio clic su una scheda o Ctrl+F1): compresso, un clic su una scheda lo apre sopra la pagina finché non si sceglie un comando o si clicca altrove; la puntina lo fissa di nuovo aperto. La scelta resta memorizzata',
+    'Accanto al titolo, lo stato dell\'offerta come percorso New → In progress → Offer review → Won / Lost, letto dallo Status SharePoint del progetto aperto (una revisione chiusa vale Offer review; Won in verde, Lost in rosso)',
+    'System Configuration all\'avvio è vuota: c\'è solo il riquadro «+ Add Position»; Generate Offer resta disattivato finché non si aggiunge la prima posizione. Vale anche dopo New offer, Reset offer e caricando un file senza posizioni',
+  ]},
   {version:'beta_6.37', date:'2026-10-12', notes:[
     'Pulsante Comprimi / Espandi sostituito da un\'icona (grafica V10): cerchio blu con freccia in su quando la sezione è aperta, cerchio bianco bordato con freccia in giù quando è compressa. Il nome dell\'azione compare al passaggio del mouse',
   ]},

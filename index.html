@@ -495,6 +495,8 @@ body.rb-collapsed.rb-peek .rb-panel{display:flex; position:absolute; left:0; rig
 .user-chip:not(.costs) #ucRole{display:none;}
 .user-chip:not(.costs) .uc-coin{background:#F1F3F6; color:#9AA1AD;}
 .user-chip:not(.costs) #ucName{color:#4B5260; font-weight:500;}
+.user-chip.noperm #ucName{color:var(--text); font-weight:600;}
+.user-chip.noperm .uc-coin{background:#E8EEF8; color:var(--accent);}
 .user-chip:hover{border-color:var(--accent);}
 @media (max-width: 760px){ .user-chip .uc-txt{display:none;} .user-chip{padding:0 4px; height:38px;} }
 /* ---- beta_6.32: no Costs.Read role → costs and margins hidden ---- */
@@ -1065,7 +1067,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header u10">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.38</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.39</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -7989,6 +7991,9 @@ const CFG_CARDS = (function(){
 // ---- beta_6.32: costs & margins only for the Azure app role "Costs.Read" ----
 // The role arrives in the Microsoft sign-in token (idTokenClaims.roles). No roles in the token at all
 // (roles not created on Azure yet) = costs visible, unless the Admin option "always require" is on.
+// beta_6.39: permissions switched OFF for now — everyone sees costs and margins. Set COST_PERMISSIONS = true to bring the
+// Costs.Read role check back (all the code below stays in place).
+const COST_PERMISSIONS = false;
 const COST_ROLE = 'Costs.Read';
 const COST_ROLE_KEY = 'upsConfigurator.requireCostsRole';
 function costRoleRequired(){ try{ return localStorage.getItem(COST_ROLE_KEY) === '1'; }catch(e){ return false; } }
@@ -7996,6 +8001,7 @@ function tokenRoles(){
   try{ const r = msalAccount && msalAccount.idTokenClaims && msalAccount.idTokenClaims.roles; return Array.isArray(r) ? r : null; }catch(e){ return null; }
 }
 function costsAllowed(){
+  if(!COST_PERMISSIONS) return true;
   const roles = tokenRoles();
   if(roles) return roles.includes(COST_ROLE);
   return !costRoleRequired();
@@ -8021,7 +8027,9 @@ function applyCostVisibility(){
   if(!ok && !_costMarkRaf) _costMarkRaf = requestAnimationFrame(() => { _costMarkRaf = 0; markCostColumns(); });
   if(_costLast !== ok){ _costLast = ok; try{ CFG_CARDS && CFG_CARDS.render(); }catch(e){} }
   const st = document.getElementById('costRoleStatus');
-  if(st){
+  if(st && !COST_PERMISSIONS){
+    st.innerHTML = '<b>Permessi disattivati</b> in questa versione: costi e margini sono visibili a tutti, connessi o ospiti, con o senza ruolo. Il controllo del ruolo Costs.Read è pronto per essere riattivato in una versione successiva.';
+  } else if(st){
     const roles = tokenRoles();
     st.innerHTML = !(msalInstance && msalAccount) ? 'Ora: ospite (non connesso) — costi ' + (ok ? '<b>visibili</b>' : '<b>nascosti</b>') + '.'
       : roles ? `Ora: ${escapeHtml(msalAccount.name || msalAccount.username || '')} — ruoli nel token: <b>${escapeHtml(roles.join(', ') || '—')}</b> → costi ${ok ? '<b>visibili</b>' : '<b>nascosti</b>'}.`
@@ -8030,7 +8038,10 @@ function applyCostVisibility(){
 }
 (function(){
   const cb = document.getElementById('costRoleRequired');
-  if(cb){ cb.checked = costRoleRequired(); cb.addEventListener('change', () => { try{ localStorage.setItem(COST_ROLE_KEY, cb.checked ? '1' : '0'); }catch(e){} applyCostVisibility(); }); }
+  if(cb && !COST_PERMISSIONS){ cb.disabled = true; cb.checked = false; cb.closest('label').style.opacity = '.5'; }
+  const bdg = document.querySelector('#costRolePanel .beta-fn-badge');
+  if(bdg && !COST_PERMISSIONS) bdg.textContent = 'Azure · Costs.Read · disattivato';
+  if(cb){ cb.checked = COST_PERMISSIONS && costRoleRequired(); cb.addEventListener('change', () => { try{ localStorage.setItem(COST_ROLE_KEY, cb.checked ? '1' : '0'); }catch(e){} applyCostVisibility(); }); }
   new MutationObserver(() => { if(document.body.classList.contains('no-costs') && !_costMarkRaf) _costMarkRaf = requestAnimationFrame(() => { _costMarkRaf = 0; markCostColumns(); }); })
     .observe(document.body, {childList: true, subtree: true});
   setInterval(applyCostVisibility, 1500);   // follows sign-in / sign-out / silent restore without hooking each of them
@@ -8099,10 +8110,16 @@ function renderStatusBar(){
     try{ name = (msalAccount && (msalAccount.name || msalAccount.username)) || ''; }catch(e){}
     if(/,/.test(name)){ const [last, first] = name.split(',').map(x => x.trim()); name = `${first} ${last}`.trim(); }
     document.getElementById('ucName').textContent = name;
-    document.getElementById('ucRole').textContent = T.costs;
+    document.getElementById('ucRole').textContent = COST_PERMISSIONS ? T.costs : '';
     const ok = typeof costsAllowed === 'function' ? costsAllowed() : true;
-    chip.classList.toggle('costs', ok);
-    chip.title = name + (ok ? ' — ' + T.costs : '');
+    chip.classList.toggle('costs', COST_PERMISSIONS && ok);
+    chip.classList.toggle('noperm', !COST_PERMISSIONS);
+    chip.title = name + (COST_PERMISSIONS && ok ? ' — ' + T.costs : '');
+    const coin = chip.querySelector('.uc-coin');   // beta_6.39: a person icon instead of the coin while permissions are off
+    if(coin && !COST_PERMISSIONS && coin.dataset.icon !== 'user'){
+      coin.dataset.icon = 'user';
+      coin.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"></path></svg>';
+    }
   }
 }
 let _stRaf = 0;
@@ -12568,7 +12585,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.38';
+const CURRENT_VERSION = 'beta_6.39';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12598,6 +12615,9 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.39', date:'2026-10-14', notes:[
+    'Permessi su costi e margini disattivati: tutti vedono costi, margini e le versioni «with margin» di offerta PDF / Excel, connessi o ospiti, con o senza il ruolo Azure Costs.Read. Nel riquadro utente non compaiono più la scritta «Costs & margins» e la moneta dorata (al suo posto un\'icona utente). Il controllo del ruolo resta nel codice, pronto per essere riattivato più avanti (pannello Admin: «Costi e margini · disattivato»)',
+  ]},
   {version:'beta_6.38', date:'2026-10-14', notes:[
     'Nuova barra dei comandi in stile Microsoft Office (ribbon) al posto del menu ☰ e dei pulsanti Projects / New Offer / Reset Offer: schede Home (Progetto: Projects, New offer, Create in SharePoint, Clone, Reset offer · Revisione: Save, Print report, Close offer, New revision, History, Load · Configurazione: Add position, Generate offer), Documents (anteprime, Offer e BOM in PDF / Excel / Word, Technical summary, nota tecnica), Price list (importa listino, aggiorna da SharePoint, impostazioni offerta) e Settings (impostazioni offerta, reset pagina, account, Admin). I pulsanti non disponibili sono disattivati; etichette in 5 lingue',
     'Il ribbon si comprime alla sola riga delle schede (freccia a destra del ribbon, doppio clic su una scheda o Ctrl+F1): compresso, un clic su una scheda lo apre sopra la pagina finché non si sceglie un comando o si clicca altrove; la puntina lo fissa di nuovo aperto. La scelta resta memorizzata',

@@ -880,6 +880,58 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
   padding:14px 20px; border-top:1px solid var(--panel-border);
   display:flex; justify-content:flex-end; gap:10px;
 }
+/* ---- beta_6.41: price list window (grid of the codes, prices and costs by hand, Excel / JSON in and out) ---- */
+.pl-modal{max-width:1240px; height:88vh;}
+.pl-modal .acc-modal-header h3{font-size:16px;}
+.pl-toolbar{display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; padding:12px 20px; border-bottom:1px solid var(--panel-border);}
+.pl-toolbar input[type=search]{flex:1 1 220px; min-width:170px; max-width:320px; background:var(--field-bg); border:1px solid var(--field-border); border-radius:8px; padding:8px 11px; font:300 13px 'Work Sans',sans-serif; color:var(--text);}
+.pl-toolbar input[type=search]:focus{outline:none; border-color:var(--accent); background:#fff;}
+.pl-chips{display:flex; gap:6px; flex-wrap:wrap;}
+.pl-chip{border:1px solid var(--panel-border); background:#fff; color:var(--text); border-radius:16px; padding:5px 11px; font:300 12px 'Work Sans',sans-serif; cursor:pointer; white-space:nowrap;}
+.pl-chip b{font-weight:600; color:var(--dim); margin-left:5px;}
+.pl-chip:hover{border-color:var(--accent);}
+.pl-chip.on{background:var(--accent-soft); border-color:#B8CDEB; color:var(--accent-dark); font-weight:500;}
+.pl-chip.on b{color:var(--accent-dark);}
+.pl-missing{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--dim); cursor:pointer; white-space:nowrap;}
+.pl-modal .acc-modal-header > div:first-child{flex:1 1 auto; min-width:0;}
+.pl-io{display:flex; gap:6px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
+.pl-io button.act{padding:7px 12px; font-size:12px; display:inline-flex; gap:6px; align-items:center; color:var(--accent-dark); border-color:#C9D7EE;}
+.pl-io button.act:hover{color:var(--accent-dark); border-color:var(--accent); background:#F3F7FD;}
+.pl-hint{font-size:11.5px; font-weight:300; color:var(--dim); padding:8px 20px 0;}
+.pl-body{padding:0 20px 8px;}
+.pl-table{width:100%; border-collapse:collapse; table-layout:fixed;}
+.pl-table thead th{position:sticky; top:0; z-index:1; background:#fff; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--dim); text-align:left; padding:12px 8px 8px; border-bottom:1px solid var(--panel-border);}
+.pl-table th.num, .pl-table td.num{text-align:right;}
+.pl-table td{padding:6px 8px; border-bottom:1px solid #EEF0F3; font-size:12.5px; vertical-align:middle;}
+.pl-table tbody tr:hover td{background:#FAFBFD;}
+.pl-type{display:inline-block; font-size:10px; font-weight:600; letter-spacing:.04em; padding:2px 7px; border-radius:10px; background:#EEF1F6; color:#4B5260;}
+.pl-type.t-UPS{background:#E3ECFA; color:var(--accent-dark);}
+.pl-type.t-PM{background:#E3F4F1; color:#0B7A70;}
+.pl-type.t-AUX{background:#F1ECF8; color:#6A4C9C;}
+.pl-type.t-BAT_P{background:#FFF2CC; color:#8A5A00;}
+.pl-model b{font-weight:500; display:block; white-space:pre-line;}
+.pl-model small{color:var(--dim); font-size:11px;}
+.pl-code{font-family:monospace; font-size:11.5px; color:#3A4150; word-break:break-all;}
+.pl-desc{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:#4B5260; font-weight:300; line-height:1.35;}
+.pl-in{width:100%; box-sizing:border-box; text-align:right; background:var(--field-bg); border:1px solid var(--field-border); border-radius:6px; padding:6px 8px; font:400 12.5px 'Work Sans',sans-serif; color:var(--text); font-variant-numeric:tabular-nums;}
+.pl-in:focus{outline:none; border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(68,114,196,.15);}
+.pl-in.chg{background:#FFF8E1; border-color:#F0D58A;}
+.pl-in.bad{border-color:var(--red); background:#FDECEF;}
+.pl-in::placeholder{color:#B5BBC6;}
+.pl-mg{font-variant-numeric:tabular-nums; color:var(--dim); white-space:nowrap;}
+.pl-mg.neg{color:var(--red);}
+.pl-table tr.pl-none td{padding:30px 8px; text-align:center; color:var(--dim); font-weight:300;}
+.pl-drop{display:inline-flex; align-items:center; gap:7px; border:1.5px dashed #B8CDEB; border-radius:8px; padding:6px 12px; font-size:12px; color:var(--accent-dark); background:#F7FAFE; cursor:pointer; white-space:nowrap; margin-left:auto;}
+.pl-drop:hover{border-color:var(--accent); background:#EEF4FC;}
+.pl-modal{position:relative;}
+.pl-dropmask{position:absolute; inset:0; z-index:6; display:none; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:rgba(238,244,252,.94); border:3px dashed var(--accent); border-radius:inherit; color:var(--accent-dark); font-size:20px; font-weight:600; text-align:center; pointer-events:none; padding:0 40px;}
+.pl-dropmask small{font-size:13px; font-weight:400; color:#4B5260; max-width:560px; line-height:1.45;}
+.pl-modal.pl-dragging .pl-dropmask{display:flex;}
+.pl-foot{align-items:center;}
+.pl-foot-info{font-size:12px; color:var(--dim); margin-right:auto;}
+.pl-foot-info b{color:#8A5A00; font-weight:600;}
+@media (max-width: 760px){ .pl-body{overflow-x:auto;} .pl-table{min-width:780px;} .pl-toolbar input[type=search]{max-width:none;}
+  .pl-modal .acc-modal-header{flex-wrap:wrap;} .pl-io{order:3; flex-basis:100%; justify-content:flex-start;} .pl-io button.act{padding:6px 10px;} .pl-drop{margin-left:0;} }
 /* Multiline descriptions entered manually in the free-form dialogs. */
 .bom .desc-text{white-space:pre-wrap; display:block; line-height:1.35; min-height:1.35em;}
 .multiline-desc-editor{
@@ -1067,7 +1119,7 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
       <div class="page-header u10">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.39</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.41</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -1304,6 +1356,41 @@ tr.bom-acc-row td:nth-child(1){color:var(--dim); font-size:11.5px;}
 
 <!-- IN-APP DIALOG — replaces the browser's own confirm()/alert() where the answer must not freeze
      the page: labelled buttons (e.g. Yes / No) instead of OK / Cancel, and nothing waits on it -->
+<!-- beta_6.41: PRICE LIST WINDOW -->
+<div class="acc-modal-overlay" id="plGridOverlay" style="display:none">
+  <div class="acc-modal acc-modal-wide pl-modal" role="dialog" aria-modal="true" aria-labelledby="plGridTitle">
+    <div class="acc-modal-header">
+      <div><h3 id="plGridTitle">Price list</h3><p class="acc-modal-sub" id="plGridSub"></p></div>
+      <div class="pl-io">
+        <button type="button" class="btn-ghost act" id="plImport"></button>
+        <button type="button" class="btn-ghost act" id="plExportXlsx"></button>
+        <button type="button" class="btn-ghost act" id="plExportJson"></button>
+      </div>
+      <button type="button" class="acc-modal-close" id="plGridClose" aria-label="Close">×</button>
+    </div>
+    <div class="pl-toolbar">
+      <input type="search" id="plSearch" autocomplete="off">
+      <div class="pl-chips" id="plChips"></div>
+      <label class="pl-missing"><input type="checkbox" id="plOnlyMissing"><span id="plOnlyMissingLbl"></span></label>
+      <label class="pl-drop" id="plDrop"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span id="plDropLbl"></span>
+        <input type="file" id="plFileInput" accept=".xlsx,.xls,.xlsm,.csv,.json" style="display:none"></label>
+    </div>
+    <div class="pl-hint" id="plHint"></div>
+    <div class="acc-modal-body pl-body">
+      <table class="pl-table">
+        <thead><tr><th id="plThType" style="width:78px"></th><th id="plThModel" style="width:180px"></th><th id="plThCode" style="width:150px"></th><th id="plThDesc"></th><th class="num" id="plThPrice" style="width:118px"></th><th class="num cc" id="plThCost" style="width:118px"></th><th class="num cc" id="plThMargin" style="width:86px"></th></tr></thead>
+        <tbody id="plBody"></tbody>
+      </table>
+    </div>
+    <div class="acc-modal-footer pl-foot">
+      <span class="pl-foot-info" id="plFootInfo"></span>
+      <button type="button" class="btn-ghost act" id="plCancel"></button>
+      <button type="button" class="act btn-primary" id="plApply"></button>
+    </div>
+    <div class="pl-dropmask" id="plDropMask" aria-hidden="true"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span id="plDropMaskLbl"></span><small id="plDropMaskSub"></small></div>
+  </div>
+</div>
+
 <div class="settings-overlay" id="appDialogOverlay" style="display:none">
   <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="appDialogTitle" style="max-width:520px;">
     <div class="acc-modal-header">
@@ -1565,6 +1652,7 @@ let bomRowCounter = 0;
 let ARCH_ACTIVE = ARCH;          // {pmax, model, connection, configuration} — falls back to the built-in reference table
 let MODULE_KW_ACTIVE = MODULE_KW;
 let CATALOG_LOADED = false;
+let CATALOG_ROWS = [], CATALOG_NAME = '';   // beta_6.41: the rows of the list in use, for the price list window
 let CATALOG_LOOKUP = {};         // "model|connection|configuration|ventFlag" -> {code, description, price, cost, model}
 let CATALOG_PM = [];             // power-module rows (TYPE = PM)
 let CATALOG_AUX = [];            // accessory rows (TYPE = AUX)
@@ -3823,13 +3911,9 @@ function resetAll(){
 
 // ---- Import Price List (.xlsx) — sources Model / Connection / Configuration / pricing / accessories ----
 const priceListInput = document.getElementById('priceListInput');
-document.getElementById('btnImportPriceList').addEventListener('click', ()=>{
-  if(typeof XLSX === 'undefined'){
-    alert('The Excel-reading library failed to load (no internet access?). Check your connection and reload the page.');
-    return;
-  }
-  priceListInput.click();
-});
+// beta_6.41: the button opens the price list window (grid, prices by hand, Excel / JSON in and out);
+// the hidden file input below still imports an Excel price list directly.
+document.getElementById('btnImportPriceList').addEventListener('click', ()=>{ PRICE_GRID.open(); });
 priceListInput.addEventListener('change', (e)=>{
   const file = e.target.files[0];
   if(!file) return;
@@ -4010,7 +4094,7 @@ function processCatalog(rows, filename){
 
   if(!upsRows.length){
     alert('No rows with TYPE = "UPS" were found. Check that the columns are named FAM, TYPE, Model, Code, Description, Size, Weight, Price, Cost.');
-    return;
+    return false;
   }
 
   const newArch = [];
@@ -4038,7 +4122,7 @@ function processCatalog(rows, filename){
 
   if(!newArch.length){
     alert('UPS rows were found, but none matched the expected "MP2 ###" / "M2S ###" / "M2X ### - ##" naming pattern in the Model column.');
-    return;
+    return false;
   }
 
   // A model family not yet covered by this price list (e.g. one added to the tool more recently
@@ -4083,6 +4167,10 @@ function processCatalog(rows, filename){
   statusEl.className = 'catalog-status loaded';
   statusEl.innerHTML = `Price list: <b>${escapeHtml(filename)}</b> — ${newArch.length} models · ${CATALOG_PM.length} module row(s) · ${CATALOG_AUX.length} accessories · ${moduleKw}&nbsp;kW module.`;
   CATALOG_IS_BUILTIN = false;
+  CATALOG_ROWS = rows.map(r => ({FAM: r.FAM == null ? '' : r.FAM, TYPE: r.TYPE == null ? '' : r.TYPE, Model: r.Model == null ? '' : r.Model, Code: r.Code == null ? '' : r.Code,
+    Description: r.Description == null ? '' : r.Description, Price: r.Price == null ? '' : r.Price, Cost: r.Cost == null ? '' : r.Cost}));
+  CATALOG_NAME = filename;
+  return true;
 }
 
 function accessoryFamMatches(fam, baseModel){
@@ -4106,6 +4194,514 @@ function accessoryFamMatches(fam, baseModel){
 function isAutoHandledTopVent(a){
   return /top\s*vent/i.test(a.description + ' ' + a.model) && (a.fam === 'MP2 500/600' || a.fam === 'M2S');
 }
+
+// ---- beta_6.41: price list window. "Import price list" opens a grid with every code of the current list
+// (built-in or imported): prices and costs are typed in by hand (or pasted from Excel), the grid can be
+// exported / imported as Excel or JSON, and "Load into configurator" applies it exactly like an imported
+// Excel price list (catalog, offer lines, kept for this tab). Codes and descriptions are read only. ----
+const PL_TXT = {
+  en: {drop: 'Drag an Excel / JSON file here', dropMask: 'Drop the file to import it', dropSub: 'Excel (.xlsx, .xls, .csv) or JSON. A full price list replaces the grid, a file with only Code and Price / Cost updates the codes it finds.', wrongType: 'Only Excel (.xlsx, .xls, .xlsm, .csv) or JSON files can be imported.', title: 'Price list', sub: (name, n, miss) => `${name} · ${n} codes · ${miss} without price`, builtin: 'Built-in list', manual: 'Manual price list', edited: 'edited',
+       search: 'Search code, model or description', all: 'All', UPS: 'UPS', PM: 'Power modules', AUX: 'Accessories', BAT_P: 'Battery',
+       missing: 'Only without price', imp: 'Import Excel / JSON', expX: 'Export Excel', expJ: 'Export JSON',
+       type: 'Type', model: 'Model', code: 'Code', desc: 'Description', price: 'Price €', cost: 'Cost €', margin: 'Margin %',
+       none: 'No code matches the filter.', changed: n => `${n} code${n === 1 ? '' : 's'} changed`, fromFile: (n, f) => `${n} rows from ${f}`, unchanged: 'No changes yet',
+       apply: 'Load into configurator', cancel: 'Cancel',
+       hint: 'Type prices and costs in EUR, or paste a column copied from Excel. Enter moves to the row below. Rows with the same code change together.',
+       read: (n, f) => `${n} rows read from ${f} — check them, then click "Load into configurator".`,
+       merged: (m, u) => `${m} code${m === 1 ? '' : 's'} updated from the file${u ? ` · ${u} code${u === 1 ? '' : 's'} not in the list ignored` : ''} — click "Load into configurator" to use them.`,
+       noCols: 'This file has no usable columns: it needs at least Code and Price (or Cost).', bad: 'Could not read this file.',
+       noLib: 'The Excel library did not load (no internet access?). Use JSON, or reload the page.',
+       discardT: 'Price list', discardM: 'The changes have not been loaded into the configurator.', discardQ: 'Close and discard them?', keep: 'Keep editing', discard: 'Discard changes',
+       fix: 'Some values are not numbers (in red): correct them first.', invalid: 'Not a number',
+       loaded: (u, miss, ro) => 'Price list loaded into the configurator' + (ro ? ' — the revision is closed: offer lines not changed' : u ? ` — prices and costs updated on ${u} offer line${u === 1 ? '' : 's'}` : '') + (miss && !ro ? ` (${miss} line${miss === 1 ? '' : 's'} with a code not in the list kept as they were)` : '') + '.'},
+  it: {drop: 'Trascina qui un file Excel / JSON', dropMask: 'Rilascia il file per importarlo', dropSub: 'Excel (.xlsx, .xls, .csv) o JSON. Un listino completo sostituisce la griglia, un file con solo Codice e Prezzo / Costo aggiorna i codici che trova.', wrongType: 'Si possono importare solo file Excel (.xlsx, .xls, .xlsm, .csv) o JSON.', title: 'Listino prezzi', sub: (name, n, miss) => `${name} · ${n} codici · ${miss} senza prezzo`, builtin: 'Listino integrato', manual: 'Listino manuale', edited: 'modificato',
+       search: 'Cerca codice, modello o descrizione', all: 'Tutti', UPS: 'UPS', PM: 'Moduli di potenza', AUX: 'Accessori', BAT_P: 'Batterie',
+       missing: 'Solo senza prezzo', imp: 'Importa Excel / JSON', expX: 'Esporta Excel', expJ: 'Esporta JSON',
+       type: 'Tipo', model: 'Modello', code: 'Codice', desc: 'Descrizione', price: 'Prezzo €', cost: 'Costo €', margin: 'Margine %',
+       none: 'Nessun codice corrisponde al filtro.', changed: n => `${n} codic${n === 1 ? 'e modificato' : 'i modificati'}`, fromFile: (n, f) => `${n} righe da ${f}`, unchanged: 'Nessuna modifica',
+       apply: 'Carica nel configuratore', cancel: 'Annulla',
+       hint: 'Scrivi prezzi e costi in EUR, oppure incolla una colonna copiata da Excel. Invio passa alla riga sotto. Le righe con lo stesso codice cambiano insieme.',
+       read: (n, f) => `${n} righe lette da ${f} — controllale, poi clicca «Carica nel configuratore».`,
+       merged: (m, u) => `${m} codic${m === 1 ? 'e aggiornato' : 'i aggiornati'} dal file${u ? ` · ${u} codic${u === 1 ? 'e non in listino ignorato' : 'i non in listino ignorati'}` : ''} — clicca «Carica nel configuratore» per usarli.`,
+       noCols: 'Il file non ha colonne utilizzabili: servono almeno Codice e Prezzo (o Costo).', bad: 'Impossibile leggere questo file.',
+       noLib: 'La libreria Excel non si è caricata (manca la connessione?). Usa il JSON oppure ricarica la pagina.',
+       discardT: 'Listino prezzi', discardM: 'Le modifiche non sono state caricate nel configuratore.', discardQ: 'Chiudere e scartarle?', keep: 'Continua a modificare', discard: 'Scarta le modifiche',
+       fix: 'Alcuni valori non sono numeri (in rosso): correggili prima.', invalid: 'Non è un numero',
+       loaded: (u, miss, ro) => 'Listino caricato nel configuratore' + (ro ? ' — revisione chiusa: righe d\'offerta non modificate' : u ? ` — prezzi e costi aggiornati su ${u} rig${u === 1 ? 'a' : 'he'} d'offerta` : '') + (miss && !ro ? ` (${miss} con codice non in listino lasciat${miss === 1 ? 'a' : 'e'} com'erano)` : '') + '.'},
+  de: {drop: 'Excel- / JSON-Datei hierher ziehen', dropMask: 'Datei loslassen, um sie zu importieren', dropSub: 'Excel (.xlsx, .xls, .csv) oder JSON. Eine vollständige Preisliste ersetzt das Raster, eine Datei nur mit Code und Preis / Kosten aktualisiert die gefundenen Codes.', wrongType: 'Es können nur Excel- (.xlsx, .xls, .xlsm, .csv) oder JSON-Dateien importiert werden.', title: 'Preisliste', sub: (name, n, miss) => `${name} · ${n} Codes · ${miss} ohne Preis`, builtin: 'Integrierte Liste', manual: 'Manuelle Preisliste', edited: 'bearbeitet',
+       search: 'Code, Modell oder Beschreibung suchen', all: 'Alle', UPS: 'USV', PM: 'Leistungsmodule', AUX: 'Zubehör', BAT_P: 'Batterie',
+       missing: 'Nur ohne Preis', imp: 'Excel / JSON importieren', expX: 'Excel exportieren', expJ: 'JSON exportieren',
+       type: 'Typ', model: 'Modell', code: 'Code', desc: 'Beschreibung', price: 'Preis €', cost: 'Kosten €', margin: 'Marge %',
+       none: 'Kein Code entspricht dem Filter.', changed: n => `${n} Code${n === 1 ? '' : 's'} geändert`, fromFile: (n, f) => `${n} Zeilen aus ${f}`, unchanged: 'Noch keine Änderungen',
+       apply: 'In den Konfigurator laden', cancel: 'Abbrechen',
+       hint: 'Preise und Kosten in EUR eingeben oder eine aus Excel kopierte Spalte einfügen. Enter springt in die nächste Zeile. Zeilen mit demselben Code ändern sich gemeinsam.',
+       read: (n, f) => `${n} Zeilen aus ${f} gelesen — prüfen und dann „In den Konfigurator laden" klicken.`,
+       merged: (m, u) => `${m} Code${m === 1 ? '' : 's'} aus der Datei aktualisiert${u ? ` · ${u} Code${u === 1 ? '' : 's'} nicht in der Liste ignoriert` : ''} — „In den Konfigurator laden" klicken, um sie zu verwenden.`,
+       noCols: 'Die Datei hat keine verwendbaren Spalten: mindestens Code und Preis (oder Kosten) sind nötig.', bad: 'Die Datei konnte nicht gelesen werden.',
+       noLib: 'Die Excel-Bibliothek wurde nicht geladen (keine Internetverbindung?). JSON verwenden oder die Seite neu laden.',
+       discardT: 'Preisliste', discardM: 'Die Änderungen wurden nicht in den Konfigurator geladen.', discardQ: 'Schließen und verwerfen?', keep: 'Weiter bearbeiten', discard: 'Änderungen verwerfen',
+       fix: 'Einige Werte sind keine Zahlen (rot): bitte zuerst korrigieren.', invalid: 'Keine Zahl',
+       loaded: (u, miss, ro) => 'Preisliste in den Konfigurator geladen' + (ro ? ' — Revision geschlossen: Angebotszeilen unverändert' : u ? ` — Preise und Kosten in ${u} Angebotszeile${u === 1 ? '' : 'n'} aktualisiert` : '') + (miss && !ro ? ` (${miss} Zeile${miss === 1 ? '' : 'n'} mit Code nicht in der Liste unverändert)` : '') + '.'},
+  fr: {drop: 'Glissez ici un fichier Excel / JSON', dropMask: 'Déposez le fichier pour l\'importer', dropSub: 'Excel (.xlsx, .xls, .csv) ou JSON. Un tarif complet remplace la grille, un fichier avec seulement Code et Prix / Coût met à jour les codes trouvés.', wrongType: 'Seuls les fichiers Excel (.xlsx, .xls, .xlsm, .csv) ou JSON peuvent être importés.', title: 'Tarif', sub: (name, n, miss) => `${name} · ${n} codes · ${miss} sans prix`, builtin: 'Liste intégrée', manual: 'Tarif manuel', edited: 'modifié',
+       search: 'Rechercher code, modèle ou description', all: 'Tous', UPS: 'ASI', PM: 'Modules de puissance', AUX: 'Accessoires', BAT_P: 'Batterie',
+       missing: 'Seulement sans prix', imp: 'Importer Excel / JSON', expX: 'Exporter Excel', expJ: 'Exporter JSON',
+       type: 'Type', model: 'Modèle', code: 'Code', desc: 'Description', price: 'Prix €', cost: 'Coût €', margin: 'Marge %',
+       none: 'Aucun code ne correspond au filtre.', changed: n => `${n} code${n === 1 ? ' modifié' : 's modifiés'}`, fromFile: (n, f) => `${n} lignes de ${f}`, unchanged: 'Aucune modification',
+       apply: 'Charger dans le configurateur', cancel: 'Annuler',
+       hint: 'Saisissez prix et coûts en EUR, ou collez une colonne copiée depuis Excel. Entrée passe à la ligne suivante. Les lignes avec le même code changent ensemble.',
+       read: (n, f) => `${n} lignes lues dans ${f} — vérifiez-les, puis cliquez sur « Charger dans le configurateur ».`,
+       merged: (m, u) => `${m} code${m === 1 ? ' mis' : 's mis'} à jour depuis le fichier${u ? ` · ${u} code${u === 1 ? ' absent de la liste ignoré' : 's absents de la liste ignorés'}` : ''} — cliquez sur « Charger dans le configurateur » pour les utiliser.`,
+       noCols: 'Ce fichier n\'a pas de colonnes utilisables : il faut au moins Code et Prix (ou Coût).', bad: 'Impossible de lire ce fichier.',
+       noLib: 'La bibliothèque Excel ne s\'est pas chargée (pas d\'accès Internet ?). Utilisez le JSON ou rechargez la page.',
+       discardT: 'Tarif', discardM: 'Les modifications n\'ont pas été chargées dans le configurateur.', discardQ: 'Fermer et les abandonner ?', keep: 'Continuer', discard: 'Abandonner les modifications',
+       fix: 'Certaines valeurs ne sont pas des nombres (en rouge) : corrigez-les d\'abord.', invalid: 'Pas un nombre',
+       loaded: (u, miss, ro) => 'Tarif chargé dans le configurateur' + (ro ? ' — révision fermée : lignes de l\'offre inchangées' : u ? ` — prix et coûts mis à jour sur ${u} ligne${u === 1 ? '' : 's'} de l'offre` : '') + (miss && !ro ? ` (${miss} ligne${miss === 1 ? '' : 's'} avec un code absent de la liste inchangée${miss === 1 ? '' : 's'})` : '') + '.'},
+  es: {drop: 'Arrastre aquí un archivo Excel / JSON', dropMask: 'Suelte el archivo para importarlo', dropSub: 'Excel (.xlsx, .xls, .csv) o JSON. Una lista completa sustituye la cuadrícula, un archivo solo con Código y Precio / Coste actualiza los códigos que encuentra.', wrongType: 'Solo se pueden importar archivos Excel (.xlsx, .xls, .xlsm, .csv) o JSON.', title: 'Lista de precios', sub: (name, n, miss) => `${name} · ${n} códigos · ${miss} sin precio`, builtin: 'Lista integrada', manual: 'Lista de precios manual', edited: 'modificada',
+       search: 'Buscar código, modelo o descripción', all: 'Todos', UPS: 'SAI', PM: 'Módulos de potencia', AUX: 'Accesorios', BAT_P: 'Batería',
+       missing: 'Solo sin precio', imp: 'Importar Excel / JSON', expX: 'Exportar Excel', expJ: 'Exportar JSON',
+       type: 'Tipo', model: 'Modelo', code: 'Código', desc: 'Descripción', price: 'Precio €', cost: 'Coste €', margin: 'Margen %',
+       none: 'Ningún código coincide con el filtro.', changed: n => `${n} código${n === 1 ? ' modificado' : 's modificados'}`, fromFile: (n, f) => `${n} filas de ${f}`, unchanged: 'Sin cambios',
+       apply: 'Cargar en el configurador', cancel: 'Cancelar',
+       hint: 'Escriba precios y costes en EUR, o pegue una columna copiada de Excel. Intro baja a la fila siguiente. Las filas con el mismo código cambian juntas.',
+       read: (n, f) => `${n} filas leídas de ${f} — revíselas y haga clic en «Cargar en el configurador».`,
+       merged: (m, u) => `${m} código${m === 1 ? ' actualizado' : 's actualizados'} desde el archivo${u ? ` · ${u} código${u === 1 ? ' fuera de la lista ignorado' : 's fuera de la lista ignorados'}` : ''} — haga clic en «Cargar en el configurador» para usarlos.`,
+       noCols: 'El archivo no tiene columnas utilizables: necesita al menos Código y Precio (o Coste).', bad: 'No se pudo leer este archivo.',
+       noLib: 'La biblioteca de Excel no se cargó (¿sin conexión?). Use JSON o recargue la página.',
+       discardT: 'Lista de precios', discardM: 'Los cambios no se han cargado en el configurador.', discardQ: '¿Cerrar y descartarlos?', keep: 'Seguir editando', discard: 'Descartar cambios',
+       fix: 'Algunos valores no son números (en rojo): corríjalos primero.', invalid: 'No es un número',
+       loaded: (u, miss, ro) => 'Lista de precios cargada en el configurador' + (ro ? ' — revisión cerrada: líneas de la oferta sin cambios' : u ? ` — precios y costes actualizados en ${u} línea${u === 1 ? '' : 's'} de la oferta` : '') + (miss && !ro ? ` (${miss} línea${miss === 1 ? '' : 's'} con código fuera de la lista sin cambios)` : '') + '.'}
+};
+const PRICE_GRID = (() => {
+  const $ = id => document.getElementById(id);
+  const ov = $('plGridOverlay'), body = $('plBody');
+  const T = () => PL_TXT[LANG] || PL_TXT.en;
+  const TYPES = ['UPS', 'PM', 'AUX', 'BAT_P'];
+  const KEYS = ['Price', 'Cost'];
+  const realCode = c => /^[A-Z0-9._-]+$/.test(c);
+  const normCode = c => String(c == null ? '' : c).replace(/\s+/g, '').toUpperCase();
+  const str = v => String(v == null ? '' : v).trim();
+  let G = null;                                   // {rows, base, replaced, mergedFrom}
+  let F = {q: '', type: '', missing: false};
+
+  // "18.500,00" / "18,500.00" / "18500,5" / "€ 1 250" → number; '' = no value; NaN = not a number
+  function parseNum(v){
+    if(v === null || v === undefined) return '';
+    if(typeof v === 'number') return Number.isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : NaN;
+    let s = String(v).replace(/[€\s  ']/g, '').replace(/^EUR|EUR$/i, '');
+    if(s === '' || s === '-') return '';
+    const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+    if(lc >= 0 && ld >= 0){
+      if(lc > ld) s = s.replace(/\./g, '').replace(',', '.');
+      else s = s.replace(/,/g, '');
+    } else if(lc >= 0){
+      s = (s.match(/,/g).length > 1) ? s.replace(/,/g, '') : s.replace(',', '.');
+    } else if((s.match(/\./g) || []).length > 1){
+      s = s.replace(/\./g, '');
+    }
+    if(!/^\d+(\.\d+)?$/.test(s)) return NaN;
+    return Math.round(Number(s) * 100) / 100;
+  }
+  const toVal = v => { const n = parseNum(v); return Number.isFinite(n) && n > 0 ? n : ''; };
+  const fmtIn = v => v === '' ? '' : Number(v).toFixed(2);
+  const mkRow = r => {
+    const p = toVal(r.Price), c = toVal(r.Cost);
+    return {FAM: str(r.FAM), TYPE: str(r.TYPE).toUpperCase(), Model: str(r.Model), Code: str(r.Code), Description: str(r.Description), Price: p, Cost: c, p0: p, c0: c};
+  };
+  const isChanged = r => r.Price !== r.p0 || r.Cost !== r.c0;
+  const changedCount = () => G.rows.filter(isChanged).length;
+  const isDirty = () => !!G && (!!G.replaced || !!G.mergedFrom || changedCount() > 0);
+  const missingCount = () => G.rows.filter(r => r.Price === '').length;
+  const showCosts = () => typeof costsAllowed !== 'function' || costsAllowed();
+  function currentName(){
+    const t = T();
+    if(G.replaced) return changedCount() ? `${G.replaced} (${t.edited})` : G.replaced;
+    if(G.base){
+      if(!changedCount()) return G.base;
+      return G.base.endsWith(`(${t.edited})`) ? G.base : `${G.base} (${t.edited})`;
+    }
+    if(G.mergedFrom) return changedCount() ? G.mergedFrom : t.builtin;
+    return changedCount() ? t.manual : t.builtin;
+  }
+  function margin(r){
+    if(!(r.Price > 0) || !(r.Cost > 0)) return {txt: '—', neg: false};
+    const m = (r.Price - r.Cost) / r.Price * 100;
+    return {txt: m.toFixed(1) + ' %', neg: m < 0};
+  }
+
+  function labels(){
+    const t = T();
+    $('plGridTitle').textContent = t.title;
+    $('plSearch').placeholder = t.search;
+    $('plOnlyMissingLbl').textContent = t.missing;
+    $('plImport').textContent = t.imp; $('plExportXlsx').textContent = t.expX; $('plExportJson').textContent = t.expJ;
+    $('plDropLbl').textContent = t.drop; $('plDropMaskLbl').textContent = t.dropMask; $('plDropMaskSub').textContent = t.dropSub;
+    $('plHint').textContent = t.hint;
+    [['plThType', 'type'], ['plThModel', 'model'], ['plThCode', 'code'], ['plThDesc', 'desc'], ['plThPrice', 'price'], ['plThCost', 'cost'], ['plThMargin', 'margin']]
+      .forEach(([id, k]) => { $(id).textContent = t[k]; });
+    $('plCancel').textContent = t.cancel; $('plApply').textContent = t.apply;
+    $('plGridClose').setAttribute('aria-label', t.cancel);
+  }
+  function chips(){
+    const t = T();
+    const n = {'': G.rows.length};
+    TYPES.forEach(k => { n[k] = G.rows.filter(r => r.TYPE === k).length; });
+    $('plChips').innerHTML = ['', ...TYPES].filter(k => k === '' || n[k]).map(k =>
+      `<button type="button" class="pl-chip${F.type === k ? ' on' : ''}" data-type="${k}">${escapeHtml(k ? t[k] : t.all)}<b>${n[k]}</b></button>`).join('');
+  }
+  function visible(){
+    const q = F.q.trim().toLowerCase();
+    const out = [];
+    G.rows.forEach((r, i) => {
+      if(F.type && r.TYPE !== F.type) return;
+      if(F.missing && r.Price !== '') return;
+      if(q && !`${r.Code} ${r.Model} ${r.Description} ${r.FAM}`.toLowerCase().includes(q)) return;
+      out.push(i);
+    });
+    return out;
+  }
+  function rowHtml(i){
+    const r = G.rows[i], m = margin(r);
+    const inp = k => `<input class="pl-in${(k === 'Price' ? r.Price !== r.p0 : r.Cost !== r.c0) ? ' chg' : ''}" data-k="${k}" inputmode="decimal" placeholder="—" value="${fmtIn(r[k])}" aria-label="${escapeHtml(T()[k === 'Price' ? 'price' : 'cost'] + ' ' + r.Code)}">`;
+    return `<tr data-i="${i}"><td><span class="pl-type t-${escapeHtml(r.TYPE)}">${escapeHtml(r.TYPE)}</span></td>`
+      + `<td class="pl-model"><b>${escapeHtml(r.Model)}</b><small>${escapeHtml(r.FAM)}</small></td>`
+      + `<td class="pl-code">${escapeHtml(r.Code)}</td>`
+      + `<td><div class="pl-desc" title="${escapeHtml(r.Description)}">${escapeHtml(r.Description)}</div></td>`
+      + `<td class="num">${inp('Price')}</td><td class="num cc">${inp('Cost')}</td>`
+      + `<td class="num cc"><span class="pl-mg${m.neg ? ' neg' : ''}">${m.txt}</span></td></tr>`;
+  }
+  function render(){
+    const vis = visible();
+    body.innerHTML = vis.length ? vis.map(rowHtml).join('') : `<tr class="pl-none"><td colspan="7">${escapeHtml(T().none)}</td></tr>`;
+    chips(); info();
+  }
+  function info(){
+    const t = T();
+    $('plGridSub').textContent = t.sub(currentName(), G.rows.length, missingCount());
+    const ch = changedCount();
+    const parts = [];
+    if(G.replaced) parts.push(escapeHtml(t.fromFile(G.rows.length, G.replaced)));
+    if(ch) parts.push(`<b>${escapeHtml(t.changed(ch))}</b>`);
+    $('plFootInfo').innerHTML = parts.length ? parts.join(' · ') : escapeHtml(t.unchanged);
+    $('plApply').disabled = !isDirty();
+    $('plApply').style.opacity = isDirty() ? '' : '.55';
+  }
+  // refresh the cells of one row in place (keeps the focus where it is)
+  function refreshRow(i){
+    const tr = body.querySelector(`tr[data-i="${i}"]`); if(!tr) return;
+    const r = G.rows[i], m = margin(r);
+    KEYS.forEach(k => {
+      const el = tr.querySelector(`.pl-in[data-k="${k}"]`); if(!el) return;
+      if(document.activeElement !== el) el.value = fmtIn(r[k]);
+      el.classList.toggle('chg', k === 'Price' ? r.Price !== r.p0 : r.Cost !== r.c0);
+    });
+    const mg = tr.querySelector('.pl-mg'); mg.textContent = m.txt; mg.classList.toggle('neg', m.neg);
+  }
+  // one article, one price: rows with the same real code change together
+  function setVal(i, k, v){
+    const code = normCode(G.rows[i].Code);
+    const idx = realCode(code) ? G.rows.map((r, j) => normCode(r.Code) === code ? j : -1).filter(j => j >= 0) : [i];
+    idx.forEach(j => { G.rows[j][k] = v; });
+    return idx;
+  }
+  function onEdit(el){
+    const tr = el.closest('tr'); const i = Number(tr.dataset.i), k = el.dataset.k;
+    const v = parseNum(el.value);
+    if(Number.isNaN(v)){ el.classList.add('bad'); el.title = T().invalid; return; }
+    el.classList.remove('bad'); el.removeAttribute('title');
+    setVal(i, k, v === 0 ? '' : v).forEach(refreshRow);
+    info();
+  }
+  function moveFocus(el, dir){
+    const k = el.dataset.k;
+    const rows = [...body.querySelectorAll('tr[data-i]')];
+    const at = rows.indexOf(el.closest('tr'));
+    const next = rows[at + dir]; if(!next) return;
+    const t = next.querySelector(`.pl-in[data-k="${k}"]`); if(t){ t.focus(); t.select(); }
+  }
+  // paste a block copied from Excel: rows go down from this cell, a second column goes into Cost
+  function onPaste(el, e){
+    const text = (e.clipboardData || window.clipboardData).getData('text') || '';
+    if(!/[\t\n\r]/.test(text.replace(/[\r\n]+$/, ''))) return;   // a single value: the normal paste
+    e.preventDefault();
+    const lines = text.replace(/\r/g, '').replace(/\n+$/, '').split('\n');
+    const rows = [...body.querySelectorAll('tr[data-i]')];
+    const start = rows.indexOf(el.closest('tr'));
+    const cols = el.dataset.k === 'Price' ? KEYS : ['Cost'];
+    const touched = new Set();
+    lines.forEach((line, j) => {
+      const tr = rows[start + j]; if(!tr) return;
+      line.split('\t').slice(0, cols.length).forEach((cell, c) => {
+        const v = parseNum(cell);
+        if(Number.isNaN(v)) return;
+        setVal(Number(tr.dataset.i), cols[c], v === 0 ? '' : v).forEach(x => touched.add(x));
+      });
+    });
+    el.blur();
+    touched.forEach(refreshRow);
+    info();
+  }
+
+  // ---- files ----
+  const KEYMAP = [
+    ['FAM', /^(fam|family|famiglia|famille|familia|familie)$/],
+    ['TYPE', /^(type|tipo|typ)$/],
+    ['Model', /^(model|modello|modell|modèle|modele|modelo)$/],
+    ['Code', /^(code|codice|cod|codigo|código|article|articolo|artikel|part ?(no|number)|item ?code|sku)$/],
+    ['Description', /^(description|descrizione|beschreibung|descripción|descripcion|desc)$/],
+    ['Price', /^(price|prezzo|preis|prix|precio|gross ?price|list ?price|unit ?price|prezzo ?(di )?listino|listino)( ?(€|eur|\(€\)|\(eur\)))?$/],
+    ['Cost', /^(cost|costo|kosten|coût|cout|coste|unit ?cost|costo ?unitario)( ?(€|eur|\(€\)|\(eur\)))?$/],
+  ];
+  function normalizeRows(raw){
+    if(!Array.isArray(raw)) return [];
+    return raw.filter(o => o && typeof o === 'object').map(o => {
+      const out = {};
+      Object.keys(o).forEach(key => {
+        const k = String(key).trim().toLowerCase().replace(/[_\s]+/g, ' ');
+        const hit = KEYMAP.find(([, rx]) => rx.test(k));
+        if(hit && !(hit[0] in out)) out[hit[0]] = o[key];
+      });
+      return out;
+    });
+  }
+  function parseCsv(text){
+    text = text.replace(/^﻿/, '');
+    const first = text.split(/\r?\n/)[0] || '';
+    const d = [';', '\t', ','].sort((a, b) => first.split(b).length - first.split(a).length)[0];
+    const rows = []; let row = [], cell = '', q = false;
+    for(let i = 0; i < text.length; i++){
+      const ch = text[i];
+      if(q){ if(ch === '"'){ if(text[i + 1] === '"'){ cell += '"'; i++; } else q = false; } else cell += ch; continue; }
+      if(ch === '"') q = true;
+      else if(ch === d){ row.push(cell); cell = ''; }
+      else if(ch === '\n'){ row.push(cell.replace(/\r$/, '')); rows.push(row); row = []; cell = ''; }
+      else cell += ch;
+    }
+    if(cell !== '' || row.length){ row.push(cell); rows.push(row); }
+    const head = (rows.shift() || []).map(h => h.trim());
+    return rows.filter(r => r.some(c => c.trim() !== '')).map(r => Object.fromEntries(head.map((h, i) => [h, r[i] == null ? '' : r[i]])));
+  }
+  // .xlsx without SheetJS (e.g. the CDN is unreachable): first sheet read straight from the zip
+  async function readXlsxZip(buf){
+    const zip = await JSZip.loadAsync(buf);
+    const P = new DOMParser();
+    const xml = async p => { const f = zip.file(p); return f ? P.parseFromString(await f.async('string'), 'application/xml') : null; };
+    const wb = await xml('xl/workbook.xml'), rels = await xml('xl/_rels/workbook.xml.rels');
+    const sheets = wb ? [...wb.getElementsByTagName('sheet')] : [];
+    if(!sheets.length) throw new Error('no sheet');
+    const pick = sheets.find(s => /price|listino|prezz/i.test(s.getAttribute('name') || '')) || sheets[0];
+    const rid = pick.getAttribute('r:id') || pick.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+    const rel = rels ? [...rels.getElementsByTagName('Relationship')].find(r => r.getAttribute('Id') === rid) : null;
+    const target = (rel ? rel.getAttribute('Target') : 'worksheets/sheet1.xml').replace(/^\/?(xl\/)?/, '');
+    const ws = await xml('xl/' + target);
+    if(!ws) throw new Error('sheet not found');
+    const ssDoc = await xml('xl/sharedStrings.xml');
+    const ss = ssDoc ? [...ssDoc.getElementsByTagName('si')].map(si => [...si.getElementsByTagName('t')].map(t => t.textContent).join('')) : [];
+    const colOf = ref => { const m = /^([A-Z]+)/.exec(ref || ''); if(!m) return -1; let n = 0; for(const ch of m[1]) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+    const grid = [];
+    [...ws.getElementsByTagName('row')].forEach(rowEl => {
+      const arr = []; let next = 0;
+      [...rowEl.getElementsByTagName('c')].forEach(c => {
+        let col = colOf(c.getAttribute('r')); if(col < 0) col = next; next = col + 1;
+        const t = c.getAttribute('t'), v = c.getElementsByTagName('v')[0];
+        let val = '';
+        if(t === 's') val = ss[Number(v && v.textContent)] || '';
+        else if(t === 'inlineStr') val = [...c.getElementsByTagName('t')].map(x => x.textContent).join('');
+        else if(t === 'str' || t === 'b' || t === 'e') val = v ? v.textContent : '';
+        else val = v && v.textContent !== '' ? Number(v.textContent) : '';
+        arr[col] = val;
+      });
+      grid.push(arr);
+    });
+    const hi = grid.findIndex(r => r.some(c => c !== '' && c != null));
+    if(hi < 0) return [];
+    const head = grid[hi].map(h => String(h == null ? '' : h).trim());
+    return grid.slice(hi + 1).filter(r => r.some(c => c !== '' && c != null))
+      .map(r => Object.fromEntries(head.map((h, i) => [h, r[i] == null ? '' : r[i]])));
+  }
+  async function readXlsx(buf){
+    if(typeof XLSX !== 'undefined'){
+      const wb = XLSX.read(new Uint8Array(buf), {type: 'array'});
+      const name = wb.SheetNames.find(n => /price|listino|prezz/i.test(n)) || wb.SheetNames[0];
+      return XLSX.utils.sheet_to_json(wb.Sheets[name], {defval: ''});
+    }
+    if(typeof JSZip !== 'undefined') return readXlsxZip(buf);
+    const e = new Error('no library'); e.noLib = true; throw e;
+  }
+  function importRows(raw, fileName){
+    const t = T();
+    const rows = normalizeRows(raw);
+    const hasCode = rows.some(r => str(r.Code) !== '');
+    const hasVal = rows.some(r => 'Price' in r || 'Cost' in r);
+    if(!rows.length || !hasCode || !hasVal){ openAppDialog({title: t.title, message: t.noCols}); return; }
+    const full = rows.some(r => str(r.TYPE).toUpperCase() === 'UPS' && str(r.Model) !== '');
+    if(full){
+      G.rows = rows.filter(r => str(r.Code) !== '' || str(r.Model) !== '').map(mkRow);
+      G.replaced = fileName; G.mergedFrom = null; G.base = '';
+      F = {q: '', type: '', missing: false}; $('plSearch').value = ''; $('plOnlyMissing').checked = false;
+      render();
+      showExportToast(t.read(G.rows.length, fileName), 'ok');
+      return;
+    }
+    const byCode = new Map();
+    rows.forEach(r => { const c = normCode(r.Code); if(c) byCode.set(c, r); });
+    let matched = 0, unknown = 0;
+    const costs = showCosts();
+    byCode.forEach((r, c) => {
+      const idx = G.rows.map((x, j) => normCode(x.Code) === c ? j : -1).filter(j => j >= 0);
+      if(!idx.length){ unknown++; return; }
+      const p = 'Price' in r ? parseNum(r.Price) : NaN, k = costs && 'Cost' in r ? parseNum(r.Cost) : NaN;
+      let hit = false;
+      idx.forEach(j => {
+        if(Number.isFinite(p) && p > 0){ G.rows[j].Price = p; hit = true; }
+        if(Number.isFinite(k) && k > 0){ G.rows[j].Cost = k; hit = true; }
+      });
+      if(hit) matched++;
+    });
+    G.mergedFrom = fileName;
+    render();
+    showExportToast(t.merged(matched, unknown), matched ? 'ok' : 'warn');
+  }
+  async function onFile(file){
+    const t = T();
+    try{
+      let raw;
+      if(/\.json$/i.test(file.name)){
+        const o = JSON.parse(await file.text());
+        raw = Array.isArray(o) ? o : (o && Array.isArray(o.rows) ? o.rows : null);
+      } else if(/\.csv$/i.test(file.name)){
+        raw = parseCsv(await file.text());
+      } else {
+        raw = await readXlsx(await file.arrayBuffer());
+      }
+      if(!raw){ openAppDialog({title: t.title, message: t.noCols}); return; }
+      importRows(raw, file.name);
+    }catch(err){
+      console.warn('Price list file not read:', err);
+      openAppDialog({title: t.title, message: err && err.noLib ? t.noLib : t.bad});
+    }
+  }
+  const stamp = () => new Date().toISOString().slice(0, 10);
+  const exportRows = () => {
+    const costs = showCosts();
+    return G.rows.map(r => {
+      const o = {FAM: r.FAM, TYPE: r.TYPE, Model: r.Model, Code: r.Code, Description: r.Description, Price: r.Price === '' ? null : r.Price};
+      if(costs) o.Cost = r.Cost === '' ? null : r.Cost;
+      return o;
+    });
+  };
+  async function exportJson(){
+    const doc = {format: 'ups-configurator-price-list', version: 1, name: currentName(), exported: new Date().toISOString(), currency: 'EUR', rows: exportRows()};
+    await saveBlob(new Blob([JSON.stringify(doc, null, 2)], {type: 'application/json'}), `UPS_Price_List_${stamp()}.json`);
+  }
+  async function exportXlsx(){
+    const rows = exportRows();
+    const cols = ['FAM', 'TYPE', 'Model', 'Code', 'Description', 'Price'].concat(showCosts() ? ['Cost'] : []);
+    let blob;
+    if(typeof JSZip !== 'undefined'){
+      // same columns as the Excel price list, so the file can be imported back (here or with the old import)
+      const ws = createXlsxSheet('Price list');
+      const head = {font: {b: true, color: 'FFFFFF'}, fill: '00257A', border: 'C9D3E3', align: {v: 'center'}};
+      const cell = {border: 'E1E6EE', align: {v: 'top'}};
+      const money = {...cell, numFmt: '#,##0.00'};
+      const widths = {FAM: 14, TYPE: 8, Model: 28, Code: 20, Description: 80, Price: 13, Cost: 13};
+      cols.forEach((c, j) => { xlsxSet(ws, 1, j + 1, {v: c, s: head}); ws.cols[j] = widths[c]; });
+      rows.forEach((r, i) => cols.forEach((c, j) => {
+        const v = r[c];
+        xlsxSet(ws, i + 2, j + 1, (c === 'Price' || c === 'Cost') ? {v: v == null ? '' : v, s: money} : {v: v == null ? '' : String(v), s: cell});
+      }));
+      ws.heights[1] = 20; ws.freezeRow = 1;
+      blob = await buildXlsxBlob(ws);
+    } else if(typeof XLSX !== 'undefined'){
+      const sheet = XLSX.utils.json_to_sheet(rows.map(r => Object.fromEntries(cols.map(c => [c, r[c] == null ? '' : r[c]]))), {header: cols});
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, sheet, 'Price list');
+      blob = new Blob([XLSX.write(wb, {bookType: 'xlsx', type: 'array'})], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    } else { openAppDialog({title: T().title, message: T().noLib}); return; }
+    await saveBlob(blob, `UPS_Price_List_${stamp()}.xlsx`);
+  }
+
+  // ---- open / close / apply ----
+  function open(){
+    const src = (typeof CATALOG_ROWS !== 'undefined' && CATALOG_ROWS.length) ? CATALOG_ROWS : BUILTIN_PRICE_LIST;
+    G = {rows: src.map(mkRow), base: CATALOG_IS_BUILTIN ? '' : (CATALOG_NAME || ''), replaced: null, mergedFrom: null};
+    F = {q: '', type: '', missing: false};
+    $('plSearch').value = ''; $('plOnlyMissing').checked = false;
+    labels(); render();
+    resetDialogPosition(ov.querySelector('.acc-modal'));
+    ov.style.display = 'flex';
+    ov.querySelector('.pl-body').scrollTop = 0;
+    setTimeout(() => $('plSearch').focus(), 30);
+  }
+  const isOpen = () => ov.style.display !== 'none' && ov.style.display !== '';
+  function hide(){ ov.style.display = 'none'; G = null; }
+  async function requestClose(){
+    if(!G) return hide();
+    if(isDirty()){
+      const t = T();
+      const ok = await openAppDialog({title: t.discardT, message: t.discardM, question: t.discardQ,
+        buttons: [{label: t.discard, value: true}, {label: t.keep, value: false, primary: true}]});
+      if(!ok) return;
+    }
+    hide();
+  }
+  function apply(){
+    if(!G || !isDirty()) return;
+    const bad = body.querySelector('.pl-in.bad');
+    if(bad){ showExportToast(T().fix, 'warn'); bad.focus(); return; }
+    const rows = G.rows.map(r => ({FAM: r.FAM, TYPE: r.TYPE, Model: r.Model, Code: r.Code, Description: r.Description, Price: r.Price, Cost: r.Cost}));
+    const name = currentName();
+    if(processCatalog(rows, name) === false) return;      // processCatalog already said why
+    saveCatalogForSession(rows, name);
+    const ro = typeof READ_ONLY !== 'undefined' && READ_ONLY;
+    const u = ro ? {updated: 0, missing: 0} : updateOfferPricesFromCatalog();
+    showExportToast(T().loaded(u.updated, u.missing, ro), 'ok');
+    hide();
+  }
+
+  // ---- events ----
+  body.addEventListener('input', e => { if(e.target.matches('.pl-in')) onEdit(e.target); });
+  body.addEventListener('focusout', e => {
+    const el = e.target; if(!el.matches || !el.matches('.pl-in') || !G) return;
+    if(!el.classList.contains('bad')){ const tr = el.closest('tr'); if(tr && tr.isConnected) el.value = fmtIn(G.rows[Number(tr.dataset.i)][el.dataset.k]); }
+  });
+  body.addEventListener('keydown', e => {
+    if(!e.target.matches('.pl-in')) return;
+    if(e.key === 'Enter' || e.key === 'ArrowDown'){ e.preventDefault(); moveFocus(e.target, e.shiftKey && e.key === 'Enter' ? -1 : 1); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); moveFocus(e.target, -1); }
+  });
+  body.addEventListener('paste', e => { if(e.target.matches('.pl-in')) onPaste(e.target, e); });
+  $('plSearch').addEventListener('input', e => { F.q = e.target.value; render(); });
+  $('plOnlyMissing').addEventListener('change', e => { F.missing = e.target.checked; render(); });
+  $('plChips').addEventListener('click', e => { const b = e.target.closest('[data-type]'); if(!b) return; F.type = b.dataset.type; render(); });
+  $('plImport').addEventListener('click', () => $('plFileInput').click());
+  // drag & drop: a file dragged over the window lights it up; dropped, it is imported like "Import Excel / JSON"
+  const modal = ov.querySelector('.pl-modal');
+  const isFileDrag = e => [...(e.dataTransfer && e.dataTransfer.types || [])].includes('Files');
+  let dragDepth = 0;
+  const dragOff = () => { dragDepth = 0; modal.classList.remove('pl-dragging'); };
+  ov.addEventListener('dragenter', e => { if(!isFileDrag(e) || !G) return; e.preventDefault(); dragDepth++; modal.classList.add('pl-dragging'); });
+  ov.addEventListener('dragover', e => { if(!isFileDrag(e) || !G) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; modal.classList.add('pl-dragging'); });
+  ov.addEventListener('dragleave', e => { if(!isFileDrag(e)) return; dragDepth = Math.max(0, dragDepth - 1); if(!dragDepth || !ov.contains(e.relatedTarget)) dragOff(); });
+  ov.addEventListener('drop', e => {
+    if(!isFileDrag(e)) return;
+    e.preventDefault(); dragOff();
+    if(!G) return;
+    const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return;
+    if(!/\.(xlsx|xls|xlsm|csv|json)$/i.test(f.name)){ openAppDialog({title: T().title, message: T().wrongType}); return; }
+    onFile(f);
+  });
+  $('plFileInput').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if(f) onFile(f); });
+  $('plExportXlsx').addEventListener('click', () => exportXlsx().catch(err => { console.warn(err); openAppDialog({title: T().title, message: String(err && err.message || err)}); }));
+  $('plExportJson').addEventListener('click', () => exportJson());
+  $('plApply').addEventListener('click', apply);
+  $('plCancel').addEventListener('click', requestClose);
+  $('plGridClose').addEventListener('click', requestClose);
+  document.addEventListener('keydown', e => {
+    if(e.key !== 'Escape' || !isOpen()) return;
+    if(getComputedStyle($('appDialogOverlay')).display !== 'none') return;   // the question answers Esc itself
+    e.preventDefault(); requestClose();
+  });
+  return {open, close: requestClose, isOpen, apply, parseNum, state: () => G, importFile: onFile};
+})();
 
 // ---- catalog lookups used by Generate Offer (Modulo1.Generate_BOM logic) ----
 function lookupCabinet(codiceStr){
@@ -7991,9 +8587,9 @@ const CFG_CARDS = (function(){
 // ---- beta_6.32: costs & margins only for the Azure app role "Costs.Read" ----
 // The role arrives in the Microsoft sign-in token (idTokenClaims.roles). No roles in the token at all
 // (roles not created on Azure yet) = costs visible, unless the Admin option "always require" is on.
-// beta_6.39: permissions switched OFF for now — everyone sees costs and margins. Set COST_PERMISSIONS = true to bring the
-// Costs.Read role check back (all the code below stays in place).
-const COST_PERMISSIONS = false;
+// beta_6.39 switched the permissions off (COST_PERMISSIONS = false: everyone sees costs and margins);
+// beta_6.40: back on, as in beta_6.38.
+const COST_PERMISSIONS = true;
 const COST_ROLE = 'Costs.Read';
 const COST_ROLE_KEY = 'upsConfigurator.requireCostsRole';
 function costRoleRequired(){ try{ return localStorage.getItem(COST_ROLE_KEY) === '1'; }catch(e){ return false; } }
@@ -12585,7 +13181,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.39';
+const CURRENT_VERSION = 'beta_6.41';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Initialize Report + Technical Note — Word', date: '2026-09-22', notes:[
@@ -12615,6 +13211,14 @@ function setBetaFunctionsUnlocked(on){
 }
 try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList.add('beta-unlocked'); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.41', date:'2026-10-14', notes:[
+    'Import price list apre la finestra Listino prezzi: una griglia con tutti i codici del listino in uso (integrato o importato) — tipo, modello, codice, descrizione, prezzo, costo e margine. Prezzi e costi si scrivono a mano (in EUR, con virgola o punto) o si incollano da una colonna di Excel; Invio scende alla riga sotto; i codici uguali cambiano insieme. Cerca, filtro per tipo (UPS, moduli, accessori, batterie) e «Solo senza prezzo»',
+    '«Carica nel configuratore» usa la griglia come listino, come un Excel importato: modelli e prezzi aggiornati, righe d\'offerta con quei codici aggiornate (non se la revisione è chiusa), listino tenuto anche dopo F5. Chiudendo con modifiche non caricate chiede se scartarle',
+    'Esporta Excel (stesse colonne del listino: FAM, TYPE, Model, Code, Description, Price, Cost) ed Esporta JSON; Importa Excel / JSON (anche .csv), con il pulsante oppure trascinando il file sulla finestra: un listino completo sostituisce la griglia, un file con solo Codice e Prezzo / Costo aggiorna i codici che trova. Chi non vede i costi non ha le colonne Costo e Margine e non li esporta',
+  ]},
+  {version:'beta_6.40', date:'2026-10-14', notes:[
+    'Ripristinati i permessi su costi e margini come in beta_6.38: chi ha il ruolo Azure Costs.Read vede Unit Cost / Total Cost / Margin %, costi e margini di Kit Builder, schede e finestre di inserimento e genera le versioni «with margin» di Offer PDF / Excel; chi non ce l\'ha no. Se il token non contiene ruoli i costi restano visibili (salvo l\'opzione Admin «Richiedi sempre il ruolo Costs.Read»). Nel riquadro utente tornano «Costs & margins» e la moneta dorata',
+  ]},
   {version:'beta_6.39', date:'2026-10-14', notes:[
     'Permessi su costi e margini disattivati: tutti vedono costi, margini e le versioni «with margin» di offerta PDF / Excel, connessi o ospiti, con o senza il ruolo Azure Costs.Read. Nel riquadro utente non compaiono più la scritta «Costs & margins» e la moneta dorata (al suo posto un\'icona utente). Il controllo del ruolo resta nel codice, pronto per essere riattivato più avanti (pannello Admin: «Costi e margini · disattivato»)',
   ]},

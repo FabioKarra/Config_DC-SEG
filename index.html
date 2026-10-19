@@ -727,6 +727,29 @@ body.has-ribbon #btnShowSidebar, body.has-ribbon .new-offer-sticky-bar, body.has
 .rb-tabs{display:flex; align-items:center; gap:2px; height:38px; margin-left:-6px;}
 .rb-tab{height:36px; padding:0 14px; border:none; background:transparent; border-radius:8px; font-family:'Work Sans',sans-serif; font-size:13.5px; font-weight:500; color:var(--text); cursor:pointer; position:relative;}
 .rb-tab:hover{background:#EEF3FB;}
+/* App tab (like Office "File"): program name; the menu holds version, what's new and feedback. The old
+   title row keeps only the status path. */
+.page-header.u10 h1{display:none !important;}
+.app-tab{height:34px; padding:0 14px; margin:0 10px 0 -6px; border:none; border-radius:8px; background:var(--accent); color:#fff; font:600 13.5px 'Work Sans',sans-serif; cursor:pointer; white-space:nowrap; flex:none; display:flex; align-items:center; gap:7px;}
+.app-tab:hover, .app-tab[aria-expanded="true"]{background:#24467F;}
+.app-tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+.app-tab .at-chev{transition:transform .15s;}
+.app-tab[aria-expanded="true"] .at-chev{transform:rotate(180deg);}
+.app-menu{position:fixed; z-index:1000; width:290px; background:#fff; border:1px solid var(--panel-border); border-radius:12px; box-shadow:0 16px 40px rgba(20,22,26,.2); padding:14px 8px 8px; font-family:'Work Sans',sans-serif; color:var(--text);}
+.app-menu .am-head{padding:0 10px 10px; border-bottom:1px solid var(--panel-border); margin-bottom:6px;}
+.app-menu .am-name{font-weight:700; font-size:15px; color:var(--accent);}
+.app-menu .am-ver{font-size:12px; color:var(--dim); margin-top:2px;}
+.app-menu .am-item{display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; background:transparent; border-radius:8px; font:500 13px 'Work Sans',sans-serif; color:var(--text); cursor:pointer; text-align:left; text-decoration:none; box-sizing:border-box;}
+.app-menu .am-item:hover, .app-menu .am-item:focus-visible{background:#EEF3FB; outline:none;}
+.app-menu .am-item svg{flex:none; color:var(--accent);}
+.app-menu .am-item small{display:block; font-size:11px; color:var(--dim); font-weight:400; margin-top:1px;}
+.whatsnew-modal ul{margin:0; padding-left:18px;} .whatsnew-modal li{margin:0 0 6px; line-height:1.45;}
+.whatsnew-modal details{margin-top:12px;} .whatsnew-modal summary{cursor:pointer; font-weight:600; color:var(--accent);}
+.whatsnew-modal .wn-ver{font-weight:700; margin:12px 0 4px;} .whatsnew-modal .wn-ver span{font-weight:400; color:var(--dim); margin-left:6px;}
+body.dark-theme .app-tab{background:#3F6FC4;} body.dark-theme .app-tab:hover, body.dark-theme .app-tab[aria-expanded="true"]{background:#4F80D6;}
+body.dark-theme .app-menu{background:var(--panel); border-color:var(--panel-border); box-shadow:0 16px 40px rgba(0,0,0,.45);}
+body.dark-theme .app-menu .am-name{color:#A9C7FF;} body.dark-theme .app-menu .am-item svg{color:#A9C7FF;}
+body.dark-theme .app-menu .am-item:hover, body.dark-theme .app-menu .am-item:focus-visible{background:#303744;}
 .rb-tab.on{color:#2F5597; font-weight:600;}
 .rb-tab.on::after{content:''; position:absolute; left:12px; right:12px; bottom:1px; height:3px; border-radius:2px; background:#2F5597;}
 body.rb-collapsed:not(.rb-peek) .rb-tab.on{color:var(--text); font-weight:500;}
@@ -12562,6 +12585,84 @@ const STATUS_PIPE = (function(){
   }
   setInterval(render, 1000); render();
   return {render};
+})();
+
+// ---- App tab before Home (like Office "File"): "UPS Configurator" opens a small menu with the version,
+// what's new and Send feedback (an e-mail to the DC technical team with version, project and user filled in). ----
+const FEEDBACK_EMAIL = 'tecdc@riello-ups.com';
+// The manuals (PDF) on the DC Sales SharePoint, 03_Tools/PreSales_Execution/DEF
+const MANUALS_BASE = 'https://rielloups.sharepoint.com/sites/DCSales2/Shared%20Documents/03_Tools/PreSales_Execution/DEF/';
+const MANUAL_URLS = {user: MANUALS_BASE + 'UPS_Configurator_User_Manual.pdf', quick: MANUALS_BASE + 'UPS_Configurator_QuickStart_Guide.pdf'};
+const APP_MENU = (function(){
+  const tb = document.getElementById('appTopbar'), tabs = tb && tb.querySelector('.rb-tabs');
+  if(!tabs) return null;
+  const TX = {en: ["What's new", 'Changes in this version', 'Send feedback', 'E-mail to ' + FEEDBACK_EMAIL, 'Version', 'Earlier versions', 'Download version log (CSV)', 'Close', 'User Manual', 'The complete guide (PDF)', 'QuickStart Guide', 'The essential steps (PDF)'],
+    it: ['Novità', 'Le modifiche di questa versione', 'Invia feedback', 'E-mail a ' + FEEDBACK_EMAIL, 'Versione', 'Versioni precedenti', 'Scarica il registro versioni (CSV)', 'Chiudi', 'User Manual', 'La guida completa (PDF)', 'QuickStart Guide', 'I passi essenziali (PDF)'],
+    de: ['Neuigkeiten', 'Änderungen dieser Version', 'Feedback senden', 'E-Mail an ' + FEEDBACK_EMAIL, 'Version', 'Frühere Versionen', 'Versionsprotokoll herunterladen (CSV)', 'Schließen', 'User Manual', 'Das vollständige Handbuch (PDF)', 'QuickStart Guide', 'Die wichtigsten Schritte (PDF)'],
+    fr: ['Nouveautés', 'Les changements de cette version', 'Envoyer un avis', 'E-mail à ' + FEEDBACK_EMAIL, 'Version', 'Versions précédentes', "Télécharger l'historique (CSV)", 'Fermer', 'User Manual', 'Le guide complet (PDF)', 'QuickStart Guide', 'Les étapes essentielles (PDF)'],
+    es: ['Novedades', 'Los cambios de esta versión', 'Enviar comentarios', 'Correo a ' + FEEDBACK_EMAIL, 'Versión', 'Versiones anteriores', 'Descargar registro de versiones (CSV)', 'Cerrar', 'User Manual', 'La guía completa (PDF)', 'QuickStart Guide', 'Los pasos esenciales (PDF)']};
+  const T = () => TX[typeof LANG !== 'undefined' && TX[LANG] ? LANG : 'en'];
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'app-tab'; btn.id = 'appMenuTab';
+  btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', 'false');
+  btn.innerHTML = 'UPS Configurator<svg class="at-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  tb.insertBefore(btn, tabs);
+  const ver = () => (document.querySelector('.version-badge')?.textContent || '').trim();   // CURRENT_VERSION is declared further down this script
+  const syncTitle = () => { btn.title = `UPS Configurator — ${ver()}`; };
+  syncTitle();
+  function feedbackHref(){
+    const v = id => (document.getElementById(id)?.value || '').trim();
+    const ref = v('prjRef'), name = v('prjName');
+    const who = typeof currentUserName === 'function' ? currentUserName() : '';
+    const info = [`UPS Configurator ${ver()}`, ref ? `Project: ${ref}${name ? ' · ' + name : ''}` : 'Project: none open',
+      who ? `User: ${who}` : null, `Language: ${(typeof LANG !== 'undefined' ? LANG : 'en').toUpperCase()}`, `Browser: ${navigator.userAgent}`].filter(Boolean);
+    const body = ['Hello,', '', '', '', '---', ...info].join('\n');
+    return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(`UPS Configurator ${ver()} – feedback${ref ? ' (' + ref + ')' : ''}`)}&body=${encodeURIComponent(body)}`;
+  }
+  function close(){ const m = document.getElementById('appMenu'); if(m) m.remove(); btn.setAttribute('aria-expanded', 'false'); }
+  function open(){
+    close();
+    const t = T(), r = btn.getBoundingClientRect();
+    const m = document.createElement('div');
+    m.className = 'app-menu'; m.id = 'appMenu'; m.setAttribute('role', 'menu');
+    m.style.left = `${Math.max(8, r.left)}px`; m.style.top = `${r.bottom + 8}px`;
+    m.innerHTML = `<div class="am-head"><div class="am-name">UPS Configurator</div><div class="am-ver">${escapeHtml(t[4])} ${escapeHtml(ver())} · Riello UPS</div></div>
+      <button type="button" class="am-item" role="menuitem" data-am="news"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><span>${escapeHtml(t[0])}<small>${escapeHtml(t[1])}</small></span></button>
+      <a class="am-item" role="menuitem" data-am="manual" href="${MANUAL_URLS.user}" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg><span>${escapeHtml(t[8])}<small>${escapeHtml(t[9])}</small></span></a>
+      <a class="am-item" role="menuitem" data-am="quick" href="${MANUAL_URLS.quick}" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>${escapeHtml(t[10])}<small>${escapeHtml(t[11])}</small></span></a>
+      <a class="am-item" role="menuitem" data-am="feedback" href="${escapeHtml(feedbackHref())}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>${escapeHtml(t[2])}<small>${escapeHtml(t[3])}</small></span></a>`;
+    document.body.appendChild(m);
+    btn.setAttribute('aria-expanded', 'true');
+    m.querySelector('[data-am="news"]').addEventListener('click', () => { close(); openWhatsNew(); });
+    m.querySelectorAll('a.am-item').forEach(a => a.addEventListener('click', () => setTimeout(close, 0)));
+    m.querySelector('.am-item').focus();
+  }
+  function openWhatsNew(){
+    document.getElementById('whatsNewOverlay')?.remove();
+    const t = T(), log = typeof CHANGELOG !== 'undefined' ? CHANGELOG : [];
+    const cur = log.find(c => c.version === ver()) || log[0];
+    const list = c => `<ul>${c.notes.map(n => `<li>${escapeHtml(n)}</li>`).join('')}</ul>`;
+    const ov = document.createElement('div');
+    ov.className = 'settings-overlay'; ov.id = 'whatsNewOverlay'; ov.style.display = 'flex'; ov.style.zIndex = '1150';
+    ov.innerHTML = `<div class="settings-modal whatsnew-modal" role="dialog" aria-modal="true" style="max-width:720px;">
+      <div class="acc-modal-header"><h3>${escapeHtml(t[0])} · ${escapeHtml(ver())}</h3><button type="button" class="acc-modal-close" data-x aria-label="${escapeHtml(t[7])}">×</button></div>
+      <div class="settings-body" style="max-height:62vh; overflow:auto;">${cur ? `<div class="wn-ver">${escapeHtml(cur.version)}<span>${escapeHtml(cur.date)}</span></div>${list(cur)}` : ''}
+        ${log.length > 1 ? `<details><summary>${escapeHtml(t[5])}</summary>${log.filter(c => c !== cur).map(c => `<div class="wn-ver">${escapeHtml(c.version)}<span>${escapeHtml(c.date)}</span></div>${list(c)}`).join('')}</details>` : ''}</div>
+      <div class="acc-modal-footer"><button type="button" class="btn-ghost act" data-csv>${escapeHtml(t[6])}</button><button type="button" class="act btn-primary" data-x>${escapeHtml(t[7])}</button></div></div>`;
+    document.body.appendChild(ov);
+    const shut = () => ov.remove();
+    ov.querySelectorAll('[data-x]').forEach(b => b.addEventListener('click', shut));
+    ov.querySelector('[data-csv]').addEventListener('click', () => { try{ downloadChangelogCsv(); }catch(e){ console.warn(e); } });
+    ov.addEventListener('keydown', e => { if(e.key === 'Escape'){ e.stopPropagation(); shut(); } });
+    setupBackdropClose(ov, shut);
+    ov.querySelector('.btn-primary').focus();
+  }
+  btn.addEventListener('click', e => { e.stopPropagation(); if(document.getElementById('appMenu')) close(); else open(); });
+  document.addEventListener('click', e => { const m = document.getElementById('appMenu'); if(m && !m.contains(e.target) && e.target !== btn) close(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.getElementById('appMenu')){ close(); btn.focus(); } });
+  window.addEventListener('resize', close);
+  window.addEventListener('scroll', () => { if(document.getElementById('appMenu')) close(); }, {passive: true});
+  return {open, close, openWhatsNew, feedbackHref};
 })();
 
 // ---- beta_6.38: System Configuration starts empty — only the "+ Add Position" card; Generate Offer waits for

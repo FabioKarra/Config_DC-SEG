@@ -1152,8 +1152,8 @@ table.bom input.in-qty{padding-left:3px; padding-right:3px; -moz-appearance:text
 table.bom input.in-qty::-webkit-outer-spin-button, table.bom input.in-qty::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
 /* beta_6.44: editable prices (gross price, unit cost) always as € + two decimals — the € sits inside the field */
 table.bom td:has(> input.in-gross), table.bom td:has(> input.in-cost){position:relative; padding-left:4px; padding-right:4px;}
-table.bom td:has(> input.in-gross)::before, table.bom td:has(> input.in-cost)::before{content:'€'; position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:400; color:#8A93A3; pointer-events:none;}
-table.bom input.in-gross, table.bom input.in-cost{max-width:none; padding-left:16px; padding-right:5px; font-variant-numeric:tabular-nums; -moz-appearance:textfield; appearance:textfield;}
+table.bom td:has(> input.in-gross)::before, table.bom td:has(> input.in-cost)::before{content:var(--cur-sym, '€'); position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:400; color:#8A93A3; pointer-events:none;}
+table.bom input.in-gross, table.bom input.in-cost{max-width:none; padding-left:var(--cur-pad, 16px); padding-right:5px; font-variant-numeric:tabular-nums; -moz-appearance:textfield; appearance:textfield;}
 table.bom input.in-gross::-webkit-outer-spin-button, table.bom input.in-gross::-webkit-inner-spin-button,
 table.bom input.in-cost::-webkit-outer-spin-button, table.bom input.in-cost::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
 .model-cell{color:var(--accent-dark); font-weight:300;}
@@ -2104,6 +2104,8 @@ body.dark-theme #tcoPage svg text { fill: #C8D1E0 !important; }
 /* SLA configuration selection: an explicit check mark, not colour-only state (both themes). */
 .svc-modal .svc-pill{display:inline-flex;align-items:center;gap:6px;}
 .svc-modal .svc-pill.svc-fok{font-weight:700; letter-spacing:.04em; border-style:dashed;}
+/* a component discount that carries its share of the kit discount (set from the kit line) */
+#bomBody input.in-disc.kit-disc-share{color:var(--accent, #2F5597); font-weight:600; background:rgba(47,85,151,.06);}
 .svc-modal .svc-pill.svc-fok.on{border-style:solid; background:#FFF1DC; color:#8A4B00; border-color:#F2C777;}
 .svc-modal .svc-pill.fok-lock{opacity:.6; cursor:default;}
 body.dark-theme .svc-modal .svc-pill.svc-fok.on{background:#3A2E1A; color:#F2C777; border-color:#7A5A22;}
@@ -2973,7 +2975,7 @@ body.dark-theme #tcoPage .tco-sts i.on{background:#3E6FB8;color:#FFFFFF;}
       <button type="button" class="acc-modal-close" id="btnSettingsClose">×</button>
     </div>
     <div class="settings-body">
-      <p class="settings-note">EUR is always the base currency — Gross Price and Cost are always entered in EUR throughout the tool. Currency, conversion rate and discount update the displayed totals immediately (2 decimals everywhere); underlying EUR figures never change, so switching back and forth never drifts.</p>
+      <p class="settings-note">The whole offer works in the currency chosen here: prices from the price list are converted with the rate, and Gross Price, Unit Cost, kit, service and price list fields are shown and typed in that currency. The price lists stay in EUR underneath, so switching back and forth never drifts.</p>
       <div class="field mkx-field">
         <label data-i18n="settings.market">Price list</label>
         <div class="mkx mkdd" data-mkx="settings"></div>
@@ -3559,9 +3561,10 @@ function setupBackdropClose(overlayEl, closeFn){
 })();
 
 
-// ---- currency (EUR is always the base/storage currency — Gross Price & Cost inputs are always
-// entered in EUR; switching currency here only changes the conversion rate applied when
-// DISPLAYING computed totals, so there's a single source of truth and no conversion drift) ----
+// ---- currency: EUR is the base / storage currency (the price lists are in EUR). Since beta 6.49 the
+// whole document works in the selected currency: totals are shown converted (formatMoney) AND every
+// money field (Gross Price, Unit Cost, kit price, battery / technology / service / delivery windows,
+// sales-code price, TCO amounts) shows and takes values in that currency — see installMoneyView. ----
 let CURRENCY = { code:'EUR', symbol:'€' };
 let CURRENCY_RATE = 1; // units of CURRENCY.symbol per 1 EUR — always 1 when CURRENCY is EUR itself
 let PROJECT_DISCOUNT = 0;
@@ -3590,11 +3593,93 @@ function fmt2(n){
 function formatMoney(n){
   return `${CURRENCY.symbol}${fmt2((Number(n)||0) * CURRENCY_RATE)}`;
 }
+// ---- beta 6.49: money fields in the selected currency. The field shows (and the person types) the
+// amount in the document currency; for the program the field's .value is still EUR — reading gives
+// EUR, writing takes EUR and shows it converted. The exact EUR amount is kept with the field, so
+// switching currency back and forth never drifts. ----
+const MONEY_SEL = 'input.in-gross, input.in-cost, input.batt-gross, input.batt-cost, input.tech-gross, input.tech-cost, input.svc-gross, input.svc-cost, #sbPrice, #kbPrice, #svcDeliveryPrice, input[data-money]';
+const NATIVE_VALUE = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+function moneyRate(){ const r = Number(CURRENCY_RATE); return Number.isFinite(r) && r > 0 ? r : 1; }
+function moneyShow(eur, dec){
+  const s = String(eur), n = Number(s);
+  if(s.trim() === '' || !Number.isFinite(n)) return s;
+  const r = moneyRate();
+  if(r === 1) return s;
+  const f = Math.pow(10, dec);
+  return (Math.round(n * r * f) / f).toFixed(dec);
+}
+function installMoneyView(el){
+  if(!el || el._money || !(el instanceof HTMLInputElement)) return;
+  const eur0 = NATIVE_VALUE.get.call(el);
+  el._money = true;
+  const dec = Number(el.dataset.money) > 0 ? Number(el.dataset.money) : 2;
+  Object.defineProperty(el, 'value', {configurable: true, enumerable: true,
+    get(){
+      const raw = NATIVE_VALUE.get.call(this);
+      if(moneyRate() === 1) return raw;
+      if(this._eur != null && this._shown === raw) return this._eur;
+      const n = Number(raw);
+      if(String(raw).trim() === '' || !Number.isFinite(n)) return raw;
+      this._eur = String(+(n / moneyRate()).toFixed(10)); this._shown = raw;     // typed in the document currency
+      return this._eur;
+    },
+    set(v){
+      const str = v == null ? '' : String(v);
+      if(moneyRate() === 1){ this._eur = null; NATIVE_VALUE.set.call(this, str); return; }
+      NATIVE_VALUE.set.call(this, moneyShow(str, dec));
+      this._eur = str; this._shown = NATIVE_VALUE.get.call(this);
+    }});
+  el.value = eur0;
+}
+function installMoneyViews(root){
+  if(!root || !root.querySelectorAll) return;
+  if(root.matches && root.matches(MONEY_SEL)) installMoneyView(root);
+  root.querySelectorAll(MONEY_SEL).forEach(installMoneyView);
+}
+new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if(n.nodeType === 1) installMoneyViews(n); })))
+  .observe(document.documentElement, {childList: true, subtree: true});
+// the EUR amounts of every money field, taken before the currency / rate changes and written back after
+function moneySnapshot(){
+  installMoneyViews(document);
+  const snap = [...document.querySelectorAll(MONEY_SEL)].filter(el => el._money).map(el => [el, el.value]);
+  snap.rate = moneyRate();
+  return snap;
+}
+function moneyRestore(snap){
+  if(snap && snap.rate === moneyRate()){ syncCurrencySymbolCss(); return; }     // same rate: the fields stay as they are
+  const one = moneyRate() === 1;
+  (snap || []).forEach(([el, v]) => {
+    const n = Number(v), dec = Number(el.dataset.money) > 0 ? Number(el.dataset.money) : 2;
+    // back to EUR the field is plain EUR again: cents (the energy price: 3 decimals)
+    el.value = one && String(v).trim() !== '' && Number.isFinite(n) ? (Math.round(n * Math.pow(10, dec)) / Math.pow(10, dec)).toFixed(dec) : v;
+  });
+  syncCurrencySymbolCss();
+}
+function syncCurrencySymbolCss(){
+  const sym = String(CURRENCY.symbol || CURRENCY.code || '€');
+  document.documentElement.style.setProperty('--cur-sym', JSON.stringify(sym));
+  document.documentElement.style.setProperty('--cur-pad', `${10 + Math.max(1, sym.length) * 7}px`);
+  document.querySelectorAll('[data-cur-sym]').forEach(e => { e.textContent = sym; });
+}
+syncCurrencySymbolCss();
+installMoneyViews(document);
 // beta_6.44: editable prices in the offer lines always show two decimals, also when typed without them.
 // A value typed with more decimals is rounded to the cent; values the program writes with more precision
 // (a kit price spread over its components) are only padded, never rounded, when the field is left.
 function bomPriceFormat(el, typed){
   if(!el || !el.matches || !el.matches('input.in-gross, input.in-cost')) return;
+  if(el._money && moneyRate() !== 1){
+    // the field shows the document currency: two decimals of that amount (the EUR behind keeps full precision)
+    const raw = String(NATIVE_VALUE.get.call(el)).trim();
+    if(raw === ''){ el.value = '0'; return; }
+    const n = Number(raw);
+    if(!Number.isFinite(n)) return;
+    const dec = (raw.split('.')[1] || '').length;
+    if(dec === 2) return;
+    NATIVE_VALUE.set.call(el, (Math.round(n * 100) / 100).toFixed(2)); el._eur = null;
+    if(typed && dec > 2) el.dispatchEvent(new Event('input', {bubbles: true}));
+    return;
+  }
   const v = String(el.value).trim();
   if(v === ''){ el.value = '0.00'; return; }
   const n = Number(v);
@@ -3686,6 +3771,7 @@ function applySettingsLive(){
   const discountInput = document.getElementById('settingsProjectDiscount');
   const sel = currencySelect.value;
   const symbols = {EUR:'€', USD:'$', GBP:'£'};
+  const moneySnap = moneySnapshot();     // EUR amounts of the money fields, re-shown in the new currency below
 
   // Apply currency/symbol immediately; while a custom symbol is being edited,
   // keep the last valid one until the field contains at least one non-space character.
@@ -3707,6 +3793,7 @@ function applySettingsLive(){
     if(Number.isFinite(discount)) PROJECT_DISCOUNT = Math.max(0, Math.min(100, discount));
   }
   setAutosaveEnabled(!!document.getElementById('settingsAutosaveEnabled').checked);
+  moneyRestore(moneySnap);
   refreshAllBomMoney();
   updateBomHeaders();
   updateDeliveryRow();
@@ -6126,7 +6213,10 @@ priceListInput.addEventListener('change', (e)=>{
       priceListInput.value = '';
       return;
     }
-    const sheet = wb.Sheets[wb.SheetNames.find(n => n.trim().toUpperCase() === PRICE_MARKET) || wb.SheetNames[0]];
+    const mkOf = n => { const u = String(n || '').toUpperCase(); return /(^|[^A-Z])IEC([^A-Z]|$)/.test(u) ? 'IEC' : /(^|[^A-Z])UL([^A-Z]|$)/.test(u) ? 'UL' : ''; };
+    const sheet = wb.Sheets[wb.SheetNames.find(n => n.trim().toUpperCase() === PRICE_MARKET) || wb.SheetNames.find(n => mkOf(n) === PRICE_MARKET) || wb.SheetNames[0]];
+    const otherName = wb.SheetNames.find(n => mkOf(n) && mkOf(n) !== PRICE_MARKET);
+    if(otherName){ const oRows = XLSX.utils.sheet_to_json(wb.Sheets[otherName], {defval:''}); if(oRows.length) saveCatalogForSession(oRows, file.name, mkOf(otherName)); }
     const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
     processCatalog(rows, file.name);
     if(CATALOG_LOADED && !CATALOG_IS_BUILTIN){
@@ -6435,7 +6525,7 @@ function isAutoHandledTopVent(a){
 // exported / imported as Excel or JSON, and "Load into configurator" applies it exactly like an imported
 // Excel price list (catalog, offer lines, kept for this tab). Codes and descriptions are read only. ----
 const PL_TXT = {
-  en: {drop: 'Drag an Excel / JSON file here', dropMask: 'Drop the file to import it', dropSub: 'Excel (.xlsx, .xls, .csv) or JSON. A full price list replaces the grid, a file with only Code and Price / Cost updates the codes it finds.', wrongType: 'Only Excel (.xlsx, .xls, .xlsm, .csv) or JSON files can be imported.', title: 'Price list', sub: (name, n, miss) => `${name} · ${n} codes · ${miss} without price`, builtin: 'Built-in list', manual: 'Manual price list', edited: 'edited',
+  en: {drop: 'Drag an Excel / JSON file here', dropMask: 'Drop the file to import it', dropSub: 'Excel (.xlsx, .xls, .csv) or JSON. A full price list replaces the grid, a file with only Code and Price / Cost updates the codes it finds. An Excel file with the sheets IEC PL and UL PL fills both lists; with one sheet you are asked which list it is.', wrongType: 'Only Excel (.xlsx, .xls, .xlsm, .csv) or JSON files can be imported.', title: 'Price list', sub: (name, n, miss) => `${name} · ${n} codes · ${miss} without price`, builtin: 'Built-in list', manual: 'Manual price list', edited: 'edited',
        search: 'Search code, model or description', all: 'All', UPS: 'UPS', PM: 'Power modules', AUX: 'Accessories', BAT_P: 'Battery',
        missing: 'Only without price', imp: 'Import Excel / JSON', expX: 'Export Excel', expJ: 'Export JSON',
        type: 'Type', model: 'Model', code: 'Code', desc: 'Description', price: 'Price €', cost: 'Cost €', margin: 'Margin %',
@@ -6449,7 +6539,7 @@ const PL_TXT = {
        discardT: 'Price list', discardM: 'The changes have not been loaded into the configurator.', discardQ: 'Close and discard them?', keep: 'Keep editing', discard: 'Discard changes',
        fix: 'Some values are not numbers (in red): correct them first.', invalid: 'Not a number',
        loaded: (u, miss, ro) => 'Price list loaded into the configurator' + (ro ? ' — the revision is closed: offer lines not changed' : u ? ` — prices and costs updated on ${u} offer line${u === 1 ? '' : 's'}` : '') + (miss && !ro ? ` (${miss} line${miss === 1 ? '' : 's'} with a code not in the list kept as they were)` : '') + '.'},
-  it: {drop: 'Trascina qui un file Excel / JSON', dropMask: 'Rilascia il file per importarlo', dropSub: 'Excel (.xlsx, .xls, .csv) o JSON. Un listino completo sostituisce la griglia, un file con solo Codice e Prezzo / Costo aggiorna i codici che trova.', wrongType: 'Si possono importare solo file Excel (.xlsx, .xls, .xlsm, .csv) o JSON.', title: 'Listino prezzi', sub: (name, n, miss) => `${name} · ${n} codici · ${miss} senza prezzo`, builtin: 'Listino integrato', manual: 'Listino manuale', edited: 'modificato',
+  it: {drop: 'Trascina qui un file Excel / JSON', dropMask: 'Rilascia il file per importarlo', dropSub: 'Excel (.xlsx, .xls, .csv) o JSON. Un listino completo sostituisce la griglia, un file con solo Codice e Prezzo / Costo aggiorna i codici che trova. Un Excel con i fogli IEC PL e UL PL compila entrambi i listini; con un solo foglio ti chiede quale listino è.', wrongType: 'Si possono importare solo file Excel (.xlsx, .xls, .xlsm, .csv) o JSON.', title: 'Listino prezzi', sub: (name, n, miss) => `${name} · ${n} codici · ${miss} senza prezzo`, builtin: 'Listino integrato', manual: 'Listino manuale', edited: 'modificato',
        search: 'Cerca codice, modello o descrizione', all: 'Tutti', UPS: 'UPS', PM: 'Moduli di potenza', AUX: 'Accessori', BAT_P: 'Batterie',
        missing: 'Solo senza prezzo', imp: 'Importa Excel / JSON', expX: 'Esporta Excel', expJ: 'Esporta JSON',
        type: 'Tipo', model: 'Modello', code: 'Codice', desc: 'Descrizione', price: 'Prezzo €', cost: 'Costo €', margin: 'Margine %',
@@ -6463,7 +6553,7 @@ const PL_TXT = {
        discardT: 'Listino prezzi', discardM: 'Le modifiche non sono state caricate nel configuratore.', discardQ: 'Chiudere e scartarle?', keep: 'Continua a modificare', discard: 'Scarta le modifiche',
        fix: 'Alcuni valori non sono numeri (in rosso): correggili prima.', invalid: 'Non è un numero',
        loaded: (u, miss, ro) => 'Listino caricato nel configuratore' + (ro ? ' — revisione chiusa: righe d\'offerta non modificate' : u ? ` — prezzi e costi aggiornati su ${u} rig${u === 1 ? 'a' : 'he'} d'offerta` : '') + (miss && !ro ? ` (${miss} con codice non in listino lasciat${miss === 1 ? 'a' : 'e'} com'erano)` : '') + '.'},
-  de: {drop: 'Excel- / JSON-Datei hierher ziehen', dropMask: 'Datei loslassen, um sie zu importieren', dropSub: 'Excel (.xlsx, .xls, .csv) oder JSON. Eine vollständige Preisliste ersetzt das Raster, eine Datei nur mit Code und Preis / Kosten aktualisiert die gefundenen Codes.', wrongType: 'Es können nur Excel- (.xlsx, .xls, .xlsm, .csv) oder JSON-Dateien importiert werden.', title: 'Preisliste', sub: (name, n, miss) => `${name} · ${n} Codes · ${miss} ohne Preis`, builtin: 'Integrierte Liste', manual: 'Manuelle Preisliste', edited: 'bearbeitet',
+  de: {drop: 'Excel- / JSON-Datei hierher ziehen', dropMask: 'Datei loslassen, um sie zu importieren', dropSub: 'Excel (.xlsx, .xls, .csv) oder JSON. Eine vollständige Preisliste ersetzt das Raster, eine Datei nur mit Code und Preis / Kosten aktualisiert die gefundenen Codes. Eine Excel-Datei mit den Blättern IEC PL und UL PL füllt beide Listen; bei nur einem Blatt wird gefragt, welche Liste es ist.', wrongType: 'Es können nur Excel- (.xlsx, .xls, .xlsm, .csv) oder JSON-Dateien importiert werden.', title: 'Preisliste', sub: (name, n, miss) => `${name} · ${n} Codes · ${miss} ohne Preis`, builtin: 'Integrierte Liste', manual: 'Manuelle Preisliste', edited: 'bearbeitet',
        search: 'Code, Modell oder Beschreibung suchen', all: 'Alle', UPS: 'USV', PM: 'Leistungsmodule', AUX: 'Zubehör', BAT_P: 'Batterie',
        missing: 'Nur ohne Preis', imp: 'Excel / JSON importieren', expX: 'Excel exportieren', expJ: 'JSON exportieren',
        type: 'Typ', model: 'Modell', code: 'Code', desc: 'Beschreibung', price: 'Preis €', cost: 'Kosten €', margin: 'Marge %',
@@ -6477,7 +6567,7 @@ const PL_TXT = {
        discardT: 'Preisliste', discardM: 'Die Änderungen wurden nicht in den Konfigurator geladen.', discardQ: 'Schließen und verwerfen?', keep: 'Weiter bearbeiten', discard: 'Änderungen verwerfen',
        fix: 'Einige Werte sind keine Zahlen (rot): bitte zuerst korrigieren.', invalid: 'Keine Zahl',
        loaded: (u, miss, ro) => 'Preisliste in den Konfigurator geladen' + (ro ? ' — Revision geschlossen: Angebotszeilen unverändert' : u ? ` — Preise und Kosten in ${u} Angebotszeile${u === 1 ? '' : 'n'} aktualisiert` : '') + (miss && !ro ? ` (${miss} Zeile${miss === 1 ? '' : 'n'} mit Code nicht in der Liste unverändert)` : '') + '.'},
-  fr: {drop: 'Glissez ici un fichier Excel / JSON', dropMask: 'Déposez le fichier pour l\'importer', dropSub: 'Excel (.xlsx, .xls, .csv) ou JSON. Un tarif complet remplace la grille, un fichier avec seulement Code et Prix / Coût met à jour les codes trouvés.', wrongType: 'Seuls les fichiers Excel (.xlsx, .xls, .xlsm, .csv) ou JSON peuvent être importés.', title: 'Tarif', sub: (name, n, miss) => `${name} · ${n} codes · ${miss} sans prix`, builtin: 'Liste intégrée', manual: 'Tarif manuel', edited: 'modifié',
+  fr: {drop: 'Glissez ici un fichier Excel / JSON', dropMask: 'Déposez le fichier pour l\'importer', dropSub: 'Excel (.xlsx, .xls, .csv) ou JSON. Un tarif complet remplace la grille, un fichier avec seulement Code et Prix / Coût met à jour les codes trouvés. Un fichier Excel avec les feuilles IEC PL et UL PL remplit les deux tarifs ; avec une seule feuille, on vous demande lequel c\'est.', wrongType: 'Seuls les fichiers Excel (.xlsx, .xls, .xlsm, .csv) ou JSON peuvent être importés.', title: 'Tarif', sub: (name, n, miss) => `${name} · ${n} codes · ${miss} sans prix`, builtin: 'Liste intégrée', manual: 'Tarif manuel', edited: 'modifié',
        search: 'Rechercher code, modèle ou description', all: 'Tous', UPS: 'ASI', PM: 'Modules de puissance', AUX: 'Accessoires', BAT_P: 'Batterie',
        missing: 'Seulement sans prix', imp: 'Importer Excel / JSON', expX: 'Exporter Excel', expJ: 'Exporter JSON',
        type: 'Type', model: 'Modèle', code: 'Code', desc: 'Description', price: 'Prix €', cost: 'Coût €', margin: 'Marge %',
@@ -6491,7 +6581,7 @@ const PL_TXT = {
        discardT: 'Tarif', discardM: 'Les modifications n\'ont pas été chargées dans le configurateur.', discardQ: 'Fermer et les abandonner ?', keep: 'Continuer', discard: 'Abandonner les modifications',
        fix: 'Certaines valeurs ne sont pas des nombres (en rouge) : corrigez-les d\'abord.', invalid: 'Pas un nombre',
        loaded: (u, miss, ro) => 'Tarif chargé dans le configurateur' + (ro ? ' — révision fermée : lignes de l\'offre inchangées' : u ? ` — prix et coûts mis à jour sur ${u} ligne${u === 1 ? '' : 's'} de l'offre` : '') + (miss && !ro ? ` (${miss} ligne${miss === 1 ? '' : 's'} avec un code absent de la liste inchangée${miss === 1 ? '' : 's'})` : '') + '.'},
-  es: {drop: 'Arrastre aquí un archivo Excel / JSON', dropMask: 'Suelte el archivo para importarlo', dropSub: 'Excel (.xlsx, .xls, .csv) o JSON. Una lista completa sustituye la cuadrícula, un archivo solo con Código y Precio / Coste actualiza los códigos que encuentra.', wrongType: 'Solo se pueden importar archivos Excel (.xlsx, .xls, .xlsm, .csv) o JSON.', title: 'Lista de precios', sub: (name, n, miss) => `${name} · ${n} códigos · ${miss} sin precio`, builtin: 'Lista integrada', manual: 'Lista de precios manual', edited: 'modificada',
+  es: {drop: 'Arrastre aquí un archivo Excel / JSON', dropMask: 'Suelte el archivo para importarlo', dropSub: 'Excel (.xlsx, .xls, .csv) o JSON. Una lista completa sustituye la cuadrícula, un archivo solo con Código y Precio / Coste actualiza los códigos que encuentra. Un Excel con las hojas IEC PL y UL PL rellena las dos listas; con una sola hoja se pregunta cuál es.', wrongType: 'Solo se pueden importar archivos Excel (.xlsx, .xls, .xlsm, .csv) o JSON.', title: 'Lista de precios', sub: (name, n, miss) => `${name} · ${n} códigos · ${miss} sin precio`, builtin: 'Lista integrada', manual: 'Lista de precios manual', edited: 'modificada',
        search: 'Buscar código, modelo o descripción', all: 'Todos', UPS: 'SAI', PM: 'Módulos de potencia', AUX: 'Accesorios', BAT_P: 'Batería',
        missing: 'Solo sin precio', imp: 'Importar Excel / JSON', expX: 'Exportar Excel', expJ: 'Exportar JSON',
        type: 'Tipo', model: 'Modelo', code: 'Código', desc: 'Descripción', price: 'Precio €', cost: 'Coste €', margin: 'Margen %',
@@ -6517,13 +6607,17 @@ const PRICE_GRID = (() => {
   const str = v => String(v == null ? '' : v).trim();
   let G = null;                                   // {rows, base, replaced, mergedFrom}
   let VM = 'IEC';                                 // the market whose list the window shows (tabs IEC | UL)
+  let PEND = {};                                  // beta 6.49: the other tab's unsaved grid (edits, or the 2nd sheet of an imported file)
+  const SHEET = {IEC: 'IEC PL', UL: 'UL PL'};     // the two sheets of the price list Excel file
+  const otherMk = m => m === 'UL' ? 'IEC' : 'UL';
   let F = {q: '', type: '', missing: false};
 
   // "18.500,00" / "18,500.00" / "18500,5" / "€ 1 250" → number; '' = no value; NaN = not a number
   function parseNum(v){
     if(v === null || v === undefined) return '';
     if(typeof v === 'number') return Number.isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : NaN;
-    let s = String(v).replace(/[€\s  ']/g, '').replace(/^EUR|EUR$/i, '');
+    let s = String(v).replace(/[€$£\s  ']/g, '').replace(/^(EUR|USD|GBP)|(EUR|USD|GBP)$/i, '');
+    if(CURRENCY && CURRENCY.symbol && !/[0-9.,-]/.test(CURRENCY.symbol)) s = s.split(CURRENCY.symbol).join('');
     if(s === '' || s === '-') return '';
     const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
     if(lc >= 0 && ld >= 0){
@@ -6538,7 +6632,16 @@ const PRICE_GRID = (() => {
     return Math.round(Number(s) * 100) / 100;
   }
   const toVal = v => { const n = parseNum(v); return Number.isFinite(n) && n > 0 ? n : ''; };
-  const fmtIn = v => v === '' ? '' : Number(v).toFixed(2);
+  // beta 6.49: the grid shows and takes prices / costs in the document currency; G keeps EUR (the list currency)
+  const RT = () => moneyRate(), CODE = () => String(CURRENCY.code || 'EUR'), SYMB = () => String(CURRENCY.symbol || '€');
+  const fmtIn = v => v === '' ? '' : (Math.round(Number(v) * RT() * 100) / 100).toFixed(2);
+  // a typed amount (document currency) → EUR; the same amount as shown keeps the exact EUR it came from
+  const toEur = (n, orig) => {
+    if(n === '' || RT() === 1) return n;
+    if(orig !== '' && orig != null && Math.round(Number(orig) * RT() * 100) === Math.round(n * 100)) return orig;
+    return +(n / RT()).toFixed(6);
+  };
+  let IMPORT_CUR = '';                    // the currency a JSON file declares (Excel / CSV: the column names say it)
   // weight: a number when it reads as one ("18,5" → 18.5), otherwise the text as it is
   const toWeight = v => { if(v === null || v === undefined || str(v) === '') return ''; const n = parseNum(v); return Number.isFinite(n) ? n : str(v); };
   const mkRow = r => {
@@ -6548,19 +6651,21 @@ const PRICE_GRID = (() => {
   };
   const dimText = r => [r.Size ? r.Size + ' mm' : '', r.Weight !== '' ? `${typeof r.Weight === 'number' ? r.Weight.toLocaleString(LANG === 'en' ? 'en-GB' : LANG) : r.Weight} kg` : ''].filter(Boolean).join(' · ');
   const isChanged = r => r.Price !== r.p0 || r.Cost !== r.c0;
-  const changedCount = () => G.rows.filter(isChanged).length;
-  const isDirty = () => !!G && (!!G.replaced || !!G.mergedFrom || changedCount() > 0);
+  const changedCount = (g = G) => g.rows.filter(isChanged).length;
+  const isDirtyG = g => !!g && (!!g.replaced || !!g.mergedFrom || changedCount(g) > 0);
+  const isDirty = () => isDirtyG(G);
+  const anyDirty = () => isDirty() || Object.values(PEND).some(isDirtyG);
   const missingCount = () => G.rows.filter(r => r.Price === '').length;
   const showCosts = () => typeof costsAllowed !== 'function' || costsAllowed();
-  function currentName(){
-    const t = T();
-    if(G.replaced) return changedCount() ? `${G.replaced} (${t.edited})` : G.replaced;
-    if(G.base){
-      if(!changedCount()) return G.base;
-      return G.base.endsWith(`(${t.edited})`) ? G.base : `${G.base} (${t.edited})`;
+  function currentName(g = G){
+    const t = T(), ch = changedCount(g);
+    if(g.replaced) return ch ? `${g.replaced} (${t.edited})` : g.replaced;
+    if(g.base){
+      if(!ch) return g.base;
+      return g.base.endsWith(`(${t.edited})`) ? g.base : `${g.base} (${t.edited})`;
     }
-    if(G.mergedFrom) return changedCount() ? G.mergedFrom : t.builtin;
-    return changedCount() ? t.manual : t.builtin;
+    if(g.mergedFrom) return ch ? g.mergedFrom : t.builtin;
+    return ch ? t.manual : t.builtin;
   }
   function margin(r){
     if(!(r.Price > 0) || !(r.Cost > 0)) return {txt: '—', neg: false};
@@ -6575,9 +6680,9 @@ const PRICE_GRID = (() => {
     $('plOnlyMissingLbl').textContent = t.missing;
     $('plImport').textContent = t.imp; $('plExportXlsx').textContent = t.expX; $('plExportJson').textContent = t.expJ;
     $('plDropLbl').textContent = t.drop; $('plDropMaskLbl').textContent = t.dropMask; $('plDropMaskSub').textContent = t.dropSub;
-    $('plHint').textContent = t.hint;
+    $('plHint').textContent = t.hint.replace(/\bEUR\b/g, CODE());
     [['plThType', 'type'], ['plThModel', 'model'], ['plThCode', 'code'], ['plThDesc', 'desc'], ['plThPrice', 'price'], ['plThCost', 'cost'], ['plThMargin', 'margin']]
-      .forEach(([id, k]) => { $(id).textContent = t[k]; });
+      .forEach(([id, k]) => { $(id).textContent = String(t[k]).replace('€', SYMB()); });
     $('plCancel').textContent = t.cancel; $('plApply').textContent = t.apply;
     $('plGridClose').setAttribute('aria-label', t.cancel);
   }
@@ -6616,14 +6721,15 @@ const PRICE_GRID = (() => {
   }
   function info(){
     const t = T();
-    $('plGridSub').textContent = t.sub(currentName(), G.rows.length, missingCount());
+    $('plGridSub').textContent = t.sub(currentName(), G.rows.length, missingCount())
+      + (CODE() !== 'EUR' ? ` · prices in ${CODE()} (1 EUR = ${CURRENCY_RATE} ${CODE()})` : '');
     const ch = changedCount();
     const parts = [];
     if(G.replaced) parts.push(escapeHtml(t.fromFile(G.rows.length, G.replaced)));
     if(ch) parts.push(`<b>${escapeHtml(t.changed(ch))}</b>`);
     $('plFootInfo').innerHTML = parts.length ? parts.join(' · ') : escapeHtml(t.unchanged);
-    $('plApply').disabled = !isDirty();
-    $('plApply').style.opacity = isDirty() ? '' : '.55';
+    $('plApply').disabled = !anyDirty();
+    $('plApply').style.opacity = anyDirty() ? '' : '.55';
     renderTabs();
   }
   // refresh the cells of one row in place (keeps the focus where it is)
@@ -6649,7 +6755,7 @@ const PRICE_GRID = (() => {
     const v = parseNum(el.value);
     if(Number.isNaN(v)){ el.classList.add('bad'); el.title = T().invalid; return; }
     el.classList.remove('bad'); el.removeAttribute('title');
-    setVal(i, k, v === 0 ? '' : v).forEach(refreshRow);
+    setVal(i, k, v === 0 ? '' : toEur(v, G.rows[i][k])).forEach(refreshRow);
     info();
   }
   function moveFocus(el, dir){
@@ -6674,7 +6780,7 @@ const PRICE_GRID = (() => {
       line.split('\t').slice(0, cols.length).forEach((cell, c) => {
         const v = parseNum(cell);
         if(Number.isNaN(v)) return;
-        setVal(Number(tr.dataset.i), cols[c], v === 0 ? '' : v).forEach(x => touched.add(x));
+        setVal(Number(tr.dataset.i), cols[c], v === 0 ? '' : toEur(v, G.rows[Number(tr.dataset.i)][cols[c]])).forEach(x => touched.add(x));
       });
     });
     el.blur();
@@ -6691,8 +6797,8 @@ const PRICE_GRID = (() => {
     ['Description', /^(description|descrizione|beschreibung|descripción|descripcion|desc)$/],
     ['Size', /^(size|sizes|dimension|dimensions|dimensioni|dimensione|misure|ingombro|abmessungen|abmessung|maße|masse|taille|dimensiones|dimensión|tamaño)( ?(\(mm\)|mm|\(w ?x ?d ?x ?h\)|w ?x ?d ?x ?h))?$/],
     ['Weight', /^(weight|peso|gewicht|poids|kg|weight ?kg|peso ?kg)( ?(\(kg\)|kg))?$/],
-    ['Price', /^(price|prezzo|preis|prix|precio|gross ?price|list ?price|unit ?price|prezzo ?(di )?listino|listino)( ?(€|eur|\(€\)|\(eur\)))?$/],
-    ['Cost', /^(cost|costo|kosten|coût|cout|coste|unit ?cost|costo ?unitario)( ?(€|eur|\(€\)|\(eur\)))?$/],
+    ['Price', /^(price|prezzo|preis|prix|precio|gross ?price|list ?price|unit ?price|prezzo ?(di )?listino|listino)( ?(€|\$|£|[a-z]{3}|\((€|\$|£|[a-z]{3})\)))?$/],
+    ['Cost', /^(cost|costo|kosten|coût|cout|coste|unit ?cost|costo ?unitario)( ?(€|\$|£|[a-z]{3}|\((€|\$|£|[a-z]{3})\)))?$/],
   ];
   function normalizeRows(raw){
     if(!Array.isArray(raw)) return [];
@@ -6723,7 +6829,57 @@ const PRICE_GRID = (() => {
     const head = (rows.shift() || []).map(h => h.trim());
     return rows.filter(r => r.some(c => c.trim() !== '')).map(r => Object.fromEntries(head.map((h, i) => [h, r[i] == null ? '' : r[i]])));
   }
-  // .xlsx without SheetJS (e.g. the CDN is unreachable): first sheet read straight from the zip
+  // .xlsx without SheetJS (e.g. the CDN is unreachable): sheets read straight from the zip
+  async function readXlsxZipAll(buf){
+    const zip = await JSZip.loadAsync(buf);
+    const P = new DOMParser();
+    const xml = async p => { const f = zip.file(p); return f ? P.parseFromString(await f.async('string'), 'application/xml') : null; };
+    const wb = await xml('xl/workbook.xml'), rels = await xml('xl/_rels/workbook.xml.rels');
+    const sheets = wb ? [...wb.getElementsByTagName('sheet')] : [];
+    if(!sheets.length) throw new Error('no sheet');
+    const ssDoc = await xml('xl/sharedStrings.xml');
+    const ss = ssDoc ? [...ssDoc.getElementsByTagName('si')].map(si => [...si.getElementsByTagName('t')].map(t => t.textContent).join('')) : [];
+    const colOf = ref => { const m = /^([A-Z]+)/.exec(ref || ''); if(!m) return -1; let n = 0; for(const ch of m[1]) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+    const out = [];
+    for(const sh of sheets){
+      const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+      const rel = rels ? [...rels.getElementsByTagName('Relationship')].find(r => r.getAttribute('Id') === rid) : null;
+      const target = (rel ? rel.getAttribute('Target') : 'worksheets/sheet1.xml').replace(/^\/?(xl\/)?/, '');
+      const ws = await xml('xl/' + target);
+      if(!ws) continue;
+      const grid = [];
+      [...ws.getElementsByTagName('row')].forEach(rowEl => {
+        const arr = []; let next = 0;
+        [...rowEl.getElementsByTagName('c')].forEach(c => {
+          let col = colOf(c.getAttribute('r')); if(col < 0) col = next; next = col + 1;
+          const t = c.getAttribute('t'), v = c.getElementsByTagName('v')[0];
+          let val = '';
+          if(t === 's') val = ss[Number(v && v.textContent)] || '';
+          else if(t === 'inlineStr') val = [...c.getElementsByTagName('t')].map(x => x.textContent).join('');
+          else if(t === 'str' || t === 'b' || t === 'e') val = v ? v.textContent : '';
+          else val = v && v.textContent !== '' ? Number(v.textContent) : '';
+          arr[col] = val;
+        });
+        grid.push(arr);
+      });
+      const hi = grid.findIndex(r => r.some(c => c !== '' && c != null));
+      if(hi < 0){ out.push({name: sh.getAttribute('name') || '', rows: []}); continue; }
+      const head = grid[hi].map(h => String(h == null ? '' : h).trim());
+      out.push({name: sh.getAttribute('name') || '', rows: grid.slice(hi + 1).filter(r => r.some(c => c !== '' && c != null))
+        .map(r => Object.fromEntries(head.map((h, i) => [h, r[i] == null ? '' : r[i]])))});
+    }
+    return out;
+  }
+  async function readXlsxAll(buf){
+    if(typeof XLSX !== 'undefined'){
+      const wb = XLSX.read(new Uint8Array(buf), {type: 'array'});
+      return wb.SheetNames.map(n => ({name: n, rows: XLSX.utils.sheet_to_json(wb.Sheets[n], {defval: ''})}));
+    }
+    if(typeof JSZip !== 'undefined') return readXlsxZipAll(buf);
+    const e = new Error('no library'); e.noLib = true; throw e;
+  }
+  // the market a sheet name stands for: "IEC PL" / "UL PL" (also "IEC", "UL price list" …)
+  const sheetMarket = n => { const u = String(n || '').toUpperCase(); return /(^|[^A-Z])IEC([^A-Z]|$)/.test(u) ? 'IEC' : /(^|[^A-Z])UL([^A-Z]|$)/.test(u) ? 'UL' : ''; };
   async function readXlsxZip(buf){
     const zip = await JSZip.loadAsync(buf);
     const P = new DOMParser();
@@ -6770,20 +6926,40 @@ const PRICE_GRID = (() => {
     if(typeof JSZip !== 'undefined') return readXlsxZip(buf);
     const e = new Error('no library'); e.noLib = true; throw e;
   }
-  function importRows(raw, fileName){
+  // EUR per unit of the file's currency: "Price USD" / "Cost (£)" columns, or the JSON's "currency";
+  // no currency = EUR. A currency other than EUR and the one in use cannot be converted: NaN.
+  function importFactor(raw){
+    let cur = IMPORT_CUR || '';
+    const keys = new Set();
+    (Array.isArray(raw) ? raw : []).slice(0, 20).forEach(o => { if(o && typeof o === 'object') Object.keys(o).forEach(k => keys.add(k)); });
+    keys.forEach(k => {
+      const m = /^\s*(price|prezzo|preis|prix|precio|gross ?price|list ?price|unit ?price|cost|costo|kosten|coût|cout|coste|unit ?cost)\s*\(?\s*([a-z]{3}|[$£€])\s*\)?\s*$/i.exec(String(k));
+      if(m) cur = m[2];
+    });
+    cur = ({'€': 'EUR', '$': 'USD', '£': 'GBP'})[cur] || String(cur).toUpperCase();
+    if(!cur || cur === 'EUR') return 1;
+    if(cur === CODE().toUpperCase() || cur === SYMB()) return 1 / RT();
+    return NaN;
+  }
+  const usable = raw => { const rows = normalizeRows(raw); return rows.length && rows.some(r => str(r.Code) !== '') && rows.some(r => 'Price' in r || 'Cost' in r || 'Size' in r || 'Weight' in r); };
+  function importRows(raw, fileName, quiet){
     const t = T();
+    const f = importFactor(raw);
+    if(Number.isNaN(f)){ if(!quiet) openAppDialog({title: t.title, message: `The prices in "${fileName}" are in another currency: set that currency in Settings (or use a file in EUR / ${CODE()}) and import it again.`}); return null; }
     const rows = normalizeRows(raw);
+    if(f !== 1) rows.forEach(r => ['Price', 'Cost'].forEach(k => { if(k in r){ const n = parseNum(r[k]); if(n !== '' && Number.isFinite(n)) r[k] = +(n * f).toFixed(6); } }));
     const hasCode = rows.some(r => str(r.Code) !== '');
     const hasVal = rows.some(r => 'Price' in r || 'Cost' in r || 'Size' in r || 'Weight' in r);
-    if(!rows.length || !hasCode || !hasVal){ openAppDialog({title: t.title, message: t.noCols}); return; }
+    if(!rows.length || !hasCode || !hasVal){ if(!quiet) openAppDialog({title: t.title, message: t.noCols}); return null; }
     const full = rows.some(r => str(r.TYPE).toUpperCase() === 'UPS' && str(r.Model) !== '');
     if(full){
       G.rows = rows.filter(r => str(r.Code) !== '' || str(r.Model) !== '').map(mkRow);
       G.replaced = fileName; G.mergedFrom = null; G.base = '';
       F = {q: '', type: '', missing: false}; $('plSearch').value = ''; $('plOnlyMissing').checked = false;
+      if(quiet) return {full: true, n: G.rows.length};
       render();
       showExportToast(t.read(G.rows.length, fileName), 'ok');
-      return;
+      return {full: true, n: G.rows.length};
     }
     const byCode = new Map();
     rows.forEach(r => { const c = normCode(r.Code); if(c) byCode.set(c, r); });
@@ -6804,68 +6980,118 @@ const PRICE_GRID = (() => {
       if(hit) matched++;
     });
     G.mergedFrom = fileName;
+    if(quiet) return {full: false, matched, unknown};
     render();
     showExportToast(t.merged(matched, unknown), matched ? 'ok' : 'warn');
+    return {full: false, matched, unknown};
   }
+  // imports rows into the grid of market m (the tab shown, or the other one kept as pending)
+  function importInto(m, raw, fileName){
+    if(m === VM) return importRows(raw, fileName, true);
+    const keepG = G, keepVM = VM;
+    loadMarket(m);
+    const r = importRows(raw, fileName, true);
+    if(r) PEND[m] = G;
+    G = keepG; VM = keepVM;
+    return r;
+  }
+  // a file with one list: which market is it? (pre-selected: the sheet name, else the tab shown)
+  async function askMarket(guess, fileName){
+    const g = guess || VM;
+    const v = await openAppDialog({title: T().title, message: `"${fileName}" contains one price list.`, question: 'Which price list is it?',
+      buttons: [{label: 'IEC price list', value: 'IEC', primary: g === 'IEC'}, {label: 'UL price list', value: 'UL', primary: g === 'UL'}, {label: T().cancel, value: null}]});
+    return v === 'IEC' || v === 'UL' ? v : null;
+  }
+  async function importSingle(raw, fileName, guess){
+    if(!usable(raw)){ openAppDialog({title: T().title, message: T().noCols}); return; }
+    const m = await askMarket(guess, fileName);
+    if(!m) return;
+    if(m !== VM){ if(isDirty()) PEND[VM] = G; loadMarket(m); }
+    importRows(raw, fileName);
+  }
+  // beta 6.49: an Excel file with the sheets "IEC PL" and "UL PL" fills both lists; an Excel file with
+  // one list asks whether it is the IEC or the UL price list (CSV / JSON go to the tab shown, or to the JSON's market)
   async function onFile(file){
     const t = T();
     try{
-      let raw;
+      IMPORT_CUR = '';
       if(/\.json$/i.test(file.name)){
         const o = JSON.parse(await file.text());
-        raw = Array.isArray(o) ? o : (o && Array.isArray(o.rows) ? o.rows : null);
-      } else if(/\.csv$/i.test(file.name)){
-        raw = parseCsv(await file.text());
-      } else {
-        raw = await readXlsx(await file.arrayBuffer());
+        IMPORT_CUR = o && !Array.isArray(o) && typeof o.currency === 'string' ? o.currency : '';
+        if(o && !Array.isArray(o) && Array.isArray(o.IEC) && Array.isArray(o.UL)) return importBoth({IEC: o.IEC, UL: o.UL}, file.name);
+        const raw = Array.isArray(o) ? o : (o && Array.isArray(o.rows) ? o.rows : null);
+        if(!raw){ openAppDialog({title: t.title, message: t.noCols}); return; }
+        // a JSON exported here says its market: it goes to that tab; otherwise to the tab shown
+        const jm = o && (o.market === 'IEC' || o.market === 'UL') ? o.market : VM;
+        if(jm !== VM){ if(isDirty()) PEND[VM] = G; loadMarket(jm); }
+        importRows(raw, file.name); return;
       }
-      if(!raw){ openAppDialog({title: t.title, message: t.noCols}); return; }
-      importRows(raw, file.name);
+      if(/\.csv$/i.test(file.name)){ importRows(parseCsv(await file.text()), file.name); return; }
+      const sheets = (await readXlsxAll(await file.arrayBuffer())).filter(sh => usable(sh.rows));
+      if(!sheets.length){ openAppDialog({title: t.title, message: t.noCols}); return; }
+      const iec = sheets.find(sh => sheetMarket(sh.name) === 'IEC'), ul = sheets.find(sh => sheetMarket(sh.name) === 'UL');
+      if(iec && ul) return importBoth({IEC: iec.rows, UL: ul.rows}, file.name);
+      const one = sheets.find(sh => /price|listino|prezz/i.test(sh.name)) || sheets[0];
+      return importSingle(one.rows, file.name, sheetMarket(one.name));
     }catch(err){
       console.warn('Price list file not read:', err);
       openAppDialog({title: t.title, message: err && err.noLib ? t.noLib : t.bad});
     }
   }
+  function importBoth(lists, fileName){
+    const ri = importInto('IEC', lists.IEC, fileName), ru = importInto('UL', lists.UL, fileName);
+    render();
+    const say = (m, r) => !r ? `${m}: no usable columns` : r.full ? `${m}: ${r.n} rows` : `${m}: ${r.matched} codes updated`;
+    showExportToast(`${SHEET.IEC} and ${SHEET.UL} read from ${fileName} (${say('IEC', ri)} · ${say('UL', ru)}) — check both tabs, then click "${$('plApply').textContent}".`, ri && ru ? 'ok' : 'warn');
+  }
   const stamp = () => new Date().toISOString().slice(0, 10);
-  const exportRows = () => {
+  // the rows of a market as the grid holds them now (the tab shown, a pending tab, or the saved list)
+  const gridOf = m => m === VM ? G : (PEND[m] || {rows: marketRows(m).rows.map(mkRow)});
+  const exportRows = (g = G) => {
     const costs = showCosts();
-    return G.rows.map(r => {
+    return g.rows.map(r => {
+      const cv = v => v === '' ? null : (RT() === 1 ? v : Math.round(v * RT() * 100) / 100);
       const o = {FAM: r.FAM, TYPE: r.TYPE, Model: r.Model, Code: r.Code, Description: r.Description,
-        Size: r.Size === '' ? null : r.Size, Weight: r.Weight === '' ? null : r.Weight, Price: r.Price === '' ? null : r.Price};
-      if(costs) o.Cost = r.Cost === '' ? null : r.Cost;
+        Size: r.Size === '' ? null : r.Size, Weight: r.Weight === '' ? null : r.Weight, Price: cv(r.Price)};
+      if(costs) o.Cost = cv(r.Cost);
       return o;
     });
   };
   async function exportJson(){
-    const doc = {format: 'ups-configurator-price-list', version: 1, name: currentName(), exported: new Date().toISOString(), currency: 'EUR', rows: exportRows()};
-    await saveBlob(new Blob([JSON.stringify(doc, null, 2)], {type: 'application/json'}), `UPS_Price_List_${stamp()}.json`);
+    const doc = {format: 'ups-configurator-price-list', version: 1, market: VM, name: currentName(), exported: new Date().toISOString(), currency: CODE(), rows: exportRows()};
+    await saveBlob(new Blob([JSON.stringify(doc, null, 2)], {type: 'application/json'}), `UPS_Price_List_${VM}_${stamp()}.json`);
   }
+  // beta 6.49: one Excel file, two sheets — "IEC PL" and "UL PL" (same columns, importable back in one go)
   async function exportXlsx(){
-    const rows = exportRows();
+    const lists = ['IEC', 'UL'].map(m => ({m, rows: exportRows(gridOf(m))}));
     const cols = ['FAM', 'TYPE', 'Model', 'Code', 'Description', 'Size', 'Weight', 'Price'].concat(showCosts() ? ['Cost'] : []);
+    // "Price USD" / "Cost USD" when the offer is in another currency (the file imports back the same way)
+    const colName = c => (c === 'Price' || c === 'Cost') && CODE() !== 'EUR' ? `${c} ${CODE()}` : c;
     let blob;
     if(typeof JSZip !== 'undefined'){
-      // same columns as the Excel price list, so the file can be imported back (here or with the old import)
-      const ws = createXlsxSheet('Price list');
       const head = {font: {b: true, color: 'FFFFFF'}, fill: '00257A', border: 'C9D3E3', align: {v: 'center'}};
       const cell = {border: 'E1E6EE', align: {v: 'top'}};
       const money = {...cell, numFmt: '#,##0.00'};
       const widths = {FAM: 14, TYPE: 8, Model: 28, Code: 20, Description: 80, Size: 24, Weight: 10, Price: 13, Cost: 13};
       const num = {...cell, align: {v: 'top', h: 'right'}};
-      cols.forEach((c, j) => { xlsxSet(ws, 1, j + 1, {v: c, s: head}); ws.cols[j] = widths[c]; });
-      rows.forEach((r, i) => cols.forEach((c, j) => {
-        const v = r[c];
-        xlsxSet(ws, i + 2, j + 1, (c === 'Price' || c === 'Cost') ? {v: v == null ? '' : v, s: money}
-          : (c === 'Weight' && typeof v === 'number') ? {v, s: num} : {v: v == null ? '' : String(v), s: cell});
-      }));
-      ws.heights[1] = 20; ws.freezeRow = 1;
-      blob = await buildXlsxBlob(ws);
+      const sheets = lists.map(({m, rows}) => {
+        const ws = createXlsxSheet(SHEET[m]);
+        cols.forEach((c, j) => { xlsxSet(ws, 1, j + 1, {v: colName(c), s: head}); ws.cols[j] = widths[c]; });
+        rows.forEach((r, i) => cols.forEach((c, j) => {
+          const v = r[c];
+          xlsxSet(ws, i + 2, j + 1, (c === 'Price' || c === 'Cost') ? {v: v == null ? '' : v, s: money}
+            : (c === 'Weight' && typeof v === 'number') ? {v, s: num} : {v: v == null ? '' : String(v), s: cell});
+        }));
+        ws.heights[1] = 20; ws.freezeRow = 1;
+        return ws;
+      });
+      blob = await buildXlsxBlob(sheets);
     } else if(typeof XLSX !== 'undefined'){
-      const sheet = XLSX.utils.json_to_sheet(rows.map(r => Object.fromEntries(cols.map(c => [c, r[c] == null ? '' : r[c]]))), {header: cols});
-      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, sheet, 'Price list');
+      const wb = XLSX.utils.book_new();
+      lists.forEach(({m, rows}) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map(r => Object.fromEntries(cols.map(c => [colName(c), r[c] == null ? '' : r[c]]))), {header: cols.map(colName)}), SHEET[m]));
       blob = new Blob([XLSX.write(wb, {bookType: 'xlsx', type: 'array'})], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     } else { openAppDialog({title: T().title, message: T().noLib}); return; }
-    await saveBlob(blob, `UPS_Price_List_${stamp()}.xlsx`);
+    await saveBlob(blob, `UPS_Price_List_IEC_UL_${stamp()}.xlsx`);
   }
 
   // ---- open / close / apply ----
@@ -6877,32 +7103,36 @@ const PRICE_GRID = (() => {
   }
   function loadMarket(m){
     VM = m === 'UL' ? 'UL' : 'IEC';
+    if(PEND[VM]){ G = PEND[VM]; delete PEND[VM]; return; }
     const src = marketRows(VM);
     G = {rows: src.rows.map(mkRow), base: src.name, replaced: null, mergedFrom: null};
   }
   function tabsHtml(){
     return ['IEC', 'UL'].map(m => {
       let name, n, miss;
+      let pend = false;
       if(m === VM && G){ name = G.replaced || G.base; n = G.rows.length; miss = missingCount(); }
+      else if(PEND[m]){ const g = PEND[m]; name = g.replaced || g.base; n = g.rows.length; miss = g.rows.filter(r => r.Price === '').length; pend = isDirtyG(g); }
       else { const src = marketRows(m); name = src.name; n = src.rows.length; miss = src.rows.filter(r => !(toVal(r.Price) > 0)).length; }
-      const file = name || 'built-in list';
+      const file = (name || 'built-in list') + (pend ? ' · not saved yet' : '');
       return `<button type="button" class="pl-tab${m === VM ? ' on' : ''}" role="tab" aria-selected="${m === VM}" data-plm="${m}"><span class="mkdd-tag${m === 'UL' ? ' ul' : ''}">${m}</span>`
         + `<span><span class="pl-tab-t">${m} price list${m === PRICE_MARKET ? ' <span class="pl-inuse">IN USE</span>' : ''}</span>`
         + `<span class="pl-tab-s">${escapeHtml(file)} · ${n} codes${miss ? ` · <span class="miss">${miss} without price</span>` : ''}</span></span></button>`;
     }).join('');
   }
-  function renderTabs(){ $('plTabs').innerHTML = tabsHtml(); $('plApply').textContent = VM === PRICE_MARKET ? T().apply : `Save ${VM} price list`; }
+  function renderTabs(){
+    $('plTabs').innerHTML = tabsHtml();
+    const pm = Object.keys(PEND).filter(m => isDirtyG(PEND[m]));
+    const lab = m => m === PRICE_MARKET ? T().apply : `Save ${m} price list`;
+    $('plApply').textContent = pm.length && isDirty() ? 'Save IEC + UL price lists' : pm.length ? lab(pm[0]) : lab(VM);
+  }
   async function switchTab(m){
     if(!G || m === VM) return;
-    if(isDirty()){
-      const t = T();
-      const ok = await openAppDialog({title: t.discardT, message: t.discardM, question: t.discardQ,
-        buttons: [{label: t.discard, value: true}, {label: t.keep, value: false, primary: true}]});
-      if(!ok) return;
-    }
+    if(isDirty()) PEND[VM] = G;            // the tab left keeps its changes until they are saved or the window is closed
     loadMarket(m); F = {q: F.q, type: F.type, missing: F.missing}; render(); ov.querySelector('.pl-body').scrollTop = 0;
   }
   function open(market){
+    PEND = {};
     loadMarket(market || PRICE_MARKET);
     F = {q: '', type: '', missing: false};
     $('plSearch').value = ''; $('plOnlyMissing').checked = false;
@@ -6913,10 +7143,10 @@ const PRICE_GRID = (() => {
     setTimeout(() => $('plSearch').focus(), 30);
   }
   const isOpen = () => ov.style.display !== 'none' && ov.style.display !== '';
-  function hide(){ ov.style.display = 'none'; G = null; }
+  function hide(){ ov.style.display = 'none'; G = null; PEND = {}; }
   async function requestClose(){
     if(!G) return hide();
-    if(isDirty()){
+    if(anyDirty()){
       const t = T();
       const ok = await openAppDialog({title: t.discardT, message: t.discardM, question: t.discardQ,
         buttons: [{label: t.discard, value: true}, {label: t.keep, value: false, primary: true}]});
@@ -6924,25 +7154,34 @@ const PRICE_GRID = (() => {
     }
     hide();
   }
+  // saves every changed list: the one not in use is kept for later, the one in use is loaded into the configurator
   function apply(){
-    if(!G || !isDirty()) return;
+    if(!G || !anyDirty()) return;
     const bad = body.querySelector('.pl-in.bad');
     if(bad){ showExportToast(T().fix, 'warn'); bad.focus(); return; }
-    const rows = G.rows.map(r => ({FAM: r.FAM, TYPE: r.TYPE, Model: r.Model, Code: r.Code, Description: r.Description, Size: r.Size, Weight: r.Weight, Price: r.Price, Cost: r.Cost}));
-    const name = currentName();
-    if(VM !== PRICE_MARKET){
-      // the list of the market not in use: saved for later, the offer keeps the list in use
-      if(!rows.some(r => String(r.TYPE || '').trim().toUpperCase() === 'UPS')){ openAppDialog({title: T().title, message: 'No rows with TYPE = "UPS" in this list.'}); return; }
-      saveCatalogForSession(rows, name, VM);
-      showExportToast(`${VM} price list saved (${name}) — the offers keep using the ${PRICE_MARKET} list; change it in Settings › Price list.`, 'ok');
-      hide();
-      return;
+    const todo = [];
+    if(isDirty()) todo.push([VM, G]);
+    Object.entries(PEND).forEach(([m, g]) => { if(isDirtyG(g)) todo.push([m, g]); });
+    const rowsOf = g => g.rows.map(r => ({FAM: r.FAM, TYPE: r.TYPE, Model: r.Model, Code: r.Code, Description: r.Description, Size: r.Size, Weight: r.Weight, Price: r.Price, Cost: r.Cost}));
+    const other = todo.filter(([m]) => m !== PRICE_MARKET), inUse = todo.find(([m]) => m === PRICE_MARKET);
+    for(const [m, g] of other){
+      if(!rowsOf(g).some(r => String(r.TYPE || '').trim().toUpperCase() === 'UPS')){
+        if(m !== VM){ if(isDirty()) PEND[VM] = G; loadMarket(m); render(); }
+        openAppDialog({title: T().title, message: `No rows with TYPE = "UPS" in the ${m} list.`}); return;
+      }
     }
-    if(processCatalog(rows, name) === false) return;      // processCatalog already said why
-    saveCatalogForSession(rows, name);
-    const ro = typeof READ_ONLY !== 'undefined' && READ_ONLY;
-    const u = ro ? {updated: 0, missing: 0} : updateOfferPricesFromCatalog();
-    showExportToast(T().loaded(u.updated, u.missing, ro), 'ok');
+    const msgs = [];
+    other.forEach(([m, g]) => { const name = currentName(g); saveCatalogForSession(rowsOf(g), name, m); msgs.push(`${m} price list saved (${name})`); });
+    if(inUse){
+      const [m, g] = inUse, rows = rowsOf(g), name = currentName(g);
+      if(processCatalog(rows, name) === false){ if(other.length) other.forEach(([om]) => { delete PEND[om]; }); if(m !== VM){ loadMarket(m); } render(); return; }      // processCatalog already said why
+      saveCatalogForSession(rows, name);
+      const ro = typeof READ_ONLY !== 'undefined' && READ_ONLY;
+      const u = ro ? {updated: 0, missing: 0} : updateOfferPricesFromCatalog();
+      showExportToast((msgs.length ? msgs.join(' · ') + ' · ' : '') + T().loaded(u.updated, u.missing, ro), 'ok');
+    } else {
+      showExportToast(`${msgs.join(' · ')} — the offers keep using the ${PRICE_MARKET} list; change it in Settings › Price list.`, 'ok');
+    }
     hide();
   }
 
@@ -6990,7 +7229,7 @@ const PRICE_GRID = (() => {
     if(getComputedStyle($('appDialogOverlay')).display !== 'none') return;   // the question answers Esc itself
     e.preventDefault(); requestClose();
   });
-  return {open, close: requestClose, isOpen, apply, parseNum, state: () => G, importFile: onFile, market: () => VM, switchTab};
+  return {open, close: requestClose, isOpen, apply, parseNum, state: () => G, pending: () => PEND, importFile: onFile, market: () => VM, switchTab, exportXlsx};
 })();
 
 // ---- catalog lookups used by Generate Offer (Modulo1.Generate_BOM logic) ----
@@ -7194,6 +7433,7 @@ function addBomRow(data, insertBeforeNode){
     if(data.kitParent) row.dataset.kitParent = 'true';
     if(data.kitDefaults) row.dataset.kitDefaults = typeof data.kitDefaults === 'string' ? data.kitDefaults : JSON.stringify(data.kitDefaults);
     if(data.kitHead) row.dataset.kitHead = 'true';   // files from 6.01–6.05, converted by refreshKitsInChapter
+    if(!data.kitParent && data.kitOrigDisc != null && data.kitOrigDisc !== '') row.dataset.kitOrigDisc = String(data.kitOrigDisc);
     if(data.kitName) row.dataset.kitName = data.kitName;
     if(data.kitDesc) row.dataset.kitDesc = data.kitDesc;
   }
@@ -7682,7 +7922,7 @@ function openAccessoryModal(headerRow){
                 </div>
               </td>
               <td class="acc-row-code">${escapeHtml(o.code||'')}</td>
-              <td class="acc-row-price">€${Number(o.price||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+              <td class="acc-row-price">${formatMoney(o.price||0)}</td>
               <td class="acc-row-qty"><input type="number" min="1" value="${defaultQty}" class="acc-row-qty-input" onclick="event.stopPropagation()"></td>
             </tr>
           `).join('')}
@@ -8062,7 +8302,7 @@ function openTechIntegrationModal(triggerRow){
             <td><div class="acc-row-check">✓</div></td>
             <td><div class="acc-row-desc"><span>${escapeHtml(it.description || it.model)}</span></div></td>
             <td class="acc-row-code">${escapeHtml(it.code||'')}</td>
-            <td class="acc-row-price">€${Number(it.price||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+            <td class="acc-row-price">${formatMoney(it.price||0)}</td>
             <td class="acc-row-qty"><input type="number" min="1" value="1" class="acc-row-qty-input" onclick="event.stopPropagation()"></td>
           </tr>
         `).join('');
@@ -8507,7 +8747,7 @@ function parseSubBomRows(aoa){
     if(c.qty >= 0 && (c.code >= 0 || c.desc >= 0)){ hi = i; cols = c; break; }
   }
   if(!cols){ hi = -1; cols = {qty: 0, code: 1, desc: 2, cost: 3}; }
-  const num = v => { if(v === '' || v === null || v === undefined) return 0; if(typeof v === 'number') return v; const t = String(v).replace(/[€\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); const n = Number(t); return Number.isFinite(n) ? n : 0; };
+  const num = v => { if(v === '' || v === null || v === undefined) return 0; if(typeof v === 'number') return v; const t = String(v).replace(/[€$£\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); const n = Number(t); return Number.isFinite(n) ? n : 0; };
   const out = [];
   aoa.slice(hi + 1).forEach(r => {
     if(!r) return;
@@ -8707,13 +8947,69 @@ function rowRecalcOutputs(row){
   if(mEl){ mEl.textContent = margin.toFixed(2) + '%'; mEl.className = 'num out-margin ' + (margin >= 0 ? 'margin-pos' : 'margin-neg'); }
 }
 function clearKitLook(r){
+  if(r.dataset.kitParent !== 'true'){ restoreKitOrigDisc(r); rowRecalcOutputs(r); }
   r.classList.remove('kit-head', 'kit-child', 'kit-member', 'kit-parent');
   r.style.display = '';
   r.querySelectorAll('.kit-chip, .kit-ren, .kit-out').forEach(el => el.remove());
   if(!READ_ONLY) r.querySelectorAll('.in-gross, .in-disc, .in-cost').forEach(el => { if(r.dataset.kind !== 'delivery') el.disabled = false; });
 }
+// Kit discount spread over the component lines (beta 6.49): the discount typed on the kit line is
+// split over its components in proportion to each line's value — share_i ∝ value_i, scaled so that
+// the kit total is exactly the kit discount off the component total (e.g. A 1000 / B 500 with 20% →
+// A 24%, B 12%, total 1200). Each component remembers its own starting discount (data-kit-orig-disc):
+// the share is added on top of it, and a kit discount back to 0 (or the line leaving the kit) restores it.
+function kitBaseDisc(r){
+  const o = r && r.dataset.kitOrigDisc;
+  return (o != null && o !== '') ? (Number(o) || 0) : (Number(r?.querySelector('.in-disc')?.value) || 0);
+}
+function rowBaseDisc(r){ return isKitMember(r) ? kitBaseDisc(r) : (Number(r?.querySelector('.in-disc')?.value) || 0); }
+function kitMemberBase(r){
+  const qty = Number(rowQty(r)) || 0, gross = Number(r.querySelector('.in-gross')?.value) || 0;
+  return gross * (1 - kitBaseDisc(r) / 100) * qty;
+}
 function kitBaseNet(kitId){
-  return kitMembersOf(kitId).reduce((sum, r) => { const v = kitRowNet(r); return sum + v.net * v.qty; }, 0);
+  return kitMembersOf(kitId).reduce((sum, r) => sum + kitMemberBase(r), 0);
+}
+// fractions e_i (0…1) with e_i ∝ base_i and Σ base_i·e_i = D·Σ base_i; a share that would pass 100% stops there
+function kitWeightedShares(bases, D){
+  const e = bases.map(() => 0);
+  const V = bases.reduce((a, b) => a + (b > 0 ? b : 0), 0);
+  if(!(V > 0) || !(D > 0)) return e;
+  let need = Math.min(1, D) * V;
+  const free = bases.map(b => b > 0);
+  for(let it = 0; it <= bases.length && need > 1e-9; it++){
+    const idx = bases.map((b, i) => i).filter(i => free[i]);
+    const s1 = idx.reduce((a, i) => a + bases[i], 0), s2 = idx.reduce((a, i) => a + bases[i] * bases[i], 0);
+    if(!(s2 > 0)) break;
+    const k = need * s1 / s2;
+    const over = idx.filter(i => k * bases[i] / s1 >= 1);
+    if(!over.length){ idx.forEach(i => { e[i] = k * bases[i] / s1; }); need = 0; break; }
+    over.forEach(i => { e[i] = 1; free[i] = false; need -= bases[i]; });
+  }
+  return e;
+}
+function restoreKitOrigDisc(r){
+  const d = r.querySelector('.in-disc');
+  if(r.dataset.kitOrigDisc != null){ if(d) d.value = r.dataset.kitOrigDisc; delete r.dataset.kitOrigDisc; }
+  if(d){ d.classList.remove('kit-disc-share'); if(!READ_ONLY && r.dataset.kind !== 'delivery') d.disabled = false; if(d.dataset.kitShareTitle){ d.title = ''; delete d.dataset.kitShareTitle; } }
+}
+function distributeKitDiscount(kitId, D){
+  const members = kitMembersOf(kitId);
+  D = Math.max(0, Math.min(100, Number(D) || 0));
+  if(!(D > 0)){ members.forEach(r => { restoreKitOrigDisc(r); rowRecalcOutputs(r); }); return; }
+  members.forEach(r => { if(r.dataset.kitOrigDisc == null) r.dataset.kitOrigDisc = String(Number(r.querySelector('.in-disc')?.value) || 0); });
+  const e = kitWeightedShares(members.map(kitMemberBase), D / 100);
+  members.forEach((r, i) => {
+    const o = kitBaseDisc(r) / 100, d = r.querySelector('.in-disc');
+    if(d){
+      const tot = (1 - (1 - o) * (1 - e[i])) * 100;
+      d.value = String(Math.round(tot * 10000) / 10000);
+      d.disabled = true; d.classList.add('kit-disc-share'); d.dataset.kitShareTitle = '1';
+      d.title = `Share of the ${D.toFixed(2)}% kit discount, weighted on the line value: ${(e[i] * 100).toFixed(2)}%` +
+        (o > 0 ? ` on top of the line's own ${(o * 100).toFixed(2)}%` : '') + ' — change it on the kit line';
+    }
+    rowRecalcOutputs(r);
+  });
 }
 function applyKitLook(parent, members){
   const open = parent.dataset.kitOpen === 'true';
@@ -8724,7 +9020,7 @@ function applyKitLook(parent, members){
   const kitGross = parent.querySelector('.in-gross');
   if(kitGross && !READ_ONLY){
     kitGross.disabled = false;
-    kitGross.title = 'Kit total target — enter the desired net total; it is achieved with a kit-level discount, without changing component prices';
+    kitGross.title = 'Kit total target — enter the desired net total; it becomes the kit discount, spread over the component lines';
     if(!kitGross.dataset.kitPriceWired){
       kitGross.dataset.kitPriceWired = '1';
       kitGross.addEventListener('change', () => {
@@ -8747,7 +9043,7 @@ function applyKitLook(parent, members){
   if(kitDisc && !READ_ONLY){
     kitDisc.disabled = false;
     kitDisc.min = '0'; kitDisc.max = '100';
-    kitDisc.title = 'Discount applied to the kit total; component selling prices remain unchanged';
+    kitDisc.title = 'Discount on the kit total – spread over the component lines, weighted on their value';
     if(!kitDisc.dataset.kitDiscountWired){
       kitDisc.dataset.kitDiscountWired = '1';
       kitDisc.addEventListener('change', () => {
@@ -8894,13 +9190,15 @@ function refreshKitsInChapter(owner){
       if(anchor.nextElementSibling !== r){ bomBody.insertBefore(r, anchor.nextElementSibling); moved = true; }
       anchor = r;
     });
-    // kit price / cost per kit = sum of the components
+    // the kit discount is spread over the components (weighted on their value); the kit line shows
+    // the components' total before it, and the kit discount
+    distributeKitDiscount(kitId, Number(parent.querySelector('.in-disc')?.value) || 0);
     let net = 0, cost = 0;
-    members.forEach(r => { const v = kitRowNet(r); net += v.net * v.qty; cost += v.cost * v.qty; });
+    members.forEach(r => { const v = kitRowNet(r); net += kitMemberBase(r); cost += v.cost * v.qty; });
     const g = parent.querySelector('.in-gross'), d = parent.querySelector('.in-disc'), c = parent.querySelector('.in-cost');
     if(g && document.activeElement !== g) g.value = net.toFixed(2);
     const disc = Math.max(0, Math.min(100, Number(d?.value) || 0));
-    if(d){ d.disabled = !!READ_ONLY; d.title = 'Discount on the kit total; component prices remain unchanged'; }
+    if(d){ d.disabled = !!READ_ONLY; d.title = 'Discount on the kit total – spread over the component lines, weighted on their value'; }
     if(c) c.value = cost.toFixed(2);
     rowRecalcOutputs(parent);
     applyKitLook(parent, members);
@@ -9171,7 +9469,7 @@ function kbCatalogByCode(code){
 function kbVals(c){
   if(c.row){
     const v = kitRowNet(c.row);
-    return {model: rowModelText(c.row).replace(/^↳\s*/, ''), code: rowCodeText(c.row), desc: rowDescText(c.row), net: v.net, cost: v.cost};
+    return {model: rowModelText(c.row).replace(/^↳\s*/, ''), code: rowCodeText(c.row), desc: rowDescText(c.row), net: v.gross * (1 - rowBaseDisc(c.row) / 100), cost: v.cost};
   }
   const d = c.data;
   return {model: d.model, code: d.code, desc: d.desc, net: (Number(d.gross) || 0) * (1 - (Number(d.disc) || 0) / 100), cost: Number(d.cost) || 0};
@@ -9466,7 +9764,7 @@ function kbDataHtml(){
     </div>
     ${(() => { const t = kbTotals(d.comps, d.priceTarget, d.discountTarget); return `<div class="kb-price"><label class="kb-lab">Selling price / kit<input type="number" class="kb-in" id="kbPrice" min="0" step="0.01" value="${t.net.toFixed(2)}"></label>
       <label class="kb-lab">Kit discount %<input type="number" class="kb-in" id="kbDiscount" min="0" max="100" step="0.1" value="${Number(d.discountTarget || 0)}"></label>
-      <span class="kb-price-hint" id="kbPriceHint">${d.priceTarget != null ? `Target price reached through a kit-level discount; component prices are unchanged (base total: ${formatMoney(t.sum)}). <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>` : `Component total less ${Number(d.discountTarget || 0).toFixed(2)}% kit discount. Component prices remain unchanged.${Number(d.discountTarget || 0) > 0 ? ' <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>' : ''}`}</span></div>`; })()}
+      <span class="kb-price-hint" id="kbPriceHint">${d.priceTarget != null ? `Target price reached through the kit discount, spread over the components weighted on their value (base total: ${formatMoney(t.sum)}). <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>` : `Component total less ${Number(d.discountTarget || 0).toFixed(2)}% kit discount, spread over the component lines weighted on their value.${Number(d.discountTarget || 0) > 0 ? ' <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>' : ''}`}</span></div>`; })()}
     <label class="kb-lab">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea class="kb-ta" id="kbDesc" rows="2" placeholder="What the offer says about this kit">${escapeHtml(d.desc)}</textarea></label>
     <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:11.5px; color:#4B5260"><span id="kbDataHint">${d.mode === 'new' && d.autoTexts ? 'Proposed from the first component — overwrite as you like.' : 'Price = sum of the components; the BOM lists only the components.'}</span>
     ${d.comps.length ? `<button type="button" class="kb-link" data-fromfirst>From the first component</button>` : ''}</div></div>`;
@@ -9595,7 +9893,7 @@ function kbWire(panel){
         d.priceTarget = null;
         const base = kbTotals(d.comps).sum;
         const hint = document.getElementById('kbPriceHint');
-        if(hint) hint.textContent = 'Kit-level discount applied to the total; component selling prices remain unchanged.';
+        if(hint) hint.textContent = 'Kit discount on the total – spread over the component lines, weighted on their value.';
         const pp = document.getElementById('kbPrice');
         if(pp) pp.value = (base * (1 - d.discountTarget / 100)).toFixed(2);
         kbRenderSummary();
@@ -9615,7 +9913,7 @@ function kbWire(panel){
           if(target > sum + 0.005){ pr.value = sum.toFixed(2); d.priceTarget = sum; }
         }
         const hint = document.getElementById('kbPriceHint');
-        if(hint) hint.textContent = v !== '' && Number(v) > sum + 0.005 ? 'A discount cannot increase the component total; the selling price is limited to that total. Component prices are unchanged.' : `Target selling price aligned with a kit-level discount. Component prices remain unchanged (base total: ${formatMoney(sum)}).`;
+        if(hint) hint.textContent = v !== '' && Number(v) > sum + 0.005 ? 'A discount cannot increase the component total; the selling price is limited to that total.' : `Target selling price reached with the kit discount, spread over the components weighted on their value (base total: ${formatMoney(sum)}).`;
         kbRenderSummary();
       });
     }
@@ -9851,6 +10149,7 @@ function bomRowCopyData(r){
     desc: rowDescText(r),
     gross: r.querySelector('.in-gross') ? r.querySelector('.in-gross').value : 0,
     disc: r.querySelector('.in-disc') ? r.querySelector('.in-disc').value : 0,
+    kitOrigDisc: r.dataset.kitOrigDisc,
     cost: r.querySelector('.in-cost') ? r.querySelector('.in-cost').value : 0,
     extSupplier: rowExtSupplier(r),
     techCategory: r.dataset.techCategory || null,
@@ -10199,7 +10498,7 @@ function openServiceModal(headerRow){
         </div>
         <div class="svc-delivery-fields">
           <div class="field"><label for="svcDeliveryPercent">Delivery percentage</label><input id="svcDeliveryPercent" type="number" min="0" max="100" step="0.1" value="0"></div>
-          <div class="field"><label for="svcDeliveryPrice">Manual Delivery price (€)</label><input id="svcDeliveryPrice" type="number" min="0" step="0.01" value="0"></div>
+          <div class="field"><label for="svcDeliveryPrice">Manual Delivery price (<span data-cur-sym>${escapeHtml(CURRENCY.symbol || '€')}</span>)</label><input id="svcDeliveryPrice" type="number" min="0" step="0.01" value="0"></div>
         </div>
         <div class="svc-delivery-hint">When present, Delivery remains the last line in SERVICES. A manual price affects both selling price and cost; you can return to percentage calculation at any time.</div>
       </div>
@@ -10372,7 +10671,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       code: rowCodeText(r),
       desc: rowDescText(r),
       gross: r.querySelector('.in-gross').value,
-      disc: r.querySelector('.in-disc').value,
+      disc: String(rowBaseDisc(r)),
       cost: r.querySelector('.in-cost').value,
       qty: rowQty(r),
       extSupplier: rowExtSupplier(r),
@@ -10405,7 +10704,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       code: rowCodeText(r),
       desc: rowDescText(r),
       gross: r.querySelector('.in-gross').value,
-      disc: r.querySelector('.in-disc').value,
+      disc: String(rowBaseDisc(r)),
       cost: r.querySelector('.in-cost').value,
       qty: rowQty(r),
       extSupplier: rowExtSupplier(r),
@@ -10437,7 +10736,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         code: rowCodeText(r),
         desc: rowDescText(r),
         gross: r.querySelector('.in-gross').value,
-        disc: r.querySelector('.in-disc').value,
+        disc: String(rowBaseDisc(r)),
         cost: r.querySelector('.in-cost').value,
         qty: rowQty(r),
         extSupplier: rowExtSupplier(r),
@@ -10784,6 +11083,8 @@ function setReadOnly(ro){
   bomBody.querySelectorAll('tr[data-kind="delivery"] .in-qty, tr[data-kind="delivery"] .in-disc').forEach(el=>{ el.disabled = true; });
   // a kit line's price and cost are always the sum of its components
   bomBody.querySelectorAll('tr[data-kit-parent="true"] .in-gross, tr[data-kit-parent="true"] .in-disc, tr[data-kit-parent="true"] .in-cost').forEach(el=>{ el.disabled = true; });
+  // a component's discount carrying a share of the kit discount is set from the kit line
+  bomBody.querySelectorAll('tr[data-kit-orig-disc] .in-disc').forEach(el=>{ el.disabled = true; });
   // a service line with a level: the quantity follows the UPS configurations (or 1 for training)
   bomBody.querySelectorAll('tr[data-svc-level] .in-qty').forEach(el=>{ el.disabled = true; });
   bomBody.classList.toggle('read-only', ro); // hides the ⠿ drag handles while the revision is closed
@@ -11680,8 +11981,11 @@ var TCO = (function(){
   const num = (v, d = 0) => { const n = Number(v); return isFinite(n) ? n : d; };
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const esc = v => escapeHtml(String(v == null ? '' : v));
-  const eur = v => '€' + Math.round(v).toLocaleString('en-US');
-  const k = v => Math.abs(v) >= 1e6 ? '€' + (v / 1e6).toFixed(2) + 'M' : '€' + Math.round(v / 1000).toLocaleString('en-US') + 'k';
+  // amounts are computed in EUR and shown in the document currency (Settings › Display currency)
+  const SYM = () => String(CURRENCY.symbol || '€'), RT = () => moneyRate();
+  const eur = v => SYM() + Math.round(v * RT()).toLocaleString('en-US');
+  const k = v => { const x = v * RT(); return Math.abs(x) >= 1e6 ? SYM() + (x / 1e6).toFixed(2) + 'M' : SYM() + Math.round(x / 1000).toLocaleString('en-US') + 'k'; };
+  const cu = s => String(s).replace(/€/g, SYM());
   const pfKey = () => PFS.includes(String(S.pf)) ? String(S.pf) : '1.00';
   const pfFactor = () => { const p = pfKey(), o = S.pfk || {}; return clamp(o[p] != null && isFinite(Number(o[p])) ? Number(o[p]) : PF_DEF[p], 0.8, 1.05); };
 
@@ -11932,7 +12236,7 @@ var TCO = (function(){
   }
 
   // ---------- Overview ----------
-  const field = (key, label, unit, step, tip) => `<div class="tco-f"><label for="tcoF_${key}" title="${esc(tip || label)}">${label}</label><div class="tco-in"><input id="tcoF_${key}" type="number" inputmode="decimal" step="${step || 'any'}" data-k="${key}" value="${esc(S[key])}">${unit ? `<span>${unit}</span>` : ''}</div></div>`;
+  const field = (key, label, unit, step, tip) => { const m = /€/.test(unit || ''); return `<div class="tco-f"><label for="tcoF_${key}" title="${esc(tip || label)}">${label}</label><div class="tco-in"><input id="tcoF_${key}" type="number" inputmode="decimal" step="${step || 'any'}" data-k="${key}"${m ? ` data-money="${key === 'price' ? 3 : 2}"` : ''} value="${esc(S[key])}">${unit ? `<span>${esc(cu(unit))}</span>` : ''}</div></div>`; };
   function curveNote(p){
     if(p.cv.src === 'generic') return `Generic example curve – enter the ${p.model}${p.vk === 'ftt' ? ' Front to Top' : ''} datasheet points in «Efficiency curves»`;
     if(p.cv.fallback) return `No Front to Top curve for the ${p.model} yet – its Standard curve is used`;
@@ -11946,10 +12250,10 @@ var TCO = (function(){
       <input type="range" class="tco-rng" min="10" max="100" step="5" value="${esc(p.ps.avg)}" aria-label="Average load of position ${esc(p.pos)}, % of the design load">
       <div class="tco-curve"></div>
       <button type="button" class="tco-ex" data-goto hidden></button>
-      <div class="tco-k3"><div title="With the ECO mode share and the power-factor correction"><small>Efficiency</small><b class="tco-e"></b></div><div><small>Losses</small><b class="tco-l"></b></div><div><small>€ / year</small><b class="tco-y"></b></div></div>
+      <div class="tco-k3"><div title="With the ECO mode share and the power-factor correction"><small>Efficiency</small><b class="tco-e"></b></div><div><small>Losses</small><b class="tco-l"></b></div><div><small>${SYM()} / year</small><b class="tco-y"></b></div></div>
       <div class="tco-row tco-instrow" hidden><span title="Its share of the SERVICES lines L1–L5 assigned to this configuration (by number of UPS)">Installation & commissioning</span><b class="tco-inst-p"></b></div>
       <div class="tco-g2 tco-bat">
-        <div class="tco-f"><label title="Price of one battery set; one set per UPS (× ${p.units})">Battery set${p.units > 1 ? ` · ×${p.units}` : ''}</label><div class="tco-in"><input type="number" min="0" step="100" data-p="set" value="${esc(p.ps.set)}" aria-label="Battery set price, position ${esc(p.pos)}"><span>€</span></div></div>
+        <div class="tco-f"><label title="Price of one battery set; one set per UPS (× ${p.units})">Battery set${p.units > 1 ? ` · ×${p.units}` : ''}</label><div class="tco-in"><input type="number" min="0" step="100" data-p="set" data-money="2" value="${esc(p.ps.set)}" aria-label="Battery set price, position ${esc(p.pos)}"><span>${SYM()}</span></div></div>
         <div class="tco-f"><label title="Battery replacement interval">Replaced every</label><div class="tco-in"><input type="number" min="0" max="30" step="1" data-p="every" value="${esc(p.ps.every)}" aria-label="Battery replacement interval, position ${esc(p.pos)}"><span>years</span></div></div></div>
     </div>`;
   }
@@ -12006,7 +12310,7 @@ var TCO = (function(){
       <span>NPV ${k(R.npv)} · CO₂ ${Math.round(R.co2).toLocaleString('en-US')} t${R.tot.capex ? '' : ' · generate the offer to include the purchase price'}</span>${compBar(R)}
       ${R.tot.capex ? `<p class="tco-capex">CAPEX ${k(R.capex)} = ${[['UPS configurations', R.equipment], ['installation & commissioning', R.install.total], ['other offer lines', R.otherOffer], ['other installation', R.extraInstall]].filter(x => x[1] > 0.5).map(x => `${x[0]} <b>${k(x[1])}</b>`).join(' · ')}</p>` : ''}`;
     const ie = el.querySelector('.tco-inst');
-    if(ie){ ie.textContent = R.install.lines ? eur(R.install.total).replace('€', '') : '–'; ie.closest('.tco-f').title = R.install.lines ? installText(R.install) : 'No SERVICES line with a level yet – choose the level in Add Service Items (Offer Lines › SERVICES › + Add Service)'; }
+    if(ie){ ie.textContent = R.install.lines ? eur(R.install.total).replace(SYM(), '') : '–'; ie.closest('.tco-f').title = R.install.lines ? installText(R.install) : 'No SERVICES line with a level yet – choose the level in Add Service Items (Offer Lines › SERVICES › + Add Service)'; }
     const view = S.view === 'year' ? 'year' : 'cum';
     el.querySelectorAll('.tco-seg button').forEach(b => { b.classList.toggle('on', b.dataset.view === view); b.setAttribute('aria-pressed', String(b.dataset.view === view)); });
     const box = el.querySelector('.tco-chart'); const w = Math.max(320, Math.round(box.clientWidth - 28));
@@ -12223,16 +12527,16 @@ var TCO = (function(){
      ['CO₂ factor kg/kWh', S.co2], ['ECO mode % of hours', S.eco], ['Load power factor', Number(pfKey())], ['PF correction (efficiency ×)', +R.pfk.toFixed(4)], ['Hours per year', S.hours],
      ['Installation & commissioning from the offer (L1–L6) €', Math.round(R.install.total)], ...SVC_LEVELS.filter(l => R.install.byLevel[l.id]).map(l => [`   ${l.id} · ${l.name} €`, Math.round(R.install.byLevel[l.id])]),
      ['Other installation (not in the offer) €', S.install], ['CAPEX €', Math.round(R.capex)]]
-      .forEach(([a, b]) => { xlsxSet(ws, r, 1, {v: a, s: C}); xlsxSet(ws, r++, 2, {v: num(b), s: /€$/.test(a) ? M : C}); });
+      .forEach(([a, b]) => { const m = /€/.test(a); xlsxSet(ws, r, 1, {v: cu(a), s: C}); xlsxSet(ws, r++, 2, {v: m ? (/kWh/.test(a) ? +(num(b) * RT()).toFixed(4) : Math.round(num(b) * RT())) : num(b), s: m && !/kWh/.test(a) ? M : C}); });
     r++;
-    ['Pos', 'Load', 'UPS frame', 'Ventilation', 'Installed kW', 'UPS', 'Average load %', 'Load % of installed', 'Efficiency %', 'Losses kW', 'Energy + cooling €/yr', 'Battery set €', 'Every yr', 'Curve', 'Installation & commissioning €'].forEach((h, j) => xlsxSet(ws, r, j + 1, {v: h, s: H})); r++;
-    R.per.forEach(p => { [p.pos, p.lt, p.model, ventName(p.vk), Math.round(p.inst), p.units, num(p.ps.avg), +(p.x * 100).toFixed(1), +(p.eff * 100).toFixed(2), +p.loss.toFixed(2), Math.round(p.eurYear), num(p.ps.set), num(p.ps.every),
-      p.cv.src === 'generic' ? 'generic example' : p.cv.fallback ? 'Standard curve (no Front to Top points)' : 'datasheet points', Math.round(p.install)]
+    ['Pos', 'Load', 'UPS frame', 'Ventilation', 'Installed kW', 'UPS', 'Average load %', 'Load % of installed', 'Efficiency %', 'Losses kW', 'Energy + cooling €/yr', 'Battery set €', 'Every yr', 'Curve', 'Installation & commissioning €'].forEach((h, j) => xlsxSet(ws, r, j + 1, {v: cu(h), s: H})); r++;
+    R.per.forEach(p => { [p.pos, p.lt, p.model, ventName(p.vk), Math.round(p.inst), p.units, num(p.ps.avg), +(p.x * 100).toFixed(1), +(p.eff * 100).toFixed(2), +p.loss.toFixed(2), Math.round(p.eurYear * RT()), Math.round(num(p.ps.set) * RT()), num(p.ps.every),
+      p.cv.src === 'generic' ? 'generic example' : p.cv.fallback ? 'Standard curve (no Front to Top points)' : 'datasheet points', Math.round(p.install * RT())]
       .forEach((v, j) => xlsxSet(ws, r, j + 1, {v, s: typeof v === 'number' && (j === 10 || j === 11 || j === 14) ? M : C})); r++; });
     r++;
     ['Year', 'CAPEX', 'Energy lost', 'Cooling', 'Batteries', 'Service', 'Total', 'Cumulative', 'Present value'].forEach((h, j) => xlsxSet(ws, r, j + 1, {v: h, s: H})); r++;
-    R.rows.forEach(x => { [x.year, x.capex, x.energy, x.cooling, x.battery, x.maint, x.total, x.cum, x.pv].forEach((v, j) => xlsxSet(ws, r, j + 1, {v: j ? Math.round(v) : v, s: j ? M : C})); r++; });
-    [() => 'Total', ...['capex', 'energy', 'cooling', 'battery', 'maint', 'total'].map(kk => () => Math.round(R.tot[kk])), () => '', () => Math.round(R.npv)].forEach((f, j) => xlsxSet(ws, r, j + 1, {v: f(), s: {...M, font: {b: true}}}));
+    R.rows.forEach(x => { [x.year, x.capex, x.energy, x.cooling, x.battery, x.maint, x.total, x.cum, x.pv].forEach((v, j) => xlsxSet(ws, r, j + 1, {v: j ? Math.round(v * RT()) : v, s: j ? M : C})); r++; });
+    [() => 'Total', ...['capex', 'energy', 'cooling', 'battery', 'maint', 'total'].map(kk => () => Math.round(R.tot[kk] * RT())), () => '', () => Math.round(R.npv * RT())].forEach((f, j) => xlsxSet(ws, r, j + 1, {v: f(), s: {...M, font: {b: true}}}));
     ws.cols = [44, 16, 14, 14, 13, 9, 14, 14, 13, 12, 18, 13, 9, 30, 16];
     await saveBlob(await buildXlsxBlob(ws), `${ref || 'Offer'}_TCO.xlsx`);
   }
@@ -12261,7 +12565,7 @@ var TCO = (function(){
       T(title, M, 92, {bold: true, size: 11, color: [0, 112, 192]});
       T(sub, M, 106, {size: 8.5, color: DIM});
     }
-    const sub = `${today} · offer R${typeof REVISION !== 'undefined' ? REVISION : 0} · horizon ${R.years} years · energy €${num(S.price).toFixed(2)}/kWh +${num(S.esc)}%/yr · COP ${num(S.cop)} · discount ${num(S.disc)}% · PF ${pfKey()} (efficiency × ${R.pfk.toFixed(3)})${num(S.eco) ? ` · ECO ${num(S.eco)}%` : ''}`;
+    const sub = `${today} · offer R${typeof REVISION !== 'undefined' ? REVISION : 0} · horizon ${R.years} years · energy ${SYM()}${(num(S.price) * RT()).toFixed(2)}/kWh +${num(S.esc)}%/yr · COP ${num(S.cop)} · discount ${num(S.disc)}% · PF ${pfKey()} (efficiency × ${R.pfk.toFixed(3)})${num(S.eco) ? ` · ECO ${num(S.eco)}%` : ''}`;
     // ---- page 1: summary ----
     head(sub);
     let y = 122;
@@ -12286,7 +12590,7 @@ var TCO = (function(){
     pdfCostChart(doc, R, cx, y, cw, ch, T);
     doc.autoTable({startY: y - 9, margin: {left: M + CW - 284, right: M}, tableWidth: 284, theme: 'grid',
       head: [[{content: 'TCO settings', colSpan: 2}]],
-      body: [['Energy price', `€${num(S.price).toFixed(3)} / kWh`], ['Yearly increase', `${num(S.esc)} %`], ['Cooling COP', String(num(S.cop))], ['Horizon', `${R.years} years`], ['Discount rate', `${num(S.disc)} %`],
+      body: [['Energy price', `${SYM()}${(num(S.price) * RT()).toFixed(3)} / kWh`], ['Yearly increase', `${num(S.esc)} %`], ['Cooling COP', String(num(S.cop))], ['Horizon', `${R.years} years`], ['Discount rate', `${num(S.disc)} %`],
              ['Service and maintenance', `${eur(num(S.service))} per UPS / year`], ['CO2 factor', `${num(S.co2)} kg/kWh`], ['ECO mode', `${num(S.eco)} % of the hours`], ['Hours per year', String(num(S.hours))],
              ['Load power factor', `${pfKey()} – efficiency × ${R.pfk.toFixed(3)}`], ['Installation & commissioning (offer, L1–L6)', R.install.lines ? eur(R.install.total) : '–'], ['Other installation (not in the offer)', num(S.install) ? eur(num(S.install)) : '–'], ['Fans', num(S.fansCost) ? `year ${S.fansYear} · ${eur(num(S.fansCost))} per UPS` : '–'],
              ['Capacitors', num(S.capsCost) ? `year ${S.capsYear} · ${eur(num(S.capsCost))} per UPS` : '–'], ['End of life', num(S.eol) ? eur(num(S.eol)) : '–'], ['CAPEX (offer lines + other installation)', eur(R.capex)]],
@@ -13264,6 +13568,7 @@ function buildConfigState(){
     if(r.dataset.kitId){
       item.kitId = r.dataset.kitId;
       if(r.dataset.kitParent === 'true'){ item.kitParent = true; try{ item.kitDefaults = JSON.parse(r.dataset.kitDefaults || 'null') || undefined; }catch(e){} }
+      else if(r.dataset.kitOrigDisc != null) item.kitOrigDisc = r.dataset.kitOrigDisc;
     }
     if(kind === 'header'){
       item.label = r.cells[4].textContent;
@@ -14380,8 +14685,10 @@ function applyLoadedState(state){
     document.getElementById('prjOfferType').value = p.offerType || '';
     document.getElementById('prjStdSpecial').value = p.stdSpecial || '';
 
+    const moneySnap = moneySnapshot();
     if(state.currency && state.currency.symbol) CURRENCY = state.currency;
     if(state.currencyRate) CURRENCY_RATE = state.currencyRate;
+    moneyRestore(moneySnap);
     if(state.projectDiscount !== undefined) PROJECT_DISCOUNT = Number(state.projectDiscount)||0;
     if(state.deliveryPercent !== undefined) DELIVERY_PERCENT = Number(state.deliveryPercent)||0;
     DELIVERY_ENABLED = state.deliveryEnabled !== undefined ? !!state.deliveryEnabled : !!(state.bom || []).some(item => item && item.kind === 'delivery');
@@ -17280,6 +17587,9 @@ const CHANGELOG = [
     'Gamma UL M2F / M2U (listino UL integrato neutro, senza prezzi e costi): modelli divisi per taglia modulo (M2F 150/350/675 - 50/75, M2U 140/68 - 34/25/20), solo cablati e solo moduli BLUE. M2F 150 e M2U 68 solo CBC 6, M2F 675 solo PC0, M2F 350 e M2U 140 PC0 o PCS. Potenza massima dell\'armadio (M2F 675 = 675 kW, M2U 140 = 136 kW, M2F 350 PCS = 300 kW) e massimo moduli 3 / 5 / 9',
     'Servizi SLA (L1–L5): nella scelta delle posizioni c\'è FOK (First of a Kind) — prende tutte le posizioni (anche quelle aggiunte dopo), la quantità è libera (parte da 1, sempre modificabile) e la descrizione della riga riporta "First of a Kind (FOK)"',
     'Generazione UL: PCS = armadio PC0 + YM2FM11A (M2F 350, nota limite 300 kW) o + YM2UM08A (M2U 140, nota kit cavi YM2UE34A disponibile); VE = kit YM2UM06A (M2F 150, M2U 140, M2U 68), armadio M2F 675 PC0 VE per M2F 675, e per M2F 350 (VE non disponibile) passaggio a M2F 675 PC0 VE; litio = EnergyManager YSKCC06AUL; kit parallelo dal listino UL (YM2UP00B, YMP2P00A per M2F 675). Accessori proposti in base alle famiglie UL',
+    'Price list Excel: Export Excel scarica un unico file con due fogli — foglio 1 "IEC PL", foglio 2 "UL PL" (stesse colonne, con le modifiche non ancora salvate delle due schede). Importando un file con i due fogli si compilano entrambe le schede e il pulsante diventa "Save IEC + UL price lists"; con un Excel di un solo foglio il programma chiede se è il listino IEC o UL (proposto quello del nome del foglio). Passando da una scheda all\'altra le modifiche restano (scheda "not saved yet") fino al salvataggio o alla chiusura; l\'Export JSON indica il suo listino e reimportato va nella sua scheda',
+    'Kit: lo sconto inserito sulla riga del kit si distribuisce nelle caselle sconto delle righe figlie, pesato sul valore di ogni riga e scalato perché il kit faccia esattamente lo sconto indicato (es. A 1000 / B 500 con 20% → A 24%, B 12%, kit 1200). Le righe figlie con uno sconto proprio ricevono la quota in aggiunta; azzerando lo sconto del kit, o togliendo la riga dal kit, torna lo sconto originale. Le caselle sconto dei figli sono bloccate (si cambia lo sconto sul kit); il prezzo del kit scritto a mano diventa lo sconto del kit e si distribuisce allo stesso modo. Le offerte salvate prima vengono convertite all\'apertura senza doppio sconto',
+    'Valuta: scegliendo una valuta in Settings (es. USD con il cambio 1 EUR = ? USD) tutto il documento lavora in quella valuta — non solo i totali ma anche i campi modificabili: Gross Price e Unit Cost delle righe (simbolo $ dentro il campo), riga kit e prezzo del kit, finestre Battery / Technology Integration / Services (prezzo Delivery manuale), prezzo del sales code e importi del TCO. I prezzi presi dal listino vengono convertiti; quello che scrivi è nella valuta scelta. Sotto il programma tiene gli importi in EUR (la valuta dei listini), quindi cambiando valuta avanti e indietro i valori non si spostano; il file salvato conserva la valuta. Anche la finestra Price list mostra e accetta Price e Cost nella valuta scelta (intestazioni "Price $ / Cost $", nota col cambio); l\'Export Excel / JSON esce in quella valuta (colonne "Price USD" / "Cost USD") e si reimporta uguale, un file con colonne "Price" senza valuta è letto in EUR, un file in una terza valuta viene rifiutato con spiegazione',
   ]},
   {version:'beta_6.48', date:'2026-10-15', notes:[
     'Ribbon Home, gruppo Progetto: "New project" sostituisce "New offer" e "Create in SharePoint" (tolti). Apre la pagina "New project"; "Back to the offer" torna all\'offerta com\'era, senza toccarla',

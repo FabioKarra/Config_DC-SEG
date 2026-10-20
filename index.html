@@ -1152,8 +1152,8 @@ table.bom input.in-qty{padding-left:3px; padding-right:3px; -moz-appearance:text
 table.bom input.in-qty::-webkit-outer-spin-button, table.bom input.in-qty::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
 /* beta_6.44: editable prices (gross price, unit cost) always as € + two decimals — the € sits inside the field */
 table.bom td:has(> input.in-gross), table.bom td:has(> input.in-cost){position:relative; padding-left:4px; padding-right:4px;}
-table.bom td:has(> input.in-gross)::before, table.bom td:has(> input.in-cost)::before{content:'€'; position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:400; color:#8A93A3; pointer-events:none;}
-table.bom input.in-gross, table.bom input.in-cost{max-width:none; padding-left:16px; padding-right:5px; font-variant-numeric:tabular-nums; -moz-appearance:textfield; appearance:textfield;}
+table.bom td:has(> input.in-gross)::before, table.bom td:has(> input.in-cost)::before{content:var(--cur-sym, '€'); position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:400; color:#8A93A3; pointer-events:none;}
+table.bom input.in-gross, table.bom input.in-cost{max-width:none; padding-left:var(--cur-pad, 16px); padding-right:5px; font-variant-numeric:tabular-nums; -moz-appearance:textfield; appearance:textfield;}
 table.bom input.in-gross::-webkit-outer-spin-button, table.bom input.in-gross::-webkit-inner-spin-button,
 table.bom input.in-cost::-webkit-outer-spin-button, table.bom input.in-cost::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
 .model-cell{color:var(--accent-dark); font-weight:300;}
@@ -3561,9 +3561,10 @@ function setupBackdropClose(overlayEl, closeFn){
 })();
 
 
-// ---- currency (EUR is always the base/storage currency — Gross Price & Cost inputs are always
-// entered in EUR; switching currency here only changes the conversion rate applied when
-// DISPLAYING computed totals, so there's a single source of truth and no conversion drift) ----
+// ---- currency: EUR is the base / storage currency (the price lists are in EUR). Since beta 6.49 the
+// whole document works in the selected currency: totals are shown converted (formatMoney) AND every
+// money field (Gross Price, Unit Cost, kit price, battery / technology / service / delivery windows,
+// sales-code price, TCO amounts) shows and takes values in that currency — see installMoneyView. ----
 let CURRENCY = { code:'EUR', symbol:'€' };
 let CURRENCY_RATE = 1; // units of CURRENCY.symbol per 1 EUR — always 1 when CURRENCY is EUR itself
 let PROJECT_DISCOUNT = 0;
@@ -3592,11 +3593,93 @@ function fmt2(n){
 function formatMoney(n){
   return `${CURRENCY.symbol}${fmt2((Number(n)||0) * CURRENCY_RATE)}`;
 }
+// ---- beta 6.49: money fields in the selected currency. The field shows (and the person types) the
+// amount in the document currency; for the program the field's .value is still EUR — reading gives
+// EUR, writing takes EUR and shows it converted. The exact EUR amount is kept with the field, so
+// switching currency back and forth never drifts. ----
+const MONEY_SEL = 'input.in-gross, input.in-cost, input.batt-gross, input.batt-cost, input.tech-gross, input.tech-cost, input.svc-gross, input.svc-cost, #sbPrice, #kbPrice, #svcDeliveryPrice, input[data-money]';
+const NATIVE_VALUE = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+function moneyRate(){ const r = Number(CURRENCY_RATE); return Number.isFinite(r) && r > 0 ? r : 1; }
+function moneyShow(eur, dec){
+  const s = String(eur), n = Number(s);
+  if(s.trim() === '' || !Number.isFinite(n)) return s;
+  const r = moneyRate();
+  if(r === 1) return s;
+  const f = Math.pow(10, dec);
+  return (Math.round(n * r * f) / f).toFixed(dec);
+}
+function installMoneyView(el){
+  if(!el || el._money || !(el instanceof HTMLInputElement)) return;
+  const eur0 = NATIVE_VALUE.get.call(el);
+  el._money = true;
+  const dec = Number(el.dataset.money) > 0 ? Number(el.dataset.money) : 2;
+  Object.defineProperty(el, 'value', {configurable: true, enumerable: true,
+    get(){
+      const raw = NATIVE_VALUE.get.call(this);
+      if(moneyRate() === 1) return raw;
+      if(this._eur != null && this._shown === raw) return this._eur;
+      const n = Number(raw);
+      if(String(raw).trim() === '' || !Number.isFinite(n)) return raw;
+      this._eur = String(+(n / moneyRate()).toFixed(10)); this._shown = raw;     // typed in the document currency
+      return this._eur;
+    },
+    set(v){
+      const str = v == null ? '' : String(v);
+      if(moneyRate() === 1){ this._eur = null; NATIVE_VALUE.set.call(this, str); return; }
+      NATIVE_VALUE.set.call(this, moneyShow(str, dec));
+      this._eur = str; this._shown = NATIVE_VALUE.get.call(this);
+    }});
+  el.value = eur0;
+}
+function installMoneyViews(root){
+  if(!root || !root.querySelectorAll) return;
+  if(root.matches && root.matches(MONEY_SEL)) installMoneyView(root);
+  root.querySelectorAll(MONEY_SEL).forEach(installMoneyView);
+}
+new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if(n.nodeType === 1) installMoneyViews(n); })))
+  .observe(document.documentElement, {childList: true, subtree: true});
+// the EUR amounts of every money field, taken before the currency / rate changes and written back after
+function moneySnapshot(){
+  installMoneyViews(document);
+  const snap = [...document.querySelectorAll(MONEY_SEL)].filter(el => el._money).map(el => [el, el.value]);
+  snap.rate = moneyRate();
+  return snap;
+}
+function moneyRestore(snap){
+  if(snap && snap.rate === moneyRate()){ syncCurrencySymbolCss(); return; }     // same rate: the fields stay as they are
+  const one = moneyRate() === 1;
+  (snap || []).forEach(([el, v]) => {
+    const n = Number(v), dec = Number(el.dataset.money) > 0 ? Number(el.dataset.money) : 2;
+    // back to EUR the field is plain EUR again: cents (the energy price: 3 decimals)
+    el.value = one && String(v).trim() !== '' && Number.isFinite(n) ? (Math.round(n * Math.pow(10, dec)) / Math.pow(10, dec)).toFixed(dec) : v;
+  });
+  syncCurrencySymbolCss();
+}
+function syncCurrencySymbolCss(){
+  const sym = String(CURRENCY.symbol || CURRENCY.code || '€');
+  document.documentElement.style.setProperty('--cur-sym', JSON.stringify(sym));
+  document.documentElement.style.setProperty('--cur-pad', `${10 + Math.max(1, sym.length) * 7}px`);
+  document.querySelectorAll('[data-cur-sym]').forEach(e => { e.textContent = sym; });
+}
+syncCurrencySymbolCss();
+installMoneyViews(document);
 // beta_6.44: editable prices in the offer lines always show two decimals, also when typed without them.
 // A value typed with more decimals is rounded to the cent; values the program writes with more precision
 // (a kit price spread over its components) are only padded, never rounded, when the field is left.
 function bomPriceFormat(el, typed){
   if(!el || !el.matches || !el.matches('input.in-gross, input.in-cost')) return;
+  if(el._money && moneyRate() !== 1){
+    // the field shows the document currency: two decimals of that amount (the EUR behind keeps full precision)
+    const raw = String(NATIVE_VALUE.get.call(el)).trim();
+    if(raw === ''){ el.value = '0'; return; }
+    const n = Number(raw);
+    if(!Number.isFinite(n)) return;
+    const dec = (raw.split('.')[1] || '').length;
+    if(dec === 2) return;
+    NATIVE_VALUE.set.call(el, (Math.round(n * 100) / 100).toFixed(2)); el._eur = null;
+    if(typed && dec > 2) el.dispatchEvent(new Event('input', {bubbles: true}));
+    return;
+  }
   const v = String(el.value).trim();
   if(v === ''){ el.value = '0.00'; return; }
   const n = Number(v);
@@ -3688,6 +3771,7 @@ function applySettingsLive(){
   const discountInput = document.getElementById('settingsProjectDiscount');
   const sel = currencySelect.value;
   const symbols = {EUR:'€', USD:'$', GBP:'£'};
+  const moneySnap = moneySnapshot();     // EUR amounts of the money fields, re-shown in the new currency below
 
   // Apply currency/symbol immediately; while a custom symbol is being edited,
   // keep the last valid one until the field contains at least one non-space character.
@@ -3709,6 +3793,7 @@ function applySettingsLive(){
     if(Number.isFinite(discount)) PROJECT_DISCOUNT = Math.max(0, Math.min(100, discount));
   }
   setAutosaveEnabled(!!document.getElementById('settingsAutosaveEnabled').checked);
+  moneyRestore(moneySnap);
   refreshAllBomMoney();
   updateBomHeaders();
   updateDeliveryRow();
@@ -6626,7 +6711,8 @@ const PRICE_GRID = (() => {
   }
   function info(){
     const t = T();
-    $('plGridSub').textContent = t.sub(currentName(), G.rows.length, missingCount());
+    $('plGridSub').textContent = t.sub(currentName(), G.rows.length, missingCount())
+      + (CURRENCY.code !== 'EUR' ? ` · list in EUR — the offer shows it in ${CURRENCY.code} (1 EUR = ${CURRENCY_RATE} ${CURRENCY.code})` : '');
     const ch = changedCount();
     const parts = [];
     if(G.replaced) parts.push(escapeHtml(t.fromFile(G.rows.length, G.replaced)));
@@ -7803,7 +7889,7 @@ function openAccessoryModal(headerRow){
                 </div>
               </td>
               <td class="acc-row-code">${escapeHtml(o.code||'')}</td>
-              <td class="acc-row-price">€${Number(o.price||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+              <td class="acc-row-price">${formatMoney(o.price||0)}</td>
               <td class="acc-row-qty"><input type="number" min="1" value="${defaultQty}" class="acc-row-qty-input" onclick="event.stopPropagation()"></td>
             </tr>
           `).join('')}
@@ -8183,7 +8269,7 @@ function openTechIntegrationModal(triggerRow){
             <td><div class="acc-row-check">✓</div></td>
             <td><div class="acc-row-desc"><span>${escapeHtml(it.description || it.model)}</span></div></td>
             <td class="acc-row-code">${escapeHtml(it.code||'')}</td>
-            <td class="acc-row-price">€${Number(it.price||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+            <td class="acc-row-price">${formatMoney(it.price||0)}</td>
             <td class="acc-row-qty"><input type="number" min="1" value="1" class="acc-row-qty-input" onclick="event.stopPropagation()"></td>
           </tr>
         `).join('');
@@ -8628,7 +8714,7 @@ function parseSubBomRows(aoa){
     if(c.qty >= 0 && (c.code >= 0 || c.desc >= 0)){ hi = i; cols = c; break; }
   }
   if(!cols){ hi = -1; cols = {qty: 0, code: 1, desc: 2, cost: 3}; }
-  const num = v => { if(v === '' || v === null || v === undefined) return 0; if(typeof v === 'number') return v; const t = String(v).replace(/[€\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); const n = Number(t); return Number.isFinite(n) ? n : 0; };
+  const num = v => { if(v === '' || v === null || v === undefined) return 0; if(typeof v === 'number') return v; const t = String(v).replace(/[€$£\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); const n = Number(t); return Number.isFinite(n) ? n : 0; };
   const out = [];
   aoa.slice(hi + 1).forEach(r => {
     if(!r) return;
@@ -10379,7 +10465,7 @@ function openServiceModal(headerRow){
         </div>
         <div class="svc-delivery-fields">
           <div class="field"><label for="svcDeliveryPercent">Delivery percentage</label><input id="svcDeliveryPercent" type="number" min="0" max="100" step="0.1" value="0"></div>
-          <div class="field"><label for="svcDeliveryPrice">Manual Delivery price (€)</label><input id="svcDeliveryPrice" type="number" min="0" step="0.01" value="0"></div>
+          <div class="field"><label for="svcDeliveryPrice">Manual Delivery price (<span data-cur-sym>${escapeHtml(CURRENCY.symbol || '€')}</span>)</label><input id="svcDeliveryPrice" type="number" min="0" step="0.01" value="0"></div>
         </div>
         <div class="svc-delivery-hint">When present, Delivery remains the last line in SERVICES. A manual price affects both selling price and cost; you can return to percentage calculation at any time.</div>
       </div>
@@ -11862,8 +11948,11 @@ var TCO = (function(){
   const num = (v, d = 0) => { const n = Number(v); return isFinite(n) ? n : d; };
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const esc = v => escapeHtml(String(v == null ? '' : v));
-  const eur = v => '€' + Math.round(v).toLocaleString('en-US');
-  const k = v => Math.abs(v) >= 1e6 ? '€' + (v / 1e6).toFixed(2) + 'M' : '€' + Math.round(v / 1000).toLocaleString('en-US') + 'k';
+  // amounts are computed in EUR and shown in the document currency (Settings › Display currency)
+  const SYM = () => String(CURRENCY.symbol || '€'), RT = () => moneyRate();
+  const eur = v => SYM() + Math.round(v * RT()).toLocaleString('en-US');
+  const k = v => { const x = v * RT(); return Math.abs(x) >= 1e6 ? SYM() + (x / 1e6).toFixed(2) + 'M' : SYM() + Math.round(x / 1000).toLocaleString('en-US') + 'k'; };
+  const cu = s => String(s).replace(/€/g, SYM());
   const pfKey = () => PFS.includes(String(S.pf)) ? String(S.pf) : '1.00';
   const pfFactor = () => { const p = pfKey(), o = S.pfk || {}; return clamp(o[p] != null && isFinite(Number(o[p])) ? Number(o[p]) : PF_DEF[p], 0.8, 1.05); };
 
@@ -12114,7 +12203,7 @@ var TCO = (function(){
   }
 
   // ---------- Overview ----------
-  const field = (key, label, unit, step, tip) => `<div class="tco-f"><label for="tcoF_${key}" title="${esc(tip || label)}">${label}</label><div class="tco-in"><input id="tcoF_${key}" type="number" inputmode="decimal" step="${step || 'any'}" data-k="${key}" value="${esc(S[key])}">${unit ? `<span>${unit}</span>` : ''}</div></div>`;
+  const field = (key, label, unit, step, tip) => { const m = /€/.test(unit || ''); return `<div class="tco-f"><label for="tcoF_${key}" title="${esc(tip || label)}">${label}</label><div class="tco-in"><input id="tcoF_${key}" type="number" inputmode="decimal" step="${step || 'any'}" data-k="${key}"${m ? ` data-money="${key === 'price' ? 3 : 2}"` : ''} value="${esc(S[key])}">${unit ? `<span>${esc(cu(unit))}</span>` : ''}</div></div>`; };
   function curveNote(p){
     if(p.cv.src === 'generic') return `Generic example curve – enter the ${p.model}${p.vk === 'ftt' ? ' Front to Top' : ''} datasheet points in «Efficiency curves»`;
     if(p.cv.fallback) return `No Front to Top curve for the ${p.model} yet – its Standard curve is used`;
@@ -12128,10 +12217,10 @@ var TCO = (function(){
       <input type="range" class="tco-rng" min="10" max="100" step="5" value="${esc(p.ps.avg)}" aria-label="Average load of position ${esc(p.pos)}, % of the design load">
       <div class="tco-curve"></div>
       <button type="button" class="tco-ex" data-goto hidden></button>
-      <div class="tco-k3"><div title="With the ECO mode share and the power-factor correction"><small>Efficiency</small><b class="tco-e"></b></div><div><small>Losses</small><b class="tco-l"></b></div><div><small>€ / year</small><b class="tco-y"></b></div></div>
+      <div class="tco-k3"><div title="With the ECO mode share and the power-factor correction"><small>Efficiency</small><b class="tco-e"></b></div><div><small>Losses</small><b class="tco-l"></b></div><div><small>${SYM()} / year</small><b class="tco-y"></b></div></div>
       <div class="tco-row tco-instrow" hidden><span title="Its share of the SERVICES lines L1–L5 assigned to this configuration (by number of UPS)">Installation & commissioning</span><b class="tco-inst-p"></b></div>
       <div class="tco-g2 tco-bat">
-        <div class="tco-f"><label title="Price of one battery set; one set per UPS (× ${p.units})">Battery set${p.units > 1 ? ` · ×${p.units}` : ''}</label><div class="tco-in"><input type="number" min="0" step="100" data-p="set" value="${esc(p.ps.set)}" aria-label="Battery set price, position ${esc(p.pos)}"><span>€</span></div></div>
+        <div class="tco-f"><label title="Price of one battery set; one set per UPS (× ${p.units})">Battery set${p.units > 1 ? ` · ×${p.units}` : ''}</label><div class="tco-in"><input type="number" min="0" step="100" data-p="set" data-money="2" value="${esc(p.ps.set)}" aria-label="Battery set price, position ${esc(p.pos)}"><span>${SYM()}</span></div></div>
         <div class="tco-f"><label title="Battery replacement interval">Replaced every</label><div class="tco-in"><input type="number" min="0" max="30" step="1" data-p="every" value="${esc(p.ps.every)}" aria-label="Battery replacement interval, position ${esc(p.pos)}"><span>years</span></div></div></div>
     </div>`;
   }
@@ -12188,7 +12277,7 @@ var TCO = (function(){
       <span>NPV ${k(R.npv)} · CO₂ ${Math.round(R.co2).toLocaleString('en-US')} t${R.tot.capex ? '' : ' · generate the offer to include the purchase price'}</span>${compBar(R)}
       ${R.tot.capex ? `<p class="tco-capex">CAPEX ${k(R.capex)} = ${[['UPS configurations', R.equipment], ['installation & commissioning', R.install.total], ['other offer lines', R.otherOffer], ['other installation', R.extraInstall]].filter(x => x[1] > 0.5).map(x => `${x[0]} <b>${k(x[1])}</b>`).join(' · ')}</p>` : ''}`;
     const ie = el.querySelector('.tco-inst');
-    if(ie){ ie.textContent = R.install.lines ? eur(R.install.total).replace('€', '') : '–'; ie.closest('.tco-f').title = R.install.lines ? installText(R.install) : 'No SERVICES line with a level yet – choose the level in Add Service Items (Offer Lines › SERVICES › + Add Service)'; }
+    if(ie){ ie.textContent = R.install.lines ? eur(R.install.total).replace(SYM(), '') : '–'; ie.closest('.tco-f').title = R.install.lines ? installText(R.install) : 'No SERVICES line with a level yet – choose the level in Add Service Items (Offer Lines › SERVICES › + Add Service)'; }
     const view = S.view === 'year' ? 'year' : 'cum';
     el.querySelectorAll('.tco-seg button').forEach(b => { b.classList.toggle('on', b.dataset.view === view); b.setAttribute('aria-pressed', String(b.dataset.view === view)); });
     const box = el.querySelector('.tco-chart'); const w = Math.max(320, Math.round(box.clientWidth - 28));
@@ -12405,16 +12494,16 @@ var TCO = (function(){
      ['CO₂ factor kg/kWh', S.co2], ['ECO mode % of hours', S.eco], ['Load power factor', Number(pfKey())], ['PF correction (efficiency ×)', +R.pfk.toFixed(4)], ['Hours per year', S.hours],
      ['Installation & commissioning from the offer (L1–L6) €', Math.round(R.install.total)], ...SVC_LEVELS.filter(l => R.install.byLevel[l.id]).map(l => [`   ${l.id} · ${l.name} €`, Math.round(R.install.byLevel[l.id])]),
      ['Other installation (not in the offer) €', S.install], ['CAPEX €', Math.round(R.capex)]]
-      .forEach(([a, b]) => { xlsxSet(ws, r, 1, {v: a, s: C}); xlsxSet(ws, r++, 2, {v: num(b), s: /€$/.test(a) ? M : C}); });
+      .forEach(([a, b]) => { const m = /€/.test(a); xlsxSet(ws, r, 1, {v: cu(a), s: C}); xlsxSet(ws, r++, 2, {v: m ? (/kWh/.test(a) ? +(num(b) * RT()).toFixed(4) : Math.round(num(b) * RT())) : num(b), s: m && !/kWh/.test(a) ? M : C}); });
     r++;
-    ['Pos', 'Load', 'UPS frame', 'Ventilation', 'Installed kW', 'UPS', 'Average load %', 'Load % of installed', 'Efficiency %', 'Losses kW', 'Energy + cooling €/yr', 'Battery set €', 'Every yr', 'Curve', 'Installation & commissioning €'].forEach((h, j) => xlsxSet(ws, r, j + 1, {v: h, s: H})); r++;
-    R.per.forEach(p => { [p.pos, p.lt, p.model, ventName(p.vk), Math.round(p.inst), p.units, num(p.ps.avg), +(p.x * 100).toFixed(1), +(p.eff * 100).toFixed(2), +p.loss.toFixed(2), Math.round(p.eurYear), num(p.ps.set), num(p.ps.every),
-      p.cv.src === 'generic' ? 'generic example' : p.cv.fallback ? 'Standard curve (no Front to Top points)' : 'datasheet points', Math.round(p.install)]
+    ['Pos', 'Load', 'UPS frame', 'Ventilation', 'Installed kW', 'UPS', 'Average load %', 'Load % of installed', 'Efficiency %', 'Losses kW', 'Energy + cooling €/yr', 'Battery set €', 'Every yr', 'Curve', 'Installation & commissioning €'].forEach((h, j) => xlsxSet(ws, r, j + 1, {v: cu(h), s: H})); r++;
+    R.per.forEach(p => { [p.pos, p.lt, p.model, ventName(p.vk), Math.round(p.inst), p.units, num(p.ps.avg), +(p.x * 100).toFixed(1), +(p.eff * 100).toFixed(2), +p.loss.toFixed(2), Math.round(p.eurYear * RT()), Math.round(num(p.ps.set) * RT()), num(p.ps.every),
+      p.cv.src === 'generic' ? 'generic example' : p.cv.fallback ? 'Standard curve (no Front to Top points)' : 'datasheet points', Math.round(p.install * RT())]
       .forEach((v, j) => xlsxSet(ws, r, j + 1, {v, s: typeof v === 'number' && (j === 10 || j === 11 || j === 14) ? M : C})); r++; });
     r++;
     ['Year', 'CAPEX', 'Energy lost', 'Cooling', 'Batteries', 'Service', 'Total', 'Cumulative', 'Present value'].forEach((h, j) => xlsxSet(ws, r, j + 1, {v: h, s: H})); r++;
-    R.rows.forEach(x => { [x.year, x.capex, x.energy, x.cooling, x.battery, x.maint, x.total, x.cum, x.pv].forEach((v, j) => xlsxSet(ws, r, j + 1, {v: j ? Math.round(v) : v, s: j ? M : C})); r++; });
-    [() => 'Total', ...['capex', 'energy', 'cooling', 'battery', 'maint', 'total'].map(kk => () => Math.round(R.tot[kk])), () => '', () => Math.round(R.npv)].forEach((f, j) => xlsxSet(ws, r, j + 1, {v: f(), s: {...M, font: {b: true}}}));
+    R.rows.forEach(x => { [x.year, x.capex, x.energy, x.cooling, x.battery, x.maint, x.total, x.cum, x.pv].forEach((v, j) => xlsxSet(ws, r, j + 1, {v: j ? Math.round(v * RT()) : v, s: j ? M : C})); r++; });
+    [() => 'Total', ...['capex', 'energy', 'cooling', 'battery', 'maint', 'total'].map(kk => () => Math.round(R.tot[kk] * RT())), () => '', () => Math.round(R.npv * RT())].forEach((f, j) => xlsxSet(ws, r, j + 1, {v: f(), s: {...M, font: {b: true}}}));
     ws.cols = [44, 16, 14, 14, 13, 9, 14, 14, 13, 12, 18, 13, 9, 30, 16];
     await saveBlob(await buildXlsxBlob(ws), `${ref || 'Offer'}_TCO.xlsx`);
   }
@@ -12443,7 +12532,7 @@ var TCO = (function(){
       T(title, M, 92, {bold: true, size: 11, color: [0, 112, 192]});
       T(sub, M, 106, {size: 8.5, color: DIM});
     }
-    const sub = `${today} · offer R${typeof REVISION !== 'undefined' ? REVISION : 0} · horizon ${R.years} years · energy €${num(S.price).toFixed(2)}/kWh +${num(S.esc)}%/yr · COP ${num(S.cop)} · discount ${num(S.disc)}% · PF ${pfKey()} (efficiency × ${R.pfk.toFixed(3)})${num(S.eco) ? ` · ECO ${num(S.eco)}%` : ''}`;
+    const sub = `${today} · offer R${typeof REVISION !== 'undefined' ? REVISION : 0} · horizon ${R.years} years · energy ${SYM()}${(num(S.price) * RT()).toFixed(2)}/kWh +${num(S.esc)}%/yr · COP ${num(S.cop)} · discount ${num(S.disc)}% · PF ${pfKey()} (efficiency × ${R.pfk.toFixed(3)})${num(S.eco) ? ` · ECO ${num(S.eco)}%` : ''}`;
     // ---- page 1: summary ----
     head(sub);
     let y = 122;
@@ -12468,7 +12557,7 @@ var TCO = (function(){
     pdfCostChart(doc, R, cx, y, cw, ch, T);
     doc.autoTable({startY: y - 9, margin: {left: M + CW - 284, right: M}, tableWidth: 284, theme: 'grid',
       head: [[{content: 'TCO settings', colSpan: 2}]],
-      body: [['Energy price', `€${num(S.price).toFixed(3)} / kWh`], ['Yearly increase', `${num(S.esc)} %`], ['Cooling COP', String(num(S.cop))], ['Horizon', `${R.years} years`], ['Discount rate', `${num(S.disc)} %`],
+      body: [['Energy price', `${SYM()}${(num(S.price) * RT()).toFixed(3)} / kWh`], ['Yearly increase', `${num(S.esc)} %`], ['Cooling COP', String(num(S.cop))], ['Horizon', `${R.years} years`], ['Discount rate', `${num(S.disc)} %`],
              ['Service and maintenance', `${eur(num(S.service))} per UPS / year`], ['CO2 factor', `${num(S.co2)} kg/kWh`], ['ECO mode', `${num(S.eco)} % of the hours`], ['Hours per year', String(num(S.hours))],
              ['Load power factor', `${pfKey()} – efficiency × ${R.pfk.toFixed(3)}`], ['Installation & commissioning (offer, L1–L6)', R.install.lines ? eur(R.install.total) : '–'], ['Other installation (not in the offer)', num(S.install) ? eur(num(S.install)) : '–'], ['Fans', num(S.fansCost) ? `year ${S.fansYear} · ${eur(num(S.fansCost))} per UPS` : '–'],
              ['Capacitors', num(S.capsCost) ? `year ${S.capsYear} · ${eur(num(S.capsCost))} per UPS` : '–'], ['End of life', num(S.eol) ? eur(num(S.eol)) : '–'], ['CAPEX (offer lines + other installation)', eur(R.capex)]],
@@ -14563,8 +14652,10 @@ function applyLoadedState(state){
     document.getElementById('prjOfferType').value = p.offerType || '';
     document.getElementById('prjStdSpecial').value = p.stdSpecial || '';
 
+    const moneySnap = moneySnapshot();
     if(state.currency && state.currency.symbol) CURRENCY = state.currency;
     if(state.currencyRate) CURRENCY_RATE = state.currencyRate;
+    moneyRestore(moneySnap);
     if(state.projectDiscount !== undefined) PROJECT_DISCOUNT = Number(state.projectDiscount)||0;
     if(state.deliveryPercent !== undefined) DELIVERY_PERCENT = Number(state.deliveryPercent)||0;
     DELIVERY_ENABLED = state.deliveryEnabled !== undefined ? !!state.deliveryEnabled : !!(state.bom || []).some(item => item && item.kind === 'delivery');
@@ -17465,6 +17556,7 @@ const CHANGELOG = [
     'Generazione UL: PCS = armadio PC0 + YM2FM11A (M2F 350, nota limite 300 kW) o + YM2UM08A (M2U 140, nota kit cavi YM2UE34A disponibile); VE = kit YM2UM06A (M2F 150, M2U 140, M2U 68), armadio M2F 675 PC0 VE per M2F 675, e per M2F 350 (VE non disponibile) passaggio a M2F 675 PC0 VE; litio = EnergyManager YSKCC06AUL; kit parallelo dal listino UL (YM2UP00B, YMP2P00A per M2F 675). Accessori proposti in base alle famiglie UL',
     'Price list Excel: Export Excel scarica un unico file con due fogli — foglio 1 "IEC PL", foglio 2 "UL PL" (stesse colonne, con le modifiche non ancora salvate delle due schede). Importando un file con i due fogli si compilano entrambe le schede e il pulsante diventa "Save IEC + UL price lists"; con un Excel di un solo foglio il programma chiede se è il listino IEC o UL (proposto quello del nome del foglio). Passando da una scheda all\'altra le modifiche restano (scheda "not saved yet") fino al salvataggio o alla chiusura; l\'Export JSON indica il suo listino e reimportato va nella sua scheda',
     'Kit: lo sconto inserito sulla riga del kit si distribuisce nelle caselle sconto delle righe figlie, pesato sul valore di ogni riga e scalato perché il kit faccia esattamente lo sconto indicato (es. A 1000 / B 500 con 20% → A 24%, B 12%, kit 1200). Le righe figlie con uno sconto proprio ricevono la quota in aggiunta; azzerando lo sconto del kit, o togliendo la riga dal kit, torna lo sconto originale. Le caselle sconto dei figli sono bloccate (si cambia lo sconto sul kit); il prezzo del kit scritto a mano diventa lo sconto del kit e si distribuisce allo stesso modo. Le offerte salvate prima vengono convertite all\'apertura senza doppio sconto',
+    'Valuta: scegliendo una valuta in Settings (es. USD con il cambio 1 EUR = ? USD) tutto il documento lavora in quella valuta — non solo i totali ma anche i campi modificabili: Gross Price e Unit Cost delle righe (simbolo $ dentro il campo), riga kit e prezzo del kit, finestre Battery / Technology Integration / Services (prezzo Delivery manuale), prezzo del sales code e importi del TCO. I prezzi presi dal listino vengono convertiti; quello che scrivi è nella valuta scelta. Sotto il programma tiene gli importi in EUR (la valuta dei listini), quindi cambiando valuta avanti e indietro i valori non si spostano; il file salvato conserva la valuta. La finestra Price list resta in EUR (è il listino) e lo indica',
   ]},
   {version:'beta_6.48', date:'2026-10-15', notes:[
     'Ribbon Home, gruppo Progetto: "New project" sostituisce "New offer" e "Create in SharePoint" (tolti). Apre la pagina "New project"; "Back to the offer" torna all\'offerta com\'era, senza toccarla',

@@ -2892,7 +2892,7 @@ body.dark-theme #tcoPage .tco-sts i.on{background:#3E6FB8;color:#FFFFFF;}
           <div class="field"><label data-i18n="pd.owner">Pre-Sales Owner</label><input id="prjOwner" list="ownerPeopleList" autocomplete="off" placeholder="Pick a person of the SharePoint site"><datalist id="ownerPeopleList"></datalist></div>
           <div class="field">
             <label data-i18n="pd.product">Product</label>
-            <select id="prjProduct"><option>MP2 - M2S</option><option>MHE</option></select>
+            <select id="prjProduct" title="Sign in to load the Product choices from SharePoint"><option value="">—</option></select>
           </div>
           <div class="field">
             <label data-i18n="pd.battery">Battery</label>
@@ -3154,7 +3154,7 @@ body.dark-theme #tcoPage .tco-sts i.on{background:#3E6FB8;color:#FFFFFF;}
             <div class="field no-span2"><label for="noCustomer"><span data-i18n="newOffer.customer">Customer</span><em class="no-req">*</em></label><input id="noCustomer" autocomplete="off"></div>
             <div class="field"><label for="noCountry"><span data-i18n="newOffer.country">Country</span><em class="no-req">*</em></label><select id="noCountry" title="Sign in first to load the list"><option value="">—</option></select></div>
             <div class="field"><label for="noPriority"><span data-i18n="newOffer.priority">Priority</span></label><select id="noPriority" title="Sign in first to load the list"><option value="">—</option></select></div>
-            <div class="field"><label for="noProduct"><span data-i18n="newOffer.product">Product</span></label><select id="noProduct"><option value="">—</option><option>MP2 - M2S</option><option>MHE</option></select></div>
+            <div class="field"><label for="noProduct"><span data-i18n="newOffer.product">Product</span></label><select id="noProduct" title="Sign in first to load the list"><option value="">—</option></select></div>
             <div class="field"><label for="noOfferType"><span data-i18n="newOffer.offerType">Offer Type</span></label><select id="noOfferType"><option value="">—</option><option>Tender</option><option>Execution</option><option>Budgetary</option><option>BAFO</option><option>Homologation</option></select></div>
             <div class="field"><label for="noBattery"><span data-i18n="newOffer.battery">Battery</span></label><select id="noBattery"><option value="">—</option><option>VRLA</option><option>Lithium</option></select></div>
             <div class="field"><label for="noBatteryBrand"><span data-i18n="newOffer.batteryBrand">Battery Brand</span></label><input id="noBatteryBrand" autocomplete="off"></div>
@@ -4384,7 +4384,7 @@ async function fetchSharePointList(){
     });
     if(rows.length) console.log('First SharePoint item — raw field names for mapping/debugging:', rows[0]);
     processProjectList(rows, `SharePoint (live): ${list.displayName || 'Progress tracker list'}`);
-    loadStdSpecialOptions();
+    loadStdSpecialOptions(); loadProductOptions();
     try{ maybeShowDeadlineNotice(); }catch(e){ console.warn('Deadlines not computed:', e); }
     updateSpStatus(`Connected — ${rows.length} records loaded at ${new Date().toLocaleTimeString('en-GB')}. Note: Person/Lookup columns may come through as IDs — check the browser console (first item logged) if a field looks wrong.`, 'loaded');
     return true;
@@ -4570,7 +4570,7 @@ function applyNewProjectTemplate(ref){
   const pSel = document.getElementById('noPriority'); const pri = rec ? String(extractDisplayValue(raw.Priority ?? raw.priority ?? '') || '').trim() : '';
   pSel.dataset.want = pri;
   if(!selectOptionLoose(pSel, pri) && [...pSel.options].some(o => o.value === '')) pSel.value = '';
-  setSel('noProduct', rec ? rec.Product : '');
+  setProductValue('noProduct', rec ? rec.Product : '', true);
   setSel('noBattery', rec && rec.Battery ? (/lith/i.test(rec.Battery) ? 'Lithium' : 'VRLA') : '');
   document.getElementById('noBatteryBrand').value = rec ? (rec['Battery Brand'] || '') : '';
   setSel('noOfferType', rec ? rec.Category : '');
@@ -4614,7 +4614,7 @@ function openNewProjectPage(){
   newOfferOverlay.style.display = 'none';
   updateNewOfferStatus('');
   const signedIn = !!(msalInstance && msalAccount);
-  if(signedIn){ loadCountryOptions(); loadPriorityOptions(); loadStdSpecialOptions(); }
+  if(signedIn){ loadCountryOptions(); loadPriorityOptions(); loadStdSpecialOptions(); loadProductOptions(); }
   renderNewProjectTemplates();
   renderRfqList();
   refreshNewProjectPage();
@@ -4852,6 +4852,68 @@ async function ensureStdSpecialChoicesLoaded(){
   } finally {
     stdSpecialChoicesLoadingPromise = null;
   }
+}
+
+// ---- Product — the Choice column "Progress" (internal name, display name "Product") of the Progress
+// tracker list. Its choices are read off the column definition, like Priority and STD/SPECIAL, and
+// fill both Product menus (Project Details and New project) — no built-in values: until they load
+// (or as a guest) the menus are empty. A value of a project that is not among the choices is kept as an extra option.
+let productChoices = [];
+let productChoicesLoaded = false;
+let productChoicesLoadingPromise = null;
+async function ensureProductChoicesLoaded(){
+  if(productChoicesLoaded) return productChoices;
+  if(productChoicesLoadingPromise) return productChoicesLoadingPromise;
+  productChoicesLoadingPromise = (async ()=>{
+    const token = await getGraphToken();
+    const {site, list} = await resolveSharePointList(token);
+    const columnsResp = await graphGet(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/columns`, token);
+    const internalName = ((document.getElementById('mapProduct') || {}).value || 'Progress').trim().toLowerCase();
+    const cols = columnsResp.value || [];
+    const col = cols.find(c => (c.name||'').toLowerCase() === internalName) || cols.find(c => (c.displayName||'').toLowerCase() === 'product');
+    if(!col) throw new Error('No "Product" (Progress) column found on the Progress tracker list.');
+    productChoices = (col.choice && col.choice.choices) || [];
+    if(!productChoices.length) throw new Error('The "Product" column was found but has no choices defined.');
+    productChoicesLoaded = true;
+    fillProductSelects();
+    return productChoices;
+  })();
+  try{
+    return await productChoicesLoadingPromise;
+  } finally {
+    productChoicesLoadingPromise = null;
+  }
+}
+function fillProductSelects(){
+  if(!productChoices.length) return;
+  ['prjProduct', 'noProduct'].forEach(id => {
+    const sel = document.getElementById(id); if(!sel) return;
+    const cur = sel.value, want = sel.dataset.want || '';
+    sel.innerHTML = '<option value="">—</option>' + productChoices.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    sel.title = '';
+    setProductValue(sel, want || cur, true);
+  });
+}
+// selects the product (loosely: case and spaces); a value not among the choices is added so it is not lost
+function setProductValue(sel, value, blank){
+  if(typeof sel === 'string') sel = document.getElementById(sel);
+  if(!sel) return;
+  const v = String(value == null ? '' : value).trim();
+  if(!v){ if(blank) sel.value = ''; return; }
+  if(selectOptionLoose(sel, v)) return;
+  const norm = x => String(x).toLowerCase().replace(/\s+/g, '');
+  const near = [...sel.options].find(o => o.value && norm(o.value) === norm(v));
+  if(near){ sel.value = near.value; return; }
+  const o = document.createElement('option'); o.value = v; o.textContent = v; o.dataset.extra = '1';
+  sel.appendChild(o); sel.value = v;
+}
+function loadProductOptions(){
+  const sels = ['prjProduct', 'noProduct'].map(id => document.getElementById(id)).filter(Boolean);
+  if(!productChoicesLoaded) sels.forEach(sel => { if(!sel.value) sel.title = 'Loading the Product choices from SharePoint…'; });
+  ensureProductChoicesLoaded().catch(err => {
+    console.warn('Could not load the Product choices from the SharePoint column "Progress":', err);
+    sels.forEach(sel => { sel.title = `Product choices not loaded: ${String(err && err.message || err).slice(0, 160)}`; });
+  });
 }
 
 function loadStdSpecialOptions(){
@@ -5809,7 +5871,7 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
     document.getElementById('prjDue').value = /^\d{4}-\d{2}-\d{2}$/.test(values.due) ? values.due.split('-').reverse().join('/') : values.due;
     document.getElementById('prjOwner').value = ownerName;
     REVISION_HISTORY = [{rev: 0, openedAt: new Date().toISOString(), openedBy: ownerName, openNote: 'First issue', closedAt: '', closedBy: '', closeNote: '', total: null}];
-    if(values.product) document.getElementById('prjProduct').value = values.product;
+    if(values.product) setProductValue('prjProduct', values.product);
     if(values.battery) document.getElementById('prjBattery').value = values.battery;
     document.getElementById('prjBatteryBrand').value = values.batteryBrand;
     document.getElementById('prjOfferType').value = values.offerType;
@@ -5853,7 +5915,7 @@ async function fillProjectDetailsFromRecord(rec){
   document.getElementById('prjCustomer').value = rec['Customer']||'';
   document.getElementById('prjDue').value = fmtDate(rec['Due date']);
   document.getElementById('prjOwner').value = rec['Created By.title']||'';
-  if(rec['Product']) document.getElementById('prjProduct').value = rec['Product'];
+  if(rec['Product']) setProductValue('prjProduct', extractDisplayValue(rec['Product']));
   if(rec['Battery']) {
     const b = /lith/i.test(rec['Battery']) ? 'Lithium' : 'VRLA';
     document.getElementById('prjBattery').value = b;
@@ -14679,7 +14741,7 @@ function applyLoadedState(state){
     document.getElementById('prjCustomer').value = p.customer || '';
     document.getElementById('prjDue').value = p.due || '';
     document.getElementById('prjOwner').value = p.owner || '';
-    if(p.product) document.getElementById('prjProduct').value = p.product;
+    if(p.product) setProductValue('prjProduct', p.product);
     if(p.battery) document.getElementById('prjBattery').value = p.battery;
     document.getElementById('prjBatteryBrand').value = p.batteryBrand || '';
     document.getElementById('prjOfferType').value = p.offerType || '';
@@ -17590,6 +17652,7 @@ const CHANGELOG = [
     'Price list Excel: Export Excel scarica un unico file con due fogli — foglio 1 "IEC PL", foglio 2 "UL PL" (stesse colonne, con le modifiche non ancora salvate delle due schede). Importando un file con i due fogli si compilano entrambe le schede e il pulsante diventa "Save IEC + UL price lists"; con un Excel di un solo foglio il programma chiede se è il listino IEC o UL (proposto quello del nome del foglio). Passando da una scheda all\'altra le modifiche restano (scheda "not saved yet") fino al salvataggio o alla chiusura; l\'Export JSON indica il suo listino e reimportato va nella sua scheda',
     'Kit: lo sconto inserito sulla riga del kit si distribuisce nelle caselle sconto delle righe figlie, pesato sul valore di ogni riga e scalato perché il kit faccia esattamente lo sconto indicato (es. A 1000 / B 500 con 20% → A 24%, B 12%, kit 1200). Le righe figlie con uno sconto proprio ricevono la quota in aggiunta; azzerando lo sconto del kit, o togliendo la riga dal kit, torna lo sconto originale. Le caselle sconto dei figli sono bloccate (si cambia lo sconto sul kit); il prezzo del kit scritto a mano diventa lo sconto del kit e si distribuisce allo stesso modo. Le offerte salvate prima vengono convertite all\'apertura senza doppio sconto',
     'Valuta: scegliendo una valuta in Settings (es. USD con il cambio 1 EUR = ? USD) tutto il documento lavora in quella valuta — non solo i totali ma anche i campi modificabili: Gross Price e Unit Cost delle righe (simbolo $ dentro il campo), riga kit e prezzo del kit, finestre Battery / Technology Integration / Services (prezzo Delivery manuale), prezzo del sales code e importi del TCO. I prezzi presi dal listino vengono convertiti; quello che scrivi è nella valuta scelta. Sotto il programma tiene gli importi in EUR (la valuta dei listini), quindi cambiando valuta avanti e indietro i valori non si spostano; il file salvato conserva la valuta. Anche la finestra Price list mostra e accetta Price e Cost nella valuta scelta (intestazioni "Price $ / Cost $", nota col cambio); l\'Export Excel / JSON esce in quella valuta (colonne "Price USD" / "Cost USD") e si reimporta uguale, un file con colonne "Price" senza valuta è letto in EUR, un file in una terza valuta viene rifiutato con spiegazione',
+    'Product (Project Details e pagina New project): nessun valore preimpostato — le scelte arrivano solo dalla colonna Choice "Progress" (nome visualizzato Product) della lista Progress tracker su SharePoint, tutte quelle impostate sulla lista. Il valore di un progetto che non è tra le scelte resta come opzione in più; da ospite, o se la colonna non si legge, il menu resta vuoto (il motivo è nel tooltip del campo)',
   ]},
   {version:'beta_6.48', date:'2026-10-15', notes:[
     'Ribbon Home, gruppo Progetto: "New project" sostituisce "New offer" e "Create in SharePoint" (tolti). Apre la pagina "New project"; "Back to the offer" torna all\'offerta com\'era, senza toccarla',

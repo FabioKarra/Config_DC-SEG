@@ -2103,6 +2103,10 @@ body.dark-theme #tcoPage svg text { fill: #C8D1E0 !important; }
 
 /* SLA configuration selection: an explicit check mark, not colour-only state (both themes). */
 .svc-modal .svc-pill{display:inline-flex;align-items:center;gap:6px;}
+.svc-modal .svc-pill.svc-fok{font-weight:700; letter-spacing:.04em; border-style:dashed;}
+.svc-modal .svc-pill.svc-fok.on{border-style:solid; background:#FFF1DC; color:#8A4B00; border-color:#F2C777;}
+.svc-modal .svc-pill.fok-lock{opacity:.6; cursor:default;}
+body.dark-theme .svc-modal .svc-pill.svc-fok.on{background:#3A2E1A; color:#F2C777; border-color:#7A5A22;}
 .svc-modal .svc-pill.on{outline:2px solid rgba(36,110,206,.18);outline-offset:1px;font-weight:600;}
 .svc-modal .svc-pill.on::before{
   content:"✓";display:inline-flex;align-items:center;justify-content:center;
@@ -4414,7 +4418,7 @@ setupBackdropClose(newOfferOverlay, closeNewOffer);
 function setNewOfferView(view){
   document.getElementById('noWaitingState').style.display = view === 'waiting' ? 'block' : 'none';
   document.getElementById('noSuccessState').style.display = view === 'success' ? 'block' : 'none';
-  if(view === 'success' && NEW_PROJECT_MARKET){ const m = NEW_PROJECT_MARKET; NEW_PROJECT_MARKET = null; if(m !== PRICE_MARKET) setTimeout(() => setPriceMarket(m), 0); }
+  if(view === 'success' && NEW_PROJECT_MARKET){ const m = NEW_PROJECT_MARKET; NEW_PROJECT_MARKET = null; if(m !== PRICE_MARKET) setTimeout(() => setPriceMarket(m, {confirmed: true}), 0); }
   document.getElementById('noUploadState').style.display = view === 'upload' ? 'block' : 'none';
   document.getElementById('noWaitingFooter').style.display = view === 'waiting' ? 'flex' : 'none';
   document.getElementById('noUploadFooter').style.display = view === 'upload' ? 'flex' : 'none';
@@ -7335,7 +7339,7 @@ function addBomRow(data, insertBeforeNode){
     mEl.className = 'num out-margin ' + (margin>=0?'margin-pos':'margin-neg');
     if(row.dataset.groupOf) recalcGroupTotal(row.dataset.groupOf);
   }
-  if(kind === 'accessory' && data.svcLevel) setServiceLevel(row, data.svcLevel, data.svcPos || [], true);
+  if(kind === 'accessory' && data.svcLevel){ if(data.svcFok) row.dataset.svcFok = '1'; setServiceLevel(row, data.svcLevel, data.svcPos || [], true); }
   row.querySelectorAll('input').forEach(inp=>inp.addEventListener('input', recalc));
   recalc();
   if(kind === 'line' || kind === 'accessory') attachBomDragHandle(row);
@@ -9855,6 +9859,7 @@ function bomRowCopyData(r){
     subBom: rowSubBom(r),
     svcLevel: r.dataset.svcLevel || undefined,
     svcPos: r.dataset.svcLevel ? svcRowPos(r) : undefined,
+    svcFok: svcRowFok(r) || undefined,
   };
 }
 function flashNewRow(row){
@@ -9963,11 +9968,12 @@ const SVC_LEVELS = [
   {id: 'L4', name: 'Start-up & functional test (SAT)'},
   {id: 'L5', name: 'Integrated systems test (IST)'},
   {id: 'L6', name: 'Training'},
-  {id: 'FOK', name: 'all positions, quantity by hand'},
 ];
-// FOK: always applies to every UPS configuration (the description lists them all), but the quantity is 1 and stays
-// editable by hand — it does not follow the number of UPS.
-const svcIsFok = lv => lv === 'FOK';
+// FOK (First of a Kind): an option of the position selection on L1–L5. The line then applies to every UPS
+// configuration (also positions added later) but its quantity is free – 1 to start, always editable by hand –
+// and the offer description says "First of a Kind (FOK)". Kept on the row as data-svc-fok="1".
+const SVC_FOK_TEXT = 'First of a Kind (FOK)';
+const svcRowFok = row => !!(row && row.dataset && row.dataset.svcFok === '1' && row.dataset.svcLevel && row.dataset.svcLevel !== 'L6');
 const svcLevelName = id => (SVC_LEVELS.find(l => l.id === id) || {}).name || '';
 function svcConfigs(){
   return [...cfgBody.querySelectorAll(':scope > tr')].map(tr => {
@@ -10019,12 +10025,14 @@ function svcBullets(row, cfgs){
 // heading of the list, from the model without «Lx - », e.g. «INSTALLATION & PRE-FUNCTIONAL CHECKS on UPS:»
 function svcGenHead(row){
   const model = String(rowModelText(row) || '').trim();
-  return (model.replace(/^\s*L\d\s*[-–·:]\s*/i, '').trim() || (svcIsFok(row.dataset.svcLevel) ? 'FOK' : svcLevelName(row.dataset.svcLevel).toUpperCase())) + ' on UPS:';
+  const head = model.replace(/^\s*L\d\s*[-–·:]\s*/i, '').trim() || svcLevelName(row.dataset.svcLevel).toUpperCase();
+  return head + (svcRowFok(row) ? ` – ${SVC_FOK_TEXT}` : '') + ' on UPS:';
 }
 // the base description is "automatic" while it is still the model (as proposed) or the generated heading
 function svcBaseIsAuto(row){
   const b0 = String(svcBaseDescription(row) || '').trim();
-  return !b0 || b0 === String(rowModelText(row) || '').trim() || b0 === svcGenHead(row);
+  if(!b0 || b0 === String(rowModelText(row) || '').trim() || b0 === svcGenHead(row)) return true;
+  return b0.replace(` – ${SVC_FOK_TEXT}`, '') === svcGenHead(row).replace(` – ${SVC_FOK_TEXT}`, '');
 }
 // the text above the list: the generated heading, or the description written by hand
 function svcHeadOf(row, cfgs){
@@ -10048,12 +10056,11 @@ function refreshServiceDescription(row, cfgs){
   el.textContent = svcDescriptionFor(row, cfgs);
 }
 function svcQty(level, pos, cfgs){
-  if(level === 'L6' || svcIsFok(level)) return 1;
+  if(level === 'L6') return 1;
   return (cfgs || svcConfigs()).filter(c => pos.includes(c.pos)).reduce((s, c) => s + c.units, 0);
 }
 function svcPosLabel(level, pos, cfgs){
   if(level === 'L6') return '1 per project';
-  if(svcIsFok(level)){ const all = cfgs || svcConfigs(); return all.length ? `FOK · ${all.map(c => 'POS ' + c.pos).join(' + ')}` : 'FOK · no UPS configuration'; }
   const on = (cfgs || svcConfigs()).filter(c => pos.includes(c.pos));
   if(!on.length) return 'No UPS configuration';
   return `${on.map(c => 'POS ' + c.pos).join(' + ')} · ${on.reduce((s, c) => s + c.units, 0)} UPS`;
@@ -10062,13 +10069,13 @@ function svcLevelOptions(sel){
   return `<option value="">— no level</option>` + SVC_LEVELS.map(l => `<option value="${l.id}"${l.id === sel ? ' selected' : ''}>${l.id} · ${escapeHtml(l.name)}</option>`).join('');
 }
 // the configurations as toggle chips (same look as the price-list filter chips)
-function svcPillsHtml(level, pos, cfgs){
+function svcPillsHtml(level, pos, cfgs, fok){
   if(level === 'L6') return `<span class="svc-note">Training – one per project, not tied to the UPS configurations</span>`;
-  if(svcIsFok(level)) return `<span class="svc-note">FOK – applies to every UPS configuration${cfgs.length ? ' (' + cfgs.map(c => 'POS ' + escapeHtml(c.pos)).join(', ') + ')' : ''}; the quantity is 1 and can be changed by hand</span>`;
   if(!cfgs.length) return `<span class="svc-note warn">No UPS configurations yet – add the positions in System Configuration, then assign them here</span>`;
   return `<span class="svc-lbl">Applies to</span>` + cfgs.map(c => { const on = pos.includes(c.pos);
-    return `<button type="button" class="pl-chip svc-pill${on ? ' on' : ''}" data-pos="${escapeHtml(c.pos)}" aria-pressed="${on}">POS ${escapeHtml(c.pos)} · ${escapeHtml(c.lt)}${c.pload ? ' ' + escapeHtml(c.pload) + ' kW' : ''}<b>${c.units} UPS</b></button>`; }).join('')
-    + `<span class="svc-sum">= ${svcQty(level, pos, cfgs)} UPS</span>`;
+    return `<button type="button" class="pl-chip svc-pill${on || fok ? ' on' : ''}${fok ? ' fok-lock' : ''}" data-pos="${escapeHtml(c.pos)}" aria-pressed="${on || !!fok}"${fok ? ' disabled' : ''}>POS ${escapeHtml(c.pos)} · ${escapeHtml(c.lt)}${c.pload ? ' ' + escapeHtml(c.pload) + ' kW' : ''}<b>${c.units} UPS</b></button>`; }).join('')
+    + `<button type="button" class="pl-chip svc-pill svc-fok${fok ? ' on' : ''}" data-fok aria-pressed="${!!fok}" title="First of a Kind: every position, free quantity (1 to start)">FOK</button>`
+    + `<span class="svc-sum">${fok ? '= free quantity (FOK)' : `= ${svcQty(level, pos, cfgs)} UPS`}</span>`;
 }
 // draws the level badge and the configurations chip in the Description cell; the quantity follows them
 function setServiceLevel(row, level, pos, silent){
@@ -10084,7 +10091,7 @@ function setServiceLevel(row, level, pos, silent){
   }
   row.dataset.svcBaseDesc = baseDesc;
   row.dataset.svcLevel = level;
-  row.dataset.svcPos = JSON.stringify(level === 'L6' ? [] : svcIsFok(level) ? svcConfigs().map(c => String(c.pos)) : (pos || []).map(String));
+  row.dataset.svcPos = JSON.stringify(level === 'L6' ? [] : svcRowFok(row) ? svcConfigs().map(c => String(c.pos)) : (pos || []).map(String));
   const tags = document.createElement('span');
   tags.className = 'svc-tags';
   tags.innerHTML = `<span class="svc-badge" title="${escapeHtml(level + ' · ' + svcLevelName(level))}">${level}</span><button type="button" class="svc-on"></button>`;
@@ -10095,19 +10102,20 @@ function setServiceLevel(row, level, pos, silent){
 function refreshServiceRow(row, cfgs, silent){
   const level = row.dataset.svcLevel; if(!level) return;
   cfgs = cfgs || svcConfigs();
-  if(svcIsFok(level)) row.dataset.svcPos = JSON.stringify(cfgs.map(c => String(c.pos)));   // always every configuration
+  const fok = svcRowFok(row);
+  if(fok) row.dataset.svcPos = JSON.stringify(cfgs.map(c => String(c.pos)));   // FOK: always every configuration
   const pos = svcRowPos(row), qty = svcQty(level, pos, cfgs);
   const chip = row.querySelector('.svc-on');
   if(chip){
-    chip.textContent = svcPosLabel(level, pos, cfgs);
-    chip.classList.toggle('none', level !== 'L6' && !svcIsFok(level) && !qty);
+    chip.textContent = fok ? `FOK · ${cfgs.map(c => 'POS ' + c.pos).join(' + ') || 'no UPS configuration'}` : svcPosLabel(level, pos, cfgs);
+    chip.classList.toggle('none', level !== 'L6' && !fok && !qty);
     chip.disabled = !!READ_ONLY;
-    chip.title = `${level} · ${svcLevelName(level)} – ${level === 'L6' ? 'one per project' : svcIsFok(level) ? 'every UPS configuration, quantity by hand' : 'quantity = UPS of the assigned configurations'}${READ_ONLY ? '' : ' (click to change)'}`;
+    chip.title = `${level} · ${svcLevelName(level)} – ${level === 'L6' ? 'one per project' : fok ? 'First of a Kind: every UPS configuration, quantity by hand' : 'quantity = UPS of the assigned configurations'}${READ_ONLY ? '' : ' (click to change)'}`;
   }
   const q = row.querySelector('.in-qty');
-  if(q && svcIsFok(level)){
+  if(q && fok){
     q.disabled = !!READ_ONLY;
-    q.title = 'FOK: quantity by hand (1 by default)';
+    q.title = 'First of a Kind (FOK): quantity by hand (1 to start)';
   } else if(q){
     q.disabled = true;
     q.title = level === 'L6' ? 'Training: one per project' : 'Number of UPS in the assigned configurations';
@@ -10124,7 +10132,7 @@ function refreshServiceLevels(){
 // "Level & UPS configurations…" on a service line (⋯ menu or its chip)
 function editServiceLevel(row){
   const cfgs = svcConfigs();
-  let level = row.dataset.svcLevel || '', pos = row.dataset.svcLevel ? svcRowPos(row) : cfgs.map(c => c.pos);
+  let level = row.dataset.svcLevel || '', pos = row.dataset.svcLevel ? svcRowPos(row) : cfgs.map(c => c.pos), fok = svcRowFok(row);
   const ov = document.createElement('div');
   ov.className = 'settings-overlay';
   ov.innerHTML = `<div class="settings-modal svc-modal" role="dialog" aria-modal="true" aria-label="Level and UPS configurations">
@@ -10133,20 +10141,23 @@ function editServiceLevel(row){
       <div class="acc-modal-footer"><button type="button" class="btn-ghost act" data-x>Cancel</button><button type="button" class="act btn-primary" data-ok>Apply</button></div></div>`;
   document.body.appendChild(ov);
   const pills = ov.querySelector('#svcEdPills');
-  const draw = () => { pills.innerHTML = level ? svcPillsHtml(level, pos, cfgs) : `<span class="svc-note">No level: the quantity is typed by hand, as for any service line</span>`; };
+  const draw = () => { pills.innerHTML = level ? svcPillsHtml(level, pos, cfgs, fok && level !== 'L6') : `<span class="svc-note">No level: the quantity is typed by hand, as for any service line</span>`; };
   draw();
   const close = () => { ov.remove(); document.removeEventListener('keydown', onKey); };
   const onKey = e => { if(e.key === 'Escape') close(); };
   document.addEventListener('keydown', onKey);
   ov.querySelector('#svcEdLevel').addEventListener('change', e => { level = e.target.value; draw(); });
-  pills.addEventListener('click', e => { const b = e.target.closest('.svc-pill'); if(!b) return; const p = b.dataset.pos; pos = pos.includes(p) ? pos.filter(x => x !== p) : [...pos, p]; draw(); });
+  pills.addEventListener('click', e => { const b = e.target.closest('.svc-pill'); if(!b) return;
+    if(b.hasAttribute('data-fok')){ fok = !fok; if(fok) pos = cfgs.map(c => c.pos); draw(); return; }
+    const p = b.dataset.pos; pos = pos.includes(p) ? pos.filter(x => x !== p) : [...pos, p]; draw(); });
   ov.addEventListener('click', e => {
     if(e.target.closest('[data-x]')) return close();
     if(e.target.closest('[data-ok]')){
-      const wasFok = svcIsFok(row.dataset.svcLevel);
+      const wasFok = svcRowFok(row);
+      if(fok && level && level !== 'L6') row.dataset.svcFok = '1'; else delete row.dataset.svcFok;
       setServiceLevel(row, level, pos);
       const q = row.querySelector('.in-qty');
-      if(svcIsFok(level) && !wasFok && q){ q.value = 1; q.dispatchEvent(new Event('input', {bubbles: true})); }   // FOK starts from quantity 1
+      if(svcRowFok(row) && !wasFok && q){ q.value = 1; q.dispatchEvent(new Event('input', {bubbles: true})); }   // FOK starts from quantity 1
       if(!level && q) q.dispatchEvent(new Event('input', {bubbles: true}));
       close();
     }
@@ -10252,16 +10263,19 @@ function openServiceModal(headerRow){
     const sync = () => {
       const lv = tr.querySelector('.svc-level').value, q = tr.querySelector('.svc-qty');
       sub.hidden = !lv;
-      q.disabled = !!lv && !svcIsFok(lv);
-      if(lv){ if(!svcIsFok(lv) || !q.dataset.fokSet){ q.value = svcQty(lv, tr._pos, cfgs); if(svcIsFok(lv)) q.dataset.fokSet = '1'; } if(!svcIsFok(lv)) delete q.dataset.fokSet; sub.querySelector('.svc-pills').innerHTML = svcPillsHtml(lv, tr._pos, cfgs); }
+      const fk = !!tr._fok && !!lv && lv !== 'L6';
+      q.disabled = !!lv && !fk;
+      if(lv){ if(!fk) q.value = svcQty(lv, tr._pos, cfgs); sub.querySelector('.svc-pills').innerHTML = svcPillsHtml(lv, tr._pos, cfgs, fk); }
     };
     tr.querySelector('.svc-level').addEventListener('change', e => {
       const lv = e.target.value, m = tr.querySelector('.svc-model');
-      if(lv && (!m.value.trim() || m.dataset.auto === '1')){ m.value = svcIsFok(lv) ? 'FOK' : `${lv} - ${svcLevelName(lv).toUpperCase()}`; m.dataset.auto = '1'; }
+      if(lv && (!m.value.trim() || m.dataset.auto === '1')){ m.value = `${lv} - ${svcLevelName(lv).toUpperCase()}`; m.dataset.auto = '1'; }
       sync();
     });
     tr.querySelector('.svc-model').addEventListener('input', e => { delete e.target.dataset.auto; });
-    sub.addEventListener('click', e => { const b = e.target.closest('.svc-pill'); if(!b) return; const p = b.dataset.pos; tr._pos = tr._pos.includes(p) ? tr._pos.filter(x => x !== p) : [...tr._pos, p]; sync(); });
+    sub.addEventListener('click', e => { const b = e.target.closest('.svc-pill'); if(!b) return;
+      if(b.hasAttribute('data-fok')){ tr._fok = !tr._fok; if(tr._fok){ tr._pos = cfgs.map(c => c.pos); tr.querySelector('.svc-qty').value = 1; } sync(); return; }
+      const p = b.dataset.pos; tr._pos = tr._pos.includes(p) ? tr._pos.filter(x => x !== p) : [...tr._pos, p]; sync(); });
   }
   addFormRow('standard');
   setTab('standard');
@@ -10288,13 +10302,14 @@ function openServiceModal(headerRow){
       if(!model && !desc) return;
       const kind = tr.dataset.svcKind === 'sla' ? 'sla' : 'standard';
       const level = kind === 'sla' ? tr.querySelector('.svc-level').value : '';
-      const pos = svcIsFok(level) ? cfgs.map(c => c.pos) : level && level !== 'L6' ? tr._pos.slice() : [];
-      const qty = level && !svcIsFok(level) ? svcQty(level, pos, cfgs) : (Number(tr.querySelector('.svc-qty').value)||1);
+      const fk = !!tr._fok && !!level && level !== 'L6';
+      const pos = fk ? cfgs.map(c => c.pos) : level && level !== 'L6' ? tr._pos.slice() : [];
+      const qty = level && !fk ? svcQty(level, pos, cfgs) : (Number(tr.querySelector('.svc-qty').value)||1);
       const code = tr.querySelector('.svc-code').value.trim();
       const gross = Number(tr.querySelector('.svc-gross').value)||0;
       const cost = Number(tr.querySelector('.svc-cost').value)||0;
       addBomRow({qty, model, code, desc: desc || model, gross, cost, kind:'accessory', groupOf:owner, manualEntry:true,
-        svcLevel: level || undefined, svcPos: level ? pos : undefined}, anchor);
+        svcLevel: level || undefined, svcPos: level ? pos : undefined, svcFok: fk || undefined}, anchor);
     });
 
     const mode = overlay.querySelector('input[name="svcDeliveryMode"]:checked')?.value || 'percent';
@@ -10398,6 +10413,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       subBom: rowSubBom(r),
       svcLevel: r.dataset.svcLevel || undefined,
       svcPos: r.dataset.svcLevel ? svcRowPos(r) : undefined,
+      svcFok: svcRowFok(r) || undefined,
     }));
   }
 
@@ -10632,7 +10648,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       addBomRow({
         qty:item.qty, model:item.model, code:item.code, desc:item.desc,
         gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, kind:'accessory', groupOf:servicesOwner, manualEntry:item.manualEntry,
-        svcLevel:item.svcLevel, svcPos:item.svcPos,
+        svcLevel:item.svcLevel, svcPos:item.svcPos, svcFok:item.svcFok,
       });
     });
     if(DELIVERY_ENABLED || savedDelivery){
@@ -13243,7 +13259,7 @@ function buildConfigState(){
     if(r.dataset.techCategory) item.techCategory = r.dataset.techCategory;
     if(r.dataset.manualEntry) item.manualEntry = true;
     if(r.dataset.manualDelivery) item.deliveryManual = true;
-    if(r.dataset.svcLevel){ item.svcLevel = r.dataset.svcLevel; item.svcPos = svcRowPos(r); }
+    if(r.dataset.svcLevel){ item.svcLevel = r.dataset.svcLevel; item.svcPos = svcRowPos(r); if(svcRowFok(r)) item.svcFok = true; }
     if(r.dataset.subBom){ try{ item.subBom = JSON.parse(r.dataset.subBom); }catch(e){} }
     if(r.dataset.kitId){
       item.kitId = r.dataset.kitId;
@@ -14421,7 +14437,9 @@ function applyLoadedState(state){
     updateRevisionStatus();
     markAutosaveBaseline();
     // the offer was made with the other market's price list (files saved before the UL list are IEC)
-    const fileMarket = state.market === 'UL' ? 'UL' : 'IEC';
+    // offers saved before the market was recorded: UL when their positions use M2F / M2U models
+    const fileMarket = state.market === 'UL' || (!state.market && (state.positions || []).some(p => /^M2[FU]\s/i.test(String(p.model || '')))) ? 'UL' : 'IEC';
+    if(fileMarket === PRICE_MARKET && fileMarket === 'UL') setTimeout(() => showExportToast('This offer uses the UL price list (M2F / M2U).', 'ok'), 0);
     if(fileMarket !== PRICE_MARKET) setTimeout(async () => {
       const ans = await openAppDialog({title: `Offer made with the ${fileMarket} price list`,
         message: `This offer was saved with the ${fileMarket} price list; the ${PRICE_MARKET} price list is in use now.`,
@@ -17260,7 +17278,7 @@ const CHANGELOG = [
     'Listino IEC / UL: due listini separati. Il listino si sceglie nella pagina New project e si cambia in Settings › Price list (menu a tendina IEC / UL); è salvato con l\'offerta e mostrato in Project Details (campo Price list). Cambiando listino con righe già in offerta il programma chiede se rigenerarla; aprendo un\'offerta fatta con l\'altro listino propone di passare a quello',
     'Finestra Price list: schede IEC price list / UL price list con file, codici e prezzi mancanti, e l\'indicazione IN USE. Il listino non in uso si può modificare o importare e salvare senza cambiare quello delle offerte. Da un file Excel con fogli "IEC" e "UL" ogni scheda legge il suo foglio',
     'Gamma UL M2F / M2U (listino UL integrato neutro, senza prezzi e costi): modelli divisi per taglia modulo (M2F 150/350/675 - 50/75, M2U 140/68 - 34/25/20), solo cablati e solo moduli BLUE. M2F 150 e M2U 68 solo CBC 6, M2F 675 solo PC0, M2F 350 e M2U 140 PC0 o PCS. Potenza massima dell\'armadio (M2F 675 = 675 kW, M2U 140 = 136 kW, M2F 350 PCS = 300 kW) e massimo moduli 3 / 5 / 9',
-    'Servizi, scheda 2 · SLA: nuovo livello FOK — vale sempre per tutte le posizioni (la descrizione le elenca tutte, anche quelle aggiunte dopo) ma la quantità parte da 1 e resta modificabile a mano',
+    'Servizi SLA (L1–L5): nella scelta delle posizioni c\'è FOK (First of a Kind) — prende tutte le posizioni (anche quelle aggiunte dopo), la quantità è libera (parte da 1, sempre modificabile) e la descrizione della riga riporta "First of a Kind (FOK)"',
     'Generazione UL: PCS = armadio PC0 + YM2FM11A (M2F 350, nota limite 300 kW) o + YM2UM08A (M2U 140, nota kit cavi YM2UE34A disponibile); VE = kit YM2UM06A (M2F 150, M2U 140, M2U 68), armadio M2F 675 PC0 VE per M2F 675, e per M2F 350 (VE non disponibile) passaggio a M2F 675 PC0 VE; litio = EnergyManager YSKCC06AUL; kit parallelo dal listino UL (YM2UP00B, YMP2P00A per M2F 675). Accessori proposti in base alle famiglie UL',
   ]},
   {version:'beta_6.48', date:'2026-10-15', notes:[
@@ -17794,13 +17812,29 @@ async function setPriceMarket(market, opts = {}){
   market = market === 'UL' ? 'UL' : 'IEC';
   if(market === PRICE_MARKET) return true;
   const from = PRICE_MARKET;
-  const hasLines = typeof bomHasRows === 'function' && bomHasRows() && !(typeof READ_ONLY !== 'undefined' && READ_ONLY);
+  const anyLines = typeof bomHasRows === 'function' && bomHasRows();
+  const ro = typeof READ_ONLY !== 'undefined' && READ_ONLY;
+  const hasLines = anyLines && !ro;
+  const range = m => m === 'UL' ? 'M2F / M2U range (North America)' : 'MP2 / M2S / M2X range';
   let regen = false;
-  if(hasLines && !opts.noAsk){
-    const ans = await openAppDialog({title: `Switch to the ${market} price list`,
-      message: `The offer lines on the page have the codes and prices of the ${from} price list.`,
-      question: `Generate the offer again with the ${market} list? Lines added by hand are kept; their prices follow the ${market} list where the code is the same.`,
-      buttons: [{label: 'Cancel', value: 'cancel'}, {label: 'Switch only', value: 'switch'}, {label: 'Switch and generate again', value: 'regen', primary: true}]});
+  if(!opts.noAsk){
+    let ans;
+    if(hasLines){
+      ans = await openAppDialog({title: `Switch to the ${market} price list`,
+        message: `The offer lines on the page have the codes and prices of the ${from} price list. The ${market} list has the ${range(market)}.`,
+        question: `Generate the offer again with the ${market} list? Lines added by hand are kept; their prices follow the ${market} list where the code is the same.`,
+        buttons: [{label: 'Cancel', value: 'cancel'}, {label: 'Switch only', value: 'switch'}, {label: 'Switch and generate again', value: 'regen', primary: true}]});
+    } else if(anyLines){
+      ans = await openAppDialog({title: `Switch to the ${market} price list`,
+        message: `This revision is closed: its offer lines keep the codes and prices of the ${from} price list. Start a new revision to work on it with the ${market} list.`,
+        question: `Use the ${market} price list (${range(market)}) from now on?`,
+        buttons: [{label: 'Cancel', value: 'cancel'}, {label: `Switch to ${market}`, value: 'switch', primary: true}]});
+    } else if(!opts.confirmed){
+      ans = await openAppDialog({title: `Switch to the ${market} price list`,
+        message: `The ${market} price list has the ${range(market)}: System Configuration and Generate offer will use it.`,
+        question: `Switch from ${from} to ${market}?`,
+        buttons: [{label: 'Cancel', value: 'cancel'}, {label: `Switch to ${market}`, value: 'switch', primary: true}]});
+    } else ans = 'switch';
     if(ans !== 'switch' && ans !== 'regen') return false;
     regen = ans === 'regen';
   }

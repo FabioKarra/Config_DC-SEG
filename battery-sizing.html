@@ -548,6 +548,90 @@ body.dark-theme footer{color:#6F7787;}
   .panel-title-left{flex:1 1 auto; min-width:0; flex-wrap:wrap; row-gap:4px;}
   .panel.pnl-collapsed .pnl-sum{display:none;}
 }
+
+/* ---- Word-like title bar, AutoSave and floating ribbon (same as the DC Configurator) ---- */
+.app-topbar{background:#EEF1F5; border-bottom:none; box-shadow:none; padding:4px 30px 0; row-gap:2px; column-gap:6px; font-family:'Segoe UI','Work Sans',Arial,sans-serif;}
+.app-topbar .app-topbar-spacer{display:none;}
+#autosaveControl{order:1; height:30px; padding:0 6px; margin:0 2px 0 -8px; gap:9px; border-radius:4px;}
+#autosaveControl:hover{background:#E3E6EB;}
+#qatSave{order:2;}
+#appDocTitle{order:3; flex:1 1 180px; min-width:0; display:flex; justify-content:center; padding:0 8px;}
+#spSaveStatus{position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+.app-topbar #btnSignIn, .app-topbar #userChip, .app-topbar #btnSpRefresh, .app-topbar #btnSignOut{order:6;}
+.app-topbar #themeToggle{order:7;}
+#appRowBreak{order:10; flex:0 0 100%; height:0;}
+#appMenuTab{order:11; height:30px; margin:0 6px 0 -6px; font-size:13px;}
+.app-topbar .rb-tabs{order:12; margin-left:2px; height:34px;}
+#autosaveControl .autosave-ribbon-label{font:400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424;}
+#autosaveControl .autosave-switch.autosave-office-switch{width:40px; height:20px;}
+#autosaveControl .autosave-office-switch .autosave-slider{background:#fff; border:1px solid #616161; border-radius:10px; box-sizing:border-box; transition:background .15s, border-color .15s;}
+#autosaveControl .autosave-office-switch .autosave-slider:before{left:3px; top:3px; width:12px; height:12px; background:#616161; transition:transform .15s, background .15s;}
+#autosaveControl .autosave-office-switch input:checked + .autosave-slider{background:#185ABD; border-color:#185ABD;}
+#autosaveControl .autosave-office-switch input:checked + .autosave-slider:before{background:#fff; transform:translateX(20px);}
+#autosaveControl .as-check{position:absolute; left:6px; top:5px; width:10px; height:10px; color:#fff; opacity:0; pointer-events:none; transition:opacity .15s;}
+#autosaveControl .autosave-office-switch input:checked ~ .as-check{opacity:1;}
+.qat-btn{display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid transparent; border-radius:4px; background:transparent; color:#424242; cursor:pointer; padding:0; flex:none;}
+.qat-btn:hover{background:#E3E6EB;}
+.qat-btn svg{width:17px; height:17px;}
+#qatSave .qs-sync{display:none;} #qatSave.synced .qs-sync{display:inline;}
+#qatSave.saving .qs-sync{display:inline; animation:qsSpin 1s linear infinite; transform-origin:18px 18px;}
+@keyframes qsSpin{to{transform:rotate(360deg);}}
+#appDocTitle .dt-btn{display:inline-flex; align-items:center; gap:6px; max-width:100%; height:28px; padding:0 8px; border:1px solid transparent; border-radius:4px; background:transparent; font:400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424; cursor:pointer; white-space:nowrap; min-width:0;}
+#appDocTitle .dt-btn:hover, #appDocTitle .dt-btn[aria-expanded="true"]{background:#E3E6EB;}
+#appDocTitle .dt-btn:focus{outline:none;} #appDocTitle .dt-btn:focus-visible{outline:2px solid #185ABD; outline-offset:1px;}
+#appDocTitle .dt-name{overflow:hidden; text-overflow:ellipsis; min-width:0;}
+#appDocTitle .dt-name b{font-weight:600;}
+#appDocTitle .dt-sep, #appDocTitle .dt-chev{color:#616161; flex:none;}
+#appDocTitle .dt-state{color:#424242; flex:none;} #appDocTitle .dt-state.warn{color:#B26A00;} #appDocTitle .dt-state.dim{color:#707070;}
+.dt-fly{position:fixed; z-index:1200; width:380px; background:#fff; border:1px solid #D6DAE1; border-radius:8px; box-shadow:0 12px 32px rgba(20,22,26,.18); padding:14px 16px 12px; font:400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424;}
+.dt-fly .df-name{font-size:15px; font-weight:600; margin-bottom:2px; word-break:break-word;}
+.dt-fly .df-sub{color:#616161; margin-bottom:10px;}
+.dt-fly .df-row{display:grid; grid-template-columns:96px 1fr; gap:8px; padding:5px 0; border-top:1px solid #EDEFF3;}
+.dt-fly .df-row span{color:#616161;} .dt-fly .df-row b{font-weight:600; word-break:break-word;} .dt-fly .df-row b.warn{color:#B26A00;}
+.dt-fly .df-acts{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+.dt-fly .df-acts button{height:28px; padding:0 10px; border:1px solid #D1D1D1; border-radius:4px; background:#fff; font:400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424; cursor:pointer;}
+.dt-fly .df-acts button:hover{background:#F0F0F0;}
+.dt-fly .df-acts button.pri{background:#185ABD; border-color:#185ABD; color:#fff;} .dt-fly .df-acts button.pri:hover{background:#0F4AA3;}
+.rb-tab{height:32px; padding:0 10px; border-radius:4px; font:400 13.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424;}
+.rb-tab:hover{background:#E3E6EB;}
+.rb-tab.on{color:#2F5597; font-weight:600;}
+.rb-tab.on::after{left:10px; right:10px; bottom:0;}
+.rb-panel{flex:0 0 calc(100% + 44px); margin:5px -22px 8px; height:98px; padding:4px 40px 2px 6px; background:#fff; border:1px solid #DFE3E9; border-radius:8px; box-shadow:0 1px 2px rgba(20,22,26,.06), 0 2px 6px rgba(20,22,26,.05); font-family:'Segoe UI','Work Sans',Arial,sans-serif;}
+body.rb-collapsed.rb-peek .rb-panel{left:8px; right:8px; margin:0; border-radius:8px; border:1px solid #DFE3E9; box-shadow:0 12px 28px rgba(20,22,26,.16);}
+.rb-grp{border-right:none; position:relative; padding:0 8px;}
+.rb-grp::after{content:''; position:absolute; right:0; top:6px; bottom:8px; width:1px; background:#E1E1E1;}
+.rb-grp:last-of-type::after{display:none;}
+.rb-lab{font:400 11.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#616161; padding:1px 0 2px;}
+.rb-big{font-family:'Segoe UI','Work Sans',Arial,sans-serif; font-size:12px; color:#242424; border-radius:4px; padding:5px 7px 4px;}
+.rb-sm{font-family:'Segoe UI','Work Sans',Arial,sans-serif; font-size:12px; color:#242424; border-radius:4px; height:24px;}
+.rb-big.pri{background:transparent;}
+.rb-big:hover:not(:disabled), .rb-sm:hover:not(:disabled){background:#F0F0F0;}
+.rb-big:active:not(:disabled), .rb-sm:active:not(:disabled){background:#E0E0E0;}
+.rb-big.rb-on{background:#E8EEF8; box-shadow:inset 0 0 0 1px #B4C6E6; color:#1F3F7A; font-weight:600;}
+.rb-pin{right:6px; bottom:4px; border-radius:4px; color:#424242;}
+.rb-pin:hover{background:#F0F0F0; color:#242424;}
+body.dark-theme .app-topbar{background:#1D2027;}
+body.dark-theme #autosaveControl .autosave-ribbon-label, body.dark-theme #appDocTitle .dt-btn, body.dark-theme .rb-tab{color:#E6E9EF;}
+body.dark-theme #autosaveControl:hover, body.dark-theme .qat-btn:hover, body.dark-theme #appDocTitle .dt-btn:hover, body.dark-theme #appDocTitle .dt-btn[aria-expanded="true"], body.dark-theme .rb-tab:hover{background:#2E333D;}
+body.dark-theme #autosaveControl .autosave-office-switch .autosave-slider{background:transparent; border-color:#ADADAD;}
+body.dark-theme #autosaveControl .autosave-office-switch .autosave-slider:before{background:#ADADAD;}
+body.dark-theme #autosaveControl .autosave-office-switch input:checked + .autosave-slider{background:#3A7BE0; border-color:#3A7BE0;}
+body.dark-theme #autosaveControl .autosave-office-switch input:checked + .autosave-slider:before{background:#fff;}
+body.dark-theme .qat-btn{color:#D6DBE4;}
+body.dark-theme #appDocTitle .dt-sep, body.dark-theme #appDocTitle .dt-chev, body.dark-theme #appDocTitle .dt-state{color:#B4BBC8;}
+body.dark-theme .rb-tab.on{color:#A9C7FF;}
+body.dark-theme .rb-panel{background:var(--panel); border-color:#343A45; box-shadow:0 1px 3px rgba(0,0,0,.35);}
+body.dark-theme .rb-grp::after{background:#3A404B;}
+body.dark-theme .rb-lab{color:#A7AFBE;}
+body.dark-theme .rb-big, body.dark-theme .rb-sm{color:#E6E9EF;}
+body.dark-theme .rb-big:hover:not(:disabled), body.dark-theme .rb-sm:hover:not(:disabled), body.dark-theme .rb-pin:hover{background:#2E333D;}
+body.dark-theme .rb-big.rb-on{background:#26344D; box-shadow:inset 0 0 0 1px #4A6AA8; color:#C9DBFF;}
+body.dark-theme .dt-fly{background:var(--panel); border-color:var(--panel-border); color:var(--text); box-shadow:0 12px 32px rgba(0,0,0,.5);}
+body.dark-theme .dt-fly .df-row{border-top-color:#343A45;} body.dark-theme .dt-fly .df-row span, body.dark-theme .dt-fly .df-sub{color:#A7AFBE;}
+body.dark-theme .dt-fly .df-acts button{background:transparent; border-color:#4A505C; color:var(--text);}
+body.dark-theme .dt-fly .df-acts button.pri{background:#3A7BE0; border-color:#3A7BE0; color:#fff;}
+@media (max-width:760px){ #appDocTitle{order:20; flex-basis:100%;} #autosaveControl .autosave-ribbon-label{display:none;} }
+@media print{ .dt-fly{display:none !important;} }
 </style>
 </head>
 <body>
@@ -866,7 +950,7 @@ const WORKSANS_BOLD_B64 = 'AAEAAAAQAQAABAAAR0RFRgmmCYcAAJXgAAAAXkdQT1PUJ1QsAACWQ
 </script>
 <script>
 'use strict';
-const APP_VERSION = 'v3.4';
+const APP_VERSION = 'v3.5';
 // Technical documents (PDF) — on SharePoint, in the same folder as the DC Configurator manuals
 const DOCS_BASE = 'https://rielloups.sharepoint.com/sites/DCSales2/Shared%20Documents/03_Tools/PreSales_Execution/DEF/';
 const DOCS = {
@@ -2676,8 +2760,8 @@ const RIBBON = (function(){
   const auto = document.createElement('label');
   auto.className = 'autosave-ribbon-control'; auto.id = 'autosaveControl';
   auto.title = 'AutoSave to the linked SharePoint project (sign in and link a reference project)';
-  auto.innerHTML = `<span class="autosave-ribbon-label">AutoSave</span><span class="autosave-switch"><input type="checkbox" id="autosaveToggle" role="switch" aria-label="AutoSave to SharePoint"${AUTOSAVE ? ' checked' : ''}><span class="autosave-slider"></span></span><span class="autosave-ribbon-state" id="autosaveState">${AUTOSAVE ? 'On' : 'Off'}</span>`;
-  tabs.insertAdjacentElement('afterend', auto);
+  auto.innerHTML = `<span class="autosave-ribbon-label">AutoSave</span><span class="autosave-switch autosave-office-switch"><input type="checkbox" id="autosaveToggle" role="switch" aria-label="AutoSave to SharePoint"${AUTOSAVE ? ' checked' : ''}><span class="autosave-slider"></span><svg class="as-check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6.3 4.8 9 10 3.2"/></svg></span><span class="autosave-ribbon-state" id="autosaveState" hidden>${AUTOSAVE ? 'On' : 'Off'}</span>`;
+  tb.insertBefore(auto, tb.firstChild);
   auto.querySelector('input').addEventListener('change', e => {
     AUTOSAVE = e.target.checked; store.set(AUTOSAVE_KEY, AUTOSAVE ? 'on' : 'off');
     $('autosaveState').textContent = AUTOSAVE ? 'On' : 'Off';
@@ -2768,6 +2852,81 @@ const RIBBON = (function(){
   btn.addEventListener('click', e => { e.stopPropagation(); $('appMenu') ? close() : open(); });
   document.addEventListener('pointerdown', e => { if(!e.target.closest('#appMenu, #appMenuTab')) close(); }, true);
   document.addEventListener('keydown', e => { if(e.key === 'Escape') close(); });
+})();
+
+
+// ---------------------------------------------------------------- title bar like Word: AutoSave · Save · "title • save state ⌄" (row 1), app tab and ribbon tabs (row 2)
+const WORD_BAR = (function(){
+  const tb = $('appTopbar');
+  const mk = (tag, id, cls, html) => { const e = document.createElement(tag); e.id = id; if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
+  const save = mk('button', 'qatSave', 'qat-btn', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v6.5M12.5 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2"/><path d="M7 3v5h8V3"/><path d="M7 21v-6h5"/><g class="qs-sync" stroke="#107C10" stroke-width="1.7"><path d="M14.6 16.4a3.5 3.5 0 0 1 6.1-1.7l.6.7"/><path d="M21.3 13.3v2.1h-2.1"/><path d="M21.4 19.6a3.5 3.5 0 0 1-6.1 1.7l-.6-.7"/><path d="M14.7 22.7v-2.1h2.1"/></g></svg>');
+  save.type = 'button'; save.title = 'Save (Ctrl+S) — to the linked SharePoint project, otherwise the configuration file'; save.setAttribute('aria-label', 'Save');
+  const title = mk('div', 'appDocTitle', '', '<button type="button" class="dt-btn" aria-haspopup="dialog" aria-expanded="false"><span class="dt-name">Battery Sizing</span><span class="dt-st"></span><svg class="dt-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>');
+  const brk = mk('div', 'appRowBreak', '');
+  $('autosaveControl').insertAdjacentElement('afterend', save);
+  save.insertAdjacentElement('afterend', title);
+  tb.appendChild(brk);
+  const dtBtn = title.querySelector('.dt-btn'), dtName = title.querySelector('.dt-name'), dtSt = title.querySelector('.dt-st');
+  function doSave(){ if(msalAccount && LINK && LAST) saveToSharePoint(false); else exportJSON(); }
+  save.addEventListener('click', e => { e.stopPropagation(); doSave(); });
+  function state(){
+    const el = $('spSaveStatus'), txt = (el.textContent || '').trim(), cls = el.className;
+    if(spBusy) return {t:'Saving…', c:'dim', busy:1, full:txt || 'Saving…'};
+    if(/\berr\b/.test(cls)) return {t:'Save problem', c:'warn', full:txt};
+    if(/\bok\b/.test(cls)) return {t:'Saved', c:'', synced:1, full:txt.replace(/^✓\s*/, '')};
+    if(!msalAccount || !LINK || !LAST) return {t:'', c:'', full:txt};
+    let changed = true; try{ changed = spSignature() !== spLastSig; }catch(e){}
+    return changed ? {t:'Not saved', c:'dim', full:txt} : {t:'Saved', c:'', synced:1, full:txt};
+  }
+  let fly = null;
+  function closeFly(){ if(fly){ fly.remove(); fly = null; } dtBtn.setAttribute('aria-expanded', 'false'); }
+  function openFly(){
+    closeFly();
+    const st = state(), I = readInputs(), folder = LINK ? sizingFolderPath(LINK.folderLink) : null;
+    const loc = !msalAccount ? (EMBED ? 'Sign in with MS 365 in the DC Configurator' : 'Not signed in to Microsoft 365') : !LINK ? (EMBED ? 'No project open in the DC Configurator' : 'No SharePoint project linked') : folder || 'The project has no folder on SharePoint';
+    fly = document.createElement('div'); fly.className = 'dt-fly'; fly.setAttribute('role', 'dialog');
+    fly.innerHTML = `<div class="df-name">${esc([I.rpRef, I.rpProject].filter(Boolean).join(' ') || 'Battery Sizing')}</div><div class="df-sub">${esc([I.rpCustomer, EMBED && HOST.pos ? posLabel(HOST.pos) : ''].filter(Boolean).join(' · ') || 'Battery Sizing')}</div>
+      <div class="df-row"><span>Location</span><b>${esc(loc)}</b></div>
+      <div class="df-row"><span>AutoSave</span><b>${AUTOSAVE ? 'On — a few seconds after every change' : 'Off'}</b></div>
+      <div class="df-row"><span>Status</span><b class="${st.c === 'warn' ? 'warn' : ''}">${esc(st.full || st.t || '—')}</b></div>
+      <div class="df-row"><span>Revision</span><b>R${esc((I.rpRev || '01').replace(/[^a-z0-9]+/gi, ''))}${I.rpRevDesc ? ' — ' + esc(I.rpRevDesc) : ''}</b></div>
+      <div class="df-acts"><button type="button" class="pri" data-a="save">Save</button>${!EMBED && msalAccount ? '<button type="button" data-a="project">Reference project</button>' : ''}${!EMBED ? '<button type="button" data-a="m365">Microsoft 365</button>' : ''}</div>`;
+    document.body.appendChild(fly);
+    const r = dtBtn.getBoundingClientRect();
+    fly.style.top = `${r.bottom + 6}px`; fly.style.left = `${Math.max(8, Math.min(window.innerWidth - fly.offsetWidth - 8, r.left + r.width / 2 - fly.offsetWidth / 2))}px`;
+    dtBtn.setAttribute('aria-expanded', 'true');
+    fly.addEventListener('click', e => {
+      const a = e.target.closest('[data-a]'); if(!a) return;
+      closeFly();
+      if(a.dataset.a === 'save') doSave(); else if(a.dataset.a === 'project') openProjectPicker(); else if(a.dataset.a === 'm365') openSpPanel();
+    });
+  }
+  dtBtn.addEventListener('click', e => { e.stopPropagation(); fly ? closeFly() : openFly(); });
+  document.addEventListener('pointerdown', e => { if(fly && !e.target.closest('.dt-fly, #appDocTitle')) closeFly(); }, true);
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){ closeFly(); return; }
+    if(!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || String(e.key).toLowerCase() !== 's') return;
+    e.preventDefault();
+    if([...document.querySelectorAll('.settings-overlay')].some(o => o.style.display !== 'none' && getComputedStyle(o).display !== 'none')) return;
+    doSave();
+  });
+  function render(){
+    const I = readInputs();
+    const name = [I.rpRef ? `<b>${esc(I.rpRef)}</b>` : '', esc(I.rpProject)].filter(Boolean).join(' ');
+    const html = `${name ? name + ' - ' : ''}Battery Sizing`;
+    if(dtName.innerHTML !== html) dtName.innerHTML = html;
+    const st = state();
+    const sh = st.t ? `<span class="dt-sep">•</span><span class="dt-state ${st.c}">${esc(st.t)}</span>` : '';
+    if(dtSt.innerHTML !== sh) dtSt.innerHTML = sh;
+    dtSt.style.display = sh ? 'contents' : 'none';
+    const tip = `${dtName.textContent}${st.full ? ' — ' + st.full : ''}`;
+    if(dtBtn.title !== tip) dtBtn.title = tip;
+    save.classList.toggle('synced', !!st.synced && !st.busy);
+    save.classList.toggle('saving', !!st.busy);
+    document.title = name ? `${dtName.textContent}` : 'Battery Sizing';
+  }
+  setInterval(render, 800); render();
+  return {render, closeFly};
 })();
 
 // ---------------------------------------------------------------- wiring

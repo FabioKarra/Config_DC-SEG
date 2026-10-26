@@ -2791,6 +2791,124 @@ body.dark-theme #tcoPage .tco-sts i{background:#2C313B;color:#A7AFBE;}
 body.dark-theme #tcoPage .tco-sts i.on{background:#3E6FB8;color:#FFFFFF;}
 </style>
 
+<style id="wordUiCss">
+/* ---- beta_6.50: title bar, AutoSave and ribbon like Word (Microsoft 365) ---- */
+body.has-ribbon .app-topbar{background:#EEF1F5; border-bottom:none; box-shadow:none; padding:4px 30px 0; font-family:'Segoe UI','Work Sans',Arial,sans-serif;}
+body.has-ribbon #autosaveStatus{position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+/* AutoSave: label + switch, check mark when on */
+body.has-ribbon #autosaveRibbonControl{height:30px; padding:0 6px; margin:0 2px 0 -8px; gap:9px; background:transparent; border:1px solid transparent; border-radius:4px;}
+body.has-ribbon #autosaveRibbonControl:hover{background:#E3E6EB;}
+#autosaveRibbonControl .autosave-ribbon-label{font:400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424; cursor:pointer;}
+#autosaveRibbonControl .autosave-ribbon-state{display:none;}
+#autosaveRibbonControl .autosave-switch.autosave-office-switch{width:40px; height:20px;}
+#autosaveRibbonControl .autosave-office-switch .autosave-slider{background:#fff; border:1px solid #616161; border-radius:10px; box-sizing:border-box; transition:background .15s, border-color .15s;}
+#autosaveRibbonControl .autosave-office-switch .autosave-slider:before{left:3px; top:3px; width:12px; height:12px; background:#616161; box-shadow:none; transition:transform .15s, background .15s;}
+#autosaveRibbonControl .autosave-office-switch input:checked + .autosave-slider{background:#185ABD; border-color:#185ABD;}
+#autosaveRibbonControl .autosave-office-switch input:checked + .autosave-slider:before{background:#fff; transform:translateX(20px);}
+#autosaveRibbonControl .as-check{position:absolute; left:6px; top:5px; width:10px; height:10px; color:#fff; opacity:0; pointer-events:none; transition:opacity .15s;}
+#autosaveRibbonControl .autosave-office-switch input:checked ~ .as-check{opacity:1;}
+#autosaveRibbonControl .autosave-office-switch input:focus-visible + .autosave-slider{outline:2px solid #185ABD; outline-offset:2px;}
+/* quick access: Save (green sync badge when AutoSave keeps it on SharePoint), Undo, Redo */
+body.has-ribbon .qat-btn, body.has-ribbon .undo-qat button{width:30px; height:30px; border-radius:4px; border:1px solid transparent; color:#424242;}
+body.has-ribbon .qat-btn:hover:not(:disabled), body.has-ribbon .undo-qat button:hover:not(:disabled){background:#E3E6EB; border-color:transparent; color:#242424;}
+body.has-ribbon .qat-btn:disabled, body.has-ribbon .undo-qat button:disabled{opacity:.38;}
+body.has-ribbon #qatSave{color:#424242;}
+#qatSave .qs-sync{display:none;}
+#qatSave.synced .qs-sync{display:inline;}
+#qatSave.saving .qs-sync{display:inline; animation:qsSpin 1s linear infinite; transform-origin:18px 18px;}
+@keyframes qsSpin{to{transform:rotate(360deg);}}
+/* title of the offer + save state, as "Document1.docx • Saved ⌄" */
+body.has-ribbon #appDocTitle{display:flex; justify-content:center; padding:0 8px;}
+#appDocTitle .dt-btn{display:inline-flex; align-items:center; gap:6px; max-width:100%; height:28px; padding:0 8px; border:1px solid transparent; border-radius:4px; background:transparent; font:400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424; cursor:pointer; white-space:nowrap; min-width:0;}
+#appDocTitle .dt-btn:hover, #appDocTitle .dt-btn[aria-expanded="true"]{background:#E3E6EB;}
+#appDocTitle .dt-btn:focus{outline:none;} #appDocTitle .dt-btn:focus-visible{outline:2px solid #185ABD; outline-offset:1px;}
+#appDocTitle .dt-name{overflow:hidden; text-overflow:ellipsis; min-width:0;}
+#appDocTitle .dt-name b{font-weight:600;}
+#appDocTitle .dt-sep{color:#616161;}
+#appDocTitle .dt-state{color:#424242; flex:none;}
+#appDocTitle .dt-state.warn{color:#B26A00;} #appDocTitle .dt-state.dim{color:#707070;}
+#appDocTitle .dt-chev{flex:none; color:#616161;}
+.dt-fly{position:fixed; z-index:1200; width:380px; background:#fff; border:1px solid #D6DAE1; border-radius:8px; box-shadow:0 12px 32px rgba(20,22,26,.18); padding:14px 16px 12px; font:400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424;}
+.dt-fly .df-name{font-size:15px; font-weight:600; margin-bottom:2px; word-break:break-word;}
+.dt-fly .df-sub{color:#616161; margin-bottom:10px;}
+.dt-fly .df-row{display:grid; grid-template-columns:96px 1fr; gap:8px; padding:5px 0; border-top:1px solid #EDEFF3;}
+.dt-fly .df-row span{color:#616161;}
+.dt-fly .df-row b{font-weight:600; word-break:break-word;}
+.dt-fly .df-row b.warn{color:#B26A00;}
+.dt-fly .df-acts{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+.dt-fly .df-acts button{height:28px; padding:0 10px; border:1px solid #D1D1D1; border-radius:4px; background:#fff; font:400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424; cursor:pointer;}
+.dt-fly .df-acts button:hover{background:#F0F0F0;}
+.dt-fly .df-acts button.pri{background:#185ABD; border-color:#185ABD; color:#fff;}
+.dt-fly .df-acts button.pri:hover{background:#0F4AA3;}
+/* tabs row */
+body.has-ribbon .rb-tab{height:32px; padding:0 10px; border-radius:4px; font:400 13.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#242424;}
+body.has-ribbon .rb-tab:hover{background:#E3E6EB;}
+body.has-ribbon .rb-tab.on{color:#2F5597; font-weight:600;}
+body.has-ribbon .rb-tab.on::after{left:10px; right:10px; bottom:0; height:3px; border-radius:2px;}
+/* the ribbon: a white card floating on the grey title area */
+body.has-ribbon .rb-panel{flex:0 0 calc(100% + 44px); margin:5px -22px 6px; height:98px; padding:4px 40px 2px 6px; background:#fff; border:1px solid #DFE3E9; border-radius:8px; box-shadow:0 1px 2px rgba(20,22,26,.06), 0 2px 6px rgba(20,22,26,.05); font-family:'Segoe UI','Work Sans',Arial,sans-serif;}
+body.has-ribbon.rb-collapsed.rb-peek .rb-panel{left:8px; right:8px; margin:0; border-radius:8px; border:1px solid #DFE3E9; box-shadow:0 12px 28px rgba(20,22,26,.16);}
+body.has-ribbon .rb-grp{border-right:none; position:relative; padding:0 8px;}
+body.has-ribbon .rb-grp::after{content:''; position:absolute; right:0; top:6px; bottom:8px; width:1px; background:#E1E1E1;}
+body.has-ribbon .rb-grp:last-of-type::after{display:none;}
+body.has-ribbon .rb-lab{font:400 11.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#616161; padding:1px 0 2px;}
+body.has-ribbon .rb-big{font-family:'Segoe UI','Work Sans',Arial,sans-serif; font-size:12px; color:#242424; border-radius:4px; padding:5px 7px 4px;}
+body.has-ribbon .rb-sm{font-family:'Segoe UI','Work Sans',Arial,sans-serif; font-size:12px; color:#242424; border-radius:4px; height:24px;}
+body.has-ribbon .rb-big.pri{background:transparent;}
+body.has-ribbon .rb-big:hover:not(:disabled), body.has-ribbon .rb-sm:hover:not(:disabled){background:#F0F0F0;}
+body.has-ribbon .rb-big:active:not(:disabled), body.has-ribbon .rb-sm:active:not(:disabled){background:#E0E0E0;}
+body.has-ribbon .rb-big.rb-on{background:#E8EEF8; box-shadow:inset 0 0 0 1px #B4C6E6; color:#1F3F7A; font-weight:600;}
+body.has-ribbon .rb-pin{right:6px; bottom:4px; border-radius:4px; color:#424242;}
+body.has-ribbon .rb-pin:hover{background:#F0F0F0; color:#242424;}
+/* dark theme */
+body.dark-theme.has-ribbon .app-topbar{background:#1D2027;}
+body.dark-theme #autosaveRibbonControl .autosave-ribbon-label, body.dark-theme #appDocTitle .dt-btn, body.dark-theme.has-ribbon .rb-tab{color:#E6E9EF;}
+body.dark-theme.has-ribbon #autosaveRibbonControl:hover, body.dark-theme #appDocTitle .dt-btn:hover, body.dark-theme #appDocTitle .dt-btn[aria-expanded="true"], body.dark-theme.has-ribbon .rb-tab:hover,
+body.dark-theme.has-ribbon .qat-btn:hover:not(:disabled), body.dark-theme.has-ribbon .undo-qat button:hover:not(:disabled){background:#2E333D;}
+body.dark-theme #autosaveRibbonControl .autosave-office-switch .autosave-slider{background:transparent; border-color:#ADADAD;}
+body.dark-theme #autosaveRibbonControl .autosave-office-switch .autosave-slider:before{background:#ADADAD;}
+body.dark-theme #autosaveRibbonControl .autosave-office-switch input:checked + .autosave-slider{background:#3A7BE0; border-color:#3A7BE0;}
+body.dark-theme #autosaveRibbonControl .autosave-office-switch input:checked + .autosave-slider:before{background:#fff;}
+body.dark-theme.has-ribbon .qat-btn, body.dark-theme.has-ribbon .undo-qat button, body.dark-theme.has-ribbon #qatSave{color:#D6DBE4;}
+body.dark-theme #appDocTitle .dt-sep, body.dark-theme #appDocTitle .dt-chev, body.dark-theme #appDocTitle .dt-state{color:#B4BBC8;}
+body.dark-theme.has-ribbon .rb-tab.on{color:#A9C7FF;}
+body.dark-theme.has-ribbon .rb-panel{background:var(--panel); border-color:#343A45; box-shadow:0 1px 3px rgba(0,0,0,.35);}
+body.dark-theme.has-ribbon .rb-grp::after{background:#3A404B;}
+body.dark-theme.has-ribbon .rb-lab{color:#A7AFBE;}
+body.dark-theme.has-ribbon .rb-big, body.dark-theme.has-ribbon .rb-sm{color:#E6E9EF;}
+body.dark-theme.has-ribbon .rb-big:hover:not(:disabled), body.dark-theme.has-ribbon .rb-sm:hover:not(:disabled), body.dark-theme.has-ribbon .rb-pin:hover{background:#2E333D;}
+body.dark-theme.has-ribbon .rb-big.rb-on{background:#26344D; box-shadow:inset 0 0 0 1px #4A6AA8; color:#C9DBFF;}
+body.dark-theme .dt-fly{background:var(--panel); border-color:var(--panel-border); color:var(--text); box-shadow:0 12px 32px rgba(0,0,0,.5);}
+body.dark-theme .dt-fly .df-row{border-top-color:#343A45;} body.dark-theme .dt-fly .df-row span, body.dark-theme .dt-fly .df-sub{color:#A7AFBE;}
+body.dark-theme .dt-fly .df-acts button{background:transparent; border-color:#4A505C; color:var(--text);}
+body.dark-theme .dt-fly .df-acts button:hover{background:#2E333D;}
+body.dark-theme .dt-fly .df-acts button.pri{background:#3A7BE0; border-color:#3A7BE0; color:#fff;}
+
+/* ---- beta_6.50: one tab per offer ---- */
+.offer-tabs{order:100; flex:0 0 calc(100% + 44px); margin:0 -22px; display:flex; align-items:flex-end; gap:2px; height:33px; padding:0 2px; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin;}
+.offer-tab{display:flex; align-items:center; gap:7px; height:30px; max-width:240px; min-width:120px; padding:0 6px 0 11px; border:1px solid transparent; border-bottom:none; border-radius:7px 7px 0 0; background:transparent; font:400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color:#424242; cursor:pointer; flex:0 1 auto; position:relative;}
+.offer-tab:hover{background:#E3E6EB;}
+.offer-tab.on{background:var(--bg); border-color:#DFE3E9; color:#242424; font-weight:600; z-index:1;}
+.offer-tab.on::before{content:''; position:absolute; left:10px; right:10px; top:0; height:2px; border-radius:0 0 2px 2px; background:#2F5597;}
+.offer-tab svg.ot-ico{flex:none; color:#2F5597;}
+.offer-tab .ot-lab{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left;}
+.offer-tab .ot-dot{flex:none; width:7px; height:7px; border-radius:50%; background:#D99A00; display:none;}
+.offer-tab.dirty .ot-dot{display:block;}
+.offer-tab .ot-x{flex:none; width:20px; height:20px; border:none; border-radius:4px; background:transparent; color:#616161; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; opacity:0;}
+.offer-tab:hover .ot-x, .offer-tab.on .ot-x{opacity:1;}
+.offer-tab .ot-x:hover{background:#D5D9E0; color:#242424;}
+.offer-tab.ro .ot-lab::after{content:' · read-only'; font-weight:400; color:#707070;}
+.offer-tabs .ot-new{flex:none; width:30px; height:28px; margin-bottom:1px; border:none; border-radius:5px; background:transparent; color:#424242; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+.offer-tabs .ot-new:hover{background:#E3E6EB; color:#242424;}
+body.has-ribbon .app-topbar{padding-bottom:0;}
+body.dark-theme .offer-tab{color:#B4BBC8;} body.dark-theme .offer-tab:hover, body.dark-theme .offer-tabs .ot-new:hover{background:#2E333D;}
+body.dark-theme .offer-tab.on{background:var(--bg); border-color:#343A45; color:#E6E9EF;}
+body.dark-theme .offer-tab.on::before{background:#78A9FF;} body.dark-theme .offer-tab svg.ot-ico{color:#91B9FF;}
+body.dark-theme .offer-tab .ot-x{color:#B4BBC8;} body.dark-theme .offer-tab .ot-x:hover{background:#3A404B; color:#fff;}
+body.dark-theme .offer-tabs .ot-new{color:#D6DBE4;}
+@media print{ .offer-tabs, .dt-fly{display:none !important;} }
+</style>
+
 </head>
 <body>
 <div id="upsCookieConsentBanner" class="ups-cookie-consent" role="dialog" aria-label="Cookie preferences" aria-describedby="upsCookieConsentDescription" hidden>
@@ -5824,8 +5942,11 @@ document.getElementById('btnNewOfferSubmit').addEventListener('click', async ()=
   // "Clone a project" was used (it already detached the project; the configuration and offer lines go along).
   // With no project on the page the work there is attached to the new one, as opening a project does.
   if(document.getElementById('prjRef').value.trim() && !noCloned){
-    if(!(await confirmLeaveCurrentProject('creating the new project'))) return;
-    resetAll();
+    if(window.OFFER_TABS){ if(!OFFER_TABS.newBlank({force: true})) return; }   // beta_6.50: the new project gets its own tab
+    else {
+      if(!(await confirmLeaveCurrentProject('creating the new project'))) return;
+      resetAll();
+    }
   }
 
   const fields = {};
@@ -11802,9 +11923,15 @@ async function confirmLeaveCurrentProject(nextLabel){
 async function switchToProject(ref){
   const cur = document.getElementById('prjRef').value.trim();
   if(cur && cur === ref) return true;
+  const TABS = window.OFFER_TABS;
+  const open = TABS ? TABS.findRef(ref) : null;
+  if(open) return TABS.activate(open.id);                       // beta_6.50: already open in its tab
   if(cur){
-    if(!(await confirmLeaveCurrentProject(`opening ${ref}`))) return false;
-    resetAll();
+    if(TABS){ if(!TABS.newBlank()) return false; }               // beta_6.50: the offer on the page stays in its tab
+    else {
+      if(!(await confirmLeaveCurrentProject(`opening ${ref}`))) return false;
+      resetAll();
+    }
   }
   document.getElementById('prjRef').value = ref;
   await loadProjectByRef(ref);
@@ -13363,7 +13490,7 @@ const RIBBON = (function(){
   const autosaveControl = document.createElement('div');
   autosaveControl.className = 'autosave-ribbon-control';
   autosaveControl.id = 'autosaveRibbonControl';
-  autosaveControl.innerHTML = '<span class="autosave-ribbon-label">AutoSave</span><label class="autosave-switch autosave-office-switch"><input type="checkbox" id="autosaveTopToggle" role="switch" aria-label="Enable autosave to SharePoint"><span class="autosave-slider"></span></label><span class="autosave-ribbon-state" id="autosaveTopState">Off</span>';
+  autosaveControl.innerHTML = '<label class="autosave-ribbon-label" for="autosaveTopToggle" id="autosaveTopLabel">AutoSave</label><label class="autosave-switch autosave-office-switch"><input type="checkbox" id="autosaveTopToggle" role="switch" aria-label="Enable autosave to SharePoint"><span class="autosave-slider"></span><svg class="as-check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6.3 4.8 9 10 3.2"/></svg></label><span class="autosave-ribbon-state" id="autosaveTopState">Off</span>';
   tabs.insertAdjacentElement('afterend', autosaveControl);
   // Compact Light/Dark selector: sun for Light, switch, moon for Dark. Theme is persisted in cookies.
   const themeToggle = document.createElement('button');
@@ -13553,10 +13680,76 @@ const WORD_BAR = (function(){
   const tb = document.getElementById('appTopbar');
   if(!tb) return null;
   const mk = (tag, id, cls, html) => { const e = document.createElement(tag); e.id = id; if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
-  const save = mk('button', 'qatSave', 'qat-btn', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v6h9V3"/><rect x="7" y="13" width="10" height="8" rx="1"/></svg>');
-  save.type = 'button'; save.title = 'Save (to the project folder on SharePoint)'; save.setAttribute('aria-label', 'Save');
+  const save = mk('button', 'qatSave', 'qat-btn', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v6.5M12.5 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2"/><path d="M7 3v5h8V3"/><path d="M7 21v-6h5"/><g class="qs-sync" stroke="#107C10" stroke-width="1.7"><path d="M14.6 16.4a3.5 3.5 0 0 1 6.1-1.7l.6.7"/><path d="M21.3 13.3v2.1h-2.1"/><path d="M21.4 19.6a3.5 3.5 0 0 1-6.1 1.7l-.6-.7"/><path d="M14.7 22.7v-2.1h2.1"/></g></svg>');
+  save.type = 'button'; save.title = 'Save (Ctrl+S) — to the project folder on SharePoint'; save.setAttribute('aria-label', 'Save');
   save.addEventListener('click', e => { e.stopPropagation(); if(typeof READ_ONLY !== 'undefined' && READ_ONLY) return; try{ saveConfigurationFlow('json'); }catch(err){ console.warn(err); } });
-  const title = mk('div', 'appDocTitle', '', 'UPS Configurator');
+  const title = mk('div', 'appDocTitle', '', '<button type="button" class="dt-btn" aria-haspopup="dialog" aria-expanded="false"><span class="dt-name">UPS Configurator</span><span class="dt-st"></span><svg class="dt-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>');
+  const dtBtn = title.querySelector('.dt-btn'), dtName = title.querySelector('.dt-name'), dtSt = title.querySelector('.dt-st');
+  // "not saved" for the title and the offer tabs: the whole offer is compared at most every 1.5 s
+  window.workIsUnsavedCached = (() => { let at = 0, val = false; const f = () => { const n = Date.now(); if(n - at > 1500){ at = n; try{ val = typeof workIsUnsaved === 'function' && workIsUnsaved(); }catch(e){ val = false; } } return val; }; f.reset = () => { at = 0; }; return f; })();
+  // AutoSave label and the short save state in the language of the page (Word: "Salvataggio automatico", "Salvataggio completato")
+  const WTX = {en: ['AutoSave', 'Saved', 'Saving…', 'Not saved', 'AutoSave on', 'AutoSave off', 'Save problem', 'Location', 'AutoSave', 'Status', 'Revision', 'Save', 'Project folder', 'Revision history', 'Project folder on SharePoint › 02 OFFER', 'Not on SharePoint yet — open or create a project', 'On — every 5 minutes', 'Off', 'open', 'closed, read-only', 'Sign in to save on SharePoint'],
+    it: ['Salvataggio automatico', 'Salvataggio completato', 'Salvataggio…', 'Non salvato', 'Salvataggio automatico attivo', 'Salvataggio automatico disattivato', 'Problema di salvataggio', 'Percorso', 'Salv. automatico', 'Stato', 'Revisione', 'Salva', 'Cartella progetto', 'Cronologia revisioni', 'Cartella del progetto su SharePoint › 02 OFFER', 'Non ancora su SharePoint — apri o crea un progetto', 'Attivo — ogni 5 minuti', 'Disattivato', 'aperta', 'chiusa, sola lettura', 'Accedi per salvare su SharePoint'],
+    de: ['Automatisches Speichern', 'Gespeichert', 'Wird gespeichert…', 'Nicht gespeichert', 'AutoSpeichern an', 'AutoSpeichern aus', 'Speicherproblem', 'Speicherort', 'AutoSpeichern', 'Status', 'Revision', 'Speichern', 'Projektordner', 'Revisionsverlauf', 'Projektordner in SharePoint › 02 OFFER', 'Noch nicht in SharePoint — Projekt öffnen oder anlegen', 'An — alle 5 Minuten', 'Aus', 'offen', 'geschlossen, schreibgeschützt', 'Anmelden, um in SharePoint zu speichern'],
+    fr: ['Enregistrement automatique', 'Enregistré', 'Enregistrement…', 'Non enregistré', 'Enregistrement auto activé', 'Enregistrement auto désactivé', "Problème d'enregistrement", 'Emplacement', 'Enreg. auto', 'État', 'Révision', 'Enregistrer', 'Dossier du projet', 'Historique des révisions', 'Dossier du projet sur SharePoint › 02 OFFER', 'Pas encore sur SharePoint — ouvrez ou créez un projet', 'Activé — toutes les 5 minutes', 'Désactivé', 'ouverte', 'fermée, lecture seule', 'Connectez-vous pour enregistrer sur SharePoint'],
+    es: ['Autoguardado', 'Guardado', 'Guardando…', 'Sin guardar', 'Autoguardado activado', 'Autoguardado desactivado', 'Problema al guardar', 'Ubicación', 'Autoguardado', 'Estado', 'Revisión', 'Guardar', 'Carpeta del proyecto', 'Historial de revisiones', 'Carpeta del proyecto en SharePoint › 02 OFFER', 'Aún no está en SharePoint — abra o cree un proyecto', 'Activado — cada 5 minutos', 'Desactivado', 'abierta', 'cerrada, solo lectura', 'Inicie sesión para guardar en SharePoint']};
+  const W = () => WTX[typeof LANG !== 'undefined' && WTX[LANG] ? LANG : 'en'];
+  // the save state, from the AutoSave messages (setAutosaveStatus) and the work on the page
+  function saveState(){ try{ return saveStateNow(); }catch(e){ return {t: '', c: '', full: ''}; } }   // the AutoSave variables exist only once the page script has run
+  function saveStateNow(){
+    const L = W(), el = document.getElementById('autosaveStatus');
+    const txt = (el && el.textContent || '').trim(), warn = !!(el && el.classList.contains('warn')) && /^⚠/.test(txt);
+    const signed = typeof msalInstance !== 'undefined' && msalInstance && msalAccount;
+    const ref = (document.getElementById('prjRef')?.value || '').trim();
+    if(typeof autosaveBusy !== 'undefined' && autosaveBusy) return {t: L[2], c: 'dim', busy: 1, full: L[2]};
+    if(warn) return {t: L[6], c: 'warn', full: txt.replace(/^⚠\s*/, '')};
+    const unsaved = window.workIsUnsavedCached();
+    const tm = (/(\d{1,2}:\d{2})\s*$/.exec(txt) || [])[1];
+    if(!ref || !signed) return unsaved ? {t: L[3], c: 'dim', full: L[3]} : {t: '', c: '', full: ''};
+    if(unsaved) return {t: L[3], c: 'dim', full: AUTOSAVE_ENABLED ? `${L[3]} · ${L[4]}` : `${L[3]} · ${L[5]}`};
+    if(/^✓/.test(txt)) return {t: L[1], c: '', synced: 1, full: `${L[1]}${tm ? ' · ' + tm : ''}`};
+    return {t: AUTOSAVE_ENABLED ? L[1] : '', c: '', synced: AUTOSAVE_ENABLED ? 1 : 0, full: AUTOSAVE_ENABLED ? L[4] : L[5]};
+  }
+  let fly = null;
+  function closeFly(){ if(fly){ fly.remove(); fly = null; } dtBtn.setAttribute('aria-expanded', 'false'); }
+  function openFly(){
+    closeFly();
+    const L = W(), st = saveState();
+    const v = id => (document.getElementById(id)?.value || '').trim();
+    const ref = v('prjRef'), name = v('prjName'), cust = v('prjCustomer');
+    const signed = typeof msalInstance !== 'undefined' && msalInstance && msalAccount;
+    const rev = typeof REVISION !== 'undefined' ? `R${typeof workingRevision === 'function' && !READ_ONLY ? workingRevision() : REVISION} — ${READ_ONLY ? L[19] : L[18]}` : '';
+    fly = document.createElement('div'); fly.className = 'dt-fly'; fly.setAttribute('role', 'dialog'); fly.setAttribute('aria-label', name || ref || 'UPS Configurator');
+    fly.innerHTML = `<div class="df-name">${escapeHtml(ref || name ? [ref, name].filter(Boolean).join(' ') : 'UPS Configurator')}</div><div class="df-sub">${escapeHtml(cust || 'UPS Configurator')}</div>
+      <div class="df-row"><span>${L[7]}</span><b>${escapeHtml(ref && signed ? L[14] : ref ? L[20] : L[15])}</b></div>
+      <div class="df-row"><span>${L[8]}</span><b>${escapeHtml(AUTOSAVE_ENABLED ? L[16] : L[17])}</b></div>
+      <div class="df-row"><span>${L[9]}</span><b class="${st.c === 'warn' ? 'warn' : ''}">${escapeHtml(st.full || st.t || '—')}</b></div>
+      ${ref ? `<div class="df-row"><span>${L[10]}</span><b>${escapeHtml(rev)}</b></div>` : ''}
+      <div class="df-acts"><button type="button" class="pri" data-a="save"${READ_ONLY ? ' disabled' : ''}>${L[11]}</button>${ref ? `<button type="button" data-a="folder">${L[12]}</button><button type="button" data-a="hist">${L[13]}</button>` : ''}</div>`;
+    document.body.appendChild(fly);
+    const r = dtBtn.getBoundingClientRect();
+    fly.style.top = `${r.bottom + 6}px`; fly.style.left = `${Math.max(8, Math.min(window.innerWidth - fly.offsetWidth - 8, r.left + r.width / 2 - fly.offsetWidth / 2))}px`;
+    dtBtn.setAttribute('aria-expanded', 'true');
+    fly.addEventListener('click', e => {
+      const a = e.target.closest('[data-a]'); if(!a || a.disabled) return;
+      closeFly();
+      if(a.dataset.a === 'save'){ try{ saveConfigurationFlow('json'); }catch(err){ console.warn(err); } }
+      else if(a.dataset.a === 'folder') document.getElementById('btnProjectFolder')?.click();
+      else if(a.dataset.a === 'hist') document.getElementById('btnRevisionHistory')?.click();
+    });
+  }
+  dtBtn.addEventListener('click', e => { e.stopPropagation(); fly ? closeFly() : openFly(); });
+  document.addEventListener('pointerdown', e => { if(fly && !e.target.closest('.dt-fly, #appDocTitle')) closeFly(); }, true);
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeFly(); });
+  // Ctrl+S saves, as in Word (not while a window of its own is open)
+  document.addEventListener('keydown', e => {
+    if(!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || String(e.key).toLowerCase() !== 's') return;
+    e.preventDefault();
+    if(typeof READ_ONLY !== 'undefined' && READ_ONLY) return;
+    const vis = o => o.style.display !== 'none' && getComputedStyle(o).display !== 'none';
+    if(document.querySelector('#kitPanel, #kitOverviewPanel') || [...document.querySelectorAll('.acc-modal-overlay, .settings-overlay')].some(vis)) return;
+    try{ saveConfigurationFlow('json'); }catch(err){ console.warn(err); }
+  });
   const brk = mk('div', 'appRowBreak', '');
   const open = mk('button', 'appOpenProject', 'qat-btn', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1"/><path d="M3 7v11a2 2 0 0 0 2 2h12.5a2 2 0 0 0 1.9-1.4L22 12H7.6a2 2 0 0 0-1.9 1.4L3 20"/></svg>');
   open.type = 'button'; open.title = 'Open a project from the list (Ctrl+K)'; open.setAttribute('aria-label', 'Open a project from the list');
@@ -13568,12 +13761,22 @@ const WORD_BAR = (function(){
     const v = id => (document.getElementById(id)?.value || '').trim();
     const ref = v('prjRef'), name = v('prjName');
     const html = ref || name ? `<b>${escapeHtml(ref)}</b>${ref && name ? ' ' : ''}${escapeHtml(name)} - UPS Configurator` : 'UPS Configurator';
-    if(title.innerHTML !== html){ title.innerHTML = html; title.title = title.textContent; }
+    if(dtName.innerHTML !== html){ dtName.innerHTML = html; }
+    const st = saveState(), L = W();
+    const sh = st.t ? `<span class="dt-sep">•</span><span class="dt-state ${st.c}">${escapeHtml(st.t)}</span>` : '';
+    if(dtSt.innerHTML !== sh) dtSt.innerHTML = sh;
+    dtSt.style.display = sh ? 'contents' : 'none';
+    const tip = `${dtName.textContent}${st.full ? ' — ' + st.full : ''}`;
+    if(dtBtn.title !== tip) dtBtn.title = tip;
+    save.classList.toggle('synced', !!st.synced && !st.busy);
+    save.classList.toggle('saving', !!st.busy);
+    const lab = document.getElementById('autosaveTopLabel');
+    if(lab && lab.textContent !== L[0]) lab.textContent = L[0];
     save.disabled = typeof READ_ONLY !== 'undefined' && READ_ONLY;
     document.title = ref || name ? `${[ref, name].filter(Boolean).join(' ')} - UPS Configurator` : 'UPS Configurator';
   }
   setInterval(render, 800); render();
-  return {render};
+  return {render, closeFly};
 })();
 
 const APP_MENU = (function(){
@@ -13685,9 +13888,12 @@ function updateProjectDetailsView(){
   }
   document.getElementById('pdgOpen')?.addEventListener('click', () => openProjectSearch());
   document.getElementById('pdgNew')?.addEventListener('click', async () => {
-    if(bomHasRows() || !configurationIsPristine()){
-      if(!(await confirmLeaveCurrentProject('starting a new offer'))) return;
-      resetAll();
+    if(document.getElementById('prjRef').value.trim() || bomHasRows() || !configurationIsPristine()){
+      if(window.OFFER_TABS){ if(!OFFER_TABS.newBlank()) return; }   // beta_6.50: a new tab for the new offer
+      else {
+        if(!(await confirmLeaveCurrentProject('starting a new offer'))) return;
+        resetAll();
+      }
     }
     document.getElementById('btnNewOffer').click();
   });
@@ -13806,8 +14012,11 @@ function openProjectSearch(){
   const doNew = async () => {
     close();
     if(document.getElementById('prjRef').value.trim() || bomHasRows() || !configurationIsPristine()){
-      if(!(await confirmLeaveCurrentProject('starting a new offer'))){ openProjectSearch(); return; }
-      resetAll();
+      if(window.OFFER_TABS){ if(!OFFER_TABS.newBlank()){ openProjectSearch(); return; } }   // beta_6.50: a new tab for the new offer
+      else {
+        if(!(await confirmLeaveCurrentProject('starting a new offer'))){ openProjectSearch(); return; }
+        resetAll();
+      }
     }
     document.getElementById('btnNewOffer').click();
   };
@@ -14635,6 +14844,7 @@ function openDeadlinePanel(){
   panel.querySelectorAll('[data-postpone]').forEach(b => b.addEventListener('click', () => postponeDeadline(b.dataset.postpone)));
 }
 function openOfferFromDeadlines(ref){
+  if(window.OFFER_TABS){ switchToProject(ref); window.scrollTo({top: 0, behavior: 'smooth'}); return; }   // beta_6.50: in its own tab
   if(READ_ONLY) setReadOnly(false);   // the loaded offer sets its own state (a closed file re-locks)
   document.getElementById('prjRef').value = ref;
   loadProjectByRef(ref);
@@ -15214,6 +15424,7 @@ const UNDO = (function(){
   function blocked(){
     if(typeof READ_ONLY !== 'undefined' && READ_ONLY) return 'The revision is closed (read only).';
     const open = sel => { const e = document.querySelector(sel); return e && getComputedStyle(e).display !== 'none' && e.offsetParent !== null; };
+    if(typeof OFFER_TABS_BUSY !== 'undefined' && OFFER_TABS_BUSY) return 'Wait — the offer is opening.';
     if(document.getElementById('kitPanel') || document.getElementById('kitOverviewPanel') || document.querySelector('.svc-modal') ||
        open('#plGridOverlay') || open('#appDialogOverlay') || open('#newProjectPage') || open('#tcoPage') || open('#battSizingPage') || (typeof bomDrag !== 'undefined' && bomDrag)) return 'Close the open window first.';
     return '';
@@ -15285,7 +15496,9 @@ const UNDO = (function(){
     if(isUndo) doUndo(); else doRedo();
   }, true);
   setTimeout(() => { ready = true; check(); }, 1500);
-  return {undo: doUndo, redo: doRedo, check: () => { clearTimeout(timer); check(); }, reset: () => { undo = []; redo = []; cur = null; check(); }, depth: () => ({undo: undo.length, redo: redo.length})};
+  return {undo: doUndo, redo: doRedo, check: () => { clearTimeout(timer); check(); }, reset: () => { undo = []; redo = []; cur = null; check(); }, depth: () => ({undo: undo.length, redo: redo.length}),
+    // beta_6.50: each offer tab keeps its own history
+    getHist: () => ({undo: undo.slice(), redo: redo.slice()}), setHist: h => { clearTimeout(timer); undo = (h && h.undo) ? h.undo.slice() : []; redo = (h && h.redo) ? h.redo.slice() : []; cur = null; sync(); check(); }};
 })();
 
 // ---- Document export (PDF via jsPDF+autoTable with full branding; Excel via SheetJS, data-only —
@@ -18119,6 +18332,8 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
   {version:'beta_6.50', date:'2026-10-26', notes:[
+    'Più offerte aperte insieme, una per scheda: la barra delle schede sotto il ribbon mostra le offerte aperte (riferimento e nome, pallino arancione = modifiche non salvate). + apre una nuova offerta in una nuova scheda, × la chiude (con la domanda di salvataggio se ci sono modifiche), clic centrale per chiudere, Ctrl+Alt+→ / ← per passare alla scheda successiva / precedente. Aprire un progetto dall\'elenco (o da My deadlines) con un\'offerta già sulla pagina lo apre in una nuova scheda; un progetto già aperto porta avanti la sua scheda. Salva, AutoSave, stampe, listino, Battery sizing e TCO agiscono solo sulla scheda aperta; Annulla / Ripeti e lo stato di salvataggio sono per scheda; le schede restano dopo F5',
+    'Barra del titolo e ribbon come Word: Salvataggio automatico con l\'interruttore Microsoft 365 (segno di spunta quando è attivo), Salva con il simbolo di sincronizzazione verde quando l\'offerta è salvata su SharePoint (Ctrl+S salva), il titolo con lo stato di salvataggio (es. "260063 Vantage GB300 - UPS Configurator • Salvataggio completato") e il menu ⌄ con percorso, salvataggio automatico, stato, revisione e i comandi Salva, Cartella progetto, Cronologia revisioni; ribbon come scheda bianca arrotondata sullo sfondo grigio, gruppi separati da linee sottili, carattere Segoe UI',
     'Funzione beta (come TCO): Battery sizing è visibile solo dopo il login Admin — comandi del ribbon, pulsante sulle schede posizione e collegamento in Add Battery compaiono con l\'Admin e spariscono con Lock',
     'Battery sizing come sottoprogramma: nuovo comando "Battery sizing" (ribbon Home › Configuration e Project › Project workflow, e pulsante accanto a Generate Offer) che apre a tutta pagina il tool Battery Sizing (battery-sizing.html, pubblicato accanto al configuratore) sulla posizione scelta. A sinistra Back to the offer e l\'elenco delle posizioni (pallino arancione = dimensionata, verde = applicata all\'offerta)',
     'Il sottoprogramma riceve dal configuratore progetto (riferimento, cliente, nome, paese, cartella SharePoint), posizione (modello e taglia UPS, UPS/Sys, batteria) e l\'accesso Microsoft 365: nessun secondo login. Il dimensionamento si salva nella posizione (JSON dell\'offerta, Save / AutoSave) e si riapre com\'era; con AutoSave del tool i file del sizing (JSON, PNG, PDF) vanno in <progetto>/02 OFFER/Battery Sizing con il numero di posizione nel nome',
@@ -18762,6 +18977,152 @@ function restoreWorkFromSession(){
   saveWorkForSession();
 }
 
+
+// ---- beta_6.50: several offers open at once — one tab per offer, under the ribbon (like the documents of
+// Word, each in its own window). A tab keeps its whole offer (the same data a saved file holds, plus the
+// AutoSave state and the Undo history); only the offer of the tab shown is on the page, so Save, AutoSave,
+// prints, price list changes, Battery sizing and TCO always act on that tab alone. Opening a project
+// from the list (or from My deadlines) while an offer is on the page opens it in a new tab; a project
+// already open just brings its tab forward. The tabs survive F5 (this browser tab's session storage). ----
+let OFFER_TABS_BUSY = false;
+const OFFER_TABS = (function(){
+  const KEY = 'upsConfigurator.session.tabs.v1', MAX = 10;
+  let tabs = [], active = null, seq = 0, bar = null;
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  const meta = () => ({ref: v('prjRef'), name: v('prjName'), customer: v('prjCustomer'), ro: !!(typeof READ_ONLY !== 'undefined' && READ_ONLY)});
+  const cur = () => tabs.find(t => t.id === active) || null;
+  const tabMeta = t => t.id === active ? meta() : (t.meta || {});
+  const label = t => { const m = tabMeta(t); return m.ref || m.name ? [m.ref, m.name].filter(Boolean).join(' ') : (m.customer || 'New offer'); };
+  const isDirty = t => { if(t.id !== active) return !!t.dirty; return window.workIsUnsavedCached ? window.workIsUnsavedCached() : false; };
+  function status(){ const el = document.getElementById('autosaveStatus'); return {text: el ? el.textContent : '', warn: !!(el && el.classList.contains('warn'))}; }
+  function capture(){
+    const t = cur(); if(!t) return;
+    try{ t.snap = currentWorkSnapshot(); }catch(e){ console.warn('Offer tab not captured:', e); }
+    let dirty = false; try{ dirty = workIsUnsaved(); }catch(e){}
+    t.baseline = autosaveBaseline; t.meta = meta(); t.dirty = dirty; t.scroll = window.scrollY; t.status = status();
+    try{ t.hist = UNDO.getHist(); }catch(e){ t.hist = null; }
+  }
+  function blocked(force){
+    if(typeof autosaveBusy !== 'undefined' && autosaveBusy) return 'Saving on SharePoint — try again in a moment.';
+    if(force) return '';
+    const shown = sel => { const e = document.querySelector(sel); return !!e && e.style.display !== 'none' && getComputedStyle(e).display !== 'none'; };
+    const anyShown = sel => [...document.querySelectorAll(sel)].some(e => e.style.display !== 'none' && getComputedStyle(e).display !== 'none');
+    if(document.getElementById('kitPanel') || document.getElementById('kitOverviewPanel') || document.querySelector('.svc-modal') || anyShown('.acc-modal-overlay') ||
+       shown('#plGridOverlay') || shown('#appDialogOverlay') || shown('#newProjectPage') || shown('#tcoPage') || shown('#battSizingPage') || shown('#newOfferOverlay')) return 'Close the open window first.';
+    return '';
+  }
+  function afterShow(t){
+    try{ window.workIsUnsavedCached && window.workIsUnsavedCached.reset(); }catch(e){}
+    try{ UNDO.setHist(t && t.hist); }catch(e){}
+    try{ recalcProjectTotal(); }catch(e){}
+    try{ CFG_CARDS && CFG_CARDS.render(); }catch(e){}
+    try{ RIBBON.render(); }catch(e){}
+    try{ WORD_BAR.render(); WORD_BAR.closeFly(); }catch(e){}
+    try{ if(typeof STATUS_PIPE !== 'undefined' && STATUS_PIPE) STATUS_PIPE.render(); }catch(e){}
+    try{ saveWorkForSession(); }catch(e){}
+    persist(); render();
+  }
+  function show(t){
+    OFFER_TABS_BUSY = true; UNDO_RESTORING = true;
+    autoLoadSeq++;   // a project still loading for the tab left behind does not land on this one
+    try{
+      if(t.snap && t.snap.state){
+        applyLoadedState(JSON.parse(JSON.stringify(t.snap.state)));
+        const x = t.snap.extra || {};
+        document.getElementById('prjCountry').dataset.countryId = x.countryId || '';
+        document.getElementById('prjRef').readOnly = x.refLocked !== false;
+        autosaveBaseline = t.baseline !== undefined ? t.baseline : autosaveSignature();
+      } else {
+        resetAll(); markAutosaveBaseline();
+      }
+      const s = t.status || {};
+      setAutosaveStatus(s.text || (AUTOSAVE_ENABLED ? 'Autosave enabled — checks every 5 minutes' : 'Autosave disabled'), s.text ? s.warn : !AUTOSAVE_ENABLED);
+    }finally{ UNDO_RESTORING = false; OFFER_TABS_BUSY = false; }
+    window.scrollTo(0, t.scroll || 0);
+    afterShow(t);
+  }
+  function activate(id){
+    if(id === active) return true;
+    const t = tabs.find(x => x.id === id); if(!t) return false;
+    const why = blocked(); if(why){ showExportToast(why, 'warn'); return false; }
+    capture(); active = id; show(t);
+    return true;
+  }
+  function newBlank(opts = {}){
+    if(tabs.length >= MAX){ showExportToast(`At most ${MAX} offers can be open at once — close a tab first.`, 'warn'); return false; }
+    const why = blocked(opts.force); if(why){ showExportToast(why, 'warn'); return false; }
+    capture();
+    const t = {id: 't' + (++seq), snap: null, meta: {}};
+    tabs.push(t); active = t.id;
+    OFFER_TABS_BUSY = true; UNDO_RESTORING = true;
+    autoLoadSeq++;
+    try{ resetAll(); markAutosaveBaseline(); setAutosaveStatus(AUTOSAVE_ENABLED ? 'Autosave enabled — checks every 5 minutes' : 'Autosave disabled', !AUTOSAVE_ENABLED); }
+    finally{ UNDO_RESTORING = false; OFFER_TABS_BUSY = false; }
+    window.scrollTo(0, 0);
+    afterShow(null);
+    return true;
+  }
+  async function close(id){
+    if(id !== active && !activate(id)) return;   // the tab is shown first: the save question is about what you see
+    if(!(await confirmLeaveCurrentProject('closing its tab'))) return;
+    const i = tabs.findIndex(x => x.id === id);
+    tabs.splice(i, 1);
+    if(!tabs.length){ tabs.push({id: 't' + (++seq), snap: null, meta: {}}); }
+    const next = tabs[Math.min(i, tabs.length - 1)];
+    active = next.id;
+    show(next);
+  }
+  function findRef(ref){ ref = String(ref || '').trim(); return ref ? tabs.find(t => tabMeta(t).ref === ref) || null : null; }
+  function persist(){
+    try{
+      const list = tabs.map(t => t.id === active ? {id: t.id, active: true} : {id: t.id, snap: t.snap, baseline: t.baseline, meta: t.meta, dirty: t.dirty, scroll: t.scroll, status: t.status});
+      if(tabs.length < 2 && !tabs.some(t => t.id !== active)){ sessionRemove(KEY); return; }
+      if(!sessionSet(KEY, JSON.stringify({seq, tabs: list}))) showExportToast('The other offer tabs are too large to be kept for a page reload — save them on SharePoint.', 'warn');
+    }catch(e){ console.warn('Offer tabs not kept for the session:', e); }
+  }
+  function render(){
+    if(!bar){
+      const tb = document.getElementById('appTopbar'); if(!tb) return;
+      bar = document.createElement('div'); bar.className = 'offer-tabs'; bar.id = 'offerTabs'; bar.setAttribute('role', 'tablist'); bar.setAttribute('aria-label', 'Open offers');
+      tb.appendChild(bar);
+      bar.addEventListener('click', e => {
+        const x = e.target.closest('[data-x]'); if(x){ e.stopPropagation(); close(x.dataset.x); return; }
+        if(e.target.closest('[data-new]')){ newBlank(); return; }
+        const b = e.target.closest('[data-tab-id]'); if(b) activate(b.dataset.tabId);
+      });
+      bar.addEventListener('auxclick', e => { const b = e.target.closest('[data-tab-id]'); if(b && e.button === 1){ e.preventDefault(); close(b.dataset.tabId); } });
+    }
+    const ico = '<svg class="ot-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>';
+    const html = tabs.map(t => {
+      const m = tabMeta(t), on = t.id === active, dirty = isDirty(t), lab = label(t);
+      return `<div class="offer-tab${on ? ' on' : ''}${dirty ? ' dirty' : ''}${m.ro ? ' ro' : ''}" role="tab" aria-selected="${on}" tabindex="0" data-tab-id="${t.id}" title="${escapeHtml(lab + (m.customer ? ' — ' + m.customer : '') + (dirty ? ' · not saved' : ''))}">${ico}<span class="ot-lab">${escapeHtml(lab)}</span><span class="ot-dot" aria-label="not saved"></span><button type="button" class="ot-x" data-x="${t.id}" title="Close this offer" aria-label="Close ${escapeHtml(lab)}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+    }).join('') + '<button type="button" class="ot-new" data-new title="New offer in a new tab" aria-label="New offer in a new tab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>';
+    if(bar.innerHTML !== html) bar.innerHTML = html;
+  }
+  function init(){
+    let saved = null;
+    try{ saved = JSON.parse(sessionGet(KEY) || 'null'); }catch(e){ saved = null; }
+    if(saved && Array.isArray(saved.tabs) && saved.tabs.some(t => t.active)){
+      tabs = saved.tabs.map(t => t.active ? {id: t.id, meta: {}} : t);
+      active = saved.tabs.find(t => t.active).id;
+      seq = Number(saved.seq) || tabs.length;
+    } else {
+      tabs = [{id: 't1', meta: {}}]; active = 't1'; seq = 1;
+    }
+    render();
+    setInterval(render, 1000);
+    document.addEventListener('keydown', e => {   // Ctrl+Alt+→ / ← : next / previous offer tab
+      if(!(e.ctrlKey && e.altKey) || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') || tabs.length < 2) return;
+      if(e.target && e.target.closest && e.target.closest('input, textarea, select')) return;
+      e.preventDefault();
+      const i = tabs.findIndex(t => t.id === active), n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      activate(n.id);
+    });
+  }
+  return {init, activate, newBlank, close, findRef, render, count: () => tabs.length, list: () => tabs.map(t => ({id: t.id, label: label(t), active: t.id === active, dirty: isDirty(t)}))};
+})();
+window.OFFER_TABS = OFFER_TABS;
+
 // Sign-in survives the reload too: the Microsoft library already keeps the session in this tab's
 // sessionStorage, so the account is picked up silently — no popup, no welcome screen — whenever a
 // token can still be obtained without asking. Otherwise the welcome screen stays as before.
@@ -18800,6 +19161,7 @@ if(IN_AUTH_POPUP){
 function startSessionKeeping(){
 markAutosaveBaseline();   // an untouched page is never autosaved; restored unsaved work is
 restoreWorkFromSession();
+try{ OFFER_TABS.init(); }catch(e){ console.warn('Offer tabs not started:', e); }   // beta_6.50
 // A guest isn't asked again after a reload. Someone who had signed in is only spared the welcome
 // screen if the silent sign-in below succeeds — if their Microsoft session has lapsed, they see it
 // again rather than silently continuing without SharePoint.

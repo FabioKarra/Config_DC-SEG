@@ -912,7 +912,14 @@ table.cfg input.field-warn{border-color:var(--red); box-shadow:0 0 0 1px var(--r
 .kb-panel{position:fixed; top:0; right:0; bottom:0; z-index:900; width:480px; max-width:100vw; background:#fff; border-left:1px solid var(--panel-border); box-shadow:-18px 0 40px rgba(20,22,26,.16); display:flex; flex-direction:column; font-size:13px; animation:kbIn .16s ease-out;}
 .kb-panel.kb-overview{width:720px;max-width:min(720px,100vw);}
 .kb-overview-intro{font-size:12px;color:var(--dim);padding:8px 18px 0;}
-.kb-overview-body{flex:1;overflow:auto;padding:12px 18px;display:flex;flex-direction:column;gap:12px;}
+.kb-overview-body{flex:1 1 auto;min-height:0;overflow-y:scroll;overscroll-behavior:contain;padding:12px 18px;display:flex;flex-direction:column;gap:12px;scrollbar-width:auto;scrollbar-color:#9AA6B8 #EEF1F6;}
+.kb-overview-body::-webkit-scrollbar{width:12px;} .kb-overview-body::-webkit-scrollbar-track{background:#EEF1F6;border-radius:6px;}
+.kb-overview-body::-webkit-scrollbar-thumb{background:#9AA6B8;border-radius:6px;border:2px solid #EEF1F6;} .kb-overview-body::-webkit-scrollbar-thumb:hover{background:#6F7C91;}
+.kb-overview-group{flex-shrink:0;}
+.kb-ov-nav{display:flex;flex-wrap:wrap;gap:6px;padding:8px 18px 0;}
+.kb-ov-nav button{border:1px solid var(--field-border);background:var(--panel);color:var(--text);border-radius:999px;padding:3px 10px;font:inherit;font-size:11px;cursor:pointer;}
+.kb-ov-nav button:hover{border-color:var(--accent);color:var(--accent);}
+.kb-ov-nav button b{font-weight:650;color:var(--accent);margin-left:4px;}
 .kb-overview-group{border:1px solid var(--panel-border);border-radius:10px;overflow:hidden;background:var(--panel);}
 .kb-overview-group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--bg);border-bottom:1px solid var(--panel-border);}
 .kb-overview-group-title{font-weight:650;color:var(--text);min-width:0;}
@@ -1070,10 +1077,10 @@ table.bom input.kb-sel, .kb-sel{width:14px !important; min-width:0 !important; h
 #bomBody.read-only .bom-drag-handle{display:none;}
 td.bom-pos-cell{white-space:nowrap;}
 .bom-drag-handle::after{content:''; position:absolute; left:2px; bottom:1px; height:2px; width:0; background:var(--accent); border-radius:2px; transition:none;}
-.bom-drag-handle.holding::after{width:calc(100% - 4px); transition:width .2s linear;}
+.bom-drag-handle.holding::after{width:calc(100% - 4px); transition:width .06s linear;}
 body.bom-dragging, body.bom-dragging *{cursor:grabbing !important; user-select:none !important; -webkit-user-select:none !important;}
-tr.bom-drag-source{opacity:.3;}
-table.bom-drag-ghost{position:fixed; z-index:1200; pointer-events:none; opacity:.72; background:#fff; border-collapse:collapse; table-layout:fixed;
+tr.bom-drag-source{opacity:.22;}
+table.bom-drag-ghost{position:fixed; z-index:1200; pointer-events:none; opacity:.5; box-shadow:0 10px 28px rgba(0,37,122,.22); background:#fff; border-collapse:collapse; table-layout:fixed;
   box-shadow:0 14px 34px rgba(20,22,26,.25); border-radius:6px; overflow:hidden;}
 .bom-drop-indicator{position:fixed; z-index:1201; height:3px; background:var(--accent); border-radius:2px; pointer-events:none; box-shadow:0 0 0 2px var(--accent-soft);}
 .bom-drop-indicator.invalid{background:var(--red); box-shadow:0 0 0 2px rgba(192,0,0,.15);}
@@ -3857,7 +3864,7 @@ const PROGRESS_FIELD_ALIASES = {
   PRJ_ID: ['PRJ_ID','PRJ ID','Project ID','ProjectID','Prj Id','ID'],
   'Rev.': ['Rev_x002e_','Rev.','Rev','Revision'],
   Category: ['Category0','Category'],
-  Status: ['Status'],
+  Status: ['Status','Status0','OfferStatus','ProjectStatus','Stato'],
   Customer: ['Title','Customer','Client'],
   'Country.lookupValue': ['Country0','Country.lookupValue','Country','Country Region','Country/Region'],
   'Project Name': ['ProjectName','Project Name','Name'],
@@ -8496,7 +8503,8 @@ function moveSectionDown(headerRow){
 //    would otherwise bring them back in the original chapter as well (a duplicate).
 //  - The auto Delivery line always stays last in SERVICES; totals and Delivery are recalculated,
 //    and numbered lines (1.1, 1.2…) are renumbered in their new order.
-const BOM_DRAG_HOLD_MS = 200;
+const BOM_DRAG_HOLD_MS = 60;           // beta 6.49: almost instant with the mouse (touch keeps a short hold)
+const BOM_DRAG_HOLD_TOUCH_MS = 200;
 let bomDrag = null;
 
 function attachBomDragHandle(row){
@@ -8504,8 +8512,8 @@ function attachBomDragHandle(row){
   handle.className = 'bom-drag-handle';
   handle.textContent = '⠿';
   handle.title = row.dataset.kind === 'header'
-    ? 'Hold briefly (0.2 s), then drag to move the whole chapter'
-    : 'Hold briefly (0.2 s), then drag to move this line';
+    ? 'Drag to move the whole chapter'
+    : 'Drag to move this line';
   handle.addEventListener('pointerdown', e => bomDragLongPress(e, row, handle));
   // Left side, right before the position number: the number moves into its own span so
   // renumbering (bomRenumberChapter) only rewrites the number, never the handle.
@@ -8531,11 +8539,15 @@ function bomDragLongPress(e, row, handle){
     window.removeEventListener('pointerup', cleanup);
     window.removeEventListener('pointercancel', cleanup);
   };
+  const touch = e.pointerType === 'touch';
   const onMove = ev => {
     lx = ev.clientX; ly = ev.clientY;
-    if(Math.hypot(lx - sx, ly - sy) > 8) cleanup(); // moved before the 2 s — not a long press
+    if(Math.hypot(lx - sx, ly - sy) > (touch ? 8 : 3)){
+      cleanup();
+      if(!touch) bomDragBegin(row, lx, ly);       // mouse / pen: moving the handle starts the drag at once
+    }
   };
-  const timer = setTimeout(()=>{ cleanup(); bomDragBegin(row, lx, ly); }, BOM_DRAG_HOLD_MS);
+  const timer = setTimeout(()=>{ cleanup(); bomDragBegin(row, lx, ly); }, touch ? BOM_DRAG_HOLD_TOUCH_MS : BOM_DRAG_HOLD_MS);
   window.addEventListener('pointermove', onMove);
   window.addEventListener('pointerup', cleanup);
   window.addEventListener('pointercancel', cleanup);
@@ -9050,6 +9062,42 @@ function kitWeightedShares(bases, D){
   }
   return e;
 }
+// Scales the gross prices of a kit's components so that their total (each line with its own discount,
+// before the kit discount) becomes `target`. Lines keep their proportions; with no prices yet the total
+// is shared by cost (or by quantity). Prices keep up to 4 decimals so the total lands on the cent.
+function scaleKitComponents(kitId, target){
+  const members = kitMembersOf(kitId);
+  if(!members.length) return false;
+  const T = Math.max(0, Number(target) || 0);
+  const vals = members.map(r => ({r, qty: Number(rowQty(r)) || 0, gross: Number(r.querySelector('.in-gross')?.value) || 0,
+    keep: 1 - kitBaseDisc(r) / 100, cost: Number(r.querySelector('.in-cost')?.value) || 0}));
+  const base = vals.reduce((a, v) => a + v.gross * v.keep * v.qty, 0);
+  let gross;
+  if(base > 0){ const f = T / base; gross = vals.map(v => v.gross * f); }
+  else {
+    let w = vals.map(v => v.cost * v.qty);
+    if(!w.some(x => x > 0)) w = vals.map(v => v.qty);
+    const W = w.reduce((a, b) => a + b, 0) || 1;
+    gross = vals.map((v, i) => v.qty > 0 && v.keep > 0 ? T * w[i] / W / v.qty / v.keep : 0);
+  }
+  gross = gross.map(g => Math.round(g * 10000) / 10000);
+  const got = vals.reduce((a, v, i) => a + gross[i] * v.keep * v.qty, 0);
+  const diff = T - got;
+  if(Math.abs(diff) >= 0.00005){
+    let i = -1, best = -1;
+    vals.forEach((v, j) => { const b = gross[j] * v.keep * v.qty; if(v.qty > 0 && v.keep > 0 && b > best){ best = b; i = j; } });
+    if(i >= 0) gross[i] = Math.max(0, Math.round((gross[i] + diff / (vals[i].qty * vals[i].keep)) * 10000) / 10000);
+  }
+  KIT_BULK++;
+  try{
+    vals.forEach((v, i) => {
+      const g = v.r.querySelector('.in-gross');
+      if(g) g.value = gross[i].toFixed(4).replace(/0{1,2}$/, '');
+      rowRecalcOutputs(v.r);
+    });
+  } finally { KIT_BULK--; }
+  return true;
+}
 function restoreKitOrigDisc(r){
   const d = r.querySelector('.in-disc');
   if(r.dataset.kitOrigDisc != null){ if(d) d.value = r.dataset.kitOrigDisc; delete r.dataset.kitOrigDisc; }
@@ -9082,18 +9130,15 @@ function applyKitLook(parent, members){
   const kitGross = parent.querySelector('.in-gross');
   if(kitGross && !READ_ONLY){
     kitGross.disabled = false;
-    kitGross.title = 'Kit total target — enter the desired net total; it becomes the kit discount, spread over the component lines';
+    kitGross.title = 'Kit total before the kit discount — type a new total: the prices of the component lines are scaled to reach it';
     if(!kitGross.dataset.kitPriceWired){
       kitGross.dataset.kitPriceWired = '1';
       kitGross.addEventListener('change', () => {
         const kid = parent.dataset.kitId, owner = parent.dataset.groupOf;
         if(!kid || parent.dataset.kitParent !== 'true') return;
-        const base = kitBaseNet(kid);
         const target = Math.max(0, Number(kitGross.value) || 0);
-        const disc = base > 0 ? Math.max(0, Math.min(100, (1 - Math.min(target, base) / base) * 100)) : 0;
-        const kitDisc = parent.querySelector('.in-disc');
-        if(kitDisc) kitDisc.value = disc.toFixed(4);
-        kitGross.value = base.toFixed(2);
+        scaleKitComponents(kid, target);           // beta 6.49: the component prices follow the kit price
+        kitGross.value = kitBaseNet(kid).toFixed(2);
         kitGross.blur();
         refreshKitsInChapter(owner); recalcGroupTotal(owner);
         if(typeof recalcProjectTotal === 'function') recalcProjectTotal();
@@ -9536,11 +9581,16 @@ function kbVals(c){
   const d = c.data;
   return {model: d.model, code: d.code, desc: d.desc, net: (Number(d.gross) || 0) * (1 - (Number(d.disc) || 0) / 100), cost: Number(d.cost) || 0};
 }
+function kbPriceHintText(d, sum){
+  const D = Math.max(0, Math.min(100, Number(d.discountTarget) || 0));
+  return `The component prices are scaled to reach this price (component total now ${formatMoney(sum)})` +
+    (D > 0 ? `; the ${D.toFixed(2)}% kit discount stays, spread over the lines.` : '.');
+}
 function kbTotals(comps, target, discount = 0){
   let net = 0, cost = 0;
   comps.filter(c => !c.removed).forEach(c => { const v = kbVals(c); net += v.net * c.qty; cost += v.cost * c.qty; });
   const sum = net;
-  if(target != null && target !== '' && isFinite(Number(target))) net = Math.max(0, Math.min(sum, Number(target)));
+  if(target != null && target !== '' && isFinite(Number(target))) net = Math.max(0, Number(target));
   else net = sum * (1 - Math.max(0, Math.min(100, Number(discount) || 0)) / 100);
   return {net, cost, sum, margin: net > 0 ? (net - cost) / net * 100 : 0};
 }
@@ -9568,8 +9618,9 @@ function closeKitOverview(){
 function openKitOverview(){
   if(READ_ONLY) return;
   closeKitOverview();
+  // beta 6.49: every chapter of the offer — UPS positions, SERVICES and project sections — with its lines
   const headers = [...bomBody.querySelectorAll('tr[data-kind="header"]')]
-    .filter(h => h.dataset.isServices !== 'true' && h.dataset.isCustomSection !== 'true');
+    .filter(h => (h.dataset.isServices !== 'true' && h.dataset.isCustomSection !== 'true') || kbChapterRows(h.dataset.rowId).length);
   if(!headers.length){ alert('Generate the offer first to create configurations and their Offer Lines.'); return; }
   const groups = headers.map(header => ({
     owner: header.dataset.rowId,
@@ -9601,7 +9652,9 @@ function openKitOverview(){
     </tr>`;
   };
   panel.innerHTML = `<div class="kb-head"><div><div class="kb-sub">Project Offer Lines</div><div class="kb-title">Kit Builder <span class="kb-ov-badge">${groups.length} configurations</span></div></div><button type="button" class="kb-x" data-overview-close aria-label="Close">×</button></div>
-    <div class="kb-overview-intro">All project lines are listed below and grouped by configuration. Lines already included in a kit stay visible but cannot be selected for another kit.</div>
+    <div class="kb-overview-intro">All project lines are listed below and grouped by chapter. Lines already included in a kit stay visible but cannot be selected for another kit. Scroll to see every chapter, or jump to one:</div>
+    <div class="kb-ov-nav">${groups.map((g, gi) => { const kits = new Set(g.rows.filter(r => r.dataset.kitId).map(r => r.dataset.kitId)).size;
+      return `<button type="button" data-ov-goto="${gi}" title="${escapeHtml(g.title)}">${escapeHtml(g.position || g.title)}${kits ? `<b>${kits} kit${kits === 1 ? '' : 's'}</b>` : ''}</button>`; }).join('')}</div>
     <div class="kb-overview-body">${groups.map((g,gi)=>{
       const freeCount = g.rows.filter(r => !r.dataset.kitId).length;
       return `<section class="kb-overview-group" data-overview-group="${gi}">
@@ -9612,6 +9665,10 @@ function openKitOverview(){
     }).join('')}</div>
     <div class="kb-foot"><span class="kb-sub">Select lines within one configuration to create a kit.</span><span class="kb-r"><button type="button" class="act btn-ghost" data-overview-close>Close</button></span></div>`;
   panel.querySelectorAll('[data-overview-close]').forEach(b => b.addEventListener('click', close));
+  panel.querySelectorAll('[data-ov-goto]').forEach(b => b.addEventListener('click', () => {
+    const sec = panel.querySelector(`[data-overview-group="${b.dataset.ovGoto}"]`), body = panel.querySelector('.kb-overview-body');
+    if(sec && body) body.scrollTo({top: sec.offsetTop - body.offsetTop - 8, behavior: 'smooth'});
+  }));
   panel.querySelectorAll('[data-open-config]').forEach(b => b.addEventListener('click', () => {
     const g = groups[Number(b.dataset.openConfig)]; if(!g) return;
     close(); openKitPanel({owner:g.owner, rows:[]});
@@ -9826,7 +9883,7 @@ function kbDataHtml(){
     </div>
     ${(() => { const t = kbTotals(d.comps, d.priceTarget, d.discountTarget); return `<div class="kb-price"><label class="kb-lab">Selling price / kit<input type="number" class="kb-in" id="kbPrice" min="0" step="0.01" value="${t.net.toFixed(2)}"></label>
       <label class="kb-lab">Kit discount %<input type="number" class="kb-in" id="kbDiscount" min="0" max="100" step="0.1" value="${Number(d.discountTarget || 0)}"></label>
-      <span class="kb-price-hint" id="kbPriceHint">${d.priceTarget != null ? `Target price reached through the kit discount, spread over the components weighted on their value (base total: ${formatMoney(t.sum)}). <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>` : `Component total less ${Number(d.discountTarget || 0).toFixed(2)}% kit discount, spread over the component lines weighted on their value.${Number(d.discountTarget || 0) > 0 ? ' <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>' : ''}`}</span></div>`; })()}
+      <span class="kb-price-hint" id="kbPriceHint">${d.priceTarget != null ? `${escapeHtml(kbPriceHintText(d, t.sum))} <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>` : `Component total less ${Number(d.discountTarget || 0).toFixed(2)}% kit discount, spread over the component lines weighted on their value.${Number(d.discountTarget || 0) > 0 ? ' <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>' : ''}`}</span></div>`; })()}
     <label class="kb-lab">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea class="kb-ta" id="kbDesc" rows="2" placeholder="What the offer says about this kit">${escapeHtml(d.desc)}</textarea></label>
     <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:11.5px; color:#4B5260"><span id="kbDataHint">${d.mode === 'new' && d.autoTexts ? 'Proposed from the first component — overwrite as you like.' : 'Price = sum of the components; the BOM lists only the components.'}</span>
     ${d.comps.length ? `<button type="button" class="kb-link" data-fromfirst>From the first component</button>` : ''}</div></div>`;
@@ -9966,16 +10023,11 @@ function kbWire(panel){
       pr.addEventListener('input', () => {
         const v = pr.value.trim();
         const sum = kbTotals(d.comps).sum;
+        // beta 6.49: a selling price scales the component prices (the kit discount stays as it is)
         if(v === '' || !isFinite(Number(v))){ d.priceTarget = null; }
-        else {
-          const target = Math.max(0, Number(v) || 0);
-          d.priceTarget = Math.min(target, sum);
-          d.discountTarget = sum > 0 ? Math.max(0, Math.min(100, (1 - d.priceTarget / sum) * 100)) : 0;
-          const di = document.getElementById('kbDiscount'); if(di) di.value = d.discountTarget.toFixed(4);
-          if(target > sum + 0.005){ pr.value = sum.toFixed(2); d.priceTarget = sum; }
-        }
+        else d.priceTarget = Math.max(0, Number(v) || 0);
         const hint = document.getElementById('kbPriceHint');
-        if(hint) hint.textContent = v !== '' && Number(v) > sum + 0.005 ? 'A discount cannot increase the component total; the selling price is limited to that total.' : `Target selling price reached with the kit discount, spread over the components weighted on their value (base total: ${formatMoney(sum)}).`;
+        if(hint) hint.textContent = d.priceTarget != null ? kbPriceHintText(d, sum) : '';
         kbRenderSummary();
       });
     }
@@ -10061,13 +10113,14 @@ function applyKitPanel(){
   if(kitId && parent){
     const kitGross = parent.querySelector('.in-gross');
     const kitDisc = parent.querySelector('.in-disc');
-    const base = kitBaseNet(kitId);
-    const requested = d.priceTarget != null ? Math.max(0, Math.min(base, Number(d.priceTarget) || 0)) : null;
-    const discount = requested != null && base > 0
-      ? Math.max(0, Math.min(100, (1 - requested / base) * 100))
-      : Math.max(0, Math.min(100, Number(d.discountTarget) || 0));
+    const discount = Math.max(0, Math.min(100, Number(d.discountTarget) || 0));
+    if(d.priceTarget != null && discount < 100){
+      // the selling price per kit (after the kit discount) → the component prices are scaled to it
+      scaleKitComponents(kitId, Math.max(0, Number(d.priceTarget) || 0) / (1 - discount / 100));
+      rows.forEach(r => rowRecalcOutputs(r));
+    }
     if(kitDisc) kitDisc.value = discount.toFixed(4);
-    if(kitGross) kitGross.value = base.toFixed(2);
+    if(kitGross) kitGross.value = kitBaseNet(kitId).toFixed(2);
     rowRecalcOutputs(parent);
   }
   refreshKitsInChapter(owner);
@@ -13175,7 +13228,7 @@ const STATUS_PIPE = (function(){
     s = String(s || '').trim();
     if(!s || /^new$|draft|not started|to do/i.test(s)) return 0;
     if(/^offer review$/i.test(s)) return 2;
-    if(/won|award|order|vint/i.test(s)) return 3;
+    if(/won|award|order|vint|execut|esecuz/i.test(s)) return 3;     // Execution = the order is being executed
     if(/lost|cancel|declin|pers/i.test(s)) return 4;
     return 1;
   }
@@ -14185,6 +14238,8 @@ function isOfferInProgress(status){
   const st = String(status || '').trim();
   if(!st) return true;
   if(/offer\s*[-_]?\s*review/i.test(st)) return false;   // "Offer Review" however written (Offer-Review, Offer review in progress…)
+  // beta 6.49: the project went on (Execution) or ended (Won, Lost, Closed, Cancelled, On hold): no deadline, however written
+  if(/execut|esecuz|won|award|order|ordin|vint|aggiudic|lost|pers[oa]?\b|closed|chius|cancel|annull|declin|on\s*hold|sospes/i.test(st)) return false;
   return /^in review$/i.test(st) || /progress|^open$|^new$|draft|to do|not started|ongoing/i.test(st);
 }
 // A project in Offer review gives no deadlines: by its SharePoint Status, and also when its last revision
@@ -14251,10 +14306,10 @@ function openDeadlinePanel(){
     <div class="dl-tabs">${[['all', 'All'], ['over', 'Overdue'], ['week', 'Next 7 days']].map(([k, l]) => `<button type="button" class="dl-tab${deadlineTab === k ? ' on' : ''}" data-tab="${k}">${l} (${counts[k]})</button>`).join('')}</div>
     <div class="dl-list">${shown.length ? shown.map(x => `<div class="dl-item"><span class="dl-dot ${x.level}"></span><div style="min-width:0">
         <div class="dl-t">${escapeHtml(x.ref)} · ${escapeHtml(x.rec['Project Name'] || '')}${deadlinePill(x)}</div>
-        <div class="dl-s">${escapeHtml(x.rec.Customer || '')}${x.due ? ' · Due date ' + escapeHtml(fmtStamp(x.due.toISOString()).slice(0, 10)) : ''}${x.rec.Status ? ' · ' + escapeHtml(x.rec.Status) : ''}</div>
+        <div class="dl-s">${escapeHtml(x.rec.Customer || '')}${x.due ? ' · Due date ' + escapeHtml(fmtStamp(x.due.toISOString()).slice(0, 10)) : ''} · Status: ${escapeHtml(x.rec.Status || '— (empty on SharePoint)')}</div>
         <div class="dl-acts"><button type="button" class="dl-a p" data-open="${escapeHtml(x.ref)}">Open offer</button><button type="button" class="dl-a" data-postpone="${escapeHtml(x.ref)}">Postpone…</button></div>
       </div></div>`).join('') : `<div class="dl-empty">${list.length ? 'Nothing in this view.' : 'No offers in progress assigned to you. 🎉'}</div>`}</div>
-    <div class="dl-foot">From the Progress tracker list (Assigned to = you; Offer review, Won and Lost are left out) · as of the last sign-in / refresh</div>`;
+    <div class="dl-foot">From the Progress tracker list (Assigned to = you; Offer review, Execution, Won, Lost, Closed and Cancelled are left out) · as of the last sign-in / refresh</div>`;
   document.body.appendChild(panel);
   panel.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); deadlineTab = b.dataset.tab; openDeadlinePanel(); }));
   panel.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => { closeDeadlinePanel(); openOfferFromDeadlines(b.dataset.open); }));
@@ -14809,13 +14864,8 @@ function applyLoadedState(state){
     // offers saved before the market was recorded: UL when their positions use M2F / M2U models
     const fileMarket = state.market === 'UL' || (!state.market && (state.positions || []).some(p => /^M2[FU]\s/i.test(String(p.model || '')))) ? 'UL' : 'IEC';
     if(fileMarket === PRICE_MARKET && fileMarket === 'UL') setTimeout(() => showExportToast('This offer uses the UL price list (M2F / M2U).', 'ok'), 0);
-    if(fileMarket !== PRICE_MARKET) setTimeout(async () => {
-      const ans = await openAppDialog({title: `Offer made with the ${fileMarket} price list`,
-        message: `This offer was saved with the ${fileMarket} price list; the ${PRICE_MARKET} price list is in use now.`,
-        question: `Switch to the ${fileMarket} price list? Its codes are the ones in the offer lines.`,
-        buttons: [{label: `Keep ${PRICE_MARKET}`, value: false}, {label: `Switch to ${fileMarket}`, value: true, primary: true}]});
-      if(ans) setPriceMarket(fileMarket, {noAsk: true});
-    }, 0);
+    // beta 6.49: an offer made with the other price list switches to it at once (no question; a notice says so)
+    if(fileMarket !== PRICE_MARKET) setPriceMarket(fileMarket, {noAsk: true, fromFile: true});
 }
 
 // ---- Document export (PDF via jsPDF+autoTable with full branding; Excel via SheetJS, data-only —
@@ -17653,6 +17703,11 @@ const CHANGELOG = [
     'Kit: lo sconto inserito sulla riga del kit si distribuisce nelle caselle sconto delle righe figlie, pesato sul valore di ogni riga e scalato perché il kit faccia esattamente lo sconto indicato (es. A 1000 / B 500 con 20% → A 24%, B 12%, kit 1200). Le righe figlie con uno sconto proprio ricevono la quota in aggiunta; azzerando lo sconto del kit, o togliendo la riga dal kit, torna lo sconto originale. Le caselle sconto dei figli sono bloccate (si cambia lo sconto sul kit); il prezzo del kit scritto a mano diventa lo sconto del kit e si distribuisce allo stesso modo. Le offerte salvate prima vengono convertite all\'apertura senza doppio sconto',
     'Valuta: scegliendo una valuta in Settings (es. USD con il cambio 1 EUR = ? USD) tutto il documento lavora in quella valuta — non solo i totali ma anche i campi modificabili: Gross Price e Unit Cost delle righe (simbolo $ dentro il campo), riga kit e prezzo del kit, finestre Battery / Technology Integration / Services (prezzo Delivery manuale), prezzo del sales code e importi del TCO. I prezzi presi dal listino vengono convertiti; quello che scrivi è nella valuta scelta. Sotto il programma tiene gli importi in EUR (la valuta dei listini), quindi cambiando valuta avanti e indietro i valori non si spostano; il file salvato conserva la valuta. Anche la finestra Price list mostra e accetta Price e Cost nella valuta scelta (intestazioni "Price $ / Cost $", nota col cambio); l\'Export Excel / JSON esce in quella valuta (colonne "Price USD" / "Cost USD") e si reimporta uguale, un file con colonne "Price" senza valuta è letto in EUR, un file in una terza valuta viene rifiutato con spiegazione',
     'Product (Project Details e pagina New project): nessun valore preimpostato — le scelte arrivano solo dalla colonna Choice "Progress" (nome visualizzato Product) della lista Progress tracker su SharePoint, tutte quelle impostate sulla lista. Il valore di un progetto che non è tra le scelte resta come opzione in più; da ospite, o se la colonna non si legge, il menu resta vuoto (il motivo è nel tooltip del campo)',
+    'Kit: funzionano entrambi i comandi. Prezzo — scrivendo il Gross Price sulla riga del kit (totale prima dello sconto kit) o il Selling price / kit nel Kit Builder (prezzo dopo lo sconto kit) i prezzi delle righe figlie vengono riscalati in proporzione fino a quel prezzo (anche verso l\'alto), lo sconto kit resta com\'è; il totale cade sul centesimo. Sconto — lo sconto sul kit si distribuisce sulle righe figlie pesato sul valore di ogni riga (come prima), i prezzi non cambiano',
+    'Kit management: la lista scorre con una barra di scorrimento ben visibile e mostra tutti i capitoli (posizioni UPS, SERVICES e sezioni di progetto con righe), senza schiacciarli; in alto un pulsante per capitolo (con il numero di kit) porta direttamente al capitolo',
+    'Spostamento delle righe e dei capitoli con il mouse: parte subito appena si muove la maniglia ⠿ (o dopo 0,06 s tenendola premuta; su touch resta 0,2 s); durante lo spostamento la voce trascinata e quella di partenza sono trasparenti',
+    'Listino IEC / UL senza domande: aprendo un\'offerta fatta con l\'altro listino il programma passa subito a quel listino (un avviso lo dice). Scegliendo un listino diverso in Settings il cambio è immediato; se l\'offerta ha righe modificabili viene rigenerata con il nuovo listino (le righe aggiunte a mano restano), in una revisione chiusa le righe restano com\'erano',
+    'Scadenze (campanella, avviso all\'accesso, finestra Projects): un progetto con Status Execution non dà più scadenze, come Offer review, Won, Lost, Closed, Cancelled e On hold (in qualunque modo siano scritti); nel percorso di stato Execution conta come Won. Nella campanella ogni offerta mostra lo Status letto da SharePoint ("— (empty on SharePoint)" se la colonna è vuota)',
   ]},
   {version:'beta_6.48', date:'2026-10-15', notes:[
     'Ribbon Home, gruppo Progetto: "New project" sostituisce "New offer" e "Create in SharePoint" (tolti). Apre la pagina "New project"; "Back to the offer" torna all\'offerta com\'era, senza toccarla',
@@ -18189,28 +18244,9 @@ async function setPriceMarket(market, opts = {}){
   const ro = typeof READ_ONLY !== 'undefined' && READ_ONLY;
   const hasLines = anyLines && !ro;
   const range = m => m === 'UL' ? 'M2F / M2U range (North America)' : 'MP2 / M2S / M2X range';
-  let regen = false;
-  if(!opts.noAsk){
-    let ans;
-    if(hasLines){
-      ans = await openAppDialog({title: `Switch to the ${market} price list`,
-        message: `The offer lines on the page have the codes and prices of the ${from} price list. The ${market} list has the ${range(market)}.`,
-        question: `Generate the offer again with the ${market} list? Lines added by hand are kept; their prices follow the ${market} list where the code is the same.`,
-        buttons: [{label: 'Cancel', value: 'cancel'}, {label: 'Switch only', value: 'switch'}, {label: 'Switch and generate again', value: 'regen', primary: true}]});
-    } else if(anyLines){
-      ans = await openAppDialog({title: `Switch to the ${market} price list`,
-        message: `This revision is closed: its offer lines keep the codes and prices of the ${from} price list. Start a new revision to work on it with the ${market} list.`,
-        question: `Use the ${market} price list (${range(market)}) from now on?`,
-        buttons: [{label: 'Cancel', value: 'cancel'}, {label: `Switch to ${market}`, value: 'switch', primary: true}]});
-    } else if(!opts.confirmed){
-      ans = await openAppDialog({title: `Switch to the ${market} price list`,
-        message: `The ${market} price list has the ${range(market)}: System Configuration and Generate offer will use it.`,
-        question: `Switch from ${from} to ${market}?`,
-        buttons: [{label: 'Cancel', value: 'cancel'}, {label: `Switch to ${market}`, value: 'switch', primary: true}]});
-    } else ans = 'switch';
-    if(ans !== 'switch' && ans !== 'regen') return false;
-    regen = ans === 'regen';
-  }
+  // beta 6.49: no question — the list is switched at once. Chosen in Settings with editable offer lines,
+  // the offer is generated again with the new list (lines added by hand are kept); a notice says what happened.
+  const regen = !opts.noAsk && hasLines;
   PRICE_MARKET = market;
   try{ upsSetPreferenceCookie(MARKET_PREF_KEY, market); }catch(e){}
   const loaded = loadMarketCatalog();
@@ -18221,7 +18257,10 @@ async function setPriceMarket(market, opts = {}){
   } else if(hasLines && loaded && !opts.noAsk){
     try{ updateOfferPricesFromCatalog(); }catch(e){}
   }
-  showExportToast(loaded ? `${market} price list in use: ${CATALOG_NAME}` : `${market} market selected — no ${market} price list imported yet: use Import price list`, loaded ? 'ok' : 'warn');
+  const what = opts.fromFile ? `Offer made with the ${market} price list — ${market} list in use now` : `${market} price list in use`;
+  const tail = regen ? ` · offer generated again with the ${market} list (lines added by hand kept)`
+    : (anyLines && ro ? ` · closed revision: the offer lines keep the ${from} codes` : '');
+  showExportToast(loaded ? `${what}: ${CATALOG_NAME}${tail}` : `${what} — no ${market} price list imported yet: use Import price list${tail}`, loaded ? 'ok' : 'warn');
   return true;
 }
 function saveCatalogForSession(rows, filename, market){

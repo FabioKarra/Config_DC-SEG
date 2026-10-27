@@ -7771,6 +7771,7 @@ function updateBomHeaders(){
 }
 
 function addBomRow(data, insertBeforeNode){
+  if(data && data.svcLevel && typeof svcRenameOldLevel === 'function') data = svcRenameOldLevel(Object.assign({}, data));
   const kind = data.kind || 'line';
   const row = document.createElement('tr');
   row.dataset.kind = kind;
@@ -10766,8 +10767,8 @@ function duplicateBomChapter(header){
 // one per project. The TCO takes its installation & commissioning cost from these lines.
 const SVC_LEVELS = [
   {id: 'L1', name: 'Factory witness test (FAT)'},
-  {id: 'L2', name: 'Site delivery inspection'},
-  {id: 'L3', name: 'Installation & pre-functional checks'},
+  {id: 'L2', name: 'Component Delivery, Installation & Pre-Start-Up'},     // beta 6.50 (was: Site delivery inspection)
+  {id: 'L3', name: 'System Start-Up'},                                     // beta 6.50 (was: Installation & pre-functional checks)
   {id: 'L4', name: 'Start-up & functional test (SAT)'},
   {id: 'L5', name: 'Integrated systems test (IST)'},
   {id: 'L6', name: 'Training'},
@@ -10778,6 +10779,20 @@ const SVC_LEVELS = [
 const SVC_FOK_TEXT = 'First of a Kind (FOK)';
 const svcRowFok = row => !!(row && row.dataset && row.dataset.svcFok === '1' && row.dataset.svcLevel && row.dataset.svcLevel !== 'L6');
 const svcLevelName = id => (SVC_LEVELS.find(l => l.id === id) || {}).name || '';
+// beta 6.50: service lines saved with the old automatic L2 / L3 names get the new ones when the offer is opened
+// (only where the text is still the automatic one; anything written by hand stays as it is)
+const SVC_OLD_NAMES = {L2: 'SITE DELIVERY INSPECTION', L3: 'INSTALLATION & PRE-FUNCTIONAL CHECKS'};
+function svcRenameOldLevel(data){
+  const old = data && SVC_OLD_NAMES[data.svcLevel]; if(!old) return data;
+  const neu = svcLevelName(data.svcLevel).toUpperCase(), lv = data.svcLevel;
+  const reModel = new RegExp('^\\s*' + lv + '\\s*[-–·:]\\s*' + old.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$', 'i');
+  if(typeof data.model === 'string' && reModel.test(data.model)) data.model = `${lv} - ${neu}`;
+  if(typeof data.desc === 'string'){
+    const esc = old.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    data.desc = data.desc.replace(new RegExp('^(\\s*(?:' + lv + '\\s*[-–·:]\\s*)?)' + esc + '(?=\\s*(?:–|-|on UPS:|$))', 'i'), (m, pre) => pre + neu);
+  }
+  return data;
+}
 function svcConfigs(){
   return [...cfgBody.querySelectorAll(':scope > tr')].map(tr => {
     const g = c => tr.querySelector(c);
@@ -10825,7 +10840,7 @@ function svcBullets(row, cfgs){
   });
   return bullets;
 }
-// heading of the list, from the model without «Lx - », e.g. «INSTALLATION & PRE-FUNCTIONAL CHECKS on UPS:»
+// heading of the list, from the model without «Lx - », e.g. «SYSTEM START-UP on UPS:»
 function svcGenHead(row){
   const model = String(rowModelText(row) || '').trim();
   const head = model.replace(/^\s*L\d\s*[-–·:]\s*/i, '').trim() || svcLevelName(row.dataset.svcLevel).toUpperCase();
@@ -10843,7 +10858,7 @@ function svcHeadOf(row, cfgs){
   if(!level || level === 'L6' || !svcBaseIsAuto(row)) return base;
   return svcBullets(row, cfgs).length ? svcGenHead(row) : (String(rowModelText(row) || '').trim() || base);
 }
-//   INSTALLATION & PRE-FUNCTIONAL CHECKS on UPS:
+//   SYSTEM START-UP on UPS:
 //   • IT UPS 1000kW
 //   • MECH UPS 800kW
 // (L6 training is once per project: no list)
@@ -15568,7 +15583,8 @@ function applyLoadedState(state){
 // project, its revision or its closed / open state change (opening another project, Close offer, New
 // revision): those are saved on SharePoint and cannot be taken back here. While a window or panel is
 // open (Kit Builder, services, price list…) Ctrl+Z is left to that window. In a field you are typing in,
-// Ctrl+Z first undoes the typing (as in Excel); once the field is back as it was, the offer is undone. ----
+// Ctrl+Z first undoes the typing (as in Excel); once the field is back as it was, the offer is undone.
+// beta 6.50: in a number / one-line field Ctrl+Z puts back the whole previous value at once, never digit by digit. ----
 let UNDO_RESTORING = false;
 const UNDO = (function(){
   const MAX = 60;
@@ -15577,6 +15593,8 @@ const UNDO = (function(){
   function check(){
     timer = null;
     if(UNDO_RESTORING || !ready) return;
+    { const a = document.activeElement;     // beta 6.50: a number still being typed is not a step yet (it is recorded once confirmed)
+      if(a && a.tagName === 'INPUT' && a._undoStart !== undefined && a.value !== a._undoStart && !/^(checkbox|radio|button|submit|range|file|color)$/i.test(a.type)) return; }
     let n; try{ n = snap(); }catch(e){ return; }
     if(!cur){ cur = n; sync(); return; }
     if(n.sig === cur.sig) return;
@@ -15642,7 +15660,11 @@ const UNDO = (function(){
     if(r){ r.disabled = !redo.length; r.title = redo.length ? `Redo (Ctrl+Y) · ${redo.length} step${redo.length === 1 ? '' : 's'}` : 'Redo (Ctrl+Y)'; }
   }
   const inQat = e => e.target && e.target.closest && e.target.closest('#undoQat');
-  document.addEventListener('input', e => { if(!inQat(e)) schedule(700); }, true);
+  // beta 6.50: a field being typed in (numbers, codes, short texts) is one step for its whole value: no
+  // snapshot while typing, one when the value is confirmed (Enter, Tab, click elsewhere). Text boxes keep the old grouping.
+  const oneLine = t => t && t.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|file|color)$/i.test(t.type);
+  document.addEventListener('input', e => { if(inQat(e)) return; if(oneLine(e.target) && e.target === document.activeElement) return; schedule(700); }, true);
+  document.addEventListener('change', e => { const t = e.target; if(oneLine(t) && t === document.activeElement) setTimeout(() => { t._undoStart = t.value; }, 0); }, true);
   document.addEventListener('change', e => { if(!inQat(e)) schedule(250); }, true);
   document.addEventListener('click', e => { if(!inQat(e)) schedule(350); }, true);
   document.addEventListener('pointerup', e => { if(!inQat(e)) schedule(350); }, true);
@@ -15655,7 +15677,15 @@ const UNDO = (function(){
     if(!isUndo && !isRedo) return;
     const t = document.activeElement;
     const editing = t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|file|color)$/i.test(t.type)));
-    if(editing && t._undoStart !== undefined && t.value !== t._undoStart) return;   // the field's own undo first
+    if(editing && t._undoStart !== undefined && t.value !== t._undoStart){
+      if(t.tagName === 'TEXTAREA' || !isUndo) return;    // text boxes: their own undo first
+      // beta 6.50: a number being typed goes back to its whole previous value at once (not digit by digit)
+      e.preventDefault();
+      t.value = t._undoStart;
+      t.dispatchEvent(new Event('input', {bubbles: true})); t.dispatchEvent(new Event('change', {bubbles: true}));
+      try{ t.select && t.select(); }catch(err){}
+      return;
+    }
     if(t && t.closest && t.closest('#kitPanel, #kitOverviewPanel, .svc-modal, #plGridOverlay, #appDialogOverlay, .settings-overlay, #tcoPage, #newProjectPage, #battSizingPage')) return;
     e.preventDefault();
     if(isUndo) doUndo(); else doRedo();
@@ -18497,6 +18527,8 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
   {version:'beta_6.50', date:'2026-10-26', notes:[
+    'SERVICES › livelli (Service Level Agreement): L2 diventa «Component Delivery, Installation & Pre-Start-Up» e L3 «System Start-Up»; L1, L4, L5 e L6 restano uguali. Nelle offerte già salvate le righe L2 / L3 col nome automatico vecchio prendono il nome nuovo quando le apri (modello e titolo della descrizione); i testi scritti a mano non vengono toccati',
+    'Annulla (Ctrl+Z) sui numeri: se modifichi un numero, Ctrl+Z torna subito al numero intero di prima, non cifra per cifra — sia mentre stai ancora scrivendo nel campo sia dopo averlo confermato (Invio, Tab o clic altrove). Ogni modifica di un campo è un solo passo di annullamento',
     'New project › Clone a project: sempre attivo — apre l\'elenco dei progetti della lista Progress tracker che hanno un\'offerta salvata (JSON) nella loro cartella "02 OFFER" (la stessa del salvataggio), con l\'ultimo file salvato (data, revisione, in corso / chiusa), ricerca per riferimento, cliente e progetto. Clone carica quell\'offerta (in una nuova scheda se c\'è già un\'offerta aperta), la stacca dal progetto di origine (R0 aperta), copia cliente, paese e dati prodotto nel modulo e il nuovo progetto creato riceve configurazione e righe d\'offerta. Resta possibile clonare l\'offerta già presente nella pagina',
     'Barra in alto: più spazio sopra la prima riga, così in Chrome la campanella (con il numero) e il bordo dei pulsanti non vengono più tagliati',
     'Più offerte aperte insieme, una per scheda: la barra delle schede sotto il ribbon mostra le offerte aperte (riferimento e nome, pallino arancione = modifiche non salvate). + apre una nuova offerta in una nuova scheda, × la chiude (con la domanda di salvataggio se ci sono modifiche), clic centrale per chiudere, Ctrl+Alt+→ / ← per passare alla scheda successiva / precedente. Aprire un progetto dall\'elenco (o da My deadlines) con un\'offerta già sulla pagina lo apre in una nuova scheda; un progetto già aperto porta avanti la sua scheda. Salva, AutoSave, stampe, listino, Battery sizing e TCO agiscono solo sulla scheda aperta; Annulla / Ripeti e lo stato di salvataggio sono per scheda; le schede restano dopo F5',

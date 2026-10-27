@@ -1384,6 +1384,35 @@ body.dark-theme .acc-modal.pop-v2 > .svc-tabs .svc-tab{background:transparent !i
 body.dark-theme .acc-modal.pop-v2 > .svc-tabs .svc-tab.on{color:#fff !important; border-bottom-color:#7FB2FF !important;}
 body.dark-theme .acc-modal.pop-v2 :is(.batt-table, .acc-table) thead th{background:#2C313B !important; color:#C9D6F2 !important; border-bottom-color:#5A77B8 !important;}
 body.dark-theme .acc-modal.pop-v2 .batt-table tbody tr > td, body.dark-theme .acc-modal.pop-v2 .acc-row > td{border-bottom-color:#393E49 !important;}
+/* beta 6.50: the Projects window in the same style */
+.ps-modal.pop-v2-ps{border-radius:12px; overflow:hidden; box-shadow:0 24px 64px rgba(0,37,122,.32);}
+.ps-modal.pop-v2-ps > .ps-header{background:var(--navy); color:#fff; border-bottom:none; padding:14px 60px 14px 18px !important; align-items:center;}
+.ps-modal.pop-v2-ps .pop-head{display:flex; align-items:center; gap:12px; min-width:0;}
+.ps-modal.pop-v2-ps .ps-header h3{color:#fff; font-size:15.5px;}
+.ps-modal.pop-v2-ps .ps-header .ps-sub{color:#AFC0E8;}
+.ps-modal.pop-v2-ps .ps-tools .ps-dim{color:#AFC0E8;}
+.ps-modal.pop-v2-ps .ps-seg{border-color:rgba(255,255,255,.28); background:transparent;}
+.ps-modal.pop-v2-ps .ps-seg button{background:transparent; color:#E4EBFA;}
+.ps-modal.pop-v2-ps .ps-seg button:hover:not(.on){background:rgba(255,255,255,.12); color:#fff;}
+.ps-modal.pop-v2-ps .ps-seg button.on{background:#fff; color:var(--navy); font-weight:600;}
+.ps-modal.pop-v2-ps .ps-header .btn-ghost{background:transparent !important; color:#fff !important; border:1px solid rgba(255,255,255,.3) !important;}
+.ps-modal.pop-v2-ps .ps-header .btn-ghost:hover{background:rgba(255,255,255,.12) !important;}
+.ps-modal.pop-v2-ps .ps-header [data-close]{color:#fff; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; top:50%; transform:translateY(-50%);}
+.ps-modal.pop-v2-ps .ps-header [data-close]:hover{background:rgba(255,255,255,.16); color:#fff;}
+.ps-modal.pop-v2-ps .ps-wrap{border-top:none;}
+.ps-modal.pop-v2-ps .ps-head{background:#fff; color:var(--navy); border-bottom:2px solid var(--navy); padding-top:10px; padding-bottom:8px;}
+.ps-modal.pop-v2-ps .ps-th{color:var(--navy); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;}
+.ps-modal.pop-v2-ps .ps-filters{background:#F6F8FB;}
+.ps-modal.pop-v2-ps .ps-fi:focus{outline:2px solid var(--navy); outline-offset:-1px; border-color:var(--navy);}
+.ps-modal.pop-v2-ps .ps-item.on{background:#E7EEFB; box-shadow:inset 3px 0 0 var(--navy);}
+.ps-modal.pop-v2-ps .ps-body::-webkit-scrollbar{width:11px;} .ps-modal.pop-v2-ps .ps-body::-webkit-scrollbar-track{background:#F3F5F9;}
+.ps-modal.pop-v2-ps .ps-body::-webkit-scrollbar-thumb{background:#AEB9CC; border-radius:10px; border:2px solid #F3F5F9;}
+.ps-modal.pop-v2-ps .ps-foot .btn-primary, .ps-modal.pop-v2-ps .ps-foot .ps-open-btn{background:var(--navy) !important; border-color:var(--navy) !important; color:#fff !important;}
+.ps-modal.pop-v2-ps .ps-foot .ps-open-btn:disabled{opacity:.45;}
+body.dark-theme .ps-modal.pop-v2-ps > .ps-header{background:#0E2A6B !important; border-bottom:none !important;}
+body.dark-theme .ps-modal.pop-v2-ps .ps-header :is(h3, [data-close]){color:#fff !important;}
+body.dark-theme .ps-modal.pop-v2-ps .ps-head{background:#2C313B !important; color:#C9D6F2 !important; border-bottom-color:#5A77B8 !important;}
+body.dark-theme .ps-modal.pop-v2-ps .ps-th{color:#C9D6F2 !important;}
 /* ---- beta_6.41: price list window (grid of the codes, prices and costs by hand, Excel / JSON in and out) ---- */
 .pl-modal{max-width:1240px; height:88vh;}
 .pl-modal .acc-modal-header h3{font-size:16px;}
@@ -3973,6 +4002,7 @@ installMoneyViews(document);
 // (a kit price spread over its components) are only padded, never rounded, when the field is left.
 function bomPriceFormat(el, typed){
   if(!el || !el.matches || !el.matches('input.in-gross, input.in-cost')) return;
+  if(el.closest && el.closest('tr.kit-parent')) return;   // beta 6.50: the kit line price keeps its decimals (kit total exact)
   if(el._money && moneyRate() !== 1){
     // the field shows the document currency: two decimals of that amount (the EUR behind keeps full precision)
     const raw = String(NATIVE_VALUE.get.call(el)).trim();
@@ -7966,7 +7996,7 @@ function addBomRow(data, insertBeforeNode){
     <td>${modelCell}</td>
     <td>${escapeHtml(data.code||'')}</td>
     <td><span class="desc-text">${escapeHtml(data.desc||'')}</span>${catBadge}${extBadge}</td>
-    <td class="num"><input type="number" class="in-gross" value="${(Number(data.gross)||0).toFixed(2)}" step="0.01"></td>
+    <td class="num"><input type="number" class="in-gross" value="${grossText(data.gross)}" step="0.01"></td>
     <td class="num"><input type="number" class="in-disc" value="${Number(data.disc)||0}" step="1"></td>
     <td class="num out-net">0</td>
     <td class="num"><input type="number" class="in-cost" value="${(Number(data.cost)||0).toFixed(2)}" step="0.01"></td>
@@ -9531,7 +9561,13 @@ function kitWeightedShares(bases, D){
 }
 // Scales the gross prices of a kit's components so that their total (each line with its own discount,
 // before the kit discount) becomes `target`. Lines keep their proportions; with no prices yet the total
-// is shared by cost (or by quantity). Prices keep up to 4 decimals so the total lands on the cent.
+// is shared by cost (or by quantity). beta 6.50: prices keep up to 9 decimals, so the kit total is exactly the
+// price typed (no cent moved by rounding).
+function kitNum(v, dec){ const n = Number(v) || 0; return String(+n.toFixed(dec)); }   // a number with up to `dec` decimals, no trailing zeros
+// beta 6.50: a gross price as written on a line — 2 decimals, or up to 9 when it has them (kit component prices
+// scaled to an exact kit price), so a saved / regenerated offer keeps the kit total to the cent
+function grossText(v){ const n = Number(v) || 0; const t = String(+n.toFixed(9)); return (t.split('.')[1] || '').length > 2 ? t : n.toFixed(2); }
+function kitMoneyText(v){ const n = Number(v) || 0; const t = String(+n.toFixed(6)); return /\.\d\d/.test(t) ? t : n.toFixed(2); }   // at least 2 decimals, up to 6
 function scaleKitComponents(kitId, target){
   const members = kitMembersOf(kitId);
   if(!members.length) return false;
@@ -9547,19 +9583,19 @@ function scaleKitComponents(kitId, target){
     const W = w.reduce((a, b) => a + b, 0) || 1;
     gross = vals.map((v, i) => v.qty > 0 && v.keep > 0 ? T * w[i] / W / v.qty / v.keep : 0);
   }
-  gross = gross.map(g => Math.round(g * 10000) / 10000);
+  gross = gross.map(g => +g.toFixed(9));
   const got = vals.reduce((a, v, i) => a + gross[i] * v.keep * v.qty, 0);
   const diff = T - got;
-  if(Math.abs(diff) >= 0.00005){
+  if(Math.abs(diff) >= 1e-9){
     let i = -1, best = -1;
     vals.forEach((v, j) => { const b = gross[j] * v.keep * v.qty; if(v.qty > 0 && v.keep > 0 && b > best){ best = b; i = j; } });
-    if(i >= 0) gross[i] = Math.max(0, Math.round((gross[i] + diff / (vals[i].qty * vals[i].keep)) * 10000) / 10000);
+    if(i >= 0) gross[i] = Math.max(0, +(gross[i] + diff / (vals[i].qty * vals[i].keep)).toFixed(9));
   }
   KIT_BULK++;
   try{
     vals.forEach((v, i) => {
       const g = v.r.querySelector('.in-gross');
-      if(g) g.value = gross[i].toFixed(4).replace(/0{1,2}$/, '');
+      if(g){ const t = String(+gross[i].toFixed(9)); g.value = (t.split('.')[1] || '').length >= 2 ? t : gross[i].toFixed(2); }   // 2 to 9 decimals
       rowRecalcOutputs(v.r);
     });
   } finally { KIT_BULK--; }
@@ -9580,7 +9616,7 @@ function distributeKitDiscount(kitId, D){
     const o = kitBaseDisc(r) / 100, d = r.querySelector('.in-disc');
     if(d){
       const tot = (1 - (1 - o) * (1 - e[i])) * 100;
-      d.value = String(Math.round(tot * 10000) / 10000);
+      d.value = kitNum(tot, 10);       // beta 6.50: full precision, so the kit total is exactly the kit discount off
       d.disabled = true; d.classList.add('kit-disc-share'); d.dataset.kitShareTitle = '1';
       d.title = `Share of the ${D.toFixed(2)}% kit discount, weighted on the line value: ${(e[i] * 100).toFixed(2)}%` +
         (o > 0 ? ` on top of the line's own ${(o * 100).toFixed(2)}%` : '') + ' — change it on the kit line';
@@ -9605,7 +9641,7 @@ function applyKitLook(parent, members){
         if(!kid || parent.dataset.kitParent !== 'true') return;
         const target = Math.max(0, Number(kitGross.value) || 0);
         scaleKitComponents(kid, target);           // beta 6.49: the component prices follow the kit price
-        kitGross.value = kitBaseNet(kid).toFixed(2);
+        kitGross.value = kitMoneyText(kitBaseNet(kid));
         kitGross.blur();
         refreshKitsInChapter(owner); recalcGroupTotal(owner);
         if(typeof recalcProjectTotal === 'function') recalcProjectTotal();
@@ -9624,8 +9660,8 @@ function applyKitLook(parent, members){
         const kid = parent.dataset.kitId, owner = parent.dataset.groupOf;
         if(!kid || parent.dataset.kitParent !== 'true') return;
         const disc = Math.max(0, Math.min(100, Number(kitDisc.value) || 0));
-        kitDisc.value = disc.toFixed(4);
-        if(kitGross) kitGross.value = kitBaseNet(kid).toFixed(2);
+        kitDisc.value = kitNum(disc, 10);
+        if(kitGross) kitGross.value = kitMoneyText(kitBaseNet(kid));
         kitDisc.blur(); refreshKitsInChapter(owner); recalcGroupTotal(owner);
         if(typeof recalcProjectTotal === 'function') recalcProjectTotal();
       });
@@ -10586,8 +10622,8 @@ function applyKitPanel(){
       scaleKitComponents(kitId, Math.max(0, Number(d.priceTarget) || 0) / (1 - discount / 100));
       rows.forEach(r => rowRecalcOutputs(r));
     }
-    if(kitDisc) kitDisc.value = discount.toFixed(4);
-    if(kitGross) kitGross.value = kitBaseNet(kitId).toFixed(2);
+    if(kitDisc) kitDisc.value = kitNum(discount, 10);
+    if(kitGross) kitGross.value = kitMoneyText(kitBaseNet(kitId));
     rowRecalcOutputs(parent);
   }
   refreshKitsInChapter(owner);
@@ -11285,8 +11321,76 @@ function clearBom(){
 }
 
 // ---- Generate Offer — faithful port of Modulo1.Generate_BOM (VBA), extended with High Efficiency ----
+
+// ---- beta 6.50: Generate offer again (after changing a UPS position) keeps what was entered on the lines ----
+// Prices and discounts typed on the generated lines stay (matched by position and code); when some of them differ
+// from the price list, a question offers to take the price list prices instead. Costs always follow the price list
+// in use when it has a cost for that code (a cost the list does not have is kept).
+let REGEN_USE_LIST_PRICES = false;     // set by a price list change (Settings): the new list's prices are wanted
+function catalogEntryForCode(code){
+  const norm = x => String(x || '').replace(/\s+/g, '').toUpperCase();
+  const c = norm(code); if(!c || !CATALOG_LOADED) return null;
+  return CATALOG_AUX.find(a => norm(a.code) === c) || CATALOG_PM.find(a => norm(a.code) === c)
+    || Object.values(CATALOG_LOOKUP || {}).find(a => a && norm(a.code) === c)
+    || (typeof BATTERY_CATALOG !== 'undefined' ? BATTERY_CATALOG.find(a => norm(a.code) === c) : null) || null;
+}
+function regenCost(code, saved){
+  const e = catalogEntryForCode(code);
+  return e && Number(e.cost) > 0 ? String(e.cost) : saved;
+}
+function captureLinePricesForRegenerate(){
+  const out = {};
+  [...bomBody.querySelectorAll('tr[data-kind="header"]')].forEach(h => {
+    if(!h.dataset.cfgPos) return;
+    out[h.dataset.cfgPos] = [...bomBody.querySelectorAll(`tr[data-kind="line"][data-group-of="${h.dataset.rowId}"]`)].map(r => ({
+      code: (rowCodeText(r) || '').trim(), gross: Number(r.querySelector('.in-gross')?.value) || 0,
+      grossText: r.querySelector('.in-gross')?.value || '0', disc: rowBaseDisc(r), cost: Number(r.querySelector('.in-cost')?.value) || 0}));
+  });
+  return out;
+}
+// after the lines are rebuilt: discounts back, own prices back (the list prices are remembered for the question), costs per the list
+function restoreLinePricesAfterRegenerate(saved){
+  const changed = [];
+  if(!saved) return changed;
+  [...bomBody.querySelectorAll('tr[data-kind="header"]')].forEach(h => {
+    const old = saved[h.dataset.cfgPos]; if(!old || !old.length) return;
+    const pool = old.slice();
+    [...bomBody.querySelectorAll(`tr[data-kind="line"][data-group-of="${h.dataset.rowId}"]`)].forEach(r => {
+      const code = (rowCodeText(r) || '').trim(); if(!code) return;
+      const k = pool.findIndex(o => o.code === code); if(k < 0) return;
+      const o = pool.splice(k, 1)[0];
+      const g = r.querySelector('.in-gross'), d = r.querySelector('.in-disc'), c = r.querySelector('.in-cost');
+      if(d && Math.abs((Number(d.value) || 0) - o.disc) > 1e-9) d.value = String(o.disc);
+      if(c && !(Number(c.value) > 0) && o.cost > 0) c.value = String(o.cost);      // the list has no cost: keep yours
+      if(g){
+        const listGross = Number(g.value) || 0;
+        if(Math.abs(listGross - o.gross) > 0.004){
+          if(REGEN_USE_LIST_PRICES) return;
+          changed.push({row: r, list: listGross, own: o.gross});
+          g.value = o.grossText;
+        }
+      }
+      rowRecalcOutputs(r);
+    });
+  });
+  return changed;
+}
+async function askKeepOwnPrices(changed){
+  if(!changed.length || typeof openAppDialog !== 'function') return;
+  const n = changed.length;
+  const ans = await openAppDialog({title: 'Prices entered by hand',
+    message: `The offer was generated again. ${n} line${n === 1 ? ' has' : 's have'} a price you entered that is different from the price list, and ${n === 1 ? 'it was' : 'they were'} kept.\n\nKeep your prices, or overwrite them with the price list prices? (Costs always follow the price list in use.)`,
+    buttons: [{label: 'Use price list prices', value: 'list'}, {label: 'Keep my prices', value: 'keep', primary: true}]});
+  if(ans !== 'list') return;
+  const owners = new Set();
+  changed.forEach(x => { if(!x.row.isConnected) return; const g = x.row.querySelector('.in-gross'); if(g) g.value = x.list.toFixed(2); rowRecalcOutputs(x.row); owners.add(x.row.dataset.groupOf); });
+  owners.forEach(o => { refreshKitsInChapter(o); recalcGroupTotal(o); });
+  if(typeof recalcProjectTotal === 'function') recalcProjectTotal();
+  showExportToast(`${n} price${n === 1 ? '' : 's'} taken from the price list`, 'ok');
+}
 document.getElementById('btnGenerate').addEventListener('click', ()=>{
   const savedKits = captureKitsForRegenerate();
+  const savedLinePrices = captureLinePricesForRegenerate();   // beta 6.50
   // Preserve manually added accessories / battery configuration rows across a re-generate.
   // Keyed by the CONFIG ROW's own position (cfgPos), not by the VBA "gruppo" number — gruppo
   // only counts non-skipped rows, so it can shift when a Q.ty flips to/from zero, while cfgPos
@@ -11303,7 +11407,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       desc: rowDescText(r),
       gross: r.querySelector('.in-gross').value,
       disc: String(rowBaseDisc(r)),
-      cost: r.querySelector('.in-cost').value,
+      cost: regenCost(rowCodeText(r), r.querySelector('.in-cost').value),
       qty: rowQty(r),
       extSupplier: rowExtSupplier(r),
       techCategory: r.dataset.techCategory || null,
@@ -11336,7 +11440,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       desc: rowDescText(r),
       gross: r.querySelector('.in-gross').value,
       disc: String(rowBaseDisc(r)),
-      cost: r.querySelector('.in-cost').value,
+      cost: regenCost(rowCodeText(r), r.querySelector('.in-cost').value),
       qty: rowQty(r),
       extSupplier: rowExtSupplier(r),
       manualEntry: r.dataset.manualEntry === 'true',
@@ -11368,7 +11472,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         desc: rowDescText(r),
         gross: r.querySelector('.in-gross').value,
         disc: String(rowBaseDisc(r)),
-        cost: r.querySelector('.in-cost').value,
+        cost: regenCost(rowCodeText(r), r.querySelector('.in-cost').value),
         qty: rowQty(r),
         extSupplier: rowExtSupplier(r),
         manualEntry: r.dataset.manualEntry === 'true',
@@ -11618,8 +11722,10 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         recalcGroupTotal(sectionOwner);
       });
   }
+  const ownPrices = restoreLinePricesAfterRegenerate(savedLinePrices);   // beta 6.50: before the kits take their lines back
   reapplyKitsAfterRegenerate(savedKits);
   updateBomHeaders();
+  if(ownPrices.length) setTimeout(() => askKeepOwnPrices(ownPrices), 0);
 });
 
 // ---- Revision management ----
@@ -15845,6 +15951,29 @@ const POP_V2 = (function(){
     const html = r.sel ? `<b>${r.n}</b> selected of ${r.all}` : `<b>${r.n}</b> line${r.n === 1 ? '' : 's'}`;
     if(c.innerHTML !== html) c.innerHTML = html;
   }
+  // beta 6.50: the list area is as tall as 6 lines (column titles included) and keeps that size; more lines scroll
+  function scroller(m){ return [...m.querySelectorAll(':scope > .acc-modal-body, :scope > .svc-lines-panel, :scope > .svc-delivery-panel')].find(e => !e.hidden && e.offsetParent !== null) || null; }
+  function fitRows(m){
+    const sc = scroller(m); if(!sc) return;
+    const lines = m.querySelector(':scope > .svc-lines-panel');
+    const box = (lines && !lines.hidden) || !lines ? sc : lines;
+    const tb = box.querySelector('.batt-table, .acc-table'); if(!tb) { if(m._popH) sc.style.height = m._popH + 'px'; return; }
+    const head = tb.tHead ? tb.tHead.offsetHeight : 0;
+    const rows = [...tb.tBodies[0].rows].filter(r => !r.classList.contains('svc-sub') && !r.hidden && r.offsetParent !== null);
+    if(!rows.length) return;
+    let body;
+    if(tb.classList.contains('acc-table')) body = rows.slice(0, 6).reduce((a, r) => a + r.offsetHeight, 0) + (rows.length < 6 ? (6 - rows.length) * rows[0].offsetHeight : 0);
+    else {
+      const r0 = rows[0], sub = r0.nextElementSibling && r0.nextElementSibling.classList.contains('svc-sub') && !r0.nextElementSibling.hidden ? r0.nextElementSibling.offsetHeight : 0;
+      body = 6 * (r0.offsetHeight + sub);
+    }
+    const top = tb.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+    let h = Math.ceil(top + head + body + 16);
+    const others = m.offsetHeight - sc.offsetHeight;
+    h = Math.max(160, Math.min(h, window.innerHeight - 40 - others));
+    m._popH = h;
+    [...m.querySelectorAll(':scope > .acc-modal-body, :scope > .svc-lines-panel, :scope > .svc-delivery-panel')].forEach(e => { e.style.height = h + 'px'; e.style.flex = '0 0 auto'; });
+  }
   function enhance(ov){
     const m = ov.querySelector(':scope > .acc-modal');
     if(!m || m.classList.contains('pop-v2')) return;
@@ -15890,12 +16019,27 @@ const POP_V2 = (function(){
       const count = document.createElement('span'); count.className = 'pop-count';
       left.appendChild(count);
       foot.prepend(left);
-      new MutationObserver(() => updateCount(m)).observe(m, {childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden']});
+      new MutationObserver(() => { updateCount(m); if(!m._popH) fitRows(m); }).observe(m, {childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden']});
       updateCount(m);
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => fitRows(m)));
+    m.querySelectorAll('.svc-tab').forEach(t => t.addEventListener('click', () => requestAnimationFrame(() => { m._popH = 0; fitRows(m); })));
+  }
+  // the Projects window gets the same look (navy title with icon)
+  function enhanceProjects(ov){
+    const m = ov.querySelector('.ps-modal'); if(!m || m.classList.contains('pop-v2-ps')) return;
+    m.classList.add('pop-v2-ps');
+    const head = m.querySelector('.ps-header > div:first-child');
+    if(head && !head.querySelector('.pop-icon')){
+      const titles = document.createElement('div'); titles.className = 'pop-titles';
+      while(head.firstChild) titles.appendChild(head.firstChild);
+      const ic = document.createElement('span'); ic.className = 'pop-icon'; ic.setAttribute('aria-hidden', 'true');
+      ic.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>';
+      head.classList.add('pop-head'); head.append(ic, titles);
     }
   }
   new MutationObserver(list => {
-    list.forEach(x => x.addedNodes.forEach(n => { if(n.nodeType === 1 && n.classList && n.classList.contains('acc-modal-overlay')) enhance(n); }));
+    list.forEach(x => x.addedNodes.forEach(n => { if(n.nodeType !== 1 || !n.classList) return; if(n.classList.contains('acc-modal-overlay')) enhance(n); else if(n.id === 'projectSearchOverlay') enhanceProjects(n); }));
   }).observe(document.body, {childList: true});
   return {enhance};
 })();
@@ -18731,6 +18875,9 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
   {version:'beta_6.50', date:'2026-10-26', notes:[
+    'Finestre di inserimento (Service, Technology, Battery, Accessories, Pick from Catalog): l\'area delle righe ha un\'altezza fissa pari a 6 righe (titoli delle colonne compresi) e non cambia aggiungendo righe; dalla settima riga si scorre. Anche la finestra Projects (apertura progetti) prende lo stesso stile: barra del titolo blu navy con icona, titoli delle colonne blu, riga selezionata evidenziata, Open project blu navy',
+    'Kit: il prezzo scritto sul kit (Gross Price della riga kit o Selling price / kit nel Kit Builder) resta esattamente quello: i prezzi delle righe figlie e le quote di sconto tengono più decimali (fino a 9 e 10) invece di essere arrotondati, così il totale del kit non si sposta di nessun centesimo. Anche lo sconto kit resta com\'è scritto (es. 10, non 10.0000). I decimali restano anche salvando e riaprendo l\'offerta e dopo Generate offer, quindi il prezzo del kit non cambia',
+    'Generate offer di nuovo (dopo aver cambiato un UPS): prezzi e sconti scritti sulle righe generate restano (stessa posizione, stesso codice); se qualche prezzo è diverso dal listino il programma chiede se tenere i tuoi prezzi (proposto) o sovrascriverli con quelli del listino. I costi seguono sempre il listino in uso quando ha un costo per quel codice (anche per le righe aggiunte a mano: accessori, batterie, servizi, sezioni); un costo che il listino non ha resta. Cambiando listino in Settings si prendono invece i prezzi del nuovo listino',
     'Finestre Add Service / Technology / Battery / Accessories / Pick from Catalog / Multiline Description ridisegnate (stile 2 «Header blu Riello»): barra del titolo blu navy con icona, sotto una fascia con le schede (Service) o con posizione e modello UPS (Battery: anche Lithium · Ampace oppure inserimento manuale, e il pulsante Battery sizing), titoli delle colonne blu, campi con bordo blu sul campo attivo, cestino rosso al passaggio, pulsante Add to Offer blu navy',
     'Le stesse finestre hanno la barra di scorrimento: con tante righe la lista scorre dentro la finestra, i titoli delle colonne restano fermi in alto e in fondo restano sempre visibili «+ Add Row», il numero di righe e i pulsanti Cancel / Add to Offer; la riga nuova viene portata in vista con il cursore nel primo campo',
     'Righe offerta: la riga Delivery si può eliminare (× in fondo alla riga); resta tolta anche dopo Generate Offer, finché non la rimetti da Add Service › Delivery',
@@ -19312,7 +19459,8 @@ async function setPriceMarket(market, opts = {}){
   syncMarketUi();
   if(regen){
     const g = document.getElementById('btnGenerate');
-    if(g && !g.disabled) g.click();
+    REGEN_USE_LIST_PRICES = true;          // beta 6.50: a new price list → its prices
+    try{ if(g && !g.disabled) g.click(); } finally { REGEN_USE_LIST_PRICES = false; }
   } else if(hasLines && loaded && !opts.noAsk){
     try{ updateOfferPricesFromCatalog(); }catch(e){}
   }

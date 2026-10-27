@@ -1047,6 +1047,9 @@ table.bom input.kb-sel, .kb-sel{width:14px !important; min-width:0 !important; h
 .kb-selbar button{height:34px; padding:0 12px; border:1px solid #4B5260; background:transparent; color:#fff; border-radius:8px; font:inherit; font-size:12.5px; cursor:pointer;}
 .kb-selbar button.kb-pri{border:none; background:var(--accent); font-weight:600;}
 .kb-selbar button:disabled{opacity:.45; cursor:default;}
+.kb-selbar button.kb-del{border-color:#B4413C; color:#FFD2CF;}
+.kb-selbar button.kb-del:hover{background:#B4413C; color:#fff;}
+.delivery-remove{color:#B4413C;}
 .kb-selmenu{position:absolute; bottom:calc(100% + 6px); right:40px; background:#fff; color:var(--text); border:1px solid var(--panel-border); border-radius:10px; box-shadow:0 12px 30px rgba(20,22,26,.2); padding:6px; display:flex; flex-direction:column; min-width:240px;}
 .kb-selmenu button{border:none; color:var(--text); text-align:left; border-radius:6px; height:auto; padding:8px 10px;}
 .kb-selmenu button:hover{background:var(--accent-soft);}
@@ -7989,7 +7992,12 @@ function addBomRow(data, insertBeforeNode){
       chip.style.display = on ? '' : 'none';
       resetBtn.style.display = on ? '' : 'none';
     };
-    row.querySelector('.bom-actions').append(chip, resetBtn);
+    // beta 6.50: the Delivery line can be deleted (it stays off until set again in Add Service › Delivery)
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button'; delBtn.className = 'row-remove delivery-remove'; delBtn.textContent = '×';
+    delBtn.title = 'Delete the Delivery line — add it again from Add Service › Delivery';
+    delBtn.addEventListener('click', ()=>{ if(!READ_ONLY) deleteBomRows([row]); });
+    row.querySelector('.bom-actions').append(chip, resetBtn, delBtn);
     resetBtn.addEventListener('click', ()=>{
       delete row.dataset.manualDelivery;
       syncForced();
@@ -10542,14 +10550,35 @@ function showKitToast(text, undo){
 function kbEligible(r){
   return !READ_ONLY && (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !r.dataset.kitId && !isServicesRow(r);
 }
+// beta 6.50: lines that can be ticked to be deleted together – every offer line (also services and the Delivery),
+// not the kit lines (a kit is managed in the Kit Builder). Only kbEligible lines can go into a kit.
+function kbDeletable(r){
+  return !READ_ONLY && ['line', 'accessory', 'delivery'].includes(r.dataset.kind) && !r.dataset.kitId;
+}
+function deleteBomRows(rows){
+  rows = (rows || []).filter(r => r && r.isConnected && kbDeletable(r));
+  if(!rows.length) return 0;
+  const owners = new Set(rows.map(r => r.dataset.groupOf).filter(Boolean));
+  let delivery = false;
+  rows.forEach(r => { if(r.dataset.kind === 'delivery') delivery = true; r.remove(); });
+  if(delivery) DELIVERY_ENABLED = false;      // stays off after Generate Offer too, until set again in Add Service › Delivery
+  owners.forEach(g => { try{ bomRenumberChapter(g); }catch(e){} recalcGroupTotal(g); });
+  updateDeliveryRow();
+  if(typeof recalcProjectTotal === 'function') recalcProjectTotal();
+  kbUpdateSelBar();
+  try{ UNDO.check(); }catch(e){}
+  const n = rows.length;
+  showKitToast(`${n} line${n === 1 ? '' : 's'} deleted${delivery ? ' (Delivery included)' : ''}`, () => { try{ UNDO.undo(); }catch(e){} });
+  return n;
+}
 function kbSyncSelectors(){
   if(typeof bomBody === 'undefined') return;
   bomBody.querySelectorAll('tr[data-kind]').forEach(r => {
     const has = r.querySelector('input.kb-sel');
-    if(kbEligible(r)){
+    if(kbDeletable(r)){
       if(!has){
         const cb = document.createElement('input');
-        cb.type = 'checkbox'; cb.className = 'kb-sel'; cb.title = 'Select — then "Create kit" in the bar at the bottom';
+        cb.type = 'checkbox'; cb.className = 'kb-sel'; cb.title = 'Select — then create a kit or delete the lines from the bar at the bottom';
         cb.setAttribute('aria-label', 'Select this line');
         cb.addEventListener('change', kbUpdateSelBar);
         cb.addEventListener('pointerdown', e => e.stopPropagation());
@@ -10570,15 +10599,19 @@ function kbUpdateSelBar(){
   if(!sel.length || KB){ if(bar) bar.remove(); return; }
   if(!bar){ bar = document.createElement('div'); bar.className = 'kb-selbar'; bar.id = 'kbSelBar'; document.body.appendChild(bar); }
   const owners = [...new Set(sel.map(r => r.dataset.groupOf))];
-  const one = owners.length === 1;
+  const kitOk = sel.every(kbEligible);          // services and Delivery can be deleted, not put in a kit
+  const one = owners.length === 1 && kitOk;
   const kits = one ? [...new Set(kbChapterRows(owners[0]).filter(isKitParent).map(r => r.dataset.kitId))] : [];
   let net = 0; sel.forEach(r => { const v = kitRowNet(r); net += v.net * v.qty; });
+  const why = !kitOk ? 'Services and Delivery cannot go into a kit' : 'The lines must be in the same chapter';
   bar.innerHTML = `<span style="font-weight:600; margin-right:6px">${sel.length} line${sel.length === 1 ? '' : 's'} · ${formatMoney(net)}</span>
-    <button type="button" class="kb-pri" data-create${one ? '' : ' disabled title="The lines must be in the same chapter"'}>⊞ Create kit with these lines</button>
+    <button type="button" class="kb-pri" data-create${one ? '' : ` disabled title="${why}"`}>⊞ Create kit with these lines</button>
     ${kits.length ? '<button type="button" data-addto>Add to kit ▾</button>' : ''}
-    ${one ? '' : '<span style="color:#F2B8B8; font-size:11.5px">lines of different chapters</span>'}
+    <button type="button" class="kb-del" data-del title="Delete the selected lines (Del key) — Ctrl+Z brings them back">🗑 Delete ${sel.length === 1 ? 'line' : sel.length + ' lines'}</button>
+    ${kitOk && owners.length > 1 ? '<span style="color:#F2B8B8; font-size:11.5px">lines of different chapters</span>' : ''}
     <button type="button" data-clear aria-label="Clear selection" style="border:none; width:34px; padding:0">×</button>`;
   bar.querySelector('[data-create]').addEventListener('click', () => { if(one) openKitPanel({owner: owners[0], rows: sel}); });
+  bar.querySelector('[data-del]').addEventListener('click', () => deleteBomRows(kbSelectedRows()));
   bar.querySelector('[data-clear]').addEventListener('click', kbClearSelection);
   const addto = bar.querySelector('[data-addto]');
   if(addto) addto.addEventListener('click', e => {
@@ -10591,6 +10624,14 @@ function kbUpdateSelBar(){
     m.querySelectorAll('[data-kit]').forEach(b => b.addEventListener('click', () => openKitPanel({kitId: b.dataset.kit, addRows: sel})));
   });
 }
+document.addEventListener('keydown', e => {      // beta 6.50: Del deletes the ticked lines (not while typing in a field)
+  if(e.key !== 'Delete' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = document.activeElement;
+  if(t && (t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable || (t.tagName === 'INPUT' && t.type !== 'checkbox'))) return;
+  if(document.querySelector('.acc-modal-overlay, #kitPanel, #kitOverviewPanel') && [...document.querySelectorAll('.acc-modal-overlay, #kitPanel, #kitOverviewPanel')].some(x => x.offsetParent !== null)) return;
+  const sel = kbSelectedRows(); if(!sel.length) return;
+  e.preventDefault(); deleteBomRows(sel);
+});
 let kbSyncPending = false;
 function kbScheduleSync(){ if(kbSyncPending) return; kbSyncPending = true; requestAnimationFrame(() => { kbSyncPending = false; kbSyncSelectors(); }); }
 if(typeof bomBody !== 'undefined'){
@@ -18527,6 +18568,8 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
   {version:'beta_6.50', date:'2026-10-26', notes:[
+    'Righe offerta: la riga Delivery si può eliminare (× in fondo alla riga); resta tolta anche dopo Generate Offer, finché non la rimetti da Add Service › Delivery',
+    'Righe offerta: selezione multipla per eliminare — spunta le righe (anche servizi e Delivery) e nella barra in basso premi «🗑 Delete N lines», oppure il tasto Canc / Del. Ctrl+Z o «Undo» nel messaggio le rimette. Le righe dei kit si gestiscono dal Kit Builder; servizi e Delivery si possono eliminare ma non mettere in un kit',
     'SERVICES › livelli (Service Level Agreement): L2 diventa «Component Delivery, Installation & Pre-Start-Up» e L3 «System Start-Up»; L1, L4, L5 e L6 restano uguali. Nelle offerte già salvate le righe L2 / L3 col nome automatico vecchio prendono il nome nuovo quando le apri (modello e titolo della descrizione); i testi scritti a mano non vengono toccati',
     'Annulla (Ctrl+Z) sui numeri: se modifichi un numero, Ctrl+Z torna subito al numero intero di prima, non cifra per cifra — sia mentre stai ancora scrivendo nel campo sia dopo averlo confermato (Invio, Tab o clic altrove). Ogni modifica di un campo è un solo passo di annullamento',
     'New project › Clone a project: sempre attivo — apre l\'elenco dei progetti della lista Progress tracker che hanno un\'offerta salvata (JSON) nella loro cartella "02 OFFER" (la stessa del salvataggio), con l\'ultimo file salvato (data, revisione, in corso / chiusa), ricerca per riferimento, cliente e progetto. Clone carica quell\'offerta (in una nuova scheda se c\'è già un\'offerta aperta), la stacca dal progetto di origine (R0 aperta), copia cliente, paese e dati prodotto nel modulo e il nuovo progetto creato riceve configurazione e righe d\'offerta. Resta possibile clonare l\'offerta già presente nella pagina',

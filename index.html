@@ -14305,8 +14305,9 @@ function openProjectSearch(){
   // Always opens flat (Group = None) and with only these 6 columns: Ref. / Customer / Project / Country / Status / Owner
   PS.group = 'none'; PS.open.clear(); PS.allOpen = false;
   PS.extra = [];
-  PS.f.due = ''; PS.f.x = {};
-  PS.f.x = PS.f.x || {};
+  // beta 6.50: every opening starts with the filters reset (Status = Open, as at the first opening), no project selected
+  PS.f = {ref: '', customer: '', name: '', country: '', owner: '', due: '', status: 'open', x: {}};
+  PS.sel = null;
   const opts = (key) => [...new Set(psAll.map(x => x[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   // an extra column with few different values gets a choice list, otherwise a text filter
   const xFilter = k => {
@@ -15975,6 +15976,9 @@ const POP_V2 = (function(){
     [...m.querySelectorAll(':scope > .acc-modal-body, :scope > .svc-lines-panel, :scope > .svc-delivery-panel')].forEach(e => { e.style.height = h + 'px'; e.style.flex = '0 0 auto'; });
   }
   function enhance(ov){
+    // the service "Level and UPS configurations" window (a small settings window) gets the same look
+    const lv = ov.classList.contains('settings-overlay') && ov.querySelector(':scope > .settings-modal.svc-modal');
+    if(lv && !lv.classList.contains('acc-modal')){ lv.classList.add('acc-modal'); lv.style.maxWidth = '560px'; }
     const m = ov.querySelector(':scope > .acc-modal');
     if(!m || m.classList.contains('pop-v2')) return;
     const t = typeOf(m); if(!t) return;
@@ -16039,7 +16043,7 @@ const POP_V2 = (function(){
     }
   }
   new MutationObserver(list => {
-    list.forEach(x => x.addedNodes.forEach(n => { if(n.nodeType !== 1 || !n.classList) return; if(n.classList.contains('acc-modal-overlay')) enhance(n); else if(n.id === 'projectSearchOverlay') enhanceProjects(n); }));
+    list.forEach(x => x.addedNodes.forEach(n => { if(n.nodeType !== 1 || !n.classList) return; if(n.classList.contains('acc-modal-overlay') || (n.classList.contains('settings-overlay') && n.querySelector(':scope > .settings-modal.svc-modal'))) enhance(n); else if(n.id === 'projectSearchOverlay') enhanceProjects(n); }));
   }).observe(document.body, {childList: true});
   return {enhance};
 })();
@@ -18875,6 +18879,8 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
   {version:'beta_6.50', date:'2026-10-26', notes:[
+    'Finestra Projects: ogni volta che si apre i filtri ripartono da zero (Ref., Customer, Project, Country, Owner vuoti e Status = Open, come alla prima apertura) e nessun progetto è selezionato',
+    'SERVICES › finestra «Level and UPS configurations» (chip delle configurazioni o ⋯ › Level & UPS configurations…) nello stesso stile delle altre finestre: barra del titolo blu navy con icona',
     'Finestre di inserimento (Service, Technology, Battery, Accessories, Pick from Catalog): l\'area delle righe ha un\'altezza fissa pari a 6 righe (titoli delle colonne compresi) e non cambia aggiungendo righe; dalla settima riga si scorre. Anche la finestra Projects (apertura progetti) prende lo stesso stile: barra del titolo blu navy con icona, titoli delle colonne blu, riga selezionata evidenziata, Open project blu navy',
     'Kit: il prezzo scritto sul kit (Gross Price della riga kit o Selling price / kit nel Kit Builder) resta esattamente quello: i prezzi delle righe figlie e le quote di sconto tengono più decimali (fino a 9 e 10) invece di essere arrotondati, così il totale del kit non si sposta di nessun centesimo. Anche lo sconto kit resta com\'è scritto (es. 10, non 10.0000). I decimali restano anche salvando e riaprendo l\'offerta e dopo Generate offer, quindi il prezzo del kit non cambia',
     'Generate offer di nuovo (dopo aver cambiato un UPS): prezzi e sconti scritti sulle righe generate restano (stessa posizione, stesso codice); se qualche prezzo è diverso dal listino il programma chiede se tenere i tuoi prezzi (proposto) o sovrascriverli con quelli del listino. I costi seguono sempre il listino in uso quando ha un costo per quel codice (anche per le righe aggiunte a mano: accessori, batterie, servizi, sezioni); un costo che il listino non ha resta. Cambiando listino in Settings si prendono invece i prezzi del nuovo listino',

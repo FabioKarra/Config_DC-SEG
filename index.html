@@ -1413,6 +1413,17 @@ body.dark-theme .ps-modal.pop-v2-ps > .ps-header{background:#0E2A6B !important; 
 body.dark-theme .ps-modal.pop-v2-ps .ps-header :is(h3, [data-close]){color:#fff !important;}
 body.dark-theme .ps-modal.pop-v2-ps .ps-head{background:#2C313B !important; color:#C9D6F2 !important; border-bottom-color:#5A77B8 !important;}
 body.dark-theme .ps-modal.pop-v2-ps .ps-th{color:#C9D6F2 !important;}
+/* beta 6.50: optional subtitle typed under the automatic chapter title (Offer Lines) — a line under the title,
+   wider than the Description column, left aligned; shown faintly on hover while empty */
+#bomBody tr.bom-header-row td:nth-child(5){position:relative; padding-bottom:24px !important;}
+#bomBody tr.bom-header-row td:nth-child(5):has(.hdr-sub:disabled:not(.has-text)){padding-bottom:revert !important;}
+#bomBody tr.bom-header-row td:nth-child(5) .hdr-sub{position:absolute; left:var(--hdr-sub-left, 1px); bottom:4px; width:min(640px, 50vw) !important; max-width:none !important; margin:0; padding:1px 6px; border:1px solid transparent; border-radius:5px; background:transparent; color:#DCE6FA; font:italic 400 12px/16px 'Work Sans',sans-serif; text-align:left; box-shadow:none; min-height:0; height:20px; z-index:1;}
+#bomBody tr.bom-header-row td:nth-child(5) .hdr-sub::placeholder{color:transparent; text-align:left;}
+#bomBody tr.bom-header-row:hover td:nth-child(5) .hdr-sub::placeholder, #bomBody tr.bom-header-row td:nth-child(5) .hdr-sub:focus::placeholder{color:rgba(255,255,255,.55);}
+#bomBody tr.bom-header-row:hover td:nth-child(5) .hdr-sub:not(:disabled){border-color:rgba(255,255,255,.25);}
+#bomBody tr.bom-header-row td:nth-child(5) .hdr-sub:focus{outline:none; border-color:rgba(255,255,255,.7); background:rgba(255,255,255,.1); color:#fff;}
+#bomBody tr.bom-header-row td:nth-child(5) .hdr-sub:disabled:not(.has-text){display:none;}
+#bomBody tr.bom-header-row td:nth-child(5) .hdr-sub:disabled{color:#DCE6FA; -webkit-text-fill-color:#DCE6FA; opacity:1; border-color:transparent;}
 /* ---- beta_6.41: price list window (grid of the codes, prices and costs by hand, Excel / JSON in and out) ---- */
 .pl-modal{max-width:1240px; height:88vh;}
 .pl-modal .acc-modal-header h3{font-size:16px;}
@@ -7891,12 +7902,20 @@ function addBomRow(data, insertBeforeNode){
     row.className = 'bom-header-row';
     row.innerHTML = `
       <td>${escapeHtml(data.pos||'')}</td><td></td><td></td><td></td>
-      <td>${escapeHtml(data.label||'')}</td>
+      <td>${escapeHtml(data.label||'')}<input type="text" class="hdr-sub" maxlength="240" value="${escapeHtml(data.subtitle||'')}" placeholder="+ subtitle (optional)" aria-label="Subtitle of this chapter (optional)" title="Descriptive subtitle shown under the chapter title in the offer documents (optional)"></td>
       <td class="num"></td><td class="num"></td><td class="num"></td>
       <td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>
       <td class="bom-actions"></td>
     `;
     if(insertBeforeNode){ bomBody.insertBefore(row, insertBeforeNode); } else { bomBody.appendChild(row); }
+    { const sub = row.querySelector('.hdr-sub');   // beta 6.50: optional subtitle typed by hand (the title stays automatic)
+      const fit = () => { sub.classList.toggle('has-text', !!sub.value.trim()); };
+      ['pointerdown', 'mousedown', 'click', 'dblclick'].forEach(ev => sub.addEventListener(ev, e => e.stopPropagation()));
+      sub.addEventListener('input', fit);
+      sub.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); sub.blur(); } });
+      sub.addEventListener('change', () => { sub.value = sub.value.replace(/\s+/g, ' ').trim(); fit(); });
+      if(READ_ONLY) sub.disabled = true;
+      fit(); }
     const hdrTools = document.createElement('span'); hdrTools.className = 'bom-tools';   // beta_6.45: never cut at the table edge
     row.querySelector('.bom-actions').appendChild(hdrTools);
     const accBtn = document.createElement('button');
@@ -9460,6 +9479,8 @@ function openSubBomView(row){
 // The BOM documents' rows — a FLAT list, with no trace of nesting: a kit line or a sales code
 // never appears itself, only what it is made of, each item with its total quantity (quantity per
 // kit × kit quantity × the chapter's systems). No positions are printed. Chapter titles stay.
+// beta 6.50: the optional subtitle of a chapter (typed under its automatic title)
+function headerSubtitle(h){ const el = h && h.querySelector && h.querySelector('.hdr-sub'); return el ? el.value.replace(/\s+/g, ' ').trim() : ''; }
 function bomDocumentRows(){
   const out = [];
   const line = (row, qty) => ({type: 'line', qty: Math.round(qty * 1000) / 1000, model: rowModelText(row).replace(/^↳\s*/, ''), code: rowCodeText(row),
@@ -9473,7 +9494,7 @@ function bomDocumentRows(){
   [...bomBody.querySelectorAll('tr[data-kind]')].forEach(r => {
     const kind = r.dataset.kind;
     if(kind === 'total' || isServicesRow(r)) return;
-    if(kind === 'header'){ out.push({type: 'header', label: r.cells[4].textContent}); return; }
+    if(kind === 'header'){ out.push({type: 'header', label: r.cells[4].textContent, subtitle: headerSubtitle(r)}); return; }
     if(isKitMember(r)) return;   // emitted through their kit line, below
     const qty = Number(bomLineQty(r)) || 0;
     if(isKitParent(r)) kitMembersOf(r.dataset.kitId).forEach(m => emit(m, (Number(rowQty(m)) || 0) * qty));
@@ -10887,7 +10908,7 @@ function duplicateBomChapter(header){
   const newHeader = addBomRow({
     kind: 'header', pos: `${nextChapterNumber()}.0`, label,
     baseModel: header.dataset.baseModel || '', cfgPos: cfgPos || undefined,
-    isCustomSection: isCustom || undefined,
+    isCustomSection: isCustom || undefined, subtitle: headerSubtitle(header) || undefined,
   }, after);
   const owner = newHeader.dataset.rowId;
   const kitMap = {};
@@ -11391,6 +11412,10 @@ async function askKeepOwnPrices(changed){
 document.getElementById('btnGenerate').addEventListener('click', ()=>{
   const savedKits = captureKitsForRegenerate();
   const savedLinePrices = captureLinePricesForRegenerate();   // beta 6.50
+  // beta 6.50: the subtitles typed under the chapter titles stay (positions by their configuration, SERVICES, sections by name)
+  const subKey = h => h.dataset.cfgPos ? `pos:${h.dataset.cfgPos}` : h.dataset.isServices === 'true' ? 'svc' : `sec:${h.cells[4].textContent}`;
+  const savedSubtitles = {};
+  bomBody.querySelectorAll('tr[data-kind="header"]').forEach(h => { const t = headerSubtitle(h); if(t) savedSubtitles[subKey(h)] = t; });
   // Preserve manually added accessories / battery configuration rows across a re-generate.
   // Keyed by the CONFIG ROW's own position (cfgPos), not by the VBA "gruppo" number — gruppo
   // only counts non-skipped rows, so it can shift when a Q.ty flips to/from zero, while cfgPos
@@ -11722,6 +11747,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         recalcGroupTotal(sectionOwner);
       });
   }
+  bomBody.querySelectorAll('tr[data-kind="header"]').forEach(h => { const t = savedSubtitles[subKey(h)]; const el = h.querySelector('.hdr-sub'); if(t && el && !el.value){ el.value = t; el.classList.add('has-text'); } });
   const ownPrices = restoreLinePricesAfterRegenerate(savedLinePrices);   // beta 6.50: before the kits take their lines back
   reapplyKitsAfterRegenerate(savedKits);
   updateBomHeaders();
@@ -14614,6 +14640,7 @@ function buildConfigState(){
     }
     if(kind === 'header'){
       item.label = r.cells[4].textContent;
+      const sub = headerSubtitle(r); if(sub) item.subtitle = sub;
     } else if(kind === 'total'){
       item.qty = r.cells[1].textContent;
     } else {
@@ -16130,6 +16157,7 @@ function buildBomPdfDoc(){
   bomDocumentRows().forEach(e=>{
     if(e.type === 'header'){
       body.push([{content: e.label, colSpan:4, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
+      if(e.subtitle) body.push([{content: e.subtitle, colSpan:4, styles:{fillColor:[255,250,234], textColor:[60,60,60], fontStyle:'italic', halign:'left'}}]);
       return;
     }
     body.push([e.qty, e.model, e.code, e.desc]);
@@ -16187,7 +16215,7 @@ function collectOfferRows(opts = {}){
     const kind = r.dataset.kind;
     if(kind === 'header'){
       currentHeaderRow = r;
-      current = {label: r.cells[4].textContent, lines: [], subtotalPrice: 0, subtotalCost: 0, configQty: configQtyFor(r), isServices: r.dataset.isServices === 'true', isCustomSection: r.dataset.isCustomSection === 'true'};
+      current = {label: r.cells[4].textContent, subtitle: headerSubtitle(r), lines: [], subtotalPrice: 0, subtotalCost: 0, configQty: configQtyFor(r), isServices: r.dataset.isServices === 'true', isCustomSection: r.dataset.isCustomSection === 'true'};
       groups.push(current);
       return;
     }
@@ -16284,6 +16312,7 @@ function buildOfferPdfDoc(withMargin){
   const body = [];
   data.groups.forEach((g, gIdx)=>{
     body.push([{content:g.label, colSpan:headCols.length, styles:{...hdrStyle, halign:'left'}}]);
+    if(g.subtitle) body.push([{content:g.subtitle, colSpan:headCols.length, styles:{fillColor:[255,255,255], textColor:[60,60,60], fontStyle:'italic', fontSize: withMargin?8.5:9.5, halign:'left'}}]);
 
     g.lines.forEach(l=>{
       const row = [l.qty, l.model, l.code, l.desc, formatMoney(l.gross), `${l.disc.toFixed(2)}%`, formatMoney(l.net), formatMoney(l.totalPrice)];
@@ -16627,6 +16656,7 @@ function buildOfferWorksheet(withMargin, opts = {}){
     xlsxMerge(ws, r, 1, r, nCols, {v: g.label, s: S.section});
     ws.heights[r] = 20;
     r++;
+    if(g.subtitle){ xlsxMerge(ws, r, 1, r, nCols, {v: g.subtitle, s: {font: {i: true, color: '404040'}, align: {v: 'top', wrap: true}}}); ws.heights[r] = 18; r++; }
     const first = r;
     g.lines.forEach(l => {
       if(l.kitLabel){
@@ -16744,6 +16774,7 @@ function buildBomWorksheet(){
       xlsxMerge(ws, r, 1, r, 4, {v: e.label, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}});
       ws.heights[r] = 19;
       r++;
+      if(e.subtitle){ xlsxMerge(ws, r, 1, r, 4, {v: e.subtitle, s: {font: {i: true, color: '404040'}, fill: 'FFFAEA', border: XLSX_GRID, align: {wrap: true}}}); ws.heights[r] = 18; r++; }
       return;
     }
     const qn = Number(e.qty);
@@ -16902,7 +16933,7 @@ function dxTable(rows, widths, o = {}){
       col += span;
       const fill = cell.fill || (isHead ? '4472C4' : '');
       const color = cell.color || (isHead ? 'FFFFFF' : '');
-      return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${span > 1 ? `<w:gridSpan w:val="${span}"/>` : ''}${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}<w:vAlign w:val="${isHead ? 'center' : 'top'}"/></w:tcPr>${dxPara(cell.text ?? '', {b: cell.b || isHead, color, sz: cell.sz || o.sz || 9, align: cell.align, after: 0})}</w:tc>`;
+      return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${span > 1 ? `<w:gridSpan w:val="${span}"/>` : ''}${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}<w:vAlign w:val="${isHead ? 'center' : 'top'}"/></w:tcPr>${dxPara(cell.text ?? '', {b: cell.b || isHead, i: cell.i, color, sz: cell.sz || o.sz || 9, align: cell.align, after: 0})}</w:tc>`;
     }).join('');
     return `<w:tr>${isHead ? '<w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>' : '<w:trPr><w:cantSplit/></w:trPr>'}${tcs}</w:tr>`;
   }).join('');
@@ -16981,6 +17012,7 @@ function buildOfferDocxBody(){
     const lines = [...bomBody.querySelectorAll(`tr[data-group-of="${owner}"]`)].filter(r => (r.dataset.kind === 'line' || r.dataset.kind === 'accessory') && !isKitMember(r));
     if(!p && !lines.length) return;   // e.g. SERVICES with only Delivery — it's in the price schedule
     out.push(dxPara(p ? `Position ${p.pos} — ${label}` : label, {style: 'Heading2'}));
+    if(headerSubtitle(h)) out.push(dxPara(headerSubtitle(h), {i: true, color: '404040'}));
     if(p){
       out.push(dxPara(`${p.qty} system${p.qty > 1 ? 's' : ''} with ${p.ups} × ${p.model} UPS (${p.conn}, ${p.config}), each equipped with ${p.npm} power modules of ${p.kw} kW (${p.heff ? 'SiC' : 'IGBT'} model), redundancy ${p.red}, for a design load of ${p.pload} kW per UPS${p.loadLevel != null ? ` (load level ${(p.loadLevel * 100).toFixed(1)}% of the available power at N)` : ''}. Batteries: ${p.batt}${document.getElementById('prjBatteryBrand').value.trim() ? ` — ${document.getElementById('prjBatteryBrand').value.trim()}` : ''}. Ventilation: ${p.vent}.`));
     }
@@ -17009,6 +17041,7 @@ function buildOfferDocxBody(){
   const prow = [['Qty', 'Item', 'Description', 'List price', 'Disc.', 'Net unit', 'Net total']];
   data.groups.forEach(g => {
     prow.push([{text: g.label, b: true, color: 'C00000', span: 7}]);
+    if(g.subtitle) prow.push([{text: g.subtitle, i: true, color: '404040', span: 7}]);
     g.lines.forEach(l => prow.push([
       {text: String(l.qty), align: 'center'}, [l.model, l.code].filter(Boolean).join('\n'), String(l.desc || ''),
       {text: money(l.gross), align: 'right'}, {text: `${l.disc.toFixed(1)}%`, align: 'right'}, {text: money(l.net), align: 'right'}, {text: money(l.totalPrice), align: 'right'},
@@ -18577,6 +18610,7 @@ function buildOfferHtmlDoc(withMargin){
   const bodyRows = [];
   data.groups.forEach((g, gIdx)=>{
     bodyRows.push(`<tr><td colspan="${colCount}" ${hdrTd}>${escapeHtml(g.label)}</td></tr>`);
+    if(g.subtitle) bodyRows.push(`<tr><td colspan="${colCount}" style="background:#FFFFFF;color:#404040;font-style:italic;">${escapeHtml(g.subtitle)}</td></tr>`);
     g.lines.forEach(l=>{
       const descHtml = escapeHtml(String(l.desc || '').replace(/\r\n?/g, '\n')).replace(/\n/g, '<br>');
       let cells = `
@@ -18879,6 +18913,7 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
   {version:'beta_6.50', date:'2026-10-26', notes:[
+    'Offer Lines: sotto il titolo automatico di ogni capitolo (posizioni UPS, SERVICES, sezioni di progetto) si può scrivere a mano un sottotitolo descrittivo, non obbligatorio — passa col mouse sulla barra blu del capitolo e clicca «+ subtitle (optional)» sotto il titolo; Invio conferma. Il sottotitolo compare in corsivo sotto il titolo in Offer PDF / Excel / Word (anche nella soluzione proposta per posizione), nelle anteprime e nella BOM PDF / Excel; si salva con l\'offerta, resta dopo Generate offer e viene copiato duplicando il capitolo',
     'Finestra Projects: ogni volta che si apre i filtri ripartono da zero (Ref., Customer, Project, Country, Owner vuoti e Status = Open, come alla prima apertura) e nessun progetto è selezionato',
     'SERVICES › finestra «Level and UPS configurations» (chip delle configurazioni o ⋯ › Level & UPS configurations…) nello stesso stile delle altre finestre: barra del titolo blu navy con icona',
     'Finestre di inserimento (Service, Technology, Battery, Accessories, Pick from Catalog): l\'area delle righe ha un\'altezza fissa pari a 6 righe (titoli delle colonne compresi) e non cambia aggiungendo righe; dalla settima riga si scorre. Anche la finestra Projects (apertura progetti) prende lo stesso stile: barra del titolo blu navy con icona, titoli delle colonne blu, riga selezionata evidenziata, Open project blu navy',

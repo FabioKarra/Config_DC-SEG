@@ -727,6 +727,7 @@ body.dark-theme .v-life i{background:#2C4370;}
         <div class="field"><label for="pf">Power factor</label><input id="pf" type="number" min="0" max="1" step=".01" placeholder="e.g. 1.00"></div>
         <div class="field"><label for="eff">UPS efficiency in battery mode (η)</label><input id="eff" type="number" min=".01" max="1" step=".001" placeholder="e.g. 0.95"><div class="settings-note">DC power to the batteries = load power / η.</div></div>
         <div class="field"><label for="pLoad">Load power (kW)</label><input id="pLoad" type="number" min="0" step="1" placeholder="= UPS rating × PF"><div class="settings-note" id="pLoadNote">Load on the UPS in battery mode. Empty = UPS rating × PF.</div></div>
+        <div class="field ai-only"><label for="upsSys">UPS per system (= UPS per IT feeder)</label><input id="upsSys" type="number" min="1" step="1" placeholder="1"><div class="settings-note" id="upsSysNote">From the UPS configuration (UPS / Sys). Empty = 1.</div></div>
         <div class="field"><label for="reqTime"><span class="li-only">Required EOL autonomy (min)</span><span class="vrla-only">Required back-up time, BUT (min)</span></label><input id="reqTime" type="number" min="0" step=".1" placeholder="e.g. 5"></div>
         <div class="field"><label for="upsVmin">UPS minimum DC voltage (V)</label><input id="upsVmin" type="number" min="0" step="1" placeholder="e.g. 380"></div>
         <div class="field"><label for="upsVmax">UPS maximum DC voltage (V)</label><input id="upsVmax" type="number" min="0" step="1" placeholder="e.g. 700"><div class="settings-note" id="vmaxNote"></div></div>
@@ -761,7 +762,7 @@ body.dark-theme .v-life i{background:#2C4370;}
           <div class="field li-only"><label for="aiAge">Ageing for AI cycling</label><input id="aiAge" type="text" readonly tabindex="-1"><div class="settings-note" id="aiAgeNote"></div></div>
           <div class="field li-only"><label for="aiSoc">Operating SOC set-point</label><input id="aiSoc" type="text" readonly tabindex="-1"><div class="settings-note" id="aiSocNote"></div></div>
         </div>
-        <p class="v-only-note">Nothing to enter here: the AI values follow from the load power, the back-up time, the rack type and the battery library (RPS AI reference design, 2 UPS per IT feeder).</p>
+        <p class="v-only-note">Nothing to enter here: the AI values follow from the load power, the back-up time, the rack type, the UPS per system of the configuration (= UPS per IT feeder) and the battery library (RPS AI reference design).</p>
       </div>
       <div class="section-label">Project &amp; report data</div>
       <div class="sp-link" id="spLinkBox">
@@ -1009,7 +1010,7 @@ const WORKSANS_BOLD_B64 = 'AAEAAAAQAQAABAAAR0RFRgmmCYcAAJccAAAAXkdQT1PUJ1QsAACXf
 </script>
 <script>
 'use strict';
-const APP_VERSION = 'v4.0';
+const APP_VERSION = 'v4.1';
 // Technical documents (PDF) — on SharePoint, in the same folder as the DC Configurator manuals
 const DOCS_BASE = 'https://rielloups.sharepoint.com/sites/DCSales2/Shared%20Documents/03_Tools/PreSales_Execution/DEF/';
 const DOCS = {
@@ -1152,7 +1153,7 @@ function calcBattery(b){
 const DEFAULTS = {mode:'AI', model:'', threeWire:'NO', rackRule:'EI', aiRack:'GB300',
   vModel:'enersys-12hx600t-fr', vBlocks:'40', vEodv:'1.67', vAge:'1.25', vMargin:'1', vLife:'10'};
 const V_NUM_DEFAULTS = {vTemp:25};   // VRLA fields start filled (the technology itself is kept)
-const NUM_FIELDS = ['upsKva','pf','eff','pLoad','reqTime','upsVmin','upsVmax','altitude','emod','vTemp','vStrings'];
+const NUM_FIELDS = ['upsKva','pf','eff','pLoad','upsSys','reqTime','upsVmin','upsVmax','altitude','emod','vTemp','vStrings'];
 const SEL_FIELDS = ['tech','mode','model','threeWire','rackRule','aiRack','vModel','vBlocks','vEodv','vAge','vMargin','vLife'];
 const TEXT_FIELDS = ['rpCustomer','rpProject','rpCountry','rpRef','rpPrepared','rpApproved','rpRev','rpRevDesc'];
 const BATT_FIELDS = {emod:'moduleEnergyEOL'};   // prefilled from the library, editable per project (the AI-duty data come from the library as they are)
@@ -1234,8 +1235,8 @@ const altitudeCheck = (I, d) => {
 function aiSizing(I, d, s1){
   const A = {};
   const S = I.upsKva*I.pf;
-  // Step 0 — racks per UPS from the load power (an IT feeder is fed by 2 UPS, so half racks per UPS are possible)
-  if(!(I.gpuFeeder > 0)) return Object.assign(A, {error:`The load power (${fmt(I.pLoadEff,0)} kW) is below half a ${I.rk.name} rack (${fmt(I.pProv/I.upsFeeder,0)} kW of provisioning per UPS).`});
+  // Step 0 — racks per UPS from the load power: an IT feeder is fed by the UPS of one system, so a rack can be shared (e.g. 6.5 racks per UPS with 2 UPS)
+  if(!(I.gpuFeeder > 0)) return Object.assign(A, {error:`The load power (${fmt(I.pLoadEff,0)} kW) is below the share of one ${I.rk.name} rack (${fmt(I.pProv/I.upsFeeder,0)} kW per UPS with ${I.upsFeeder} UPS per IT feeder).`});
   A.nGpu = I.gpuFeeder / I.upsFeeder;
   A.gpuFit = A.nGpu*I.pProv <= I.pLoadEff + 1e-9 && I.pLoadEff <= S + 1e-6;
   A.maxGpuFeeder = Math.floor(I.upsFeeder*S/I.pProv + 1e-9);
@@ -1392,12 +1393,14 @@ const AI_RACKS = {
     src:'Vera Rubin NVL72: about 190–230 kW per rack from market sources; NVIDIA has published no rack figure yet — 230 kW used, idle estimated at 25 % of the EDP, to confirm.'}
 };
 // AI load values set by the program (RPS AI reference design, Unova / Vantage GB300, Rev.01 Oct 2026): only the load power and the BUT are entered
-const AI_REF = {upsFeeder:2, duty:0.85, period:0.2, rampRate:10, agePct:15, cycles:50, socMin:55};
+const AI_REF = {duty:0.85, period:0.2, rampRate:10, agePct:15, cycles:50, socMin:55};
+const upsPerSystem = I => I._empty.has('upsSys') ? 1 : (I.upsSys >= 1 && Number.isInteger(I.upsSys) ? I.upsSys : null);
 const loadPower = I => !I._empty.has('pLoad') ? I.pLoad : (!I._empty.has('upsKva') && !I._empty.has('pf') ? I.upsKva*I.pf : NaN);   // kW per UPS
 function aiAuto(I, d){
   const rk = AI_RACKS[I.aiRack] || AI_RACKS.GB300, load = I.pLoadEff;
-  const perFeeder = isFinite(load) && load > 0 ? Math.floor(AI_REF.upsFeeder*load/rk.prov + 1e-9) : NaN;   // racks of an IT feeder fed by its 2 UPS
-  Object.assign(I, {rk, upsFeeder:AI_REF.upsFeeder, gpuFeeder:perFeeder, pProv:rk.prov, pEdp:rk.edp, pIdle:rk.idle, duty:AI_REF.duty, period:AI_REF.period,
+  const upsF = upsPerSystem(I);                       // UPS per IT feeder = UPS per system of the UPS configuration
+  const perFeeder = isFinite(load) && load > 0 && upsF ? Math.floor(upsF*load/rk.prov + 1e-9) : NaN;   // racks of an IT feeder, shared by its UPS
+  Object.assign(I, {rk, upsFeeder:upsF || 1, gpuFeeder:perFeeder, pProv:rk.prov, pEdp:rk.edp, pIdle:rk.idle, duty:AI_REF.duty, period:AI_REF.period,
     rampRate:AI_REF.rampRate, chargerMode:'AUTO', agePct:AI_REF.agePct, soc:AI_REF.socMin, cycles:'', eRated:NaN, cDis:NaN, cCh:NaN, maxParallel:null});
   if(d){
     I.eRated = d.ratedEnergy; I.cDis = d.cDis; I.cCh = d.cCh; I.maxParallel = d.maxParallel || null;
@@ -1410,8 +1413,8 @@ function renderAiAuto(I, x = {}){
   if(I.mode !== 'AI' || !I.rk) return;
   const rk = I.rk, nG = I.gpuFeeder/I.upsFeeder, has = isFinite(I.pLoadEff) && I.pLoadEff > 0;
   $('aiRackNote').textContent = rk.note;
-  $('aiRacks').value = !has ? '—' : I.gpuFeeder > 0 ? `${fmt(nG, nG % 1 ? 1 : 0)} per UPS · ${I.gpuFeeder} per IT feeder` : 'below half a rack';
-  $('aiRacksNote').textContent = has ? `${I.upsFeeder} UPS × ${fmt(I.pLoadEff,0)} kW / ${fmt(rk.prov,0)} kW per rack = ${fmt(I.upsFeeder*I.pLoadEff/rk.prov,2)} → ${I.gpuFeeder} racks per IT feeder of ${I.upsFeeder} UPS.` : 'Enter the UPS rating or the load power.';
+  $('aiRacks').value = !has || !upsPerSystem(I) ? '—' : I.gpuFeeder > 0 ? `${fmt(nG, nG % 1 ? 1 : 0)} per UPS · ${I.gpuFeeder} per IT feeder` : 'below one rack per feeder';
+  $('aiRacksNote').textContent = !upsPerSystem(I) ? 'UPS per system: enter a whole number ≥ 1.' : has ? `${I.upsFeeder} UPS × ${fmt(I.pLoadEff,0)} kW / ${fmt(rk.prov,0)} kW per rack = ${fmt(I.upsFeeder*I.pLoadEff/rk.prov,2)} → ${I.gpuFeeder} racks per IT feeder of ${I.upsFeeder} UPS.` : 'Enter the UPS rating or the load power.';
   $('aiPower').value = `${fmt(rk.prov,0)} · ${fmt(rk.edp,0)} · ${fmt(rk.idle,0)} kW`;
   $('aiProfile').value = `D ${fmt(I.duty,2)} · T ${fmt(I.period,1)} s · ${fmt(I.rampRate,0)} %/s`;
   $('aiKch').value = x.kch !== undefined && x.kch !== null ? `${fmt(x.kch*100,0)} % · ${fmt(x.kch*x.S,0)} kW` : '—';
@@ -1665,6 +1668,7 @@ function renderVrla(R){
 const REQ = [['upsKva','UPS rated power'],['pf','power factor'],['eff','UPS efficiency'],['reqTime','required autonomy'],['upsVmin','UPS min DC voltage'],['upsVmax','UPS max DC voltage'],['emod','module EOL energy']];
 // the load power entered must fit the UPS
 function loadChecks(I, invalid){
+  if(I.mode === 'AI' && !upsPerSystem(I)) invalid.push('UPS per system: a whole number ≥ 1');
   if(!I._empty.has('pLoad') && !(I.pLoad > 0)) invalid.push('load power > 0');
   else if(!I._empty.has('pLoad') && !I._empty.has('upsKva') && !I._empty.has('pf') && I.pLoad > I.upsKva*I.pf + 1e-6) invalid.push(`load power ≤ UPS rating × PF (${fmt(I.upsKva*I.pf,0)} kW)`);
 }
@@ -1859,7 +1863,7 @@ function renderNotes(R){
   if(cfg) items.push(['info', 'UPS DC window', `Racks of ${cfg.mpr} modules operate at ${fmt(cfg.vmin,1)}–${fmt(cfg.vmax,1)} V; the UPS battery window entered is ${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V — confirm it for the UPS model.`, 0]);
   if(I.mode === 'AI') items.push(['info', 'Ageing', `The base EOL ageing (${fmt(d.sohEOL*100,0)} % SOH) is already in the module EOL energy of Step 1; Step 2 adds only the extra for AI cycling.${ok && A.lifeOK ? ` With ${cycLabel(I.cycles)} the aged energy needs ${A.nMinAged} modules vs ${A.s2.total} installed (${fmt(A.s2EolAged,1)} min).` : ' No life table is stored for this battery.'}`, 1]);
   if(I.mode === 'AI') items.push(['info', 'Grid ramp rate', `The ramp rate (${fmt(I.rampRate,1)} %/s) only changes the energy cross-check, not the C-rate sizing of Step 3.`, 1]);
-  if(I.mode === 'AI') items.push(['warn', 'AI values set by the program', `Racks per UPS, rack powers, load swing, ramp rate, charger limit, extra ageing and SOC set-point come from the load power (${fmt(I.pLoadEff,0)} kW), the ${I.rk.name} rack data and the RPS AI reference design (2 UPS per IT feeder, D ${fmt(I.duty,2)}, T ${fmt(I.period,1)} s, ${fmt(I.rampRate,0)} %/s, +${fmt(I.agePct,0)} %, SOC ≥ ${AI_REF.socMin} %) — confirm them with the customer data.${I.rk.est ? ' ' + I.rk.src : ''}`, 1]);
+  if(I.mode === 'AI') items.push(['warn', 'AI values set by the program', `Racks per UPS, rack powers, load swing, ramp rate, charger limit, extra ageing and SOC set-point come from the load power (${fmt(I.pLoadEff,0)} kW), the UPS per system (${I.upsFeeder} = UPS per IT feeder), the ${I.rk.name} rack data and the RPS AI reference design (D ${fmt(I.duty,2)}, T ${fmt(I.period,1)} s, ${fmt(I.rampRate,0)} %/s, +${fmt(I.agePct,0)} %, SOC ≥ ${AI_REF.socMin} %) — confirm them with the customer data.${I.rk.est ? ' ' + I.rk.src : ''}`, 1]);
   if(I.mode === 'AI') items.push(['info', 'Power smoothing', 'Only the fast swing (duty cycle and period of the reference design) is quantified. Slow, large swings are not sized; in AI Battery Smoothing mode the charger limit causes a net SOC drift.', 1]);
   if(I.mode === 'AI' && d.info.maxChargeCurrent) items.push(['info', 'Charge current vs temperature', `${d.full}: ${d.info.maxChargeCurrent} — the ramp-down capability depends on the battery room temperature.`, 1]);
   if(d.source) items.push(['info', 'Battery data source', d.source, 0]);
@@ -2350,7 +2354,7 @@ function buildReportPdf(opts = {}){
   // ---------- 1. design input data
   doc.addPage(); y = TOP;
   section('Design input data');
-  const upsPairs = [['UPS rated power', `${n(I.upsKva,0)} kVA`], ['Power factor', n(I.pf,2)], ['Load power', `${n(I.pLoadEff,0)} kW${I._empty.has('pLoad') ? ' (UPS rating × PF)' : ''}`], ['UPS efficiency, battery mode (η)', n(I.eff,3)], ['DC power to the batteries', `${n(s1.pdc,1)} kW`],
+  const upsPairs = [['UPS rated power', `${n(I.upsKva,0)} kVA`], ['Power factor', n(I.pf,2)], ['Load power', `${n(I.pLoadEff,0)} kW${I._empty.has('pLoad') ? ' (UPS rating × PF)' : ''}`], ...(useAI ? [['UPS per system (= per IT feeder)', `${I.upsFeeder}`]] : []), ['UPS efficiency, battery mode (η)', n(I.eff,3)], ['DC power to the batteries', `${n(s1.pdc,1)} kW`],
     ['Required EOL autonomy', `${n(I.reqTime,1)} min`], ['UPS DC voltage window', `${n(I.upsVmin,0)}–${n(I.upsVmax,0)} V`], ['3-wire constraint', I.threeWire === 'YES' ? 'Yes' : 'No'], ['Altitude', `${n(I.altitude,0)} m`],
     ['Rack count rule', I.rackRule === 'EI' ? 'Energy + rack current limit' : 'Energy only'], ['Module usable energy (EOL)', `${n(I.emod,3)} kWh`]];
   if(useAI){
@@ -3125,6 +3129,7 @@ function applyConfig(x, opts = {}){
       applyBatteryToFields(b);                       // library values first …
       const vals = Object.assign({}, x); delete vals.model; delete vals.cycles;
       if(!vals.aiRack && AI_RACKS[x.vRack]) vals.aiRack = x.vRack;      // files before v4.0: the VRLA rack type (the AI values are now set by the program)
+      if(vals.upsSys === undefined && Number(x.upsFeeder || x.vUpsFeeder) >= 1) vals.upsSys = Number(x.upsFeeder || x.vUpsFeeder);   // files before v4.1: UPS per feeder = UPS per system
       if(legacy && (!x.version || x.version === '1.0')) vals.mode = 'BACKUP';
       writeInputs(vals);                             // … then the values saved in the project
       if(!AI_RACKS[$('aiRack').value]) $('aiRack').value = DEFAULTS.aiRack;
@@ -3140,7 +3145,14 @@ function applyConfig(x, opts = {}){
       refreshNotes(); calculate(); renderLibrary(); renderSpLink(); RIBBON.render();
     }
 }
-function resetTool(){ LINK = null; spLastSig = ''; clearTimeout(spTimer); clearInputs(); refreshNotes(); calculate(); renderLibrary(); renderSpLink(); RIBBON.render(); }
+function resetTool(){ LINK = null; spLastSig = ''; clearTimeout(spTimer); clearInputs(); hostUpsSys(); refreshNotes(); calculate(); renderLibrary(); renderSpLink(); RIBBON.render(); }
+// inside the DC Configurator the UPS per system comes from the position (UPS / Sys) and is not edited here
+function hostUpsSys(){
+  const n = EMBED && HOST.pos ? Math.max(1, Math.round(Number(HOST.pos.upssys) || 1)) : null;
+  $('upsSys').readOnly = n !== null;
+  if(n !== null){ $('upsSys').value = n; $('upsSysNote').textContent = `From the DC Configurator position: ${n} UPS per system = ${n} UPS per IT feeder.`; }
+  else $('upsSysNote').textContent = 'From the UPS configuration (UPS / Sys). Empty = 1.';
+}
 
 // ---------------------------------------------------------------- Microsoft 365 / SharePoint — same app registration, site and project list as the DC Configurator
 const SP_DEFAULTS = {clientId:'43e401c3-5c50-4ab1-a4b1-f66ebcbbbfc4', tenant:'d8fd0d39-8b2f-4760-af9e-84aadb8587ef', host:'rielloups.sharepoint.com', path:'/sites/DCSales2',
@@ -3613,6 +3625,7 @@ function hostInit(m){
     if(Number(p.kva) > 0) $('pf').value = 1;
     if(Number(p.pload) > 0) $('pLoad').value = p.pload;   // the load power of the configurator position (kW per UPS)
   }
+  hostUpsSys();
   const pr = HOST.project;
   LINK = pr ? {ref:String(pr.ref), customer:pr.customer || '', name:pr.name || '', country:pr.country || '', folderLink:pr.folderLink || ''} : null;
   if(pr){ $('rpRef').value = pr.ref; if(pr.customer) $('rpCustomer').value = pr.customer; if(pr.name) $('rpProject').value = pr.name; if(pr.country) $('rpCountry').value = pr.country; }

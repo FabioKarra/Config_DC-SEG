@@ -681,6 +681,58 @@ body.dark-theme .vc-col:hover, body.dark-theme table.bom tr.v-pick:hover td{back
 .vc-legend i.lg-b{background:#BDD1F0; border:1px solid var(--accent);}
 body.dark-theme .vc-col .b, body.dark-theme .v-bar .b, body.dark-theme .vc-legend i.lg-b{background:#2C4370;}
 body.dark-theme .v-life i{background:#2C4370;}
+
+/* ---- controls as in the VRLA interactive overview ---- */
+.seg{display:inline-flex; padding:3px; border:1px solid var(--field-border); border-radius:9px; background:var(--field-bg);}
+.seg button{height:34px; padding:0 14px; border:none; border-radius:7px; background:transparent; font-family:'Work Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text); cursor:pointer; white-space:nowrap;}
+.seg button[aria-pressed="true"]{background:#00257A; color:#FFFFFF;}
+.seg button:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+.seg.full{display:flex; border-radius:7px;} .seg.full button{flex:1; min-width:0; height:32px; padding:0; border-radius:5px;}
+.mode-seg{display:inline-flex; align-items:center; gap:10px; font-weight:400; letter-spacing:0; text-transform:none;}
+.mode-seg .lbl{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim);}
+.mode-seg .seg button{height:36px;}
+.rb-seg{align-self:center; margin:8px 4px 0;}
+.field .flabel{display:block; font-size:11px; font-weight:300; color:var(--dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px;}
+.field input[type=range]{padding:0; height:36px; margin:0; border:none; background:transparent; accent-color:var(--accent);}
+.field input[type=checkbox]{width:18px; height:18px; padding:0; margin:0; flex:none; accent-color:var(--accent);}
+.field.field-chk{display:flex; align-items:flex-end;}
+.field label.chk-field{display:flex; align-items:center; gap:10px; width:100%; min-height:44px; margin:0; padding:0 12px; box-sizing:border-box; border:1px solid var(--field-border); border-radius:7px; background:var(--field-bg); font-size:13px; font-weight:300; color:var(--text); text-transform:none; letter-spacing:0; cursor:pointer;}
+.settings-note.note-warn{color:#8A5200;}
+.rack-cards{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;}
+.rack-card{display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-width:190px; min-height:64px; padding:10px 14px; border:1.5px solid var(--field-border); border-radius:10px; background:var(--panel); text-align:left; font-family:'Work Sans',sans-serif; cursor:pointer;}
+.rack-card b{font-size:14px; font-weight:600; color:var(--navy);} .rack-card span{font-size:12px; font-weight:300; color:var(--text);}
+.rack-card[aria-pressed="true"]{border-color:#00257A; background:var(--accent-soft);}
+.pnl-head-r{display:inline-flex; align-items:center; gap:8px; min-width:0; font-size:12.5px; font-weight:400; letter-spacing:0; text-transform:none; color:var(--text);}
+.panel.pnl-collapsed .pnl-head-r{display:none;}
+.ev-btn{min-height:36px; padding:0 12px; border:1px solid #CBD3DF; border-radius:8px; background:var(--panel); font-family:'Work Sans',sans-serif; font-size:13px; font-weight:600; color:var(--navy); cursor:pointer; white-space:nowrap;}
+.ev-btn.on{border-color:#00257A;}
+.ai-cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px;}
+.ai-card{display:flex; flex-direction:column; gap:6px; padding:14px 16px; border:1px solid var(--panel-border); border-radius:12px; background:var(--panel); min-width:0;}
+.ai-card .hd{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.ai-card .k{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim);}
+.ai-card .nm{font-size:14px; font-weight:600; color:var(--text);} .ai-card .tt{font-size:13px; font-weight:500; color:var(--navy);} .ai-card .dt{font-size:12px; line-height:1.5; color:var(--dim);}
+body.dark-theme .seg button[aria-pressed="true"], body.dark-theme .rack-card[aria-pressed="true"]{background:#2F5597; color:#FFFFFF; border-color:#78A9FF;}
+body.dark-theme .rack-card[aria-pressed="true"] b, body.dark-theme .rack-card[aria-pressed="true"] span{color:#FFFFFF;}
+body.dark-theme .settings-note.note-warn{color:#F2C777;}
+@media (max-width:640px){ .mode-seg .lbl{display:none;} .mode-seg .seg button{padding:0 10px; font-size:12px;} .rack-card{min-width:0; flex:1 1 140px;} }
+
+/* ---- AI load (Li-ion): choosers and the usage chart ---- */
+.ai-pick{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 14px;}
+.ai-pick .flabel{font-size:11px; font-weight:300; color:var(--dim); text-transform:uppercase; letter-spacing:.06em;}
+.ai-pick .seg button{min-width:44px;}
+.ai-chart{margin:4px 0 16px; padding:14px 16px 10px; border:1px solid var(--panel-border); border-radius:14px; background:var(--panel);}
+.ai-chart svg{display:block; width:100%; height:auto;}
+.ai-chart .vc-legend i{display:inline-block; width:14px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px;}
+.ai-chart p{margin:8px 0 0; font-size:11.5px; line-height:1.5; color:var(--dim);}
+.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr));}
+@media (max-width:1100px){ .grid.g4{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media (max-width:760px){ .grid.g4{grid-template-columns:1fr;} }
+.bom td .step-no{white-space:nowrap;}
+.inp-unit{display:flex; gap:8px; align-items:stretch;}
+.inp-unit input{flex:1 1 auto; min-width:0;}
+.field .inp-unit select{flex:0 0 auto; width:auto; min-width:128px;}
+#aiBody td.num{white-space:nowrap;}
+.ai-life{display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text);}
 </style>
 </head>
 <body>
@@ -717,18 +769,18 @@ body.dark-theme .v-life i{background:#2C4370;}
 
     <!-- INPUTS -->
     <section class="panel pnl-c" id="pnlInputs" data-sum="sumInputs">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>Project &amp; UPS data</span></span>
-        <span class="pnl-tools"><span class="pnl-sum" id="sumInputs"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="inputsTitle">Project &amp; UPS data</span></span>
+        <span class="pnl-tools"><span class="mode-seg pnl-head-r"><span class="lbl">Sizing mode</span><span class="seg" role="group" aria-label="Sizing mode" id="modeSeg"><button type="button" data-mode="BACKUP" aria-pressed="false">Standard backup (BUT)</button><button type="button" data-mode="AI" aria-pressed="true">AI load</button></span></span><span class="pnl-sum" id="sumInputs"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
       <div class="grid">
-        <div class="field"><label for="tech">Battery technology</label><select id="tech"><option value="LI">Li-ion — Ampace cabinets (library)</option><option value="VRLA">VRLA — lead-acid blocks</option></select></div>
-        <div class="field"><label for="mode">Sizing mode</label><select id="mode"><option value="AI">AI load — autonomy + AI-load steps</option><option value="BACKUP">Standard backup (BUT) — autonomy only</option></select></div>
+        <div class="field hidden"><label for="tech">Battery technology</label><select id="tech"><option value="LI">Li-ion — Ampace cabinets (library)</option><option value="VRLA">VRLA — lead-acid blocks</option></select></div>
+        <div class="field hidden"><label for="mode">Sizing mode</label><select id="mode"><option value="AI">AI load — autonomy + AI-load steps</option><option value="BACKUP">Standard backup (BUT) — autonomy only</option></select></div>
         <div class="field li-only"><label for="model">Battery (library)</label><select id="model"></select><div class="settings-note"><button type="button" class="link-btn" id="lnkLibrary">Open the battery library</button> · <button type="button" class="link-btn" id="lnkAddBatt">+ Add battery</button></div></div>
         <div class="field"><label for="upsKva">UPS rated power (kVA)</label><input id="upsKva" type="number" min="0" step="1" placeholder="e.g. 1250"><div class="settings-note">Apparent power used by the sizing.</div></div>
         <div class="field"><label for="pf">Power factor</label><input id="pf" type="number" min="0" max="1" step=".01" placeholder="e.g. 1.00"></div>
         <div class="field"><label for="eff">UPS efficiency in battery mode (η)</label><input id="eff" type="number" min=".01" max="1" step=".001" placeholder="e.g. 0.95"><div class="settings-note">DC power to the batteries = load power / η.</div></div>
         <div class="field"><label for="pLoad">Load power (kW)</label><input id="pLoad" type="number" min="0" step="1" placeholder="= UPS rating × PF"><div class="settings-note" id="pLoadNote">Load on the UPS in battery mode. Empty = UPS rating × PF.</div></div>
-        <div class="field ai-only"><label for="upsSys">UPS per system (= UPS per IT feeder)</label><input id="upsSys" type="number" min="1" step="1" placeholder="1"><div class="settings-note" id="upsSysNote">From the UPS configuration (UPS / Sys). Empty = 1.</div></div>
-        <div class="field"><label for="reqTime"><span class="li-only">Required EOL autonomy (min)</span><span class="vrla-only">Required back-up time, BUT (min)</span></label><input id="reqTime" type="number" min="0" step=".1" placeholder="e.g. 5"></div>
+        <div class="field ai-only li-only"><label for="upsSys">UPS per system (= UPS per IT feeder)</label><input id="upsSys" type="number" min="1" step="1" placeholder="1"><div class="settings-note" id="upsSysNote">From the UPS configuration (UPS / Sys). Empty = 1.</div></div>
+        <div class="field"><label for="reqTime"><span class="li-only">Required EOL autonomy (min)</span><span class="vrla-only">Required BUT (min)</span></label><input id="reqTime" type="number" min="0" step=".1" placeholder="e.g. 5"><div class="settings-note" id="reqTimeNote"></div></div>
         <div class="field"><label for="upsVmin">UPS minimum DC voltage (V)</label><input id="upsVmin" type="number" min="0" step="1" placeholder="e.g. 380"></div>
         <div class="field"><label for="upsVmax">UPS maximum DC voltage (V)</label><input id="upsVmax" type="number" min="0" step="1" placeholder="e.g. 700"><div class="settings-note" id="vmaxNote"></div></div>
         <div class="field li-only"><label for="threeWire">3-wire / topology constraint</label><select id="threeWire"><option value="NO">No</option><option value="YES">Yes</option></select></div>
@@ -740,29 +792,34 @@ body.dark-theme .v-life i{background:#2C4370;}
       <div id="vrlaInputs" class="vrla-only">
         <div class="section-label">VRLA battery &amp; strings</div>
         <div class="grid">
-          <div class="field"><label for="vModel">VRLA battery</label><select id="vModel"></select><div class="settings-note" id="vModelNote"></div></div>
-          <div class="field"><label for="vBlocks">Blocks per string</label><select id="vBlocks"></select><div class="settings-note">12 V blocks: 40–48 in steps of 2 · 6 V blocks: double. Set by the UPS.</div></div>
+          <div class="field"><label for="vModel">Battery (VRLA library)</label><select id="vModel"></select><div class="settings-note" id="vModelNote"></div></div>
+          <div class="field"><span class="flabel" id="lBlocks">12 V blocks per string</span><select id="vBlocks" class="hidden" aria-hidden="true" tabindex="-1"></select><div class="seg full" role="group" aria-labelledby="lBlocks" id="vBlocksSeg"></div><div class="settings-note" id="vBlocksNote"></div></div>
           <div class="field"><label for="vEodv">End voltage (V/cell)</label><select id="vEodv"><option value="1.60">1.60 V/cell</option><option value="1.65">1.65 V/cell</option><option value="1.67">1.67 V/cell</option><option value="1.70">1.70 V/cell</option><option value="1.75">1.75 V/cell</option></select><div class="settings-note" id="vEodvNote"></div></div>
-          <div class="field"><label for="vTemp">Battery room temperature (°C)</label><input id="vTemp" type="number" min="-10" max="50" step="1" placeholder="25"><div class="settings-note" id="vTempNote"></div></div>
-          <div class="field"><label for="vAge">Ageing</label><select id="vAge"><option value="1.25">Size for end of life — 80 % capacity (× 1.25)</option><option value="1">New battery (× 1.00)</option></select></div>
           <div class="field"><label for="vMargin">Design margin</label><select id="vMargin"><option value="1">None (UPS at full rating)</option><option value="1.1">+10 %</option><option value="1.15">+15 %</option></select></div>
+          <div class="field"><label for="vTemp">Battery room temperature · <span id="vTempVal">25</span> °C</label><input id="vTemp" type="range" min="10" max="40" step="1" value="25"><div class="settings-note" id="vTempNote"></div></div>
           <div class="field"><label for="vLife">Design life at 20 °C (Eurobat)</label><select id="vLife"><option value="5">3–5 years · standard commercial</option><option value="8">6–9 years · general purpose</option><option value="10">10–12 years · long life</option><option value="12">&gt; 12 years · very long life</option></select></div>
-          <div class="field"><label for="vStrings">Strings in parallel</label><input id="vStrings" type="number" min="1" step="1" placeholder="recommended"><div class="settings-note">Empty = recommended; or click the chart or a row.</div></div>
+          <div class="field field-chk"><label class="chk-field" for="vAge"><input id="vAge" type="checkbox" checked>Size for end of life (80 % capacity)</label></div>
+          <div class="field hidden"><label for="vStrings">Strings in parallel</label><input id="vStrings" type="number" min="1" step="1"></div>
         </div>
       </div>
-      <div id="aiInputs" class="ai-only">
-        <div class="section-label">AI load — calculated by the program</div>
-        <div class="grid">
-          <div class="field"><label for="aiRack">AI rack type</label><select id="aiRack"><option value="GB200">NVIDIA GB200 NVL72</option><option value="GB300">NVIDIA GB300 NVL72</option><option value="VR">NVIDIA Vera Rubin NVL72</option></select><div class="settings-note" id="aiRackNote"></div></div>
-          <div class="field"><label for="aiRacks">AI racks per UPS</label><input id="aiRacks" type="text" readonly tabindex="-1"><div class="settings-note" id="aiRacksNote"></div></div>
-          <div class="field"><label for="aiPower">Power per rack</label><input id="aiPower" type="text" readonly tabindex="-1"><div class="settings-note" id="aiPowerNote">Provisioning · peak (EDP) · idle.</div></div>
-          <div class="field"><label for="aiProfile">Load swing and grid ramp</label><input id="aiProfile" type="text" readonly tabindex="-1"><div class="settings-note" id="aiProfileNote">Duty cycle · swing period · ramp rate (RTE grid code).</div></div>
-          <div class="field"><label for="aiKch">UPS charger limit</label><input id="aiKch" type="text" readonly tabindex="-1"><div class="settings-note" id="aiKchNote"></div></div>
-          <div class="field li-only"><label for="aiBatt">Battery for AI duty (library)</label><input id="aiBatt" type="text" readonly tabindex="-1"><div class="settings-note" id="aiBattNote"></div></div>
-          <div class="field li-only"><label for="aiAge">Ageing for AI cycling</label><input id="aiAge" type="text" readonly tabindex="-1"><div class="settings-note" id="aiAgeNote"></div></div>
-          <div class="field li-only"><label for="aiSoc">Operating SOC set-point</label><input id="aiSoc" type="text" readonly tabindex="-1"><div class="settings-note" id="aiSocNote"></div></div>
+      <div id="aiInputs" class="ai-only li-only">
+        <div class="section-label">AI load — ramps</div>
+        <div class="grid g4">
+          <div class="field"><label for="rampUp">Ramp-up — power</label><div class="inp-unit"><input id="rampUp" type="number" min="0" step="any" placeholder="100"><select id="rampUpUnit" aria-label="Ramp-up power unit"><option value="PCT">% of the load</option><option value="KW">kW (fixed)</option></select></div><div class="settings-note" id="rampUpNote"></div></div>
+          <div class="field"><label for="rampUpT">Ramp-up — time (s)</label><input id="rampUpT" type="number" min="0" step="any" placeholder="10"><div class="settings-note" id="rampUpTNote"></div></div>
+          <div class="field"><label for="rampDn">Ramp-down — power</label><div class="inp-unit"><input id="rampDn" type="number" min="0" step="any" placeholder="100"><select id="rampDnUnit" aria-label="Ramp-down power unit"><option value="PCT">% of the load</option><option value="KW">kW (fixed)</option></select></div><div class="settings-note" id="rampDnNote"></div></div>
+          <div class="field"><label for="rampDnT">Ramp-down — time (s)</label><input id="rampDnT" type="number" min="0" step="any" placeholder="10"><div class="settings-note" id="rampDnTNote"></div></div>
         </div>
-        <p class="v-only-note">Nothing to enter here: the AI values follow from the load power, the back-up time, the rack type, the UPS per system of the configuration (= UPS per IT feeder) and the battery library (RPS AI reference design).</p>
+        <div class="section-label">AI racks — maximum installable (indication)</div>
+        <select id="aiRack" class="hidden" aria-hidden="true" tabindex="-1"><option value="GB200">NVIDIA GB200 NVL72</option><option value="GB300">NVIDIA GB300 NVL72</option><option value="VR">NVIDIA Vera Rubin NVL72</option></select>
+        <div class="rack-cards" role="group" aria-label="AI rack type" id="aiRackCards"></div>
+        <div class="grid">
+          <div class="field"><label for="aiRacks">Max AI racks installable</label><input id="aiRacks" type="text" readonly tabindex="-1"><div class="settings-note" id="aiRacksNote"></div></div>
+          <div class="field"><label for="aiKch">UPS charger limit</label><input id="aiKch" type="text" readonly tabindex="-1"><div class="settings-note" id="aiKchNote"></div></div>
+          <div class="field"><label for="aiBatt">Battery for AI duty (library)</label><input id="aiBatt" type="text" readonly tabindex="-1"><div class="settings-note" id="aiBattNote"></div></div>
+          <div class="field"><label for="aiSoc">SOC set-point — extra reserve</label><input id="aiSoc" type="text" readonly tabindex="-1"><div class="settings-note" id="aiSocNote"></div></div>
+        </div>
+        <p class="v-only-note"><span id="aiRackNote"></span> The racks are only an indication: the AI sizing uses the ramp power and times above.</p>
       </div>
       <div class="section-label">Project &amp; report data</div>
       <div class="sp-link" id="spLinkBox">
@@ -784,13 +841,13 @@ body.dark-theme .v-life i{background:#2C4370;}
 
     <!-- VRLA — STEP 1 -->
     <section class="panel pnl-c vrla-only" id="pnlVStep1">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEP 1</span><span>VRLA strings — back-up time</span></span>
-        <span class="pnl-tools"><span class="pnl-sum" id="sumVStep1"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEP 1</span><span>Strings in parallel — back-up time</span></span>
+        <span class="pnl-tools"><span class="pnl-head-r" id="vS1Head"></span><span class="pnl-sum" id="sumVStep1"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
       <div class="kpis">
         <div class="kpi"><div class="k">DC power</div><div class="v" id="vkPdc">—</div><div class="s">to the batteries</div></div>
         <div class="kpi"><div class="k">Load per cell</div><div class="v" id="vkWreq">—</div><div class="s" id="vkWreqS"></div></div>
         <div class="kpi"><div class="k">One string gives</div><div class="v" id="vkWt">—</div><div class="s" id="vkWtS"></div></div>
-        <div class="kpi hl"><div class="k">Strings × blocks</div><div class="v" id="vkStr">—</div><div class="s" id="vkStrS"></div></div>
+        <div class="kpi hl"><div class="k">Strings</div><div class="v" id="vkStr">—</div><div class="s" id="vkStrS"></div></div>
         <div class="kpi"><div class="k">BUT, new battery</div><div class="v" id="vkTB">—</div><div class="s">beginning of life</div></div>
         <div class="kpi"><div class="k">BUT, end of life</div><div class="v" id="vkTE">—</div><div class="s" id="vkTES"></div></div>
       </div>
@@ -799,6 +856,7 @@ body.dark-theme .v-life i{background:#2C4370;}
         <div class="v-cfg">
           <div class="vc-head"><span class="vc-title">Configurations</span><button type="button" class="st-act" id="vCfgAuto" hidden>Back to recommended</button></div>
           <div class="table-wrap"><table class="bom" style="min-width:640px"><thead><tr><th>Strings</th><th class="num">Blocks</th><th class="num">Weight</th><th class="num">New (min)</th><th class="num">End of life (min)</th><th class="num">I string</th><th>Result</th></tr></thead><tbody id="vCfgBody"></tbody></table></div>
+          <p class="vc-cap" style="margin:10px 0 0">Times in minutes. * = outside the datasheet range, extrapolated. I string = current of one string at the end voltage.</p>
         </div>
       </div>
       <div class="card-hint" id="vStep1Note"></div>
@@ -808,25 +866,16 @@ body.dark-theme .v-life i{background:#2C4370;}
     <!-- VRLA — END VOLTAGE OF THE CHOSEN CONFIGURATION -->
     <section class="panel pnl-c vrla-only" id="pnlVEnd">
       <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>End voltage — chosen configuration</span></span>
-        <span class="pnl-tools"><span class="pnl-sum" id="sumVEnd"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
-      <p class="settings-note" id="vEndHead" style="margin:0 0 10px"></p>
-      <div class="table-wrap"><table class="bom" style="min-width:760px"><thead><tr><th>End voltage</th><th class="num">String</th><th class="num">Strings needed</th><th>Back-up time of the chosen strings</th><th class="num">New / end of life (min)</th><th>Result</th></tr></thead><tbody id="vEndBody"></tbody></table></div>
-      <div class="card-hint">Bars: light = new battery, dark = end of life, red line = required back-up time. “Strings needed” is what each end voltage would require. Click a row to set that end voltage — it is set in the UPS.</div>
+        <span class="pnl-tools"><span class="pnl-head-r" id="vEndHead"></span><span class="pnl-sum" id="sumVEnd"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+      <div class="table-wrap"><table class="bom" style="min-width:760px"><thead><tr><th>End voltage</th><th class="num">String</th><th class="num">Strings needed</th><th>BUT of the chosen strings (new · end of life)</th><th class="num">End of life</th><th>Result</th></tr></thead><tbody id="vEndBody"></tbody></table></div>
+      <div class="card-hint">Same battery, blocks, temperature and ageing as above. Bars: back-up time of the <span id="vEndN">chosen</span> strings (light = new, dark = end of life), red line = required BUT. “Strings needed” is what each end voltage would require. Click a row to apply that end voltage — it is set in the UPS.</div>
     </section>
 
     <!-- VRLA — RECHARGE, VENTILATION, LIFE -->
     <section class="panel pnl-c vrla-only" id="pnlVSite">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>Recharge · ventilation · service life</span></span>
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>Recharge · ventilation · service life<span id="vSiteN"></span></span></span>
         <span class="pnl-tools"><span class="pnl-sum" id="sumVSite"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
       <div class="v-cards" id="vSite"></div>
-    </section>
-
-    <!-- VRLA — AI LOAD LIMITS (page only) -->
-    <section class="panel pnl-c vrla-only vrla-ai-only" id="pnlVAI">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEPS 0 · 3 · 4</span><span>AI load — VRLA limits</span></span>
-        <span class="pnl-tools"><span class="pnl-sum" id="sumVAI"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
-      <ul class="note-list" id="vAiList"></ul>
-      <p class="v-only-note">These limits set themselves from the settings above. They are notes on this page only and are not printed in the report.</p>
     </section>
 
     <!-- BATTERY LIBRARY -->
@@ -851,16 +900,21 @@ body.dark-theme .v-life i{background:#2C4370;}
 
     <!-- STEP 1 -->
     <section class="panel pnl-c li-only" id="pnlStep1">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEP 1</span><span>Autonomy — configuration matrix</span></span>
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEP 1</span><span>Standard BUT — autonomy</span></span>
         <span class="pnl-tools"><span class="pnl-sum" id="sumStep1"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
       <div class="kpis">
         <div class="kpi"><div class="k">DC power</div><div class="v" id="kPdc">—<small>kW</small></div></div>
         <div class="kpi"><div class="k">Min. modules (energy)</div><div class="v" id="kNmin">—</div></div>
         <div class="kpi"><div class="k">Valid configs</div><div class="v" id="kValid">—</div></div>
-        <div class="kpi hl"><div class="k">Recommended</div><div class="v" id="kRec">—</div></div>
+        <div class="kpi hl"><div class="k">Selected</div><div class="v" id="kRec">—</div></div>
         <div class="kpi"><div class="k">EOL autonomy</div><div class="v" id="kTime">—<small>min</small></div></div>
         <div class="kpi"><div class="k">Rack current</div><div class="v" id="kCurrent">—<small>A</small></div></div>
       </div>
+      <div class="vc-head"><span class="vc-title">Choose the BUT configuration — from the minimum up</span><button type="button" class="st-act" id="butAuto" hidden>Back to the minimum</button></div>
+      <input id="butSel" type="text" class="hidden" aria-hidden="true" tabindex="-1">
+      <div class="card-hint" id="butMinNote" style="margin:0 0 10px"></div>
+      <div class="table-wrap"><table class="bom" style="min-width:780px"><thead><tr><th>Option</th><th class="num">Racks × modules</th><th class="num">Total modules</th><th class="num">EOL time</th><th class="num">BOL time</th><th class="num">I rack</th><th class="num">V min–max</th></tr></thead><tbody id="butBody"></tbody></table></div>
+      <div class="vc-head" style="margin-top:20px"><span class="vc-title">Configuration matrix — minimum racks for each modules / rack (Ampace logic)</span></div>
       <div class="table-wrap">
         <table class="bom" id="configTable" style="min-width:1100px"><thead><tr>
           <th>Configuration</th><th class="num">Modules / rack</th><th class="num">Racks</th><th>Driver</th><th class="num">Total modules</th>
@@ -874,27 +928,26 @@ body.dark-theme .v-life i{background:#2C4370;}
 
     <!-- STEPS 0, 2–5 -->
     <section class="panel pnl-c li-only" id="pnlAI">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEPS 0 · 2–5</span><span>AI load sizing</span></span>
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEPS 0 · 3 · 5</span><span>AI load — standard BUT + ramps</span></span>
         <span class="pnl-tools"><span class="pnl-sum" id="sumAI"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
       <div class="kpis">
-        <div class="kpi"><div class="k">AI racks per UPS</div><div class="v" id="aGpu">—</div><div class="s" id="aGpuS"></div></div>
-        <div class="kpi"><div class="k">Battery power / rack</div><div class="v" id="aPb">—<small>kW</small></div><div class="s">EDP at the battery</div></div>
-        <div class="kpi"><div class="k">Autonomy + ageing</div><div class="v" id="aS2">—</div><div class="s" id="aS2S"></div></div>
-        <div class="kpi"><div class="k">Ramp cabinets</div><div class="v" id="aRamp">—</div><div class="s" id="aRampS"></div></div>
+        <div class="kpi"><div class="k">Max AI racks / UPS</div><div class="v" id="aGpu">—</div><div class="s" id="aGpuS"></div></div>
+        <div class="kpi"><div class="k">Ramp-up · discharged</div><div class="v" id="aUp">—</div><div class="s" id="aUpS"></div></div>
+        <div class="kpi"><div class="k">Ramp-down · charged</div><div class="v" id="aDn">—</div><div class="s" id="aDnS"></div></div>
+        <div class="kpi"><div class="k">Min. modules ramps</div><div class="v" id="aMin">—</div><div class="s" id="aMinS"></div></div>
         <div class="kpi hl"><div class="k">Total per UPS</div><div class="v" id="aTot">—</div><div class="s" id="aTotS"></div></div>
         <div class="kpi hl"><div class="k">Total per IT feeder</div><div class="v" id="aFeed">—</div><div class="s" id="aFeedS"></div></div>
       </div>
+      <div class="card-hint" id="aiMinNote" style="margin:0 0 12px"></div>
+      <div class="ai-pick"><span class="flabel" id="lAiCab">AI cabinets — from the minimum up</span><div class="seg" role="group" aria-labelledby="lAiCab" id="aiCabSeg"></div><input id="aiCab" type="number" class="hidden" aria-hidden="true" tabindex="-1"></div>
+      <figure class="ai-chart" id="aiChart" style="margin:0 0 16px"></figure>
       <div class="table-wrap">
         <table class="bom" style="min-width:900px"><thead><tr>
           <th>Step</th><th>Condition</th><th>Result</th><th class="num">Per UPS</th><th class="num">Per IT feeder</th>
         </tr></thead><tbody id="aiBody"></tbody></table>
       </div>
-      <div class="two-col" style="margin-top:12px">
-        <div class="card-hint" id="rampCross"></div>
-        <div class="card-hint" id="smoothCross"></div>
-      </div>
+      <div class="card-hint" id="rampCross" style="margin-top:12px"></div>
     </section>
-
     <!-- STEP 6 -->
     <section class="panel pnl-c" id="pnlVerify">
       <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no" id="verifyStepNo">STEP 6</span><span>Engineering verification</span></span>
@@ -994,6 +1047,7 @@ body.dark-theme .v-life i{background:#2C4370;}
       <span class="settings-note" id="previewMsg" style="margin-right:auto; align-self:center;"></span>
       <button type="button" class="btn-ghost act" id="btnPreviewCancel">Close</button>
       <button type="button" class="act btn-primary" id="btnPreviewCopy" style="display:none;">⧉ Copy image</button>
+      <button type="button" class="btn-ghost act" id="btnPreviewWord" title="Editable Word version of this report">⬇ Word (editable)</button>
       <button type="button" class="act btn-primary" id="btnPreviewDownload">⬇ Download PDF</button>
     </div>
   </div>
@@ -1010,7 +1064,7 @@ const WORKSANS_BOLD_B64 = 'AAEAAAAQAQAABAAAR0RFRgmmCYcAAJccAAAAXkdQT1PUJ1QsAACXf
 </script>
 <script>
 'use strict';
-const APP_VERSION = 'v4.1';
+const APP_VERSION = 'v5.0';
 // Technical documents (PDF) — on SharePoint, in the same folder as the DC Configurator manuals
 const DOCS_BASE = 'https://rielloups.sharepoint.com/sites/DCSales2/Shared%20Documents/03_Tools/PreSales_Execution/DEF/';
 const DOCS = {
@@ -1150,12 +1204,12 @@ function calcBattery(b){
 }
 
 // ---------------------------------------------------------------- project inputs (the page starts empty)
-const DEFAULTS = {mode:'AI', model:'', threeWire:'NO', rackRule:'EI', aiRack:'GB300',
-  vModel:'enersys-12hx600t-fr', vBlocks:'40', vEodv:'1.67', vAge:'1.25', vMargin:'1', vLife:'10'};
+const DEFAULTS = {mode:'AI', model:'', threeWire:'NO', rackRule:'EI', aiRack:'GB300', rampUpUnit:'PCT', rampDnUnit:'PCT',
+  vModel:'enersys-12hx600t-fr', vBlocks:'40', vEodv:'1.67', vMargin:'1', vLife:'10'};
 const V_NUM_DEFAULTS = {vTemp:25};   // VRLA fields start filled (the technology itself is kept)
-const NUM_FIELDS = ['upsKva','pf','eff','pLoad','upsSys','reqTime','upsVmin','upsVmax','altitude','emod','vTemp','vStrings'];
-const SEL_FIELDS = ['tech','mode','model','threeWire','rackRule','aiRack','vModel','vBlocks','vEodv','vAge','vMargin','vLife'];
-const TEXT_FIELDS = ['rpCustomer','rpProject','rpCountry','rpRef','rpPrepared','rpApproved','rpRev','rpRevDesc'];
+const NUM_FIELDS = ['upsKva','pf','eff','pLoad','upsSys','reqTime','upsVmin','upsVmax','altitude','emod','rampUp','rampUpT','rampDn','rampDnT','aiCab','vTemp','vStrings'];
+const SEL_FIELDS = ['tech','mode','model','threeWire','rackRule','aiRack','rampUpUnit','rampDnUnit','vModel','vBlocks','vEodv','vMargin','vLife'];
+const TEXT_FIELDS = ['rpCustomer','rpProject','rpCountry','rpRef','rpPrepared','rpApproved','rpRev','rpRevDesc','butSel'];
 const BATT_FIELDS = {emod:'moduleEnergyEOL'};   // prefilled from the library, editable per project (the AI-duty data come from the library as they are)
 let LAST = null;   // last calculation result
 
@@ -1171,18 +1225,25 @@ function readInputs(){
   NUM_FIELDS.forEach(id => { const raw = String($(id).value).trim(); if(raw === '') I._empty.add(id); I[id] = Number(raw); });
   SEL_FIELDS.forEach(id => I[id] = $(id).value);
   TEXT_FIELDS.forEach(id => I[id] = $(id).value.trim());
+  I.vAge = $('vAge').checked ? '1.25' : '1';          // size for end of life (80 % capacity)
   return I;
 }
 function writeInputs(x){
   NUM_FIELDS.forEach(id => { if(x[id] !== undefined && x[id] !== null) $(id).value = x[id]; });
   SEL_FIELDS.forEach(id => { if(x[id] !== undefined && x[id] !== null) $(id).value = String(x[id]); });
   TEXT_FIELDS.forEach(id => { if(x[id] !== undefined && x[id] !== null) $(id).value = String(x[id]); });
+  if(x.vAge !== undefined && x.vAge !== null) $('vAge').checked = Number(x.vAge) > 1;
+  syncRampUnits();
 }
+const syncRampUnits = () => ['rampUpUnit', 'rampDnUnit'].forEach(id => $(id).dataset.prev = $(id).value);   // the unit the ramp values are written in
 function clearInputs(){
   NUM_FIELDS.forEach(id => $(id).value = ''); TEXT_FIELDS.forEach(id => $(id).value = '');
   populateBatterySelect('');
   Object.entries(DEFAULTS).forEach(([k, v]) => $(k).value = v);
   Object.entries(V_NUM_DEFAULTS).forEach(([k, v]) => $(k).value = v);
+  Object.entries(AI_REF.ramp).forEach(([k, v]) => $(k).value = v);
+  syncRampUnits();
+  $('vAge').checked = true;
   vBlocksOptions(vBattById($('vModel').value), $('vBlocks').value);
   vEodvOptions(vBattById($('vModel').value), $('vEodv').value);
 }
@@ -1210,19 +1271,31 @@ function rackEval(mpr, racks, I, d, pdc){
 }
 const byBest = (a, b) => a.total - b.total || a.racks - b.racks || a.mpr - b.mpr;
 
+const sameCfg = (a, b) => !!a && !!b && a.racks === b.racks && a.mpr === b.mpr;
 function step1(I, d){
   const pdc = I.pLoadEff/I.eff;
   const nmin = Math.ceil(pdc*I.reqTime/(60*I.emod) - 1e-9);
+  const racksFor = mpr => { const rE = Math.max(1, Math.ceil(nmin/mpr - 1e-9)), rI = Math.ceil(pdc*1000/(mpr*d.cells*d.cellVmin*d.currentLimit) - 1e-9); return {rE, rI, racks: I.rackRule === 'EI' ? Math.max(rE, rI) : rE}; };
   const rows = d.rackOptions.map(mpr => {
-    const racksE = Math.max(1, Math.ceil(nmin/mpr - 1e-9));
-    const racksI = Math.ceil(pdc*1000/(mpr*d.cells*d.cellVmin*d.currentLimit) - 1e-9);
-    const racks = I.rackRule === 'EI' ? Math.max(racksE, racksI) : racksE;
-    const r = rackEval(mpr, racks, I, d, pdc);
-    r.driver = (I.rackRule === 'EI' && racksI > racksE) ? 'Current' : 'Energy';
+    const m = racksFor(mpr), r = rackEval(mpr, m.racks, I, d, pdc);
+    r.driver = (I.rackRule === 'EI' && m.rI > m.rE) ? 'Current' : 'Energy';
     return r;
   });
   const valid = rows.filter(r => r.finalOK).sort(byBest);
-  return {pdc, nmin, rows, valid, rec: valid[0] || null};
+  const min = valid[0] || null;
+  // the configurations offered, from the minimum up: for each modules-per-rack option its minimum racks and three more
+  let opts = [];
+  d.rackOptions.forEach(mpr => { const r0 = racksFor(mpr).racks; for(let k = r0; k <= r0 + 3; k++){ const r = rackEval(mpr, k, I, d, pdc); if(r.finalOK) opts.push(sameCfg(r, min) ? min : r); } });
+  opts.sort(byBest); opts = opts.slice(0, 10);
+  const m = /^(\d+)\s*[x×]\s*(\d+)$/i.exec(String(I.butSel || '').trim());
+  let pick = null;
+  if(m && min){
+    const R = +m[1], M = +m[2];
+    if(d.rackOptions.includes(M) && R >= racksFor(M).racks){ const r = rackEval(M, R, I, d, pdc); if(r.finalOK) pick = opts.find(o => sameCfg(o, r)) || r; }
+    if(pick && !opts.includes(pick)) opts.push(pick);
+  }
+  const chosen = !!pick && !sameCfg(pick, min);
+  return {pdc, nmin, rows, valid, min, opts, chosen, rec: chosen ? pick : min, racksFor};
 }
 
 const altitudeCheck = (I, d) => {
@@ -1233,104 +1306,99 @@ const altitudeCheck = (I, d) => {
 
 // ---------------------------------------------------------------- Steps 0, 2–6 (AI-load methodology)
 function aiSizing(I, d, s1){
-  const A = {};
-  const S = I.upsKva*I.pf;
-  // Step 0 — racks per UPS from the load power: an IT feeder is fed by the UPS of one system, so a rack can be shared (e.g. 6.5 racks per UPS with 2 UPS)
-  if(!(I.gpuFeeder > 0)) return Object.assign(A, {error:`The load power (${fmt(I.pLoadEff,0)} kW) is below the share of one ${I.rk.name} rack (${fmt(I.pProv/I.upsFeeder,0)} kW per UPS with ${I.upsFeeder} UPS per IT feeder).`});
-  A.nGpu = I.gpuFeeder / I.upsFeeder;
-  A.gpuFit = A.nGpu*I.pProv <= I.pLoadEff + 1e-9 && I.pLoadEff <= S + 1e-6;
-  A.maxGpuFeeder = Math.floor(I.upsFeeder*S/I.pProv + 1e-9);
-  A.pb = I.pEdp / I.eff;
-  A.upsLoad = A.nGpu*I.pEdp / S;
-  A.kch = I.chargerMode === 'AUTO' ? (A.upsLoad <= 0.80 ? 0.30 : 0.20) : Number(I.chargerMode)/100;
-  // Step 2 — extra ageing for AI cycling (the base EOL ageing is already in E_mod)
-  A.kAge = 1 + I.agePct/100;
+  const A = {}, S = I.upsKva*I.pf, but = s1.rec;
+  A.but = but; A.mpr = but.mpr;
+  // Step 0 — maximum AI racks installable: an indication from the load power, the rack type and the UPS per system
+  A.nGpuMax = I.gpuFeeder > 0 ? I.gpuFeeder/I.upsFeeder : 0;
+  A.upsLoad = I.pLoadEff/S;
+  A.kch = A.upsLoad <= 0.80 ? 0.30 : 0.20;
+  A.pChMax = A.kch*S;
+  // Step 3 — ramps at the battery (P / η): power criterion (capacity for the C-rate) and energy criterion (linear ramp, P · T / 2)
+  A.pUp = I.pRampUp/I.eff; A.pDn = I.pRampDn/I.eff;
+  A.cUp = A.pUp/I.cDis; A.eUp = A.pUp*I.rampUpT/2/3600; A.capUp = Math.max(A.cUp, A.eUp);
+  A.cDn = A.pDn/I.cCh;  A.eDn = A.pDn*I.rampDnT/2/3600; A.capDn = Math.max(A.cDn, A.eDn);
+  A.gov = A.capUp >= A.capDn ? 'up' : 'down';
+  A.cap = Math.max(A.capUp, A.capDn);
+  A.nAiMin = Math.ceil(A.cap/I.eRated - 1e-9);
+  // Step 5 — the larger of the standard BUT and the ramps (cabinets with the modules per rack of the BUT racks: one DC bus), then the SOC set-point as extra reserve
+  A.socF = AI_REF.soc/100;
+  A.nCabBut = but.racks; A.nCabRamp = Math.ceil(A.nAiMin/A.mpr - 1e-9);
+  A.nCabGov = Math.max(A.nCabBut, A.nCabRamp); A.govBy = A.nCabRamp > A.nCabBut ? 'ramp' : 'but';
+  A.nCabMin = Math.ceil(A.nCabGov/A.socF - 1e-9);
+  A.nCab = Number.isInteger(I.aiCab) && I.aiCab >= A.nCabMin ? I.aiCab : A.nCabMin;
+  A.aiChosen = A.nCab !== A.nCabMin;
+  A.nCabAi = A.nCab - A.nCabBut;          // cabinets above the standard BUT (ramps and SOC reserve)
+  A.nFeeder = A.nCab*I.upsFeeder; A.nModTot = A.nCab*A.mpr;
+  A.eCab = A.mpr*I.eRated; A.eInst = A.nModTot*I.eRated; A.eEol = A.nModTot*I.emod;
+  A.final = rackEval(A.mpr, A.nCab, I, d, s1.pdc);
+  // life table (information): capacity left after AI cycling at the maximum cycles of the reference design
   A.lifeOK = I.cycles !== '' && d.life[I.cycles] !== undefined;
   A.sohPred = A.lifeOK ? d.life[I.cycles]/100 : d.sohEOL;
-  A.kReq = d.sohEOL / A.sohPred;
-  A.agedRatio = Math.min(1, A.sohPred / d.sohEOL);
-  A.nMinAged = Math.ceil(s1.nmin*A.kReq - 1e-9);
-  A.nReq = Math.ceil(s1.rec.total*A.kAge - 1e-9);
-  A.s2 = null;
-  for(let R = s1.rec.racks; R <= s1.rec.racks + 40 && !A.s2; R++){
-    const need = Math.ceil(A.nReq/R - 1e-9);
-    const opt = d.rackOptions.filter(m => m >= need).map(m => rackEval(m, R, I, d, s1.pdc)).filter(x => x.voltageOK && x.currentOK && x.threeWireOK && x.timeOK);
-    if(opt.length) A.s2 = opt[0];
-  }
-  if(!A.s2) return Object.assign(A, {error:'No module/rack combination reaches the ageing requirement within the UPS DC window.'});
-  A.kReal = A.s2.total / s1.rec.total;
-  A.s2EolAged = A.s2.eol * A.agedRatio;
-  // Step 3 — ramps
-  A.eCab = A.s2.mpr * I.eRated;
-  A.eUp = A.pb / I.cDis;
-  A.eDown = A.kch*A.pb / I.cCh;
-  A.eRampGpu = Math.max(A.eUp, A.eDown);
-  A.rampGov = A.eUp >= A.eDown ? 'ramp-up (discharge C-rate)' : 'ramp-down (charge C-rate)';
-  A.eRamp = A.nGpu * A.eRampGpu;
-  A.nRamp = Math.ceil(A.eRamp/A.eCab - 1e-9);
-  A.dP = A.pb - I.pIdle/I.eff;
-  A.tUp = (A.dP/A.pb) / (I.rampRate/100);
-  A.eUpEnergy = A.nGpu*A.dP*A.tUp/2/3600;
-  A.tDown = A.kch / (I.rampRate/100);
-  A.eDownEnergy = A.nGpu*A.kch*A.pb*A.tDown/2/3600;
-  A.eInst2 = A.s2.total * I.eRated;
-  A.cUpBol = A.nGpu*A.pb / A.eInst2; A.cUpEol = A.cUpBol/d.sohEOL;
-  A.chAccept2 = I.cCh*A.eInst2;
-  // datasheet sensitivity (continuous values from the library)
-  if(d.dsCDis && d.dsCCh){
-    const eUp = A.pb/d.dsCDis, eDn = A.kch*A.pb/d.dsCCh;
-    A.dsRamp = Math.ceil(A.nGpu*Math.max(eUp, eDn)/A.eCab - 1e-9);
-    A.dsEGpu = Math.max(eUp, eDn);
-  }
-  // Step 4 — smoothing
-  A.pAvg = I.duty*I.pEdp + (1-I.duty)*I.pIdle;
-  A.eDisKJ = (I.pEdp - A.pAvg)*I.duty*I.period;
-  A.eChKJ = (A.pAvg - I.pIdle)*(1-I.duty)*I.period;
-  A.eSmoothUps = A.nGpu*A.eDisKJ/3600;
-  A.spare = A.s2.total*I.emod - s1.pdc*I.reqTime/60;
-  A.nSmooth = A.eSmoothUps <= A.spare ? 0 : Math.ceil((A.eSmoothUps - A.spare)/A.eCab - 1e-9);
-  A.PmaxU = A.nGpu*A.pb; A.PminU = A.nGpu*I.pIdle/I.eff; A.PavgU = I.duty*A.PmaxU + (1-I.duty)*A.PminU;
-  A.pChMax = A.kch*S;
-  A.drift = I.duty*(A.PmaxU - A.PavgU) - (1-I.duty)*Math.min(A.PavgU - A.PminU, A.pChMax);
-  A.pLim0 = (A.PavgU - A.PminU <= A.pChMax) ? A.PavgU : A.PmaxU - (1-I.duty)*A.pChMax/I.duty;
-  A.gridTrough = A.PminU + Math.min(A.PavgU - A.PminU, A.pChMax);
-  // Step 5 — total
-  A.mpr = A.s2.mpr;
-  A.nCab = A.s2.racks + A.nRamp + A.nSmooth;
-  A.nFeeder = A.nCab * I.upsFeeder;
-  A.nModTot = A.nCab * A.mpr;
-  A.eInst = A.nModTot * I.eRated;
-  A.eEol = A.nModTot * I.emod;
-  A.final = rackEval(A.mpr, A.nCab, I, d, s1.pdc);
-  // Step 6 — operating SOC set-point: the reference 55 %, raised (5 % steps) when the BUT needs more from the set-point
-  A.tFull = A.eEol / s1.pdc * 60;
-  A.socNeed = 100*I.reqTime/(A.tFull*A.agedRatio);
-  I.soc = Math.min(100, Math.max(AI_REF.socMin, Math.ceil(A.socNeed/5 - 1e-9)*5));
-  A.socRaised = I.soc > AI_REF.socMin;
-  // Step 6 — checks
-  A.tSoc = (I.soc/100)*A.eEol / s1.pdc * 60;
-  A.band = (I.soc/100)*A.eEol - s1.pdc*I.reqTime/60;
-  A.driftHours = A.drift > 0 ? Math.max(0, A.band)/A.drift : Infinity;
-  const C = [];
-  C.push({k:'Step 0', name:`${I.rk.short} racks per UPS`, st: A.gpuFit ? 'ok' : 'bad', title: `${fmt(A.nGpu,1)} × ${fmt(I.pProv,0)} kW = ${fmt(A.nGpu*I.pProv,0)} kW`, detail: `Load ${fmt(I.pLoadEff,0)} kW · UPS ${fmt(S,0)} kW · ${I.gpuFeeder} racks per IT feeder of ${I.upsFeeder} UPS`});
-  if(I.maxParallel) C.push({k:'Step 5', name:'Cabinets in parallel', st: A.nCab < I.maxParallel ? 'ok' : A.nCab === I.maxParallel ? 'warn' : 'bad', title: `${A.nCab} / ${I.maxParallel} per UPS`, detail: A.nCab === I.maxParallel ? 'At the limit — no spare position' : A.nCab > I.maxParallel ? 'Exceeds the parallel limit' : 'Within the parallel limit'});
+  A.agedRatio = Math.min(1, A.sohPred/d.sohEOL);
+  // Step 6 — the battery works at the SOC set-point
+  I.soc = AI_REF.soc;
+  A.tFull = A.eEol/s1.pdc*60; A.tSoc = A.socF*A.tFull; A.tSocAged = A.tSoc*A.agedRatio;
+  A.head = (1 - A.socF)*A.eInst;
+  const C = [], rk = I.rk;
+  C.push({k:'Step 0', name:'Max AI racks installable', st:'info', title: A.nGpuMax ? `${fmt(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0)} × ${rk.short} per UPS` : 'Below one rack per feeder', detail:`${I.gpuFeeder || 0} per IT feeder of ${I.upsFeeder} UPS · ${fmt(rk.prov,0)} kW provisioning per rack · indication only`});
+  if(I.maxParallel) C.push({k:'Step 5', name:'Cabinets in parallel', st: A.nCab < I.maxParallel ? 'ok' : A.nCab === I.maxParallel ? 'warn' : 'bad', title: `${A.nCab} / ${I.maxParallel} per UPS`, detail: A.nCab === I.maxParallel ? 'At the limit — no spare position' : A.nCab > I.maxParallel ? 'Exceeds the parallel limit: review the ramp steps or the battery' : 'Within the parallel limit'});
   else C.push({k:'Step 5', name:'Cabinets in parallel', st:'info', title:`${A.nCab} per UPS`, detail:'Parallel limit not specified for this battery'});
   C.push({k:'Step 6', name:'UPS DC window', st: A.final.voltageOK ? 'ok' : 'bad', title: `${fmt(A.final.vmin,1)}–${fmt(A.final.vmax,1)} V`, detail: `UPS ${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V`});
-  const pw = A.nModTot*d.modulePower;
-  C.push({k:'Step 6', name:'Discharge power', st: pw >= s1.pdc ? 'ok' : 'bad', title: `${fmt(pw,0)} kW ≥ ${fmt(s1.pdc,0)} kW`, detail: `${A.nModTot} modules × ${d.modulePower} kW`});
+  const pw = A.nModTot*d.modulePower, pNeed = Math.max(s1.pdc, A.pUp);
+  C.push({k:'Step 6', name:'Discharge power', st: pw >= pNeed ? 'ok' : 'bad', title: `${fmt(pw,0)} kW ≥ ${fmt(pNeed,0)} kW`, detail: `${A.nModTot} modules × ${d.modulePower} kW`});
   C.push({k:'Step 6', name:'Rack current at full load', st: A.final.currentOK ? 'ok' : 'bad', title: `${fmt(A.final.current,0)} A ≤ ${d.currentLimit} A`, detail: `${A.nCab} racks sharing ${fmt(s1.pdc,0)} kW`});
-  const need = A.kch*S;
-  C.push({k:'Step 6', name:'Charge acceptance', st: I.cCh*A.eInst >= need ? 'ok' : 'bad', title: `${fmt(I.cCh*A.eInst,0)} kW ≥ ${fmt(need,0)} kW`, detail: `${fmt(I.cCh,1)}C × ${fmt(A.eInst,0)} kWh vs charger ${fmt(A.kch*100,0)} %`});
-  A.tSocAged = A.tSoc * A.agedRatio;
-  C.push({k:'Step 6', name:'Autonomy at SOC set-point', st: A.tSocAged >= I.reqTime ? 'ok' : 'bad', title: `${fmt(A.tSoc,1)} min ≥ ${fmt(I.reqTime,1)} min`, detail: `${fmt(I.soc,0)} % × ${fmt(A.eEol,0)} kWh EOL usable · ${fmt(A.tSocAged,1)} min with AI ageing`});
-  const head = (1 - I.soc/100)*A.eInst;
-  C.push({k:'Step 6', name:'Ramp-down headroom', st: head >= A.eDownEnergy ? 'ok' : 'bad', title: `${fmt(head,0)} kWh free`, detail: `ramp-down energy ${fmt(A.eDownEnergy,2)} kWh per UPS`});
-  if(A.lifeOK) C.push({k:'Step 2', name:'Autonomy after AI ageing', st: A.s2EolAged >= I.reqTime - 1e-9 ? 'ok' : 'bad', title: `${fmt(A.s2EolAged,1)} min ≥ ${fmt(I.reqTime,1)} min`, detail: `${cycLabel(I.cycles)}: SOH ${fmt(A.sohPred*100,0)} % vs ${fmt(d.sohEOL*100,0)} % in Step 1 · energy needs ${A.nMinAged} of ${A.s2.total} modules`});
-  else C.push({k:'Step 2', name:'Autonomy after AI ageing', st:'info', title:'No life table', detail:'Add the SOH life table to this battery in the library'});
-  C.push({k:'Step 4', name:'Smoothing-mode drift', st: A.drift > 0 ? 'warn' : 'ok', title: A.drift > 0 ? `Net discharge ${fmt(A.drift,0)} kW` : 'No net drift', detail: A.drift > 0 ? `≈ ${fmt(A.driftHours,1)} h above the backup reserve · zero drift at ${fmt(A.pLim0,0)} kW input` : 'Charger covers the troughs'});
+  C.push({k:'Step 6', name:'Ramp-up C-rate', st: A.pUp <= I.cDis*A.eInst + 1e-9 ? 'ok' : 'bad', title:`${fmt(A.pUp/A.eInst,2)}C ≤ ${fmt(I.cDis,1)}C`, detail:`${fmt(A.pUp,0)} kW on ${fmt(A.eInst,0)} kWh rated · ${fmt(A.eUp,2)} kWh discharged`});
+  C.push({k:'Step 6', name:'Ramp-down charge acceptance', st: I.cCh*A.eInst >= A.pDn - 1e-9 ? 'ok' : 'bad', title:`${fmt(I.cCh*A.eInst,0)} kW ≥ ${fmt(A.pDn,0)} kW`, detail:`${fmt(I.cCh,1)}C × ${fmt(A.eInst,0)} kWh rated · ${fmt(A.eDn,2)} kWh charged`});
+  const chOK = A.pDn <= A.pChMax + 1e-6;
+  C.push({k:'Step 6', name:'UPS charger vs ramp-down', st: chOK ? 'ok' : 'warn', title:`${fmt(A.pDn,0)} kW ${chOK ? '≤' : '>'} ${fmt(A.pChMax,0)} kW`, detail: chOK ? `Charger limit ${fmt(A.kch*100,0)} % of the UPS rating` : `The charger (${fmt(A.kch*100,0)} % of the UPS rating) limits the ramp-down: confirm the ramp-down step with Riello`});
+  C.push({k:'Step 6', name:`Autonomy at ${AI_REF.soc} % SOC`, st: A.tSoc >= I.reqTime - 1e-9 ? 'ok' : 'bad', title:`${fmt(A.tSoc,1)} min ≥ ${fmt(I.reqTime,1)} min`, detail:`${AI_REF.soc} % × ${fmt(A.eEol,0)} kWh EOL usable at ${fmt(s1.pdc,0)} kW`});
+  C.push({k:'Step 6', name:'Ramp-down headroom', st: A.head >= A.eDn ? 'ok' : 'bad', title:`${fmt(A.head,0)} kWh free`, detail:`${100 - AI_REF.soc} % of ${fmt(A.eInst,0)} kWh rated · ${fmt(A.eDn,2)} kWh charged in the ramp-down`});
+  if(A.lifeOK) C.push({k:'Life', name:'Autonomy after AI cycling', st: A.tSocAged >= I.reqTime - 1e-9 ? 'ok' : 'warn', title:`${fmt(A.tSocAged,1)} min ≥ ${fmt(I.reqTime,1)} min`, detail:`${cycLabel(I.cycles)}: SOH ${fmt(A.sohPred*100,0)} % vs ${fmt(d.sohEOL*100,0)} % at EOL · from ${AI_REF.soc} % SOC`});
+  C.push({k:'Life', name:'Expected life in AI duty', st:'warn', title:`≈ ${AI_REF.lifeYears} years`, detail:'Indicative: ramps and power smoothing cycle the battery — to be verified and confirmed by the manufacturer'});
   C.push(altitudeCheck(I, d));
   A.checks = C;
   return A;
+}
+
+// the use of the UPS with an AI load, for the chart: ramp-up, power smoothing, ramp-down (time not to scale)
+function aiProfile(I){
+  const P = I.pLoadEff, L0 = Math.max(0, P - I.pRampUp), L1 = Math.max(0, P - I.pRampDn), lo = P*0.85, D = 0.85, avg = D*P + (1 - D)*lo;
+  const tm = Math.max(I.rampUpT, I.rampDnT, 1e-9), w = t => 110 + 170*Math.min(1, Math.max(0, t)/tm);   // ramp length ∝ ramp time
+  const up0 = 60, up1 = up0 + w(I.rampUpT), dn1 = 940, dn0 = dn1 - w(I.rampDnT);
+  const X = {up0, up1, sm0:up1 + 25, sm1:dn0 - 25, dn0, dn1, end:1000};
+  const load = x => x < X.up0 ? L0 : x < X.sm0 ? P : x < X.sm1 ? (((x - X.sm0) % 40) < 34 ? P : lo) : x < X.dn0 ? P : L1;
+  const grid = x => x < X.up0 ? L0 : x < X.up1 ? L0 + (P - L0)*(x - X.up0)/(X.up1 - X.up0) : x < X.sm0 ? P : x < X.sm1 ? avg : x < X.dn0 ? P : x < X.dn1 ? P - (P - L1)*(x - X.dn0)/(X.dn1 - X.dn0) : L1;
+  const xs = []; for(let x = 0; x <= X.end; x += 1) xs.push(x);
+  [X.up0, X.sm0, X.sm1, X.dn0].forEach(x => xs.push(x - 0.01));
+  for(let x = X.sm0; x < X.sm1; x += 40){ xs.push(x + 33.99, x + 39.99); }
+  xs.sort((a, b) => a - b);
+  return {P, L0, L1, X, pts: xs.map(x => ({x, l:load(x), g:grid(x), b:load(x) - grid(x)}))};
+}
+function aiChartSvg(I, A){
+  const pr = aiProfile(I), X = pr.X, W = 1000, T0 = 52, T1 = 186, B0 = 222, B1 = 330;
+  const pmax = pr.P*1.08 || 1, ys = v => T1 - v/pmax*(T1 - T0);
+  const bmax = Math.max(pr.P - pr.L0, pr.P - pr.L1, pr.P*0.16, 1)*1.12, bm = (B0 + B1)/2, yb = v => bm - v/bmax*(B1 - B0)/2;
+  const path = (f, y) => pr.pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${y(f(p)).toFixed(1)}`).join(' ');
+  const area = sign => `M0 ${bm} ` + pr.pts.map(p => `L${p.x.toFixed(1)} ${yb(sign > 0 ? Math.max(0, p.b) : Math.min(0, p.b)).toFixed(1)}`).join(' ') + ` L${W} ${bm} Z`;
+  const band = (x0, x1, fill, l1, l2) => `<rect x="${x0}" y="6" width="${x1 - x0}" height="${B1 - 6}" style="fill:${fill}"/><text x="${(x0 + x1)/2}" y="21" text-anchor="middle" style="font-size:12px;font-weight:600;fill:var(--accent-dark)">${l1}</text>${l2 ? `<text x="${(x0 + x1)/2}" y="36" text-anchor="middle" style="font-size:11px;fill:var(--accent-dark)">${l2}</text>` : ''}`;
+  const kw = v => `${fmt(v,0)} kW`;
+  return `<svg viewBox="0 0 ${W} 360" role="img" aria-label="Use of the UPS with an AI load: ramp-up, power smoothing and ramp-down — load, UPS input and battery power" style="font-family:'Work Sans',sans-serif">
+    ${band(X.up0, X.up1, 'rgba(68,114,196,.09)', 'Ramp-up', `${I.upS} · ${fmt(I.rampUpT,0)} s`)}
+    ${band(X.sm0, X.sm1, 'rgba(118,126,140,.08)', 'Training — power smoothing', '(illustrative)')}
+    ${band(X.dn0, X.dn1, 'rgba(232,163,61,.12)', 'Ramp-down', `${I.dnS} · ${fmt(I.rampDnT,0)} s`)}
+    <line x1="0" y1="${T1}" x2="${W}" y2="${T1}" style="stroke:var(--field-border)"/><line x1="0" y1="${bm}" x2="${W}" y2="${bm}" style="stroke:#C9CFD8"/>
+    <text x="4" y="${ys(pr.P) - 5}" style="font-size:11px;fill:var(--dim)">${kw(pr.P)}</text>
+    <path d="${path(p => p.l, ys)}" style="fill:none;stroke:var(--navy);stroke-width:2.2"/>
+    <path d="${path(p => p.g, ys)}" style="fill:none;stroke:#E00034;stroke-width:2;stroke-dasharray:6 4"/>
+    <path d="${area(1)}" style="fill:rgba(68,114,196,.55);stroke:none"/>
+    <path d="${area(-1)}" style="fill:rgba(232,163,61,.75);stroke:none"/>
+    <text x="4" y="${B0 + 4}" style="font-size:11px;fill:var(--dim)">Battery: + discharge</text><text x="4" y="${B1 + 4}" style="font-size:11px;fill:var(--dim)">− charge</text>
+    <text x="${X.up1 + 8}" y="${B0 + 8}" style="font-size:12px;font-weight:600;fill:var(--navy)">${fmt(A.eUp,2)} kWh discharged</text>
+    <text x="${X.up1 + 8}" y="${B0 + 23}" style="font-size:11px;fill:var(--dim)">peak ${kw(A.pUp)} at the battery</text>
+    <text x="${X.dn0 - 8}" y="${B1 - 14}" text-anchor="end" style="font-size:12px;font-weight:600;fill:#8A5200">${fmt(A.eDn,2)} kWh charged</text>
+    <text x="${X.dn0 - 8}" y="${B1 + 1}" text-anchor="end" style="font-size:11px;fill:var(--dim)">peak ${kw(A.pDn)} into the battery</text>
+    <text x="${W - 4}" y="354" text-anchor="end" style="font-size:11px;fill:var(--dim)">ramp lengths in proportion to the ramp times · training not to scale</text>
+  </svg>`;
 }
 
 // ---------------------------------------------------------------- VRLA (lead-acid) sizing — constant power method (IEEE 1184 / IEEE 485 practice)
@@ -1385,23 +1453,33 @@ const vBattName = b => `${b.manufacturer} ${b.model}`;
 const vKg = kg => isFinite(kg) ? `${fmt(kg/1000, 1)} t` : '— t';
 // AI racks: provisioning power fixes how many racks a UPS can feed, the peak (EDP) is what the battery sees on a load step
 const AI_RACKS = {
-  GB200:{name:'GB200 NVL72', short:'GB200', prov:192, edp:132, idle:33, est:true, note:'Peak to confirm (HPE: 132 kW TDP, ≈ 192 kW busway peak) · idle estimated.',
+  GB200:{name:'GB200 NVL72', short:'GB200', sub:'132 kW TDP · 192 kW EDP peak', prov:192, edp:132, idle:33, est:true, note:'Peak to confirm (HPE: 132 kW TDP, ≈ 192 kW busway peak) · idle estimated.',
     src:'GB200 NVL72: 132 kW TDP nominal and about 192 kW EDP peak for the busway (HPE). The peak seen by the battery is to confirm; idle power estimated at 25 % of the EDP as for GB300 (39 / 155 kW).'},
-  GB300:{name:'GB300 NVL72', short:'GB300', prov:192, edp:155, idle:39, est:false, note:'Riello GB300 reference design (Unova / Vantage).',
+  GB300:{name:'GB300 NVL72', short:'GB300', sub:'155 kW EDP · 192 kW provisioning', prov:192, edp:155, idle:39, est:false, note:'Riello GB300 reference design (Unova / Vantage).',
     src:'GB300 NVL72: 155 kW EDP, 39 kW idle and 192 kW provisioning per rack (Riello GB300 reference design).'},
-  VR:{name:'Vera Rubin NVL72', short:'Vera Rubin', prov:230, edp:230, idle:58, est:true, note:'Estimate: NVIDIA has published no rack figure yet.',
+  VR:{name:'Vera Rubin NVL72', short:'Vera Rubin', sub:'≈ 190–230 kW per rack (estimate)', prov:230, edp:230, idle:58, est:true, note:'Estimate: NVIDIA has published no rack figure yet.',
     src:'Vera Rubin NVL72: about 190–230 kW per rack from market sources; NVIDIA has published no rack figure yet — 230 kW used, idle estimated at 25 % of the EDP, to confirm.'}
 };
 // AI load values set by the program (RPS AI reference design, Unova / Vantage GB300, Rev.01 Oct 2026): only the load power and the BUT are entered
-const AI_REF = {duty:0.85, period:0.2, rampRate:10, agePct:15, cycles:50, socMin:55};
+const AI_REF = {cycles:50, soc:80, lifeYears:5, ramp:{rampUp:100, rampUpT:10, rampDn:100, rampDnT:10}};   // SOC set-point = extra reserve; life in AI duty to confirm with the manufacturer
 const upsPerSystem = I => I._empty.has('upsSys') ? 1 : (I.upsSys >= 1 && Number.isInteger(I.upsSys) ? I.upsSys : null);
 const loadPower = I => !I._empty.has('pLoad') ? I.pLoad : (!I._empty.has('upsKva') && !I._empty.has('pf') ? I.upsKva*I.pf : NaN);   // kW per UPS
 function aiAuto(I, d){
   const rk = AI_RACKS[I.aiRack] || AI_RACKS.GB300, load = I.pLoadEff;
   const upsF = upsPerSystem(I);                       // UPS per IT feeder = UPS per system of the UPS configuration
   const perFeeder = isFinite(load) && load > 0 && upsF ? Math.floor(upsF*load/rk.prov + 1e-9) : NaN;   // racks of an IT feeder, shared by its UPS
-  Object.assign(I, {rk, upsFeeder:upsF || 1, gpuFeeder:perFeeder, pProv:rk.prov, pEdp:rk.edp, pIdle:rk.idle, duty:AI_REF.duty, period:AI_REF.period,
-    rampRate:AI_REF.rampRate, chargerMode:'AUTO', agePct:AI_REF.agePct, soc:AI_REF.socMin, cycles:'', eRated:NaN, cDis:NaN, cCh:NaN, maxParallel:null});
+  Object.assign(I, {rk, upsFeeder:upsF || 1, gpuFeeder:perFeeder, pProv:rk.prov, soc:AI_REF.soc, cycles:'', eRated:NaN, cDis:NaN, cCh:NaN, maxParallel:null});
+  // ramps: power in % of the load or fixed kW, and time — entered (defaults if left empty)
+  const RD = AI_REF.ramp;
+  if(I._empty.has('rampUp')){ I.rampUp = RD.rampUp; I.rampUpUnit = 'PCT'; }
+  if(I._empty.has('rampDn')){ I.rampDn = RD.rampDn; I.rampDnUnit = 'PCT'; }
+  if(I._empty.has('rampUpT')) I.rampUpT = RD.rampUpT;
+  if(I._empty.has('rampDnT')) I.rampDnT = RD.rampDnT;
+  const rp = (v, u) => u === 'KW' ? v : v/100*load;
+  I.pRampUp = rp(I.rampUp, I.rampUpUnit); I.pRampDn = rp(I.rampDn, I.rampDnUnit);   // at the load
+  const sh = (v, u) => u === 'KW' ? `${fmt(v,0)} kW` : `${fmt(v,0)} %`, lg = (v, u, kw) => u === 'KW' ? `${fmt(v,0)} kW (fixed)` : `${fmt(v,0)} % of the load (${fmt(kw,0)} kW)`;
+  I.upS = sh(I.rampUp, I.rampUpUnit); I.dnS = sh(I.rampDn, I.rampDnUnit);
+  I.upL = lg(I.rampUp, I.rampUpUnit, I.pRampUp); I.dnL = lg(I.rampDn, I.rampDnUnit, I.pRampDn);
   if(d){
     I.eRated = d.ratedEnergy; I.cDis = d.cDis; I.cCh = d.cCh; I.maxParallel = d.maxParallel || null;
     const keys = Object.keys(d.life).map(Number).sort((a, b) => a - b);   // life check at 50 ramp cycles a day (the maximum of the reference design)
@@ -1409,22 +1487,29 @@ function aiAuto(I, d){
   }
   return I;
 }
+function renderRackCards(){
+  const cur = $('aiRack').value;
+  $('aiRackCards').innerHTML = Object.entries(AI_RACKS).map(([k, r]) => `<button type="button" class="rack-card" data-rack="${k}" aria-pressed="${k === cur}"><b>${esc(r.name)}</b><span>${esc(r.sub)}</span></button>`).join('');
+}
 function renderAiAuto(I, x = {}){
   if(I.mode !== 'AI' || !I.rk) return;
   const rk = I.rk, nG = I.gpuFeeder/I.upsFeeder, has = isFinite(I.pLoadEff) && I.pLoadEff > 0;
-  $('aiRackNote').textContent = rk.note;
+  $('aiRackNote').textContent = rk.src;
   $('aiRacks').value = !has || !upsPerSystem(I) ? '—' : I.gpuFeeder > 0 ? `${fmt(nG, nG % 1 ? 1 : 0)} per UPS · ${I.gpuFeeder} per IT feeder` : 'below one rack per feeder';
   $('aiRacksNote').textContent = !upsPerSystem(I) ? 'UPS per system: enter a whole number ≥ 1.' : has ? `${I.upsFeeder} UPS × ${fmt(I.pLoadEff,0)} kW / ${fmt(rk.prov,0)} kW per rack = ${fmt(I.upsFeeder*I.pLoadEff/rk.prov,2)} → ${I.gpuFeeder} racks per IT feeder of ${I.upsFeeder} UPS.` : 'Enter the UPS rating or the load power.';
-  $('aiPower').value = `${fmt(rk.prov,0)} · ${fmt(rk.edp,0)} · ${fmt(rk.idle,0)} kW`;
-  $('aiProfile').value = `D ${fmt(I.duty,2)} · T ${fmt(I.period,1)} s · ${fmt(I.rampRate,0)} %/s`;
   $('aiKch').value = x.kch !== undefined && x.kch !== null ? `${fmt(x.kch*100,0)} % · ${fmt(x.kch*x.S,0)} kW` : '—';
-  $('aiKchNote').textContent = I.tech === 'VRLA' ? 'Set by the charge acceptance of the strings (0.25 C10 or the datasheet maximum).' : '20 % of the UPS rating, 30 % when the UPS load is ≤ 80 %.';
+  $('aiKchNote').textContent = '20 % of the UPS rating, 30 % when the UPS load is ≤ 80 %.';
   $('aiBatt').value = I.eRated > 0 && I.cDis > 0 && I.cCh > 0 ? `${fmt(I.cDis,1)}C / ${fmt(I.cCh,1)}C · ${fmt(I.eRated,3)} kWh` : 'missing in the library';
   $('aiBattNote').textContent = `Ramp C-rate discharge / charge · rated energy per module${I.maxParallel ? ` · max ${I.maxParallel} cabinets in parallel` : ''}.`;
-  $('aiAge').value = `+${fmt(I.agePct,0)} %${I.cycles !== '' ? ` · life check at ${cycLabel(I.cycles)}` : ''}`;
-  $('aiAgeNote').textContent = I.cycles !== '' ? '80 % residual capacity at year 10, max 50 ramp cycles a day (reference design).' : 'No life table for this battery: the +15 % only.';
-  $('aiSoc').value = x.soc !== undefined && x.soc !== null ? `${fmt(x.soc,0)} %` : `≥ ${fmt(AI_REF.socMin,0)} %`;
-  $('aiSocNote').textContent = x.socRaised ? `Raised above ${AI_REF.socMin} % so the BUT is still met from the set-point.` : 'Reference 55–60 %: room for the ramps and for the back-up.';
+  $('aiSoc').value = `${AI_REF.soc} %`;
+  $('aiSocNote').textContent = `The battery works at ${AI_REF.soc} % SOC: the larger of standard BUT and ramps is divided by ${fmt(AI_REF.soc/100,2)}.`;
+  const ok = has && I.eff > 0 && isFinite(I.pRampUp) && isFinite(I.pRampDn), pu = I.pRampUp/I.eff, pd = I.pRampDn/I.eff;
+  const at = (kw, u) => u === 'KW' ? '' : `${fmt(kw,0)} kW at the load · `;
+  const slope = (kw, t) => t > 0 ? `Slope ${fmt(kw/t,1)} kW/s (${fmt(kw/I.pLoadEff/t*100,1)} %/s of the load)` : 'Step (no ramp time)';
+  $('rampUpNote').textContent = ok ? `${at(I.pRampUp, I.rampUpUnit)}${fmt(pu,0)} kW at the battery (/η) · ${fmt(pu*I.rampUpT/2/3600,2)} kWh discharged` : '% of the load power or a fixed kW value.';
+  $('rampDnNote').textContent = ok ? `${at(I.pRampDn, I.rampDnUnit)}${fmt(pd,0)} kW into the battery (/η) · ${fmt(pd*I.rampDnT/2/3600,2)} kWh charged` : '% of the load power or a fixed kW value.';
+  $('rampUpTNote').textContent = ok ? `${slope(I.pRampUp, I.rampUpT)} — the grid follows, the battery covers the rest.` : 'Time the grid takes to follow the ramp; the battery covers the rest.';
+  $('rampDnTNote').textContent = ok ? `${slope(I.pRampDn, I.rampDnT)} — the grid follows, the battery absorbs the rest.` : 'Time the grid takes to follow the ramp; the battery absorbs the rest.';
 }
 // IEEE 485 capacity factors (vented cells, 25 °C reference) — an indication below 25 °C; above 25 °C no extra capacity is counted
 const V_KT = [[10,1.19],[12.8,1.15],[15.6,1.11],[18.3,1.08],[20,1.056],[21.1,1.04],[22.2,1.029],[23.9,1.011],[25,1]];
@@ -1457,6 +1542,16 @@ function vBlocksOptions(vb, keep){
   const mult = vb && vb.vBlock === 6 ? 2 : 1, vBlk = vb ? vb.vBlock : 12;
   $('vBlocks').innerHTML = [40, 42, 44, 46, 48].map(v => `<option value="${v}">${v*mult} × ${vBlk} V blocks · ${v*6} cells</option>`).join('');
   $('vBlocks').value = [40, 42, 44, 46, 48].includes(Number(keep)) ? String(Number(keep)) : '40';
+  $('lBlocks').textContent = `${vBlk} V blocks per string`;
+  $('vBlocksSeg').innerHTML = [40, 42, 44, 46, 48].map(v => `<button type="button" data-vblk="${v}" aria-pressed="false" aria-label="${v*mult} blocks of ${vBlk} V, ${v*6} cells">${v*mult}</button>`).join('');
+  syncSegs();
+}
+// pressed state of the segmented controls from the values they stand for
+function syncSegs(){
+  document.querySelectorAll('#vBlocksSeg [data-vblk]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vblk === $('vBlocks').value)));
+  const vr = $('tech').value === 'VRLA', effMode = vr ? 'BACKUP' : $('mode').value;
+  document.querySelectorAll('#modeSeg [data-mode]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.mode === effMode)); b.disabled = vr && b.dataset.mode === 'AI'; b.title = b.disabled ? 'AI load sizing is for Li-ion batteries only' : ''; });
+  document.querySelectorAll('#aiRackCards [data-rack]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.rack === $('aiRack').value)));
 }
 
 function vrlaSizing(I){
@@ -1498,27 +1593,7 @@ function vrlaSizing(I){
   C.push(isFinite(qb) ? {k:'Site', name:'Ventilation (IEC 62485-2)', st:'info', title:`${fmt(qb,1)} m³/h boost`, detail:`${fmt(qf,1)} m³/h in float · ${fmt(cells,0)} cells`}
                       : {k:'Site', name:'Ventilation (IEC 62485-2)', st:'warn', title:'C10 not in the datasheet', detail:'Ask the manufacturer for the Ah capacity to size the ventilation'});
   C.push(altitudeCheck(I, {altitudeMax:null}));
-  // AI load (notes on the page only — they are not printed in the report)
-  let ai = null;
-  if(I.mode === 'AI'){
-    const rk = I.rk, prov = I.pProv, edp = I.pEdp, upsF = I.upsFeeder;
-    const perFeeder = I.gpuFeeder > 0 ? I.gpuFeeder : 0, nGpu = perFeeder/upsF;
-    const pb = edp/I.eff, up = nGpu*pb, load = nGpu*edp;
-    const iAcc = isFinite(c10) ? (vb.maxCh > 0 ? Math.min(0.25*c10, vb.maxCh) : 0.25*c10) : (vb.maxCh > 0 ? vb.maxCh : NaN), accept = N*iAcc*vb.fV*n/1000;
-    const kStd = load/S <= 0.80 ? 0.30 : 0.20, kMax = accept/S, accKnown = isFinite(accept);
-    const kch = accKnown ? Math.max(0, Math.min(kStd, Math.floor(kMax*100 + 1e-9)/100)) : kStd;
-    const period = I.period, cyc = 86400/period;
-    const notes = [
-      {c:perFeeder ? 'ok' : 'bad', t:'AI racks per UPS', x:perFeeder ? `${fmt(nGpu, nGpu % 1 ? 1 : 0)} × ${rk.name} per UPS (${perFeeder} per IT feeder with ${upsF} UPS) — set from the load power: ${upsF} × ${fmt(I.pLoadEff,0)} kW / ${fmt(prov,0)} kW provisioning per rack.` : `The ${fmt(prov,0)} kW provisioning of one rack is above what ${upsF} UPS with ${fmt(I.pLoadEff,0)} kW of load each can feed.`},
-      {c:up <= pdc + 1e-9 ? 'ok' : 'warn', t:'Ramp-up', x:`${fmt(up,0)} kW at the battery on the load step (${fmt(nGpu,1)} × ${fmt(pb,1)} kW): ${up <= pdc + 1e-9 ? 'within' : 'above'} the ${fmt(pdc,0)} kW the strings deliver for the back-up time.`},
-      accKnown ? {c:kch < kStd ? 'warn' : 'ok', t:'UPS charger limit', x:`Set to ${fmt(kch*100,0)} % of the UPS rating (${fmt(kch*S,0)} kW): ${N} strings accept ${fmt(accept,0)} kW at ${fmt(iAcc,1)} A per string (${isFinite(c10) ? '0.25 C10' : 'datasheet maximum'}${vb.maxCh > 0 && isFinite(c10) ? `, datasheet maximum ${vb.maxCh} A` : ''}).${kch < kStd ? ` Lower than the ${fmt(kStd*100,0)} % standard setting: the ramp-down of the AI load is absorbed more slowly.` : ''}`}
-               : {c:'warn', t:'UPS charger limit', x:`Left at the ${fmt(kStd*100,0)} % standard setting: the datasheet of ${vBattName(vb)} gives neither the Ah capacity nor the maximum charge current, so the charge acceptance of the strings cannot be checked — confirm it with the manufacturer.`},
-      {c:'bad', t:'Power smoothing', x:`Not available with VRLA: a ${fmt(period,2)} s power swing means about ${fmt(cyc,0)} micro-cycles per day, which age AGM blocks prematurely. Use Li-ion or supercapacitors for AI power smoothing.`},
-      {c:'info', t:'Ageing from AI cycles', x:'Cycle life versus depth of discharge (IEC 60896-21/22 §6.13) is needed from the manufacturer — it is not in the standard datasheet.'},
-      {c:'info', t:'Rack data', x:rk.src}
-    ];
-    ai = {rk, prov, edp, upsF, perFeeder, nGpu, pb, up, load, iAcc, accept, kStd, kch, period, cyc, notes};
-  }
+  const ai = null;   // AI load sizing is for Li-ion only
   return {vb, vf, eod, W, T:TT, b12, mult, blocks, cellsPerBlock, n, S, pdc, tReq, temp, kT, kAge, km, life, wreq, wt, nReq, N, manual, R, rows, ev, vEnd, vFloat, vBoost, site, outRange, checks:C, ai};
 }
 
@@ -1568,7 +1643,7 @@ function renderPendingVrla(I, missing, invalid){
   $('vChart').innerHTML = '<div class="empty-row">The chart appears when the sizing is complete.</div>';
   $('vCfgBody').innerHTML = '<tr><td colspan="7" class="empty-row">Enter the UPS data to size the strings.</td></tr>';
   $('vEndBody').innerHTML = '<tr><td colspan="6" class="empty-row">—</td></tr>';
-  ['vStep1Note','vSite','vAiList'].forEach(id => $(id).innerHTML = '');
+  ['vStep1Note','vSite','vS1Head','vEndHead','vSiteN'].forEach(id => $(id).innerHTML = '');
   $('checkGrid').innerHTML = '<div class="empty-row">The verification runs when the sizing is complete.</div>';
   $('overallChip').innerHTML = ''; $('verifyStepNo').textContent = 'STEP 1';
   $('engineeringNote').className = 'catalog-status'; $('engineeringNote').textContent = 'Enter the project data to run the VRLA sizing.';
@@ -1587,7 +1662,7 @@ function renderVrla(R){
   $('vkWreqS').textContent = `per cell, ${[V.kT > 1 ? 'temperature' : '', V.kAge > 1 ? 'ageing' : '', V.km > 1 ? 'margin' : ''].filter(Boolean).join(', ') || 'no factors'} included`;
   $('vkWt').innerHTML = `${fmt(V.wt,0)}<small>W/cell</small>`;
   $('vkWtS').textContent = `${short} · ${fmt(V.tReq,1)} min to ${V.eod} V${V.outRange ? ' (extrapolated)' : ''}`;
-  $('vkStr').innerHTML = `${V.N}<small>× ${V.blocks}</small>`;
+  $('vkStr').innerHTML = `${V.N}<small>× ${V.blocks} blocks</small>`;
   $('vkStrS').textContent = `${fmt(S.blocks,0)} blocks · ${vKg(S.kg)}${V.manual ? ' · chosen' : ''}`;
   $('vkTB').innerHTML = `${vMin(S.tB, S.xB)}<small>min</small>`;
   $('vkTE').innerHTML = `<span class="${S.okE ? '' : 'v-short'}">${vMin(S.tE, S.xE)}</span><small>min</small>`;
@@ -1610,14 +1685,16 @@ function renderVrla(R){
       <td class="num">${fmt(r.blocks,0)}</td><td class="num">${vKg(r.kg)}</td><td class="num">${vMin(r.tB, r.xB)}</td><td class="num">${vMin(r.tE, r.xE)}</td><td class="num">${fmt(r.I,0)} A</td>
       <td>${r.okE ? '<span class="chip ok">VALID</span>' : r.okB ? '<span class="chip warn">SHORT AT EOL</span>' : '<span class="chip bad">NOT VALID</span>'}</td></tr>`).join('');
   $('vCfgAuto').hidden = !V.manual;
+  $('vS1Head').innerHTML = `${esc(`${V.N} × ${V.blocks} × ${short}`)} ${S.okE ? '<span class="chip ok">VALID</span>' : S.okB ? '<span class="chip warn">SHORT AT END OF LIFE</span>' : '<span class="chip bad">NOT VALID</span>'}`;
+  $('vEndN').textContent = V.N; $('vSiteN').textContent = ` — ${V.N} strings`;
   $('vStep1Note').innerHTML = `<b>${V.N} strings of ${V.blocks} × ${esc(vBattName(vb))}</b> ${S.okE ? 'cover' : 'do not cover'} ${fmt(V.tReq,1)} min at end of life (80 % capacity): ${vMin(S.tE, S.xE)} min, and ${vMin(S.tB, S.xB)} min with a new battery. Constant power table at 25 °C, end voltage ${V.vf.toFixed(2)} V/cell (${fmt(V.vEnd,1)} V); room at ${fmt(V.temp,0)} °C.${V.nReq > 1 ? ` With ${V.nReq - 1} strings the end-of-life back-up time would be ${vMin(V.rows.find(r => r.N === V.nReq - 1)?.tE ?? 0)} min.` : ''} * = outside the 5–60 min of the datasheet, extrapolated.`;
   // end voltage — chosen configuration
   const evMax = Math.max(V.tReq*1.25, ...V.ev.map(x => x.r.tB))*1.08;
-  $('vEndHead').textContent = `${V.N} × ${V.blocks} × ${short} · back-up time ${fmt(V.tReq,1)} min`;
+  $('vEndHead').textContent = `${V.N} × ${V.blocks} × ${short} · BUT ${fmt(V.tReq,1)} min`;
   $('vEndBody').innerHTML = V.ev.map(x => `<tr class="v-pick${x.vf === V.eod ? ' recommended' : ''}" data-veod="${x.vf}">
-      <td>${x.vf} V/cell${x.vf === V.eod ? ' · set' : ''}</td><td class="num">${fmt(x.v,1)} V</td><td class="num">${x.need} strings</td>
+      <td><button type="button" class="ev-btn${x.vf === V.eod ? ' on' : ''}" aria-pressed="${x.vf === V.eod}" aria-label="Apply ${x.vf} V/cell: ${vMin(x.r.tB, x.r.xB)} min new, ${vMin(x.r.tE, x.r.xE)} min at end of life with ${V.N} strings">${x.vf} V/cell</button></td><td class="num">${fmt(x.v,1)} V</td><td class="num">${x.need} strings</td>
       <td><span class="v-bar" title="${vMin(x.r.tB, x.r.xB)} min new · ${vMin(x.r.tE, x.r.xE)} min at end of life"><span class="b" style="width:${Math.min(100, x.r.tB/evMax*100)}%"></span><span class="e${x.r.okE ? '' : ' short'}" style="width:${Math.min(100, x.r.tE/evMax*100)}%"></span><span class="r" style="left:${Math.min(100, V.tReq/evMax*100)}%"></span></span></td>
-      <td class="num">${vMin(x.r.tB, x.r.xB)} / ${vMin(x.r.tE, x.r.xE)}</td>
+      <td class="num" style="font-weight:500">${vMin(x.r.tE, x.r.xE)} min</td>
       <td>${x.r.okE ? '<span class="chip ok">VALID</span>' : x.r.okB ? '<span class="chip warn">SHORT AT EOL</span>' : '<span class="chip bad">NOT VALID</span>'}</td></tr>`).join('');
   // recharge · ventilation · service life
   const u = (x, d, unit) => isFinite(x) ? `${fmt(x, d)} ${unit}` : 'n/a';
@@ -1634,13 +1711,6 @@ function renderVrla(R){
       <div class="v-life">${lifeT.map(t => `<div class="${t === near ? 'on' : ''}">${fmt(vLifeAt(s.life, t),1)}<i style="height:${vLifeAt(s.life, t)/s.life*100}%"></i></div>`).join('')}</div>
       <div class="v-life-x">${lifeT.map(t => `<span class="${t === near ? 'on' : ''}">${t} °C</span>`).join('')}</div>
       <p>Years of design life; life halves for every +10 °C above 20 °C (Eurobat). Float voltage compensated −2.5 mV/cell/°C: battery temperature sensor on the UPS.</p></div>`;
-  // AI load — limits set by themselves, notes on the page only
-  if(V.ai){
-    const a = V.ai;
-    renderAiAuto(I, {kch:a.kch, S:V.S});
-    $('vAiList').innerHTML = a.notes.map(x => `<li><span class="chip ${x.c}">${x.c === 'ok' ? 'SET' : x.c === 'warn' ? 'LIMITED' : x.c === 'bad' ? 'NOT AVAILABLE' : 'NOTE'}</span><span><b>${esc(x.t)}.</b> ${esc(x.x)}</span></li>`).join('');
-    $('sumVAI').innerHTML = `<b>${fmt(a.nGpu, a.nGpu % 1 ? 1 : 0)} × ${esc(a.rk.name)} per UPS</b> <span class="ps-k">· charger ${fmt(a.kch*100,0)} % · smoothing not available</span>`;
-  } else { $('vAiList').innerHTML = ''; $('sumVAI').innerHTML = ''; }
   // verification
   const checks = V.checks, dot = {ok:'ok', warn:'warn', bad:'err', info:'info'};
   R.checksShown = checks;
@@ -1674,9 +1744,12 @@ function loadChecks(I, invalid){
 }
 function calculate(){
   const I = readInputs();
+  if(I.tech === 'VRLA') I.mode = 'BACKUP';             // AI load sizing is for Li-ion only
   const b = battById(I.model), d = b ? calcBattery(b) : null;
   const ai = I.mode === 'AI';
   I.pLoadEff = loadPower(I);
+  $('inputsTitle').textContent = I.tech === 'VRLA' ? 'Project & UPS data — VRLA' : 'Project & UPS data — Li-ion';
+  renderRackCards(); syncSegs();
   if(ai){ aiAuto(I, I.tech === 'VRLA' ? null : d); renderAiAuto(I); }
   document.body.classList.toggle('mode-backup', !ai);
   $('aiInputs').classList.toggle('hidden', !ai);
@@ -1702,12 +1775,14 @@ function calculate(){
   chk('upsKva', I.upsKva > 0, 'UPS rated power > 0'); chk('pf', I.pf > 0 && I.pf <= 1, 'power factor (0–1]'); chk('eff', I.eff > 0 && I.eff <= 1, 'efficiency (0–1]');
   chk('reqTime', I.reqTime > 0, 'required autonomy > 0'); chk('emod', I.emod > 0, 'module EOL energy > 0'); chk('altitude', I.altitude >= 0, 'altitude ≥ 0');
   if(!I._empty.has('upsVmin') && !I._empty.has('upsVmax') && !(I.upsVmax > I.upsVmin)) invalid.push('UPS DC window (max > min)');
+  if(ai){ const rk = (id, l) => I[id + 'Unit'] === 'KW' ? chk(id, I[id] >= 0 && !(I.pLoadEff > 0 && I[id] > I.pLoadEff + 1e-9), `${l} power 0–${fmt(I.pLoadEff,0)} kW (the load)`) : chk(id, I[id] >= 0 && I[id] <= 100, `${l} power 0–100 %`);
+    rk('rampUp', 'ramp-up'); rk('rampDn', 'ramp-down'); chk('rampUpT', I.rampUpT >= 0, 'ramp-up time ≥ 0 s'); chk('rampDnT', I.rampDnT >= 0, 'ramp-down time ≥ 0 s'); }
   if(missing.length || invalid.length){ LAST = null; renderPending(I, d, missing, invalid); clearTimeout(spTimer); spIdleStatus(); hostSendState(); renderEmbedBar(); return; }
   if(I._empty.has('altitude')) I.altitude = 0;
   const s1 = step1(I, d);
   const R = {I, d, s1, A: null};
   if(ai && s1.rec) R.A = aiSizing(I, d, s1);
-  if(ai) renderAiAuto(I, R.A && !R.A.error ? {kch:R.A.kch, S:I.upsKva*I.pf, soc:I.soc, socRaised:R.A.socRaised} : {});
+  if(ai) renderAiAuto(I, R.A && !R.A.error ? {kch:R.A.kch, S:I.upsKva*I.pf} : {});
   LAST = R;
   renderStep1(R); renderAI(R); renderChecks(R); renderStatusBar(R); renderPipe(R); renderSummaries(R); renderNotes(R);
   scheduleAutosave(); hostSendState(); renderEmbedBar();
@@ -1723,12 +1798,14 @@ function renderPending(I, d, missing, invalid){
   if(invalid.length) setStatus(2, 'err', 'Check input values', invalid.join(' · '));
   else setStatus(2, '', 'Enter the project data', `Missing: ${missing.slice(0, 6).join(', ')}${missing.length > 6 ? ` +${missing.length - 6}` : ''}`);
   setStatus(3, '', 'No sizing yet', 'The result appears when all the data are entered');
-  ['kNmin','kValid','kRec','aGpu','aS2','aRamp','aTot','aFeed'].forEach(id => $(id).textContent = '—');
-  $('kPdc').innerHTML = '—<small>kW</small>'; $('kTime').innerHTML = '—<small>min</small>'; $('kCurrent').innerHTML = '—<small>A</small>'; $('aPb').innerHTML = '—<small>kW</small>';
-  ['aGpuS','aS2S','aRampS','aTotS','aFeedS'].forEach(id => $(id).textContent = '');
+  ['kNmin','kValid','kRec','aGpu','aUp','aDn','aMin','aTot','aFeed'].forEach(id => $(id).textContent = '—');
+  $('kPdc').innerHTML = '—<small>kW</small>'; $('kTime').innerHTML = '—<small>min</small>'; $('kCurrent').innerHTML = '—<small>A</small>';
+  ['aGpuS','aUpS','aDnS','aMinS','aTotS','aFeedS'].forEach(id => $(id).textContent = '');
+  ['aiMinNote','aiCabSeg','aiChart','butMinNote'].forEach(id => $(id).innerHTML = '');
+  $('butBody').innerHTML = '<tr><td colspan="7" class="empty-row">The options appear when the sizing is complete.</td></tr>';
   $('configTable').querySelector('tbody').innerHTML = '<tr><td colspan="15" class="empty-row">Enter the UPS data and select a battery to see the configuration matrix.</td></tr>';
   $('aiBody').innerHTML = '<tr><td colspan="5" class="empty-row">Enter the AI load data to run Steps 0 and 2–5.</td></tr>';
-  ['step1Note','rampCross','smoothCross'].forEach(id => $(id).innerHTML = '');
+  ['step1Note','rampCross'].forEach(id => $(id).innerHTML = '');
   $('checkGrid').innerHTML = '<div class="empty-row">The verification runs when the sizing is complete.</div>';
   $('overallChip').innerHTML = '';
   $('engineeringNote').className = 'catalog-status'; $('engineeringNote').textContent = 'Enter the project data and select a battery to run the sizing.';
@@ -1738,16 +1815,24 @@ function renderPending(I, d, missing, invalid){
 }
 
 function renderStep1(R){
-  const {I, d, s1} = R, rec = s1.rec;
+  const {I, d, s1} = R, rec = s1.rec, min = s1.min;
   $('kPdc').innerHTML = `${fmt(s1.pdc,1)}<small>kW</small>`;
   $('kNmin').textContent = s1.nmin;
   $('kValid').textContent = s1.valid.length;
   $('kRec').textContent = rec ? `${rec.racks} × ${rec.mpr}` : '—';
   $('kTime').innerHTML = `${rec ? fmt(rec.eol,2) : '—'}<small>min</small>`;
   $('kCurrent').innerHTML = `${rec ? fmt(rec.current,0) : '—'}<small>A</small>`;
+  // options from the minimum up
+  $('butAuto').hidden = !s1.chosen;
+  $('butMinNote').innerHTML = min ? `Minimum modules: <b>${s1.nmin}</b> for the energy (${fmt(I.reqTime,1)} min at ${fmt(s1.pdc,1)} kW, EOL); the smallest valid configuration is <b>${min.racks} × ${min.mpr} = ${min.total} modules</b>${min.total > s1.nmin ? ` (rack current${min.driver === 'Current' ? '' : ' / voltage'} limit)` : ''}. Click a row to choose a larger one${I.mode === 'AI' ? ' — the AI cabinets take the same modules per rack' : ''}.` : '<b>No valid configuration</b> — review the UPS DC window, the current limit or the battery.';
+  $('butBody').innerHTML = s1.opts.length ? s1.opts.map((r, i) => `<tr class="v-pick${sameCfg(r, rec) ? ' recommended' : ''}" data-but="${r.racks}x${r.mpr}">
+      <td>${sameCfg(r, min) ? '<span class="rec-tag">MINIMUM</span>' : ''}Option ${i + 1}${sameCfg(r, rec) ? ' · selected' : ''}</td>
+      <td class="num">${r.racks} × ${r.mpr}</td><td class="num">${r.total}</td><td class="num">${fmt(r.eol,2)} min</td><td class="num">${fmt(r.bol,2)} min</td><td class="num">${fmt(r.current,0)} A</td><td class="num">${fmt(r.vmin,0)}–${fmt(r.vmax,0)} V</td></tr>`).join('')
+    : '<tr><td colspan="7" class="empty-row">No valid configuration.</td></tr>';
+  // matrix (Ampace logic): minimum racks for each modules / rack
   $('configTable').querySelector('tbody').innerHTML = s1.rows.map((r, i) => `
-    <tr class="${rec && r === rec ? 'recommended' : ''}">
-      <td>${rec && r === rec ? '<span class="rec-tag">RECOMMENDED</span>' : ''}Configuration ${i+1}<button type="button" class="row-print" title="PDF report for this configuration" data-row="${i}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg></button></td>
+    <tr class="${sameCfg(r, rec) ? 'recommended' : ''}">
+      <td>${sameCfg(r, min) ? '<span class="rec-tag">MINIMUM</span>' : ''}Configuration ${i+1}<button type="button" class="row-print" title="PDF report for this configuration" data-row="${i}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg></button></td>
       <td class="num">${r.mpr}</td><td class="num">${r.racks}</td><td>${r.driver === 'Current' ? '<span class="chip info">Current</span>' : '<span class="chip ok">Energy</span>'}</td><td class="num">${r.total}</td>
       <td class="num">${fmt(r.vmin,1)}</td><td class="num">${fmt(r.vmax,1)}</td>
       <td class="num">${fmt(r.eol,2)}</td><td class="num">${fmt(r.bol,2)}</td><td class="num">${fmt(r.current,0)}</td>
@@ -1768,30 +1853,37 @@ function renderAI(R){
   const body = $('aiBody');
   if(I.mode !== 'AI') return;
   if(!s1.rec || !A || A.error){
-    ['aGpu','aPb','aS2','aRamp','aTot','aFeed'].forEach(id => $(id).textContent = '—');
+    ['aGpu','aUp','aDn','aMin','aTot','aFeed'].forEach(id => $(id).textContent = '—');
+    ['aGpuS','aUpS','aDnS','aMinS','aTotS','aFeedS'].forEach(id => $(id).textContent = '');
+    ['aiMinNote','aiCabSeg','aiChart','rampCross'].forEach(id => $(id).innerHTML = '');
     body.innerHTML = `<tr><td colspan="5"><span class="chip bad">NOT AVAILABLE</span> ${esc(!s1.rec ? 'Step 1 has no valid configuration.' : A.error)}</td></tr>`;
-    $('rampCross').innerHTML = ''; $('smoothCross').innerHTML = ''; return;
+    return;
   }
-  const bb = m => `${d.name} ${m}BB`;
-  $('aGpu').textContent = fmt(A.nGpu, A.nGpu % 1 ? 1 : 0); $('aGpuS').textContent = `${I.rk.short} · ${I.gpuFeeder} per feeder / ${I.upsFeeder} UPS`;
-  $('aPb').innerHTML = `${fmt(A.pb,1)}<small>kW</small>`;
-  $('aS2').textContent = `${A.s2.racks} × ${A.s2.mpr}`; $('aS2S').textContent = `${A.s2.total} modules · ${fmt(A.s2.eol,1)} min EOL`;
-  $('aRamp').textContent = `+${A.nRamp}`; $('aRampS').textContent = `${fmt(A.eRamp,0)} kWh / ${fmt(A.eCab,1)} kWh`;
-  $('aTot').textContent = `${A.nCab} ×`; $('aTotS').textContent = bb(A.mpr);
-  $('aFeed').textContent = `${A.nFeeder} ×`; $('aFeedS').textContent = bb(A.mpr);
+  const bb = m => `${d.name} ${m}BB`, nU = I.upsFeeder, but = A.but, up = A.gov === 'up';
+  $('aGpu').textContent = fmt(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0); $('aGpuS').textContent = `${I.rk.short} · ${I.gpuFeeder || 0} per IT feeder · indication`;
+  $('aUp').innerHTML = `${fmt(A.eUp,2)}<small>kWh</small>`; $('aUpS').textContent = `${fmt(A.pUp,0)} kW · ${I.upS} in ${fmt(I.rampUpT,0)} s`;
+  $('aDn').innerHTML = `${fmt(A.eDn,2)}<small>kWh</small>`; $('aDnS').textContent = `${fmt(A.pDn,0)} kW · ${I.dnS} in ${fmt(I.rampDnT,0)} s`;
+  $('aMin').textContent = A.nAiMin; $('aMinS').textContent = `${up ? 'ramp-up' : 'ramp-down'} governs · ${A.nCabRamp} cabinets of ${A.mpr}`;
+  $('aTot').textContent = `${A.nCab} ×`; $('aTotS').textContent = `${bb(A.mpr)} · max(${A.nCabBut} BUT ; ${A.nCabRamp} ramps) / ${fmt(A.socF,2)}`;
+  $('aFeed').textContent = `${A.nFeeder} ×`; $('aFeedS').textContent = `${bb(A.mpr)} · ${nU} UPS per system`;
+  $('aiMinNote').innerHTML = `Minimum modules — standard BUT: <b>${but.total}</b> (${but.racks} × ${but.mpr}, EOL${s1.chosen ? ', chosen' : ''}) · ramps: <b>${A.nAiMin}</b> → <b>${A.nCabRamp} cabinets</b> of ${A.mpr} (same modules per rack as the BUT racks: one DC bus). The larger governs — ${A.govBy === 'ramp' ? 'the ramps' : 'the standard BUT'}: max(${A.nCabBut} ; ${A.nCabRamp}) = ${A.nCabGov} cabinets; with the ${AI_REF.soc} % SOC reserve ⌈${A.nCabGov} / ${fmt(A.socF,2)}⌉ = <b>${A.nCabMin} cabinets = ${A.nCabMin*A.mpr} modules</b> minimum per UPS. Choose from the minimum up:`;
+  $('lAiCab').textContent = `Cabinets per UPS (${A.mpr} modules)`;
+  const lim = I.maxParallel || null;
+  $('aiCabSeg').innerHTML = Array.from({length:6}, (_, i) => A.nCabMin + i).map(k => `<button type="button" data-aicab="${k}" aria-pressed="${k === A.nCab}" title="${k} cabinets per UPS · ${k*I.upsFeeder} per IT feeder${lim && k > lim ? ` — above the ${lim} in parallel` : ''}">${k}</button>`).join('');
+  $('aiChart').innerHTML = `<div class="vc-head"><span class="vc-title">Use of the UPS with an AI load</span><span class="vc-legend"><span><i style="background:var(--navy)"></i>Load (IT)</span><span><i style="background:#E00034"></i>UPS input (grid)</span><span><i style="background:rgba(68,114,196,.55)"></i>Battery discharge</span><span><i style="background:rgba(232,163,61,.75)"></i>Battery charge</span></span></div>
+    ${aiChartSvg(I, A)}
+    <p>Ramp-up: the load steps up by ${I.upL}, the grid follows in ${fmt(I.rampUpT,0)} s and the battery delivers the difference (${fmt(A.eUp,2)} kWh). Training: the input stays constant and the battery smooths the swings (illustrative, not sized). Ramp-down: the load drops by ${I.dnL}, the grid follows in ${fmt(I.rampDnT,0)} s and the battery absorbs the difference (${fmt(A.eDn,2)} kWh). <span class="ai-life"><span class="chip warn">AGEING</span>Expected life in AI duty ≈ ${AI_REF.lifeYears} years — to be verified and confirmed by the manufacturer.</span></p>`;
   const rows = [
-    ['Step 0', 'Load per UPS', `${fmt(A.nGpu,A.nGpu % 1 ? 1 : 0)} ${I.rk.short} per UPS (${fmt(I.pLoadEff,0)} kW load) · ${fmt(A.pb,1)} kW per rack at the battery · UPS load ${fmt(A.upsLoad*100,1)} % · charger ${fmt(A.kch*100,0)} %`, '—', '—'],
-    ['Step 1', `${fmt(I.reqTime,1)} min EOL autonomy`, `${s1.rec.racks} × ${s1.rec.mpr} modules (${s1.rec.total}) · ${fmt(s1.rec.eol,2)} min · ${fmt(s1.rec.current,0)} A`, `${s1.rec.racks} × ${bb(s1.rec.mpr)}`, `${s1.rec.racks*I.upsFeeder} × ${bb(s1.rec.mpr)}`],
-    ['Step 2', `Extra ageing for AI cycling (+${fmt(I.agePct,0)} %)`, `${A.nReq} modules needed → ${A.s2.racks} × ${A.s2.mpr} = ${A.s2.total} modules · ${fmt(A.s2.eol,2)} min EOL${A.lifeOK ? ` (${fmt(A.s2EolAged,1)} min with AI ageing)` : ''} · base EOL ageing already in Step 1`, `${A.s2.racks} × ${bb(A.s2.mpr)}`, `${A.s2.racks*I.upsFeeder} × ${bb(A.s2.mpr)}`],
-    ['Step 3', `Ramp process (100 % up / ${fmt(A.kch*100,0)} % down)`, `${A.rampGov.replace(/ \(.*\)/, '')} governs · ${fmt(A.eRampGpu,1)} kWh per ${I.rk.short} rack · ${fmt(A.eRamp,1)} kWh per UPS on cabinets of ${fmt(A.eCab,1)} kWh`, `${A.nRamp} × ${bb(A.mpr)}`, `${A.nRamp*I.upsFeeder} × ${bb(A.mpr)}`],
-    ['Step 4', 'AI power smoothing', `${fmt(A.pAvg,1)} kW average per rack · ${fmt(A.eDisKJ,2)} kJ per cycle · ${fmt(A.eSmoothUps*1000,2)} Wh per UPS, ${A.nSmooth ? 'above' : 'within'} the spare ${fmt(A.spare,0)} kWh`, `${A.nSmooth} ×`, `${A.nSmooth*I.upsFeeder} ×`],
+    ['Step 0', 'Max AI racks installable (indication)', `${fmt(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0)} × ${I.rk.name} per UPS: ⌊${nU} × ${fmt(I.pLoadEff,0)} kW / ${fmt(I.pProv,0)} kW⌋ = ${I.gpuFeeder || 0} per IT feeder`, '—', '—'],
+    ['Step 1', `Standard BUT ${fmt(I.reqTime,1)} min (EOL)`, `${but.racks} × ${but.mpr} modules (${but.total}) · ${fmt(but.eol,2)} min · ${fmt(but.current,0)} A · ${s1.chosen ? 'chosen' : 'minimum'}`, `${but.racks} × ${bb(but.mpr)}`, `${but.racks*nU} × ${bb(but.mpr)}`],
+    ['Step 3', `Ramp-up ${I.upS} in ${fmt(I.rampUpT,0)} s`, `${fmt(A.pUp,0)} kW at the battery · ${fmt(A.eUp,2)} kWh discharged · capacity ${fmt(A.cUp,1)} kWh at ${fmt(I.cDis,1)}C → ${fmt(A.capUp,1)} kWh`, '—', '—'],
+    ['Step 3', `Ramp-down ${I.dnS} in ${fmt(I.rampDnT,0)} s`, `${fmt(A.pDn,0)} kW into the battery · ${fmt(A.eDn,2)} kWh charged · capacity ${fmt(A.cDn,1)} kWh at ${fmt(I.cCh,1)}C → ${fmt(A.capDn,1)} kWh`, '—', '—'],
+    ['Step 3', `AI ramps — the ${up ? 'ramp-up' : 'ramp-down'} governs`, `${fmt(A.cap,1)} kWh / ${fmt(I.eRated,3)} kWh per module = ${A.nAiMin} modules → ${A.nCabRamp} × ${A.mpr}`, `${A.nCabRamp} × ${bb(A.mpr)}`, `${A.nCabRamp*nU} × ${bb(A.mpr)}`],
+    ['Step 5', `Larger of BUT and ramps · SOC ${AI_REF.soc} % reserve`, `max(${A.nCabBut} ; ${A.nCabRamp}) = ${A.nCabGov} → ⌈${A.nCabGov} / ${fmt(A.socF,2)}⌉ = ${A.nCabMin} cabinets${A.aiChosen ? ` · ${A.nCab} chosen` : ''}`, `${A.nCab} × ${bb(A.mpr)}`, `${A.nFeeder} × ${bb(A.mpr)}`]
   ];
   body.innerHTML = rows.map(r => `<tr><td><span class="step-no">${r[0].toUpperCase()}</span></td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td class="num">${esc(r[3])}</td><td class="num">${esc(r[4])}</td></tr>`).join('') +
-    `<tr class="total"><td><span class="step-no">STEP 5</span></td><td>Total</td><td>${A.nCab} cabinets (${A.s2.racks} + ${A.nRamp} + ${A.nSmooth}) · ${A.nModTot} modules · ${fmt(A.eInst,0)} kWh rated · ${fmt(A.final.eol,1)} min EOL at full load</td><td class="num">${A.nCab} × ${esc(bb(A.mpr))}</td><td class="num">${A.nFeeder} × ${esc(bb(A.mpr))}</td></tr>`;
-  let rc = `<b>Ramp cross-check.</b> Governing case: ${A.rampGov}. Ramp energy is small: ${fmt(A.eUpEnergy,2)} kWh up (${fmt(A.tUp,1)} s at ${fmt(I.rampRate,1)} %/s) and ${fmt(A.eDownEnergy,2)} kWh down per UPS — Step 3 is a power (C-rate) criterion. All cabinets share the DC bus: the Step 2 block alone already gives the ramp-up power at ${fmt(A.cUpBol,2)}C (BOL) / ${fmt(A.cUpEol,2)}C (EOL) and accepts ${fmt(A.chAccept2,0)} kW of charge vs ${fmt(A.pChMax,0)} kW from the charger.`;
-  if(A.dsRamp !== undefined) rc += ` <b>Datasheet sensitivity</b> (continuous ${fmt(d.dsCDis,2)}C discharge / ${fmt(d.dsCCh,2)}C charge): ${fmt(A.dsEGpu,1)} kWh per rack → ${A.dsRamp} ramp cabinets → ${A.s2.racks + A.dsRamp + A.nSmooth} per UPS${I.maxParallel && A.s2.racks + A.dsRamp + A.nSmooth > I.maxParallel ? ' (above the parallel limit)' : ''}.`;
-  $('rampCross').innerHTML = rc;
-  $('smoothCross').innerHTML = `<b>Smoothing cross-check.</b> The fast swing needs ${fmt(A.eDisKJ,2)} kJ per cycle (discharge = recharge ${fmt(A.eChKJ,2)} kJ): covered by the autonomy margin, ${A.nSmooth} extra cabinets. In <b>AI Battery Smoothing</b> mode (constant input) the charger limit of ${fmt(A.pChMax,0)} kW gives ${A.drift > 0 ? `a net discharge of <b>${fmt(A.drift,0)} kW</b> per UPS (peak ${fmt(A.PmaxU,0)} kW, average ${fmt(A.PavgU,0)} kW): ≈ ${fmt(A.driftHours,1)} h above the backup reserve before the training must pause. Zero drift needs the input set at ${fmt(A.pLim0,0)} kW (grid trough ${fmt(A.gridTrough,0)} kW).` : 'no net drift.'} Slower large swings (seconds) are not covered by this check.`;
+    `<tr class="total"><td><span class="step-no">STEP 5</span></td><td>Total</td><td>${A.nCab} cabinets (${A.nCabBut} standard BUT + ${A.nCabAi} for ramps and SOC reserve) · ${A.nModTot} modules · ${fmt(A.eInst,0)} kWh rated · ${fmt(A.final.eol,1)} min EOL at full load · ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC</td><td class="num">${A.nCab} × ${esc(bb(A.mpr))}</td><td class="num">${A.nFeeder} × ${esc(bb(A.mpr))}</td></tr>`;
+  $('rampCross').innerHTML = `<b>Ramp check.</b> The ${A.nCab} cabinets share the DC bus: the ramp-up takes ${fmt(A.pUp/A.eInst,2)}C of the ${fmt(I.cDis,1)}C allowed and the ramp-down ${fmt(A.pDn/A.eInst,2)}C of ${fmt(I.cCh,1)}C. The UPS charger gives ${fmt(A.pChMax,0)} kW (${fmt(A.kch*100,0)} % of the rating)${A.pDn > A.pChMax + 1e-6 ? `, less than the ${fmt(A.pDn,0)} kW of the ramp-down — confirm the ramp-down step with Riello` : `, enough for the ${fmt(A.pDn,0)} kW of the ramp-down`}. Energy: ${fmt(A.eUp,2)} kWh discharged in the ramp-up, ${fmt(A.eDn,2)} kWh charged in the ramp-down; ${fmt(A.head,0)} kWh free above the ${AI_REF.soc} % SOC set-point.`;
 }
 
 function backupChecks(I, d, r){
@@ -1815,10 +1907,10 @@ function renderChecks(R){
   const note = $('engineeringNote');
   note.className = 'catalog-status ' + (nBad ? 'error' : 'loaded');
   if(I.mode === 'AI' && A && !A.error){
-    note.innerHTML = `Configuration per UPS: <b>${A.nCab} × ${esc(d.full)} with ${A.mpr} modules</b> (${A.s2.racks} autonomy + ageing, ${A.nRamp} ramp, ${A.nSmooth} smoothing) — <b>${A.nFeeder} per IT feeder</b>. ${A.nModTot} modules, ${fmt(A.eInst,0)} kWh rated, ${fmt(A.final.vmin,1)}–${fmt(A.final.vmax,1)} V, ${fmt(A.final.eol,1)} min EOL at full load, ${fmt(A.tSoc,1)} min from ${fmt(I.soc,0)} % SOC.`;
+    note.innerHTML = `Configuration per UPS: <b>${A.nCab} × ${esc(d.full)} with ${A.mpr} modules</b> (max of ${A.nCabBut} standard BUT and ${A.nCabRamp} for the ramps, with the ${AI_REF.soc} % SOC reserve) — <b>${A.nFeeder} per IT feeder</b>. ${A.nModTot} modules, ${fmt(A.eInst,0)} kWh rated, ${fmt(A.final.vmin,1)}–${fmt(A.final.vmax,1)} V, ${fmt(A.final.eol,1)} min EOL at full load, ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC.`;
   } else if(s1.rec){
     const r = s1.rec;
-    note.innerHTML = `Recommended configuration: <b>${r.racks} racks × ${r.mpr} modules/rack = ${r.total} modules</b> (${esc(d.full)}). EOL autonomy ${fmt(r.eol,2)} min, BOL autonomy ${fmt(r.bol,2)} min, maximum discharge current ${fmt(r.current,1)} A.`;
+    note.innerHTML = `${s1.chosen ? 'Selected' : 'Minimum'} configuration: <b>${r.racks} racks × ${r.mpr} modules/rack = ${r.total} modules</b> (${esc(d.full)}). EOL autonomy ${fmt(r.eol,2)} min, BOL autonomy ${fmt(r.bol,2)} min, maximum discharge current ${fmt(r.current,1)} A.`;
   } else {
     note.textContent = 'No configuration satisfies all active constraints. Increase the battery configuration, reduce the required load/autonomy, or review the UPS voltage/current limits.';
   }
@@ -1848,24 +1940,23 @@ function renderPipe(R, aiPending){
 
 function renderSummaries(R){
   const {I, d, s1, A} = R;
-  $('sumInputs').innerHTML = `<b>${fmt(I.upsKva,0)} kVA</b> <span class="ps-k">· ${fmt(I.pLoadEff,0)} kW load · η ${fmt(I.eff,3)} · ${fmt(I.reqTime,1)} min EOL · ${esc(d.full)}${I.mode === 'AI' && I.gpuFeeder > 0 ? ` · ${fmt(I.gpuFeeder/I.upsFeeder, 1)} × ${esc(I.rk.short)} per UPS` : ''}</span>`;
-  $('sumStep1').innerHTML = s1.rec ? `<span class="ps-k">Recommended</span> <b>${s1.rec.racks} × ${s1.rec.mpr} = ${s1.rec.total} modules</b> <span class="ps-k">· ${fmt(s1.rec.eol,2)} min EOL</span>` : '<b>No valid configuration</b>';
-  $('sumAI').innerHTML = A && !A.error ? `<b>${A.nCab} × ${esc(d.name)} ${A.mpr}BB per UPS</b> <span class="ps-k">· ${A.nFeeder} per IT feeder</span>` : '—';
+  $('sumInputs').innerHTML = `<b>${fmt(I.upsKva,0)} kVA</b> <span class="ps-k">· ${fmt(I.pLoadEff,0)} kW load · η ${fmt(I.eff,3)} · ${fmt(I.reqTime,1)} min EOL · ${esc(d.full)}${I.mode === 'AI' ? ` · ramps ${I.upS} / ${I.dnS}` : ''}</span>`;
+  $('sumStep1').innerHTML = s1.rec ? `<span class="ps-k">${s1.chosen ? 'Selected' : 'Minimum'}</span> <b>${s1.rec.racks} × ${s1.rec.mpr} = ${s1.rec.total} modules</b> <span class="ps-k">· ${fmt(s1.rec.eol,2)} min EOL</span>` : '<b>No valid configuration</b>';
+  $('sumAI').innerHTML = A && !A.error ? `<b>${A.nCab} × ${esc(d.name)} ${A.mpr}BB per UPS</b> <span class="ps-k">· max(${A.nCabBut} BUT ; ${A.nCabRamp} ramps) / ${fmt(A.socF,2)} · ${A.nFeeder} per IT feeder</span>` : '—';
   $('sumVerify').innerHTML = '';
 }
 
 function renderNotes(R){
   const {I, d, s1, A} = R;
-  const ok = A && !A.error, cfg = ok ? A.final : s1.rec;
+  const ok = A && !A.error, cfg = ok ? A.final : s1.rec, ai = I.mode === 'AI';
   const items = [];   // [chip, topic, text, aiOnly]
-  if(I.mode === 'AI' && d.dsCDis && d.dsCCh && (Math.abs(d.dsCDis - I.cDis) > 1e-6 || Math.abs(d.dsCCh - I.cCh) > 1e-6))
-    items.push(['warn', 'Charge / discharge C-rate', `The ramp sizing uses ${fmt(I.cDis,2)}C discharge / ${fmt(I.cCh,2)}C charge; the ${d.full} datasheet continuous values are ≈ ${fmt(d.dsCDis,2)}C / ${fmt(d.dsCCh,2)}C.${ok && A.dsRamp !== undefined ? ` With the datasheet values the ramp needs ${A.dsRamp} cabinets → ${A.s2.racks + A.dsRamp + A.nSmooth} per UPS.` : ''} Confirm with the manufacturer.`, 1]);
+  if(ai && ok) items.push(['warn', 'AI sizing method', `AI sizing = the larger of the standard BUT (${A.nCabBut} cabinets, EOL) and the ramps (${A.nCabRamp} cabinets: the larger of ramp-up ${I.upL} in ${fmt(I.rampUpT,0)} s and ramp-down ${I.dnL} in ${fmt(I.rampDnT,0)} s), divided by the ${AI_REF.soc} % SOC set-point as an extra reserve: ${A.nCabMin} cabinets minimum. Ramp power and times from the grid code / customer — confirm them. The ${I.rk.name} racks (${fmt(I.pProv,0)} kW provisioning) are an indication of the maximum installable.${I.rk.est ? ' ' + I.rk.src : ''}`, 1]);
+  if(ai) items.push(['warn', 'Ageing in AI duty', `Expected life of the battery in AI duty ≈ ${AI_REF.lifeYears} years (ramps and power smoothing cycle the battery) — to be verified and confirmed by the manufacturer.${ok && A.lifeOK ? ` Life table at ${cycLabel(I.cycles)}: SOH ${fmt(A.sohPred*100,0)} % at year 10, ${fmt(A.tSocAged,1)} min from ${AI_REF.soc} % SOC.` : ''}`, 1]);
+  if(ai && d.dsCDis && d.dsCCh && (Math.abs(d.dsCDis - I.cDis) > 1e-6 || Math.abs(d.dsCCh - I.cCh) > 1e-6))
+    items.push(['warn', 'Charge / discharge C-rate', `The ramp sizing uses ${fmt(I.cDis,2)}C discharge / ${fmt(I.cCh,2)}C charge; the ${d.full} datasheet continuous values are ≈ ${fmt(d.dsCDis,2)}C / ${fmt(d.dsCCh,2)}C. Confirm with the manufacturer.`, 1]);
+  if(ai && ok && A.pDn > A.pChMax + 1e-6) items.push(['warn', 'UPS charger', `The ramp-down needs ${fmt(A.pDn,0)} kW into the battery; the UPS charger gives ${fmt(A.pChMax,0)} kW (${fmt(A.kch*100,0)} % of the rating). Confirm the ramp-down step with Riello.`, 1]);
   if(cfg) items.push(['info', 'UPS DC window', `Racks of ${cfg.mpr} modules operate at ${fmt(cfg.vmin,1)}–${fmt(cfg.vmax,1)} V; the UPS battery window entered is ${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V — confirm it for the UPS model.`, 0]);
-  if(I.mode === 'AI') items.push(['info', 'Ageing', `The base EOL ageing (${fmt(d.sohEOL*100,0)} % SOH) is already in the module EOL energy of Step 1; Step 2 adds only the extra for AI cycling.${ok && A.lifeOK ? ` With ${cycLabel(I.cycles)} the aged energy needs ${A.nMinAged} modules vs ${A.s2.total} installed (${fmt(A.s2EolAged,1)} min).` : ' No life table is stored for this battery.'}`, 1]);
-  if(I.mode === 'AI') items.push(['info', 'Grid ramp rate', `The ramp rate (${fmt(I.rampRate,1)} %/s) only changes the energy cross-check, not the C-rate sizing of Step 3.`, 1]);
-  if(I.mode === 'AI') items.push(['warn', 'AI values set by the program', `Racks per UPS, rack powers, load swing, ramp rate, charger limit, extra ageing and SOC set-point come from the load power (${fmt(I.pLoadEff,0)} kW), the UPS per system (${I.upsFeeder} = UPS per IT feeder), the ${I.rk.name} rack data and the RPS AI reference design (D ${fmt(I.duty,2)}, T ${fmt(I.period,1)} s, ${fmt(I.rampRate,0)} %/s, +${fmt(I.agePct,0)} %, SOC ≥ ${AI_REF.socMin} %) — confirm them with the customer data.${I.rk.est ? ' ' + I.rk.src : ''}`, 1]);
-  if(I.mode === 'AI') items.push(['info', 'Power smoothing', 'Only the fast swing (duty cycle and period of the reference design) is quantified. Slow, large swings are not sized; in AI Battery Smoothing mode the charger limit causes a net SOC drift.', 1]);
-  if(I.mode === 'AI' && d.info.maxChargeCurrent) items.push(['info', 'Charge current vs temperature', `${d.full}: ${d.info.maxChargeCurrent} — the ramp-down capability depends on the battery room temperature.`, 1]);
+  if(ai && d.info.maxChargeCurrent) items.push(['info', 'Charge current vs temperature', `${d.full}: ${d.info.maxChargeCurrent} — the ramp-down capability depends on the battery room temperature.`, 1]);
   if(d.source) items.push(['info', 'Battery data source', d.source, 0]);
   R.notes = items.map(([c, t, x, a]) => ({c, t, x, ai: !!a}));
   $('notesList').innerHTML = items.length ? items.map(([c, t, x]) => `<li><span class="chip ${c}">${c === 'warn' ? 'CONFIRM' : 'NOTE'}</span><span><b>${esc(t)}.</b> ${esc(x)}</span></li>`).join('') : '<li><span class="settings-note">No open points.</span></li>';
@@ -1904,10 +1995,16 @@ function refreshNotes(){
   $('vmaxNote').textContent = vmaxRack ? `Largest rack of the selected battery reaches ${fmt(vmaxRack,1)} V.` : 'Confirm the battery voltage window of the UPS model.';
   const vb = vBattById(I.vModel);
   const cells = ([40, 42, 44, 46, 48].includes(Number(I.vBlocks)) ? Number(I.vBlocks) : 40)*6;
-  $('vModelNote').textContent = vb ? [vb.family, vb.c10 ? `${vb.c10} Ah` : 'Ah n/a', vb.maxCh ? `max charge ${vb.maxCh} A` : '', vb.kg ? `${vb.kg} kg` : ''].filter(Boolean).join(' · ') : '';
-  $('vEodvNote').textContent = `${fmt((Number(I.vEodv) || 1.67)*cells, 1)} V on the string (${cells} cells)${vb ? ` · table: ${vb.eodv.join(' / ')}` : ''}`;
+  $('vModelNote').textContent = vb ? [`${vb.vBlock} V block · ${vb.vBlock/2} cells`, vb.c10 ? `${vb.c10} Ah` : 'Ah n/a', vb.kg ? `${vb.kg} kg` : '', `constant power table, ${vb.refTemp || 25} °C`].filter(Boolean).join(' · ') : '';
+  $('vBlocksNote').textContent = `${cells} cells · 12 V: 40–48 step 2 · 6 V: double`;
+  $('vTempVal').textContent = I._empty.has('vTemp') ? 25 : I.vTemp;
+  const tt = vb ? vb.times : [5, 60], outT = I.tech === 'VRLA' && !I._empty.has('reqTime') && (I.reqTime < tt[0] || I.reqTime > tt[tt.length - 1]);
+  $('reqTimeNote').textContent = I.tech !== 'VRLA' ? '' : outT ? `Outside the datasheet range ${tt[0]}–${tt[tt.length - 1]} min: extrapolated` : `Free value — datasheet range ${tt[0]}–${tt[tt.length - 1]} min`;
+  $('reqTimeNote').classList.toggle('note-warn', outT);
+  syncSegs();
+  $('vEodvNote').textContent = `${fmt((Number(I.vEodv) || 1.67)*cells, 1)} V on the string${vb ? ` · table: ${vb.eodv.join(' / ')}` : ''}`;
   const t = I._empty.has('vTemp') ? 25 : I.vTemp;
-  $('vTempNote').textContent = `Capacity factor ${fmt(vKTref(t, vb ? vb.refTemp || 25 : 25), 3)} · life ${fmt(vLifeAt(Number(I.vLife) || 10, t), 1)} years (table at ${vb ? vb.refTemp || 25 : 25} °C)`;
+  $('vTempNote').textContent = `Capacity factor ${fmt(vKTref(t, vb ? vb.refTemp || 25 : 25), 3)} · life ${fmt(vLifeAt(Number(I.vLife) || 10, t), 1)} years`;
 }
 
 // ---------------------------------------------------------------- battery library panel, editor, import / export
@@ -1948,6 +2045,7 @@ function selectBattery(id){
 }
 function onBatteryChange(){
   const b = battById($('model').value);
+  $('butSel').value = ''; $('aiCab').value = '';   // another battery: back to the minimum configurations
   applyBatteryToFields(b);
   refreshNotes(); calculate(); renderLibrary(); RIBBON.render();
 }
@@ -2092,31 +2190,33 @@ const pdfTxt = s => String(s ?? '').replace(/η/g, 'eta').replace(/Δ/g, 'Delta 
 
 // ---- formulas in the PDF report, typeset like the technical documents: italic variables with subscripts (@P_DC, @V_{cell,min}),
 // fractions [[numerator // denominator]] and ceilings ⌈ … ⌉ drawn to the height of their content ----
+// formula markup → tree (fractions, ceilings, floors, brackets, subscripts, superscripts): used by the PDF and the Word report
+function mathParse(src){
+  let i = 0;
+  function seq(stop){
+    const out = []; let buf = '';
+    const flush = () => { if(buf){ out.push({t:'txt', s:buf}); buf = ''; } };
+    while(i < src.length){
+      if(stop && src.startsWith(stop, i)) break;
+      if(src.startsWith('[[', i)){ flush(); i += 2; const num = seq('//'); i += 2; const den = seq(']]'); i += 2; out.push({t:'frac', num, den}); continue; }
+      if(src[i] === '⌈'){ flush(); i++; const body = seq('⌉'); i++; out.push({t:'ceil', body}); continue; }
+      if(src[i] === '⌊'){ flush(); i++; const body = seq('⌋'); i++; out.push({t:'floor', body}); continue; }
+      if(src[i] === '⦅'){ flush(); i++; const body = seq('⦆'); i++; out.push({t:'paren', body}); continue; }
+      if(src.startsWith('^{', i)){ flush(); i += 2; const body = seq('}'); i++; out.push({t:'sup', body}); continue; }
+      if(src[i] === '@'){
+        const m = /^@([A-Za-zηΔρ]+)(?:_\{([^}]*)\}|_([A-Za-z0-9]+(?:,[A-Za-z0-9]+)*))?/.exec(src.slice(i));
+        if(m){ flush(); out.push({t:'var', name:m[1], sub:m[2] || m[3] || ''}); i += m[0].length; continue; }
+      }
+      buf += src[i]; i++;
+    }
+    flush(); return out;
+  }
+  return seq(null);
+}
 function pdfMath(doc){
   doc.addFileToVFS('MathSerif-Regular.ttf', MATHSERIF_R_B64); doc.addFont('MathSerif-Regular.ttf', 'MathSerif', 'normal');
   doc.addFileToVFS('MathSerif-Italic.ttf', MATHSERIF_I_B64); doc.addFont('MathSerif-Italic.ttf', 'MathSerif', 'italic');
-  function parse(src){
-    let i = 0;
-    function seq(stop){
-      const out = []; let buf = '';
-      const flush = () => { if(buf){ out.push({t:'txt', s:buf}); buf = ''; } };
-      while(i < src.length){
-        if(stop && src.startsWith(stop, i)) break;
-        if(src.startsWith('[[', i)){ flush(); i += 2; const num = seq('//'); i += 2; const den = seq(']]'); i += 2; out.push({t:'frac', num, den}); continue; }
-        if(src[i] === '⌈'){ flush(); i++; const body = seq('⌉'); i++; out.push({t:'ceil', body}); continue; }
-        if(src[i] === '⌊'){ flush(); i++; const body = seq('⌋'); i++; out.push({t:'floor', body}); continue; }
-        if(src[i] === '⦅'){ flush(); i++; const body = seq('⦆'); i++; out.push({t:'paren', body}); continue; }
-        if(src.startsWith('^{', i)){ flush(); i += 2; const body = seq('}'); i++; out.push({t:'sup', body}); continue; }
-        if(src[i] === '@'){
-          const m = /^@([A-Za-zηΔρ]+)(?:_\{([^}]*)\}|_([A-Za-z0-9]+(?:,[A-Za-z0-9]+)*))?/.exec(src.slice(i));
-          if(m){ flush(); out.push({t:'var', name:m[1], sub:m[2] || m[3] || ''}); i += m[0].length; continue; }
-        }
-        buf += src[i]; i++;
-      }
-      flush(); return out;
-    }
-    return seq(null);
-  }
+  const parse = mathParse;
   const tw = (txt, style, size) => { doc.setFont('MathSerif', style); doc.setFontSize(size); return doc.getTextWidth(txt); };
   function measure(nodes, sz){
     let w = 0, asc = sz*0.68, desc = sz*0.2;
@@ -2228,8 +2328,11 @@ function buildReportPdf(opts = {}){
   const font = (style = 'normal', size = 9, color = PDF_C.text) => { doc.setFont('WorkSans', style); doc.setFontSize(size); doc.setTextColor(...color); };
   const space = h => { if(y + h > H - BOTTOM){ doc.addPage(); y = TOP; } };
   const T = (txt, x, yy, o = {}) => doc.text(pdfTxt(txt), x, yy, Object.assign({baseline:'top'}, o));
+  const REC = opts.rec || null, rec = b => { if(REC) REC.push(b); };   // content blocks for the Word report
+  const TS = (txt, x, yy) => { rec({t:'title', sub:txt}); T(txt, x, yy); };
   const table = o => {
     const {gap = 14, ...opt} = o;
+    rec({t:'table', o});
     const userHook = opt.didParseCell;
     doc.autoTable(Object.assign({theme:'grid', startY:y, margin:{top:TOP, bottom:BOTTOM, left:M, right:M}}, opt, {
       styles: Object.assign({font:'WorkSans', fontStyle:'normal', fontSize:8.2, cellPadding:{top:4.5, bottom:4.5, left:5, right:5}, textColor:PDF_C.text, lineColor:PDF_C.border, lineWidth:0.5, valign:'middle', overflow:'linebreak'}, opt.styles || {}),
@@ -2240,15 +2343,16 @@ function buildReportPdf(opts = {}){
   };
   const section = title => {
     space(60);
-    secNo++;
+    secNo++; rec({t:'h1', no:secNo, text:title});
     doc.setFillColor(...PDF_C.red); doc.rect(M, y, 3.2, 14, 'F');
     font('bold', 12.5, PDF_C.navy); T(`${secNo}. ${title}`, M + 11, y + 0.5);
     toc.push({no:secNo, title, page:doc.internal.getCurrentPageInfo().pageNumber});
     doc.setDrawColor(...PDF_C.border); doc.setLineWidth(0.6); doc.line(M, y + 21, W - M, y + 21);
     y += 31;
   };
-  const sub = title => { space(30); font('bold', 9, PDF_C.accent); T(title.toUpperCase(), M, y, {charSpace:0.4}); y += 15; };
+  const sub = title => { rec({t:'h2', text:title}); space(30); font('bold', 9, PDF_C.accent); T(title.toUpperCase(), M, y, {charSpace:0.4}); y += 15; };
   const para = (text, o = {}) => {
+    rec({t:'p', text, o});
     const size = o.size || 8.6, lh = size*1.42;
     font(o.bold ? 'bold' : 'normal', size, o.color || PDF_C.text);
     const lines = doc.splitTextToSize(pdfTxt(text), o.width || CW);
@@ -2257,6 +2361,7 @@ function buildReportPdf(opts = {}){
     y += o.gap ?? 6;
   };
   const callout = (title, text, color = PDF_C.accent) => {
+    rec({t:'callout', title, text, color});
     font('normal', 8.2); const lines = doc.splitTextToSize(pdfTxt(text), CW - 24);
     const h = 22 + lines.length*11.4;
     space(h + 8);
@@ -2269,6 +2374,7 @@ function buildReportPdf(opts = {}){
   // calculation block: formulas typeset (italic variables, subscripts, fractions, ceilings) on a light panel
   const MATH = pdfMath(doc);
   const equations = (title, rows) => {
+    rec({t:'eq', title, rows});
     const pad = 12, maxW = CW - 2*pad;
     space(34);
     doc.setFillColor(...PDF_C.fieldBg); doc.rect(M, y, CW, 20, 'F'); doc.setFillColor(...PDF_C.accent); doc.rect(M, y, 2.5, 20, 'F');
@@ -2309,7 +2415,7 @@ function buildReportPdf(opts = {}){
     }
     return rows;
   };
-  const statusCell = st => ({content: st === 'ok' ? 'OK' : st === 'warn' ? 'NOTE' : 'FAIL', styles:{halign:'center', fontStyle:'bold', fillColor: st === 'ok' ? PDF_C.okBg : st === 'warn' ? PDF_C.warnBg : PDF_C.badBg, textColor: st === 'ok' ? PDF_C.ok : st === 'warn' ? PDF_C.warn : PDF_C.bad}});
+  const statusCell = st => ({content: st === 'ok' ? 'OK' : st === 'warn' ? 'NOTE' : st === 'info' ? 'INFO' : 'FAIL', styles:{halign:'center', fontStyle:'bold', fillColor: st === 'ok' ? PDF_C.okBg : st === 'warn' ? PDF_C.warnBg : st === 'info' ? PDF_C.soft : PDF_C.badBg, textColor: st === 'ok' ? PDF_C.ok : st === 'warn' ? PDF_C.warn : st === 'info' ? PDF_C.accent : PDF_C.bad}});
   const bb = m => `${d.name} ${m}BB`;
   const n = (x, dd = 2) => fmt(x, dd);
 
@@ -2317,10 +2423,11 @@ function buildReportPdf(opts = {}){
   font('bold', 8, PDF_C.accent); T('PRE-SALES · DATA CENTER POWER · BATTERY SIZING', M, y, {charSpace:1}); y += 17;
   font('bold', 25, PDF_C.navy); T('Battery Sizing Report', M, y); y += 34;
   font('normal', 10.5, PDF_C.dim);
-  T(`${d.full}${d.chem ? ' ' + d.chem : ''} battery cabinets for Riello UPS — ${useAI ? `AI load (${I.rk.short}) sizing, Steps 0–6` : sel ? 'selected configuration, backup autonomy' : 'backup autonomy sizing'}`, M, y); y += 28;
+  TS(`${d.full}${d.chem ? ' ' + d.chem : ''} battery cabinets for Riello UPS — ${useAI ? 'AI load sizing — standard BUT + ramps' : sel ? 'selected configuration, backup autonomy' : 'backup autonomy sizing'}`, M, y); y += 28;
   table({body: kvRows([['CUSTOMER', info.customer || '—'], ['PREPARED BY', info.prepared || '—'], ['PROJECT', info.project || '—'], ['APPROVED BY', info.approved || '—'], ['COUNTRY', info.country || '—'], ['DATE', info.date], ['OFFER REF.', info.ref || '—'], ['REVISION', `${info.rev} — ${info.revDesc}`], ...(info.position ? [['POSITION', info.position], ['UPS', info.ups]] : [])]),
     columnStyles:{0:{cellWidth:82}, 1:{cellWidth:CW/2 - 82}, 2:{cellWidth:82}, 3:{cellWidth:CW/2 - 82}}, styles:{fontSize:9.4, cellPadding:{top:6, bottom:6, left:7, right:6}}, gap:24});
 
+  rec({t:'h0', text:'Sizing result'});
   font('bold', 11, PDF_C.navy); T('Sizing result', M, y); y += 18;
   const vColor = nBad ? PDF_C.bad : nWarn ? PDF_C.warn : PDF_C.ok, vBg = nBad ? PDF_C.badBg : nWarn ? PDF_C.warnBg : PDF_C.okBg;
   const kpis = useAI ? [
@@ -2329,11 +2436,12 @@ function buildReportPdf(opts = {}){
     {k:'EOL AUTONOMY', v:`${n(A.final.eol,1)} min`, s:`full load · ${n(A.tSoc,1)} min from ${n(I.soc,0)} % SOC`},
     {k:'VERIFICATION', v:verdict, s: nBad ? `${nBad} failed check(s)` : nWarn ? `${nWarn} note(s) — see section 5` : 'all checks passed', color:vColor, bg:vBg}
   ] : [
-    {k:sel ? 'SELECTED CONFIGURATION' : 'RECOMMENDED CONFIGURATION', v:`${cfg.racks} × ${cfg.mpr}`, s:'racks × modules per rack', hl:1},
+    {k:sel || s1.chosen ? 'SELECTED CONFIGURATION' : 'MINIMUM CONFIGURATION', v:`${cfg.racks} × ${cfg.mpr}`, s:'racks × modules per rack', hl:1},
     {k:'TOTAL MODULES', v:`${cfg.total}`, s:`${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V`},
     {k:'EOL AUTONOMY', v:`${n(cfg.eol,2)} min`, s:`BOL ${n(cfg.bol,2)} min · required ${n(I.reqTime,1)} min`},
     {k:'VERIFICATION', v:verdict, s: nBad ? `${nBad} failed check(s)` : nWarn ? `${nWarn} note(s)` : 'all checks passed', color:vColor, bg:vBg}
   ];
+  rec({t:'kpis', items:kpis});
   const bw = (CW - 30)/4, bh = 66;
   kpis.forEach((k, i) => {
     const x = M + i*(bw + 10);
@@ -2345,29 +2453,29 @@ function buildReportPdf(opts = {}){
   });
   y += bh + 16;
   callout('Summary', useAI
-    ? `Per UPS (${n(I.upsKva,0)} kVA, ${n(I.pLoadEff,0)} kW load, ${n(A.nGpu,1)} ${I.rk.short} racks): ${A.nCab} × ${d.full} cabinets with ${A.mpr} modules — ${A.s2.racks} for ${n(I.reqTime,1)} min EOL autonomy and AI-cycling ageing, ${A.nRamp} for ramp-up / ramp-down, ${A.nSmooth} for power smoothing. ${A.nFeeder} cabinets per IT feeder. Installed ${A.nModTot} modules, ${n(A.eInst,0)} kWh rated (${n(A.eEol,0)} kWh usable at EOL), ${n(A.final.vmin,1)}–${n(A.final.vmax,1)} V.`
+    ? `Per UPS (${n(I.upsKva,0)} kVA, ${n(I.pLoadEff,0)} kW load): ${A.nCab} × ${d.full} cabinets with ${A.mpr} modules — the larger of the standard BUT of ${n(I.reqTime,1)} min (EOL, ${A.nCabBut} cabinets) and the ramps (${A.nCabRamp} cabinets; ramp-up ${I.upL} in ${n(I.rampUpT,0)} s: ${n(A.eUp,2)} kWh discharged; ramp-down ${I.dnL} in ${n(I.rampDnT,0)} s: ${n(A.eDn,2)} kWh charged), with the ${AI_REF.soc} % SOC reserve${A.aiChosen ? ` (minimum ${A.nCabMin}, ${A.nCab} chosen)` : ''}. ${A.nFeeder} cabinets per IT feeder. Installed ${A.nModTot} modules, ${n(A.eInst,0)} kWh rated (${n(A.eEol,0)} kWh usable at EOL), ${n(A.final.vmin,1)}–${n(A.final.vmax,1)} V. Expected life in AI duty ≈ ${AI_REF.lifeYears} years, to be confirmed by the manufacturer.`
     : `${cfg.racks} racks × ${cfg.mpr} modules = ${cfg.total} ${d.full} modules for a ${n(I.upsKva,0)} kVA UPS: ${n(cfg.eol,2)} min EOL (${n(cfg.bol,2)} min BOL) at ${n(s1.pdc,1)} kW DC, ${n(cfg.current,0)} A per rack, ${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V.`);
   table({head:[['Date', 'Rev.', 'Description', 'Prepared', 'Approved']], body:[[info.date, info.rev, info.revDesc, info.prepared || '—', info.approved || '—']],
     headStyles:{fillColor:PDF_C.fieldBg, textColor:PDF_C.dim}, columnStyles:{0:{cellWidth:72}, 1:{cellWidth:40, halign:'center'}, 3:{cellWidth:92}, 4:{cellWidth:92}}, gap:22});
-  const tocY = y;
+  const tocY = y; rec({t:'toc'});
 
   // ---------- 1. design input data
-  doc.addPage(); y = TOP;
+  doc.addPage(); y = TOP; rec({t:'break'});
   section('Design input data');
   const upsPairs = [['UPS rated power', `${n(I.upsKva,0)} kVA`], ['Power factor', n(I.pf,2)], ['Load power', `${n(I.pLoadEff,0)} kW${I._empty.has('pLoad') ? ' (UPS rating × PF)' : ''}`], ...(useAI ? [['UPS per system (= per IT feeder)', `${I.upsFeeder}`]] : []), ['UPS efficiency, battery mode (η)', n(I.eff,3)], ['DC power to the batteries', `${n(s1.pdc,1)} kW`],
     ['Required EOL autonomy', `${n(I.reqTime,1)} min`], ['UPS DC voltage window', `${n(I.upsVmin,0)}–${n(I.upsVmax,0)} V`], ['3-wire constraint', I.threeWire === 'YES' ? 'Yes' : 'No'], ['Altitude', `${n(I.altitude,0)} m`],
     ['Rack count rule', I.rackRule === 'EI' ? 'Energy + rack current limit' : 'Energy only'], ['Module usable energy (EOL)', `${n(I.emod,3)} kWh`]];
   if(useAI){
-    const aiPairs = [['AI rack type', I.rk.name], ['AI racks per UPS', `${n(A.nGpu, A.nGpu % 1 ? 1 : 0)} (${I.gpuFeeder} per IT feeder of ${I.upsFeeder} UPS)`], ['Provisioning power per rack', `${n(I.pProv,0)} kW`],
-      ['EDP / idle power per rack', `${n(I.pEdp,0)} / ${n(I.pIdle,0)} kW`], ['Swing duty / period', `${n(I.duty,2)} / ${n(I.period,2)} s`], ['Grid ramp rate', `${n(I.rampRate,1)} %/s`],
-      ['UPS charger limit', `${n(A.kch*100,0)} % (UPS load ${n(A.upsLoad*100,1)} %)`], ['Ramp C-rate discharge / charge', `${n(I.cDis,2)}C / ${n(I.cCh,2)}C`], ['Ramp cycles per day', A.lifeOK ? `${cycLabel(I.cycles)} (SOH ${n(A.sohPred*100,0)} %)` : 'no life table'],
-      ['Extra ageing for AI cycling', `+${n(I.agePct,0)} %`], ['Operating SOC set-point', `${n(I.soc,0)} %`]];
+    const aiPairs = [['Ramp-up', `${I.upL} in ${n(I.rampUpT,0)} s`], ['Ramp-down', `${I.dnL} in ${n(I.rampDnT,0)} s`],
+      ['AI rack type (indication)', I.rk.name], ['Max AI racks per UPS', `${n(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0)} (${I.gpuFeeder || 0} per IT feeder of ${I.upsFeeder} UPS)`],
+      ['UPS charger limit', `${n(A.kch*100,0)} % (UPS load ${n(A.upsLoad*100,1)} %)`], ['Ramp C-rate discharge / charge', `${n(I.cDis,2)}C / ${n(I.cCh,2)}C`], ['Rated energy per module', `${n(I.eRated,3)} kWh`],
+      ['SOC set-point (reserve)', `${AI_REF.soc} %`], ['Life check', A.lifeOK ? `${cycLabel(I.cycles)} (SOH ${n(A.sohPred*100,0)} %)` : 'no life table'], ['Expected life in AI duty', `≈ ${AI_REF.lifeYears} years (to confirm)`]];
     const rows = [];
     for(let i = 0; i < Math.max(upsPairs.length, aiPairs.length); i++){
       const a = upsPairs[i] || ['', ''], b = aiPairs[i] || ['', ''];
       rows.push([{content:a[0], styles:{fillColor:PDF_C.fieldBg, textColor:PDF_C.dim, fontSize:7.6}}, a[1], {content:b[0], styles:{fillColor:PDF_C.fieldBg, textColor:PDF_C.dim, fontSize:7.6}}, b[1]]);
     }
-    table({head:[[{content:'UPS & AUTONOMY', colSpan:2}, {content:'AI LOAD — SET BY THE PROGRAM', colSpan:2}]], body:rows, columnStyles:{0:{cellWidth:118}, 1:{cellWidth:CW/2 - 118}, 2:{cellWidth:124}, 3:{cellWidth:CW/2 - 124}}});
+    table({head:[[{content:'UPS & AUTONOMY', colSpan:2}, {content:'AI LOAD — RAMPS', colSpan:2}]], body:rows, columnStyles:{0:{cellWidth:118}, 1:{cellWidth:CW/2 - 118}, 2:{cellWidth:124}, 3:{cellWidth:CW/2 - 124}}});
   } else {
     table({head:[[{content:'UPS & AUTONOMY', colSpan:4}]], body:kvRows(upsPairs), columnStyles:{0:{cellWidth:118}, 1:{cellWidth:CW/2 - 118}, 2:{cellWidth:118}, 3:{cellWidth:CW/2 - 118}}});
   }
@@ -2391,10 +2499,11 @@ function buildReportPdf(opts = {}){
       {f:`@N_min = ⌈ [[@P_DC · @t_req // 60 · @E_mod]] ⌉ = ⌈ [[${f1(s1.pdc,1)} · ${f1(I.reqTime,1)} // 60 · ${f1(I.emod,3)}]] ⌉ = ${s1.nmin} modules`}];
     if(r1){
       const m = r1.mpr, nI = Math.ceil(s1.pdc*1000/(m*d.cells*d.cellVmin*d.currentLimit) - 1e-9), nE = Math.max(1, Math.ceil(s1.nmin/m - 1e-9));
-      rows.push({h:`${sel ? 'Selected' : 'Recommended'} configuration — ${m} modules per rack`});
+      rows.push({h:`${sel || s1.chosen ? 'Selected' : 'Minimum'} configuration — ${m} modules per rack`});
+      const rMin = I.rackRule === 'EI' ? Math.max(nE, nI) : nE, more = r1.racks > rMin ? `  →  ${r1.racks} racks chosen` : '';
       rows.push(I.rackRule === 'EI'
-        ? {f:`@N_rack = max⦅⌈ [[@N_min // mpr]] ⌉ ; ⌈ [[1000 · @P_DC // mpr · @n_cell · @V_{cell,min} · @I_lim]] ⌉⦆ = max⦅⌈ [[${s1.nmin} // ${m}]] ⌉ ; ⌈ [[1000 · ${f1(s1.pdc,1)} // ${m} · ${d.cells} · ${f1(d.cellVmin,2)} · ${f1(d.currentLimit,0)}]] ⌉⦆ = max( ${nE} ; ${nI} ) = ${r1.racks} racks`}
-        : {f:`@N_rack = ⌈ [[@N_min // mpr]] ⌉ = ⌈ [[${s1.nmin} // ${m}]] ⌉ = ${r1.racks} racks`});
+        ? {f:`@N_rack = max⦅⌈ [[@N_min // mpr]] ⌉ ; ⌈ [[1000 · @P_DC // mpr · @n_cell · @V_{cell,min} · @I_lim]] ⌉⦆ = max⦅⌈ [[${s1.nmin} // ${m}]] ⌉ ; ⌈ [[1000 · ${f1(s1.pdc,1)} // ${m} · ${d.cells} · ${f1(d.cellVmin,2)} · ${f1(d.currentLimit,0)}]] ⌉⦆ = max( ${nE} ; ${nI} ) = ${rMin} racks${more}`}
+        : {f:`@N_rack = ⌈ [[@N_min // mpr]] ⌉ = ⌈ [[${s1.nmin} // ${m}]] ⌉ = ${rMin} racks${more}`});
       rows.push({f:`@N_tot = @N_rack · mpr = ${r1.racks} · ${m} = ${r1.total} modules`});
       rows.push({f:`@V_min = mpr · @n_cell · @V_{cell,min} = ${m} · ${d.cells} · ${f1(d.cellVmin,2)} = ${f1(r1.vmin,1)} V          @V_max = mpr · @n_cell · @V_{cell,max} = ${m} · ${d.cells} · ${f1(d.cellVmax,2)} = ${f1(r1.vmax,1)} V`});
       rows.push({f:`@t_EOL = [[60 · @N_tot · @E_mod // @P_DC]] = [[60 · ${r1.total} · ${f1(I.emod,3)} // ${f1(s1.pdc,1)}]] = ${f1(r1.eol,2)} min          @t_BOL = [[@t_EOL // @SOH_EOL]] = [[${f1(r1.eol,2)} // ${f1(d.sohEOL,2)}]] = ${f1(r1.bol,2)} min`});
@@ -2405,54 +2514,46 @@ function buildReportPdf(opts = {}){
   const failList = r => [!r.voltageOK && 'voltage', !r.timeOK && 'time', !r.currentOK && 'current', !r.threeWireOK && '3-wire'].filter(Boolean).join(', ');
   const hlRow = sel || s1.rec;
   table({head:[['Config.', 'Mod./rack', 'Racks', 'Driver', 'Total', 'V min', 'V max', 'EOL min', 'BOL min', 'I rack A', 'Result']],
-    body: s1.rows.map((r, i) => [`${i + 1}${r === hlRow ? (sel ? ' · selected' : ' · recommended') : ''}`, r.mpr, r.racks, r.driver, r.total, n(r.vmin,1), n(r.vmax,1), n(r.eol,2), n(r.bol,2), n(r.current,0), r.finalOK ? 'VALID' : `NO: ${failList(r)}`]),
+    body: s1.rows.map((r, i) => [`${i + 1}${sameCfg(r, hlRow) ? ' · selected' : sameCfg(r, s1.min) ? ' · minimum' : ''}`, r.mpr, r.racks, r.driver, r.total, n(r.vmin,1), n(r.vmax,1), n(r.eol,2), n(r.bol,2), n(r.current,0), r.finalOK ? 'VALID' : `NO: ${failList(r)}`]),
     styles:{fontSize:7.8, halign:'right'}, headStyles:{halign:'center'}, columnStyles:{0:{halign:'left', cellWidth:86}, 3:{halign:'left'}, 10:{halign:'left', cellWidth:78}},
     didParseCell: data => {
       if(data.section !== 'body') return;
       const r = s1.rows[data.row.index];
-      if(r === hlRow){ data.cell.styles.fillColor = PDF_C.soft; data.cell.styles.fontStyle = 'bold'; }
+      if(sameCfg(r, hlRow)){ data.cell.styles.fillColor = PDF_C.soft; data.cell.styles.fontStyle = 'bold'; }
       if(data.column.index === 10){ data.cell.styles.textColor = r.finalOK ? PDF_C.ok : PDF_C.bad; data.cell.styles.fontStyle = 'bold'; }
     }});
   para($('step1Note').textContent, {size:7.8, color:PDF_C.dim});
 
   // ---------- 4. AI load sizing
   if(useAI){
-    section('AI load sizing — Steps 0, 2–5');
+    section('AI load sizing — standard BUT + ramps');
     const aiRows = [...$('aiBody').querySelectorAll('tr')].map(tr => [...tr.cells].map(td => td.textContent.trim()));
     table({head:[['Step', 'Condition', 'Result', 'Per UPS', 'Per IT feeder']], body:aiRows,
       styles:{fontSize:7.8}, columnStyles:{0:{cellWidth:44, fontStyle:'bold', textColor:PDF_C.navy}, 1:{cellWidth:96}, 3:{cellWidth:74, halign:'right'}, 4:{cellWidth:78, halign:'right'}},
       didParseCell: data => { if(data.section === 'body' && data.row.index === aiRows.length - 1){ data.cell.styles.fillColor = PDF_C.cream; data.cell.styles.fontStyle = 'bold'; data.cell.styles.textColor = PDF_C.navy; } }});
+    rec({t:'aichart'});
+    drawAiProfilePdf(doc, I, A, M, y, CW, space, () => y, v => { y = v; }, font, T);
     {
-      const r1 = s1.rec, e = [];
-      e.push({h:'Step 0 — load per UPS'});
-      e.push({f:`@N_GPU = [[⌊ @n_UPS · @P_load / @P_prov ⌋ // @n_UPS]] = [[⌊ ${I.upsFeeder} · ${f1(I.pLoadEff,0)} / ${f1(I.pProv,0)} ⌋ // ${I.upsFeeder}]] = [[${I.gpuFeeder} // ${I.upsFeeder}]] = ${f1(A.nGpu,2)}          @N_GPU · @P_prov = ${f1(A.nGpu,2)} · ${f1(I.pProv,0)} = ${f1(A.nGpu*I.pProv,0)} kW ${A.gpuFit ? '≤' : '>'} @P_load = ${f1(I.pLoadEff,0)} kW`});
-      e.push({f:`@P_b = [[@P_EDP // @η]] = [[${f1(I.pEdp,0)} // ${f1(I.eff,3)}]] = ${f1(A.pb,1)} kW          @u = [[@N_GPU · @P_EDP // @S · @PF]] = [[${f1(A.nGpu,2)} · ${f1(I.pEdp,0)} // ${f1(I.upsKva*I.pf,0)}]] = ${pct(A.upsLoad,1)}  →  @k_ch = ${pct(A.kch)}`});
-      e.push({h:`Step 2 — extra ageing for AI cycling (+${f1(I.agePct,0)} %)`});
-      e.push({f:`@k_age = 1 + [[@a // 100]] = 1 + [[${f1(I.agePct,0)} // 100]] = ${f1(A.kAge,2)}          @N_req = ⌈ @N_{tot,1} · @k_age ⌉ = ⌈ ${r1.total} · ${f1(A.kAge,2)} ⌉ = ${A.nReq} modules`});
-      e.push({f:`@N_{tot,2} = @N_{rack,2} · mpr = ${A.s2.racks} · ${A.s2.mpr} = ${A.s2.total} modules ≥ ${A.nReq}          @t_{EOL,2} = [[60 · @N_{tot,2} · @E_mod // @P_DC]] = [[60 · ${A.s2.total} · ${f1(I.emod,3)} // ${f1(s1.pdc,1)}]] = ${f1(A.s2.eol,2)} min`});
-      if(A.lifeOK){
-        e.push({f:`@k_AI = [[@SOH_EOL // @SOH_AI]] = [[${f1(d.sohEOL,2)} // ${f1(A.sohPred,2)}]] = ${f1(A.kReq,3)}          @ρ = min⦅1 ; [[@SOH_AI // @SOH_EOL]]⦆ = ${f1(A.agedRatio,3)}          @N_{min,aged} = ⌈ @N_min · @k_AI ⌉ = ⌈ ${s1.nmin} · ${f1(A.kReq,3)} ⌉ = ${A.nMinAged}`});
-        e.push({f:`@t_{EOL,2} · @ρ = ${f1(A.s2.eol,2)} · ${f1(A.agedRatio,3)} = ${f1(A.s2EolAged,2)} min ${A.s2EolAged >= I.reqTime - 1e-9 ? '≥' : '<'} @t_req = ${f1(I.reqTime,1)} min`});
-      }
-      e.push({h:`Step 3 — ramp-up / ramp-down: the ${A.rampGov.replace(/ \(.*\)/, '')} governs`});
-      e.push({f:`@E_up = [[@P_b // @C_dis]] = [[${f1(A.pb,1)} // ${f1(I.cDis,2)}]] = ${f1(A.eUp,1)} kWh          @E_down = [[@k_ch · @P_b // @C_ch]] = [[${f1(A.kch,2)} · ${f1(A.pb,1)} // ${f1(I.cCh,2)}]] = ${f1(A.eDown,1)} kWh`});
-      e.push({f:`@E_ramp = @N_GPU · max( @E_up ; @E_down ) = ${f1(A.nGpu,2)} · ${f1(A.eRampGpu,1)} = ${f1(A.eRamp,1)} kWh          @E_cab = mpr · @E_rated = ${A.s2.mpr} · ${f1(I.eRated,3)} = ${f1(A.eCab,1)} kWh`});
-      e.push({f:`@N_{cab,ramp} = ⌈ [[@E_ramp // @E_cab]] ⌉ = ⌈ [[${f1(A.eRamp,1)} // ${f1(A.eCab,1)}]] ⌉ = ${A.nRamp} cabinets`});
-      e.push({h:'Step 4 — power smoothing'});
-      e.push({f:`@P_avg = @D · @P_EDP + (1 − @D) · @P_idle = ${g3(I.duty)} · ${f1(I.pEdp,0)} + ${g3(1 - I.duty)} · ${f1(I.pIdle,0)} = ${f1(A.pAvg,1)} kW`});
-      e.push({f:`@E_dis = (@P_EDP − @P_avg) · @D · @T = (${f1(I.pEdp,0)} − ${f1(A.pAvg,1)}) · ${g3(I.duty)} · ${g3(I.period)} = ${f1(A.eDisKJ,2)} kJ          @E_smooth = [[@N_GPU · @E_dis // 3600]] = [[${f1(A.nGpu,2)} · ${f1(A.eDisKJ,2)} // 3600]] = ${f1(A.eSmoothUps,4)} kWh`});
-      e.push({f:`@E_spare = @N_{tot,2} · @E_mod − [[@P_DC · @t_req // 60]] = ${A.s2.total} · ${f1(I.emod,3)} − [[${f1(s1.pdc,1)} · ${f1(I.reqTime,1)} // 60]] = ${f1(A.spare,1)} kWh`});
-      e.push(A.nSmooth
-        ? {f:`@E_smooth > @E_spare  →  @N_{cab,smooth} = ⌈ [[@E_smooth − @E_spare // @E_cab]] ⌉ = ⌈ [[${f1(A.eSmoothUps,2)} − ${f1(A.spare,1)} // ${f1(A.eCab,1)}]] ⌉ = ${A.nSmooth} cabinets`}
-        : {f:`@E_smooth = ${f1(A.eSmoothUps,4)} kWh ≤ @E_spare = ${f1(A.spare,1)} kWh  →  @N_{cab,smooth} = 0`});
-      e.push({h:'Step 5 — total'});
-      e.push({f:`@N_cab = @N_{rack,2} + @N_{cab,ramp} + @N_{cab,smooth} = ${A.s2.racks} + ${A.nRamp} + ${A.nSmooth} = ${A.nCab} per UPS          @N_{cab,feeder} = @N_cab · @N_{UPS,feeder} = ${A.nCab} · ${I.upsFeeder} = ${A.nFeeder}`});
-      e.push({h:'Step 6 — operating SOC set-point'});
-      e.push({f:`@SOC_set = max⦅${AI_REF.socMin} % ; [[100 · @t_req // @t_{EOL,5} · @ρ]]⦆ = max⦅${AI_REF.socMin} % ; [[100 · ${f1(I.reqTime,1)} // ${f1(A.tFull,2)} · ${f1(A.agedRatio,3)}]]⦆ = ${f1(I.soc,0)} %   (rounded up to 5 %)`});
+      const but = A.but, e = [];
+      e.push({h:'Step 0 — max AI racks installable (indication)'});
+      e.push({f:`@N_{GPU,max} = [[⌊ @n_UPS · @P_load / @P_prov ⌋ // @n_UPS]] = [[⌊ ${I.upsFeeder} · ${f1(I.pLoadEff,0)} / ${f1(I.pProv,0)} ⌋ // ${I.upsFeeder}]] = ${f1(A.nGpuMax,2)}          @u = [[@P_load // @S · @PF]] = [[${f1(I.pLoadEff,0)} // ${f1(I.upsKva*I.pf,0)}]] = ${pct(A.upsLoad,1)}  →  @k_ch = ${pct(A.kch)}`});
+      const pf = (k, U, P0) => I[`ramp${U}Unit`] === 'KW' ? `@P_${k} = [[@P_{ramp,${k}} // @η]] = [[${f1(I[`ramp${U}`],0)} // ${f1(I.eff,3)}]] = ${f1(P0,1)} kW` : `@P_${k} = [[@r_${k} · @P_load // @η]] = [[${f1(I[`ramp${U}`]/100,2)} · ${f1(I.pLoadEff,0)} // ${f1(I.eff,3)}]] = ${f1(P0,1)} kW`;
+      e.push({h:`Step 3 — ramp-up: ${I.upL} in ${f1(I.rampUpT,0)} s`});
+      e.push({f:`${pf('up', 'Up', A.pUp)}          @E_up = [[@P_up · @T_up // 2 · 3600]] = [[${f1(A.pUp,1)} · ${f1(I.rampUpT,0)} // 2 · 3600]] = ${f1(A.eUp,2)} kWh discharged`});
+      e.push({f:`@Q_up = max⦅[[@P_up // @C_dis]] ; @E_up⦆ = max⦅[[${f1(A.pUp,1)} // ${f1(I.cDis,2)}]] ; ${f1(A.eUp,2)}⦆ = ${f1(A.capUp,1)} kWh`});
+      e.push({h:`Step 3 — ramp-down: ${I.dnL} in ${f1(I.rampDnT,0)} s`});
+      e.push({f:`${pf('dn', 'Dn', A.pDn)}          @E_dn = [[@P_dn · @T_dn // 2 · 3600]] = [[${f1(A.pDn,1)} · ${f1(I.rampDnT,0)} // 2 · 3600]] = ${f1(A.eDn,2)} kWh charged`});
+      e.push({f:`@Q_dn = max⦅[[@P_dn // @C_ch]] ; @E_dn⦆ = max⦅[[${f1(A.pDn,1)} // ${f1(I.cCh,2)}]] ; ${f1(A.eDn,2)}⦆ = ${f1(A.capDn,1)} kWh`});
+      e.push({h:`Step 3 — AI modules: the ${A.gov === 'up' ? 'ramp-up' : 'ramp-down'} governs`});
+      e.push({f:`@N_AI = ⌈ [[max⦅@Q_up ; @Q_dn⦆ // @E_rated]] ⌉ = ⌈ [[${f1(A.cap,1)} // ${f1(I.eRated,3)}]] ⌉ = ${A.nAiMin} modules`});
+      e.push({f:`@N_{cab,ramp} = ⌈ [[@N_AI // mpr]] ⌉ = ⌈ [[${A.nAiMin} // ${A.mpr}]] ⌉ = ${A.nCabRamp}          @N_{cab,BUT} = ${A.nCabBut}  (Step 1, ${but.racks} × ${but.mpr} modules)`});
+      e.push({h:`Step 5 — the larger of standard BUT and ramps, with the ${AI_REF.soc} % SOC reserve`});
+      e.push({f:`@N_cab = ⌈ [[max⦅@N_{cab,BUT} ; @N_{cab,ramp}⦆ // @SOC]] ⌉ = ⌈ [[max⦅${A.nCabBut} ; ${A.nCabRamp}⦆ // ${f1(A.socF,2)}]] ⌉ = ${A.nCabMin} per UPS${A.aiChosen ? `  →  ${A.nCab} chosen` : ''}          @N_{cab,feeder} = @N_cab · @n_UPS = ${A.nCab} · ${I.upsFeeder} = ${A.nFeeder}`});
+      e.push({h:`Step 6 — autonomy at the ${AI_REF.soc} % SOC set-point`});
+      e.push({f:`@t_SOC = @SOC · [[60 · @N_tot · @E_mod // @P_DC]] = ${f1(A.socF,2)} · [[60 · ${A.nModTot} · ${f1(I.emod,3)} // ${f1(s1.pdc,1)}]] = ${f1(A.tSoc,2)} min ${A.tSoc >= I.reqTime - 1e-9 ? '≥' : '<'} @t_req = ${f1(I.reqTime,1)} min`});
       equations('Calculation', e);
     }
-    callout('Ramp cross-check', $('rampCross').textContent.replace(/^Ramp cross-check\.\s*/, ''));
-    callout('Smoothing cross-check', $('smoothCross').textContent.replace(/^Smoothing cross-check\.\s*/, ''));
+    callout('Ramp check', $('rampCross').textContent.replace(/^Ramp check\.\s*/, ''));
   }
 
   // ---------- 5. verification
@@ -2471,7 +2572,7 @@ function buildReportPdf(opts = {}){
   const cabDesc = `${d.full}${d.chem ? ' ' + d.chem : ''} battery cabinet, ${cfg.mpr} modules (${cfg.mpr}BB)${I.eRated > 0 ? `, ${n(cfg.mpr*I.eRated,1)} kWh rated` : ''}, ${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V${d.info.dimensions ? `, ${d.info.dimensions}` : ''}`;
   if(useAI){
     table({head:[['Item', 'Description', 'Qty per UPS', 'Qty per IT feeder']],
-      body:[['Battery cabinet', cabDesc, A.nCab, A.nFeeder], ['of which', `Autonomy + AI-cycling ageing / ramp process / power smoothing`, `${A.s2.racks} / ${A.nRamp} / ${A.nSmooth}`, `${A.s2.racks*I.upsFeeder} / ${A.nRamp*I.upsFeeder} / ${A.nSmooth*I.upsFeeder}`]],
+      body:[['Battery cabinet', cabDesc, A.nCab, A.nFeeder], ['of which', `Standard BUT / added for the ramps and the ${AI_REF.soc} % SOC reserve`, `${A.nCabBut} / ${A.nCabAi}`, `${A.nCabBut*I.upsFeeder} / ${A.nCabAi*I.upsFeeder}`]],
       columnStyles:{0:{cellWidth:86, fontStyle:'bold'}, 2:{cellWidth:72, halign:'center'}, 3:{cellWidth:86, halign:'center'}}});
   } else {
     table({head:[['Item', 'Description', 'Qty per UPS']], body:[['Battery cabinet', cabDesc, cfg.racks]], columnStyles:{0:{cellWidth:86, fontStyle:'bold'}, 2:{cellWidth:72, halign:'center'}}});
@@ -2538,8 +2639,11 @@ function buildVrlaReport(R, opts = {}){
   const font = (style = 'normal', size = 9, color = PDF_C.text) => { doc.setFont('WorkSans', style); doc.setFontSize(size); doc.setTextColor(...color); };
   const space = h => { if(y + h > H - BOTTOM){ doc.addPage(); y = TOP; } };
   const T = (txt, x, yy, o = {}) => doc.text(pdfTxt(txt), x, yy, Object.assign({baseline:'top'}, o));
+  const REC = opts.rec || null, rec = b => { if(REC) REC.push(b); };   // content blocks for the Word report
+  const TS = (txt, x, yy) => { rec({t:'title', sub:txt}); T(txt, x, yy); };
   const table = o => {
     const {gap = 14, ...opt} = o;
+    rec({t:'table', o});
     const userHook = opt.didParseCell;
     doc.autoTable(Object.assign({theme:'grid', startY:y, margin:{top:TOP, bottom:BOTTOM, left:M, right:M}}, opt, {
       styles: Object.assign({font:'WorkSans', fontStyle:'normal', fontSize:8.2, cellPadding:{top:4.5, bottom:4.5, left:5, right:5}, textColor:PDF_C.text, lineColor:PDF_C.border, lineWidth:0.5, valign:'middle', overflow:'linebreak'}, opt.styles || {}),
@@ -2549,7 +2653,7 @@ function buildVrlaReport(R, opts = {}){
     y = doc.lastAutoTable.finalY + gap;
   };
   const section = title => {
-    space(60); secNo++;
+    space(60); secNo++; rec({t:'h1', no:secNo, text:title});
     doc.setFillColor(...PDF_C.red); doc.rect(M, y, 3.2, 14, 'F');
     font('bold', 12.5, PDF_C.navy); T(`${secNo}. ${title}`, M + 11, y + 0.5);
     toc.push({no:secNo, title, page:doc.internal.getCurrentPageInfo().pageNumber});
@@ -2557,6 +2661,7 @@ function buildVrlaReport(R, opts = {}){
     y += 31;
   };
   const para = (text, o = {}) => {
+    rec({t:'p', text, o});
     const size = o.size || 8.6, lh = size*1.42;
     font(o.bold ? 'bold' : 'normal', size, o.color || PDF_C.text);
     const lines = doc.splitTextToSize(pdfTxt(text), o.width || CW);
@@ -2565,6 +2670,7 @@ function buildVrlaReport(R, opts = {}){
     y += o.gap ?? 6;
   };
   const callout = (title, text, color = PDF_C.accent) => {
+    rec({t:'callout', title, text, color});
     font('normal', 8.2); const lines = doc.splitTextToSize(pdfTxt(text), CW - 24);
     const h = 22 + lines.length*11.4;
     space(h + 8);
@@ -2576,6 +2682,7 @@ function buildVrlaReport(R, opts = {}){
   };
   const MATH = pdfMath(doc);
   const equations = (title, rows) => {
+    rec({t:'eq', title, rows});
     const pad = 12, maxW = CW - 2*pad;
     space(34);
     doc.setFillColor(...PDF_C.fieldBg); doc.rect(M, y, CW, 20, 'F'); doc.setFillColor(...PDF_C.accent); doc.rect(M, y, 2.5, 20, 'F');
@@ -2625,9 +2732,10 @@ function buildVrlaReport(R, opts = {}){
   font('bold', 8, PDF_C.accent); T('PRE-SALES · DATA CENTER POWER · BATTERY SIZING', M, y, {charSpace:1}); y += 17;
   font('bold', 25, PDF_C.navy); T('Battery Sizing Report', M, y); y += 34;
   font('normal', 10.5, PDF_C.dim);
-  T(`${vBattName(vb)} VRLA battery strings for Riello UPS — ${I.mode === 'AI' ? 'AI load, back-up time sizing' : 'standard backup sizing'}`, M, y); y += 28;
+  TS(`${vBattName(vb)} VRLA battery strings for Riello UPS — ${I.mode === 'AI' ? 'AI load, back-up time sizing' : 'standard backup sizing'}`, M, y); y += 28;
   table({body: kvRows([['CUSTOMER', info.customer || '—'], ['PREPARED BY', info.prepared || '—'], ['PROJECT', info.project || '—'], ['APPROVED BY', info.approved || '—'], ['COUNTRY', info.country || '—'], ['DATE', info.date], ['OFFER REF.', info.ref || '—'], ['REVISION', `${info.rev} — ${info.revDesc}`], ...(info.position ? [['POSITION', info.position], ['UPS', info.ups]] : [])]),
     columnStyles:{0:{cellWidth:82}, 1:{cellWidth:CW/2 - 82}, 2:{cellWidth:82}, 3:{cellWidth:CW/2 - 82}}, styles:{fontSize:9.4, cellPadding:{top:6, bottom:6, left:7, right:6}}, gap:24});
+  rec({t:'h0', text:'Sizing result'});
   font('bold', 11, PDF_C.navy); T('Sizing result', M, y); y += 18;
   const vColor = nBad ? PDF_C.bad : nWarn ? PDF_C.warn : PDF_C.ok, vBg = nBad ? PDF_C.badBg : nWarn ? PDF_C.warnBg : PDF_C.okBg;
   const kpis = [
@@ -2636,6 +2744,7 @@ function buildVrlaReport(R, opts = {}){
     {k:'BACK-UP TIME', v:`${vMin(S.tE, S.xE)} min`, s:`end of life · ${vMin(S.tB, S.xB)} min new · required ${n(V.tReq,1)} min`},
     {k:'VERIFICATION', v:verdict, s: nBad ? `${nBad} failed check(s)` : nWarn ? `${nWarn} note(s)` : 'all checks passed', color:vColor, bg:vBg}
   ];
+  rec({t:'kpis', items:kpis});
   const bw = (CW - 30)/4, bh = 66;
   kpis.forEach((k, i) => {
     const x = M + i*(bw + 10);
@@ -2649,10 +2758,10 @@ function buildVrlaReport(R, opts = {}){
   callout('Summary', `${V.N} strings of ${V.blocks} × ${vBattName(vb)} ${vb.vBlock} V VRLA blocks (${V.n} cells per string, ${S.blocks} blocks, ${vKg(S.kg)}) for a ${n(I.upsKva,0)} kVA UPS at ${n(V.pdc,1)} kW DC: ${vMin(S.tE, S.xE)} min at end of life and ${vMin(S.tB, S.xB)} min with a new battery, end voltage ${V.vf.toFixed(2)} V/cell (${n(V.vEnd,1)} V), ${n(S.I,0)} A per string, battery room at ${n(V.temp,0)} °C.`);
   table({head:[['Date', 'Rev.', 'Description', 'Prepared', 'Approved']], body:[[info.date, info.rev, info.revDesc, info.prepared || '—', info.approved || '—']],
     headStyles:{fillColor:PDF_C.fieldBg, textColor:PDF_C.dim}, columnStyles:{0:{cellWidth:72}, 1:{cellWidth:40, halign:'center'}, 3:{cellWidth:92}, 4:{cellWidth:92}}, gap:22});
-  const tocY = y;
+  const tocY = y; rec({t:'toc'});
 
   // ---------- 1. design input data
-  doc.addPage(); y = TOP;
+  doc.addPage(); y = TOP; rec({t:'break'});
   section('Design input data');
   const inPairs = [['UPS rated power', `${n(I.upsKva,0)} kVA`], ['Power factor', n(I.pf,2)], ['Load power', `${n(I.pLoadEff,0)} kW${I._empty.has('pLoad') ? ' (UPS rating × PF)' : ''}`], ['UPS efficiency, battery mode (η)', n(I.eff,3)], ['DC power to the batteries', `${n(V.pdc,1)} kW`],
     ['Required back-up time (BUT)', `${n(V.tReq,1)} min`], ['UPS DC voltage window', I._empty.has('upsVmin') || I._empty.has('upsVmax') ? '—' : `${n(I.upsVmin,0)}–${n(I.upsVmax,0)} V`],
@@ -2870,12 +2979,253 @@ async function buildVrlaSummaryPng(R){
   const blob = await pngWithDpi(raw, PNG_DPI);
   return {blob, filename:fileName(info, 'Summary', 'png'), w:cv.width, h:cv.height};
 }
+// the AI use chart drawn in the PDF report (vector), same profile as the page
+function drawAiProfilePdf(doc, I, A, M, y0, CW, space, getY, setY, font, T){
+  const H = 160; space(H + 40); let y = getY();
+  const pr = aiProfile(I), X = pr.X, sx = x => M + x/1000*CW;
+  const T0 = y + 32, T1 = y + 92, B0 = y + 104, B1 = y + 152, bm = (B0 + B1)/2;
+  const pmax = pr.P*1.08 || 1, ys = v => T1 - v/pmax*(T1 - T0);
+  const bmax = Math.max(pr.P - pr.L0, pr.P - pr.L1, pr.P*0.16, 1)*1.12, yb = v => bm - v/bmax*(B1 - B0)/2;
+  font('bold', 8.4, PDF_C.navy); T('Use of the UPS with an AI load', M, y);
+  font('normal', 7, PDF_C.dim); T('ramp lengths in proportion to the ramp times · training not to scale', M + CW, y, {align:'right'});
+  const band = (x0, x1, rgb, l1, l2) => { doc.setFillColor(...rgb); doc.rect(sx(x0), y + 12, sx(x1) - sx(x0), B1 - y - 12, 'F'); font('bold', 6.6, PDF_C.accent); T(l1, (sx(x0) + sx(x1))/2, y + 14, {align:'center'}); font('normal', 6.4, PDF_C.accent); T(l2, (sx(x0) + sx(x1))/2, y + 22, {align:'center'}); };
+  band(X.up0, X.up1, [234,240,250], 'Ramp-up', `${I.upS} · ${Math.round(I.rampUpT)} s`);
+  band(X.sm0, X.sm1, [244,245,247], 'Training — power smoothing', '(illustrative)');
+  band(X.dn0, X.dn1, [252,240,222], 'Ramp-down', `${I.dnS} · ${Math.round(I.rampDnT)} s`);
+  doc.setDrawColor(...PDF_C.border); doc.setLineWidth(0.5); doc.line(M, T1, M + CW, T1); doc.line(M, bm, M + CW, bm);
+  const poly = (f, yy, rgb, w, dash) => {
+    const pts = pr.pts.filter((p, i) => i % 2 === 0 || i === pr.pts.length - 1);
+    const seg = []; for(let i = 1; i < pts.length; i++) seg.push([sx(pts[i].x) - sx(pts[i-1].x), yy(f(pts[i])) - yy(f(pts[i-1]))]);
+    doc.setDrawColor(...rgb); doc.setLineWidth(w); if(dash) doc.setLineDashPattern(dash, 0);
+    doc.lines(seg, sx(pts[0].x), yy(f(pts[0])), [1, 1], 'S', false); doc.setLineDashPattern([], 0);
+  };
+  const area = (sign, rgb) => {
+    const pts = pr.pts.filter((p, i) => i % 2 === 0 || i === pr.pts.length - 1);
+    const val = p => sign > 0 ? Math.max(0, p.b) : Math.min(0, p.b);
+    const abs = [[sx(0), bm], ...pts.map(p => [sx(p.x), yb(val(p))]), [sx(1000), bm]];
+    const seg = []; for(let i = 1; i < abs.length; i++) seg.push([abs[i][0] - abs[i-1][0], abs[i][1] - abs[i-1][1]]);
+    doc.setFillColor(...rgb); doc.lines(seg, abs[0][0], abs[0][1], [1, 1], 'F', true);
+  };
+  area(1, [143,170,220]); area(-1, [236,186,110]);
+  poly(p => p.l, ys, PDF_C.navy, 1.2); poly(p => p.g, ys, PDF_C.red, 1, [3, 2]);
+  font('normal', 6.6, PDF_C.dim); T(`${Math.round(pr.P)} kW`, M + 2, ys(pr.P) - 8); T('battery + discharge / − charge', M + 2, B0 - 2);
+  font('bold', 7, PDF_C.navy); T(`${fmt(A.eUp,2)} kWh discharged (${fmt(A.pUp,0)} kW peak)`, sx(X.up1) + 4, B0 + 1);
+  font('bold', 7, PDF_C.warn); T(`${fmt(A.eDn,2)} kWh charged (${fmt(A.pDn,0)} kW peak)`, sx(X.dn0) - 4, B1 - 9, {align:'right'});
+  const ly = B1 + 8; let lx = M;
+  [[PDF_C.navy, 'Load (IT)'], [PDF_C.red, 'UPS input (grid)'], [[143,170,220], 'Battery discharge'], [[236,186,110], 'Battery charge']].forEach(([c, l]) => { doc.setFillColor(...c); doc.rect(lx, ly + 1, 9, 5, 'F'); font('normal', 7, PDF_C.text); T(l, lx + 12, ly); lx += 14 + doc.getTextWidth(pdfTxt(l)) + 14; });
+  setY(ly + 18);
+}
+
+// ---------------------------------------------------------------- Word report (.docx): the same content as the PDF report, editable
+// (formulas as Word equations, tables as Word tables). Written directly as Office Open XML in a stored zip: no extra library.
+const DOCX_C = {navy:'00257A', accent:'4472C4', red:'E00034', text:'14161A', dim:'767E8C', border:'D6DBE3', fieldBg:'F6F7F9'};
+const hexOf = c => Array.isArray(c) ? c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase()
+  : typeof c === 'number' ? Math.round(c).toString(16).padStart(2, '0').repeat(3).toUpperCase() : typeof c === 'string' && c ? c.replace('#', '').toUpperCase() : null;
+const xmlEsc = s => String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// crc32 (zip entries): the helper defined with the PNG writer below
+function zipStore(files, type){
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  const d = new Date(), tm = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF, dt = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+  files.forEach(f => {
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint16(10, tm, true); h.setUint16(12, dt, true);
+    h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true); c.setUint16(12, tm, true); c.setUint16(14, dt, true);
+    c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    cen.push(new Uint8Array(c.buffer), name);
+    off += 30 + name.length + data.length;
+  });
+  const size = cen.reduce((a, b) => a + b.length, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, size, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, new Uint8Array(e.buffer)], {type});
+}
+// formula markup → Office Math (OMML): editable equations in Word
+function ommlOf(src, sz = 21){
+  const run = (t, it) => `<m:r>${it ? '' : '<m:rPr><m:sty m:val="p"/></m:rPr>'}<w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr><m:t xml:space="preserve">${xmlEsc(t)}</m:t></m:r>`;
+  const walk = nodes => {
+    const out = [];
+    nodes.forEach(n => {
+      if(n.t === 'txt') out.push(run(n.s, false));
+      else if(n.t === 'var'){
+        const base = run(n.name, n.name.length === 1 || /^[ηΔρ]$/.test(n.name));
+        out.push(n.sub ? `<m:sSub><m:e>${base}</m:e><m:sub>${run(n.sub, false)}</m:sub></m:sSub>` : base);
+      }
+      else if(n.t === 'frac') out.push(`<m:f><m:num>${walk(n.num)}</m:num><m:den>${walk(n.den)}</m:den></m:f>`);
+      else if(n.t === 'ceil' || n.t === 'floor'){ const [b, e] = n.t === 'ceil' ? ['⌈', '⌉'] : ['⌊', '⌋']; out.push(`<m:d><m:dPr><m:begChr m:val="${b}"/><m:endChr m:val="${e}"/></m:dPr><m:e>${walk(n.body)}</m:e></m:d>`); }
+      else if(n.t === 'paren') out.push(`<m:d><m:e>${walk(n.body)}</m:e></m:d>`);
+      else if(n.t === 'sup'){ const base = out.pop() || run('', false); out.push(`<m:sSup><m:e>${base}</m:e><m:sup>${walk(n.body)}</m:sup></m:sSup>`); }
+    });
+    return out.join('');
+  };
+  return walk(mathParse(src));
+}
+// the AI use chart as a PNG (light colours, Work Sans embedded) for the Word report
+async function aiChartPng(I, A){
+  const LIGHT = {'navy':'#00257A', 'accent-dark':'#2F5597', 'field-border':'#DEE2E8', 'dim':'#767E8C', 'text':'#14161A', 'accent':'#4472C4', 'red':'#E00034'};
+  let svg = aiChartSvg(I, A).replace(/var\(--([a-z-]+)\)/g, (m, k) => LIGHT[k] || '#14161A');
+  const vb = /viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/.exec(svg), vw = vb ? +vb[1] : 1000, vh = vb ? +vb[2] : 360, scale = 2;
+  const font = `<defs><style>@font-face{font-family:'Work Sans';src:url(data:font/ttf;base64,${WORKSANS_LIGHT_B64});font-weight:100 500;}@font-face{font-family:'Work Sans';src:url(data:font/ttf;base64,${WORKSANS_BOLD_B64});font-weight:550 900;}</style></defs>`;
+  svg = svg.replace(/^\s*<svg /, `<svg xmlns="http://www.w3.org/2000/svg" width="${vw*scale}" height="${vh*scale}" `).replace(/(<svg[^>]*>)/, `$1${font}`);
+  const url = URL.createObjectURL(new Blob([svg], {type:'image/svg+xml'}));
+  try{
+    const img = new Image(); img.src = url; await img.decode();
+    const cv = document.createElement('canvas'); cv.width = vw*scale; cv.height = vh*scale;
+    const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    return {data:new Uint8Array(await blob.arrayBuffer()), w:vw, h:vh};
+  } finally { URL.revokeObjectURL(url); }
+}
+async function buildReportDocx(){
+  const rec = [];
+  const built = buildReportPdf({rec});   // same blocks as the PDF report
+  const R = LAST, I = R.I, info = reportInfo(I);
+  const name = R.tech === 'VRLA' ? `${vBattName(R.V.vb)} VRLA battery sizing` : `${R.d.full} battery sizing`;
+  const TW = 9638, SC = TW/511.28, EMU = 635;   // text width (twips) on A4 with 2 cm margins; PDF content width 511 pt
+  const C = DOCX_C;
+  let drawId = 1;
+  // runs and paragraphs
+  const rPr = o => [o.font ? `<w:rFonts w:ascii="${o.font}" w:hAnsi="${o.font}" w:cs="${o.font}"/>` : '', o.b ? '<w:b/><w:bCs/>' : '', o.caps ? '<w:caps/>' : '',
+    o.color ? `<w:color w:val="${o.color}"/>` : '', o.sp ? `<w:spacing w:val="${o.sp}"/>` : '', o.sz ? `<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>` : ''].join('');
+  const wR = (t, o = {}) => { const p = rPr(o), rp = p ? `<w:rPr>${p}</w:rPr>` : '';
+    return String(t ?? '').split('\n').map((line, i) => `${i ? `<w:r>${rp}<w:br/></w:r>` : ''}<w:r>${rp}<w:t xml:space="preserve">${xmlEsc(line)}</w:t></w:r>`).join(''); };
+  const panel = bar => `<w:pBdr><w:top w:val="single" w:sz="4" w:space="5" w:color="${C.fieldBg}"/><w:left w:val="single" w:sz="18" w:space="8" w:color="${bar}"/><w:bottom w:val="single" w:sz="4" w:space="5" w:color="${C.fieldBg}"/></w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="${C.fieldBg}"/>`;
+  const wP = (inner, o = {}) => `<w:p><w:pPr>${[o.style ? `<w:pStyle w:val="${o.style}"/>` : '', o.keep ? '<w:keepNext/>' : '', o.keepLines ? '<w:keepLines/>' : '',
+    o.panel ? panel(o.panel) : '', o.tabs || '', `<w:spacing w:before="${o.before ?? 0}" w:after="${o.after ?? 80}"/>`, o.ind ? `<w:ind w:left="${o.ind}" w:right="${o.ind}"/>` : '', o.jc ? `<w:jc w:val="${o.jc}"/>` : ''].join('')}</w:pPr>${inner}</w:p>`;
+  const gap = (h = 6) => `<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="${Math.round(h*20)}" w:lineRule="exact"/><w:rPr><w:sz w:val="4"/></w:rPr></w:pPr></w:p>`;
+  const wImg = (rid, wTw, hTw, label) => { const cx = Math.round(wTw*EMU), cy = Math.round(hTw*EMU), id = drawId++;
+    return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${id}" name="${xmlEsc(label)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${id}" name="${xmlEsc(label)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`; };
+  const fld = (code, cached, o) => `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> ${code} </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>${wR(cached, o)}<w:r><w:fldChar w:fldCharType="end"/></w:r>`;
+  // tables: the autoTable options of the PDF (column widths, cell styles, colour hooks)
+  const table = o => {
+    const norm = c => (c !== null && typeof c === 'object' && !Array.isArray(c)) ? c : {content:c};
+    const H = (o.head || []).map(r => r.map(norm)), B = (o.body || []).map(r => r.map(norm)), span = c => c.colSpan || 1;
+    const nCol = Math.max(1, ...[...H, ...B].map(r => r.reduce((a, c) => a + span(c), 0)));
+    const cs = o.columnStyles || {}, fixed = [], wt = [];
+    for(let c = 0; c < nCol; c++){ fixed.push(cs[c] && typeof cs[c].cellWidth === 'number' ? cs[c].cellWidth*SC : null); wt.push(5); }
+    [...H, ...B].forEach(r => { let c = 0; r.forEach(cell => { if(span(cell) === 1 && fixed[c] === null) wt[c] = Math.max(wt[c], Math.min(44, ...[Math.max(...String(cell.content ?? '').split('\n').map(x => x.length))])); c += span(cell); }); });
+    const fsum = fixed.reduce((a, w) => a + (w || 0), 0), free = Math.max(TW - fsum, 400*fixed.filter(w => w === null).length), wsum = wt.reduce((a, w, i) => a + (fixed[i] === null ? w : 0), 0) || 1;
+    let cols = fixed.map((w, i) => w !== null ? w : free*wt[i]/wsum); const k = TW/cols.reduce((a, b) => a + b, 0); cols = cols.map(w => Math.max(240, Math.round(w*k)));
+    const base = Object.assign({fontSize:8.2, halign:'left', fontStyle:'normal', textColor:PDF_C.text, fillColor:null}, o.styles || {});
+    const headBase = Object.assign({}, base, {fillColor:PDF_C.accent, textColor:255, fontStyle:'bold', fontSize:7.8}, o.headStyles || {});
+    const row = (r, ri, sec) => { let c = 0;
+      const cells = r.map(cell => {
+        const st = Object.assign({}, sec === 'head' ? headBase : base, sec === 'body' ? (cs[c] || {}) : {}, cell.styles || {});
+        const data = {section:sec, row:{index:ri, raw:r}, column:{index:c}, cell:{raw:cell, text:String(cell.content ?? '').split('\n'), styles:st}};
+        if(o.didParseCell) try{ o.didParseCell(data); }catch(e){}
+        const w = cols.slice(c, c + span(cell)).reduce((a, b) => a + b, 0), fill = hexOf(data.cell.styles.fillColor), jc = {right:'right', center:'center'}[data.cell.styles.halign];
+        const x = `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${span(cell) > 1 ? `<w:gridSpan w:val="${span(cell)}"/>` : ''}${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}<w:vAlign w:val="center"/></w:tcPr>${wP(wR(data.cell.text.join('\n'), {b:data.cell.styles.fontStyle === 'bold', color:hexOf(data.cell.styles.textColor), sz:Math.round(((data.cell.styles.fontSize || 8.2) + 0.7)*2)}), {after:0, jc})}</w:tc>`;
+        c += span(cell); return x; });
+      return `<w:tr><w:trPr><w:cantSplit/>${sec === 'head' ? '<w:tblHeader/>' : ''}</w:trPr>${cells.join('')}</w:tr>`; };
+    return `<w:tbl><w:tblPr><w:tblW w:w="${cols.reduce((a, b) => a + b, 0)}" w:type="dxa"/><w:tblBorders>${['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(x => `<w:${x} w:val="single" w:sz="4" w:space="0" w:color="${C.border}"/>`).join('')}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="85" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="85" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${cols.map(w => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${H.map((r, i) => row(r, i, 'head')).join('')}${B.map((r, i) => row(r, i, 'body')).join('')}</w:tbl>` + gap(Math.max(6, (o.gap ?? 14)*0.7));
+  };
+  const kpis = items => {
+    const n = items.length, g = 140, w = Math.floor((TW - g*(n - 1))/n), cols = []; items.forEach((k, i) => { cols.push(w); if(i < n - 1) cols.push(g); });
+    const cell = k => { const bd = k.hl ? C.accent : C.border, sz = k.hl ? 8 : 4;
+      return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/><w:tcBorders>${['top', 'left', 'bottom', 'right'].map(x => `<w:${x} w:val="single" w:sz="${sz}" w:space="0" w:color="${bd}"/>`).join('')}</w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="${hexOf(k.bg) || (k.hl ? 'EEF3FB' : 'FAFBFC')}"/><w:tcMar><w:top w:w="110" w:type="dxa"/><w:left w:w="140" w:type="dxa"/><w:bottom w:w="110" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>`
+        + wP(wR(k.k, {b:1, color:C.dim, sz:13, sp:6}), {after:40}) + wP(wR(k.v, {b:1, color:hexOf(k.color) || C.navy, sz:30}), {after:40}) + wP(wR(k.s, {color:C.dim, sz:15}), {after:0}) + '</w:tc>'; };
+    const spacer = `<w:tc><w:tcPr><w:tcW w:w="${g}" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr></w:p></w:tc>`;
+    return `<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${cols.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid><w:tr><w:trPr><w:cantSplit/></w:trPr>${items.map((k, i) => cell(k) + (i < n - 1 ? spacer : '')).join('')}</w:tr></w:tbl>` + gap(10);
+  };
+  const equations = (title, rows) => {
+    let x = wP(wR(title, {b:1, color:C.navy, sz:18}), {panel:C.accent, ind:113, after:40, keep:1});
+    rows.forEach(r => {
+      if(r.h){ x += wP(wR(r.h, {b:1, caps:1, color:C.accent, sz:15, sp:6}), {panel:C.accent, ind:113, before:60, after:20, keep:1}); return; }
+      String(r.f).split(/\s{4,}/).map(t => t.trim()).filter(Boolean).forEach(seg => {
+        x += `<w:p><w:pPr><w:keepLines/>${panel(C.accent)}<w:spacing w:before="20" w:after="20"/><w:ind w:left="113" w:right="113"/></w:pPr><m:oMathPara><m:oMathParaPr><m:jc m:val="left"/></m:oMathParaPr><m:oMath>${ommlOf(seg)}</m:oMath></m:oMathPara></w:p>`;
+      });
+    });
+    return x + gap(10);
+  };
+  const callout = (title, text, color) => wP(wR(title, {b:1, color:C.navy, sz:18}), {panel:hexOf(color) || C.accent, ind:113, after:40, keep:1})
+    + wP(wR(text, {sz:18}), {panel:hexOf(color) || C.accent, ind:113, after:0}) + gap(10);
+  // the AI chart (Li-ion, AI load)
+  const media = [];
+  let chartXml = '';
+  if(rec.some(b => b.t === 'aichart')){
+    try{
+      const png = await aiChartPng(I, R.A); media.push({name:'word/media/chart.png', data:png.data, rid:'rIdChart'});
+      const legend = [['00257A', 'Load (IT)'], ['E00034', 'UPS input (grid)'], ['8FAADC', 'Battery discharge'], ['ECBA6E', 'Battery charge']]
+        .map(([c, l]) => wR('■ ', {color:c, sz:20}) + wR(l + '      ', {sz:16, color:C.text})).join('');
+      chartXml = wP(wR('Use of the UPS with an AI load', {b:1, color:C.navy, sz:18}), {keep:1, before:80, after:40})
+        + wP(wImg('rIdChart', TW, TW*png.h/png.w, 'AI load chart'), {keep:1, after:20}) + wP(legend, {after:40})
+        + wP(wR('Ramp lengths in proportion to the ramp times; the training phase is illustrative and not to scale.', {color:C.dim, sz:15}), {after:120});
+    }catch(e){ console.warn('chart', e); }
+  }
+  // body
+  const h1s = rec.filter(b => b.t === 'h1');
+  const toc = () => wP(wR('Contents', {b:1, color:C.navy, sz:22}), {before:240, after:100, keep:1})
+    + h1s.map((h, i) => `<w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr>${i === 0 ? '<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-1" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>' : ''}${wR(`${h.no}. ${h.text}`)}${i === h1s.length - 1 ? '<w:r><w:fldChar w:fldCharType="end"/></w:r>' : ''}</w:p>`).join('')
+    + wP(wR('Page numbers: right-click the contents and choose “Update Field”.', {color:C.dim, sz:14}), {before:40, after:0});
+  let body = '';
+  rec.forEach(b => {
+    if(b.t === 'title') body += wP(wR('PRE-SALES · DATA CENTER POWER · BATTERY SIZING', {b:1, color:C.accent, sz:16, sp:20}), {after:60})
+      + wP(wR('Battery Sizing Report', {b:1, color:C.navy, sz:52}), {after:60}) + wP(wR(b.sub, {color:C.dim, sz:21}), {after:280});
+    else if(b.t === 'h0') body += wP(wR(b.text, {b:1, color:C.navy, sz:22}), {before:120, after:120, keep:1});
+    else if(b.t === 'h1') body += wP(wR(`${b.no}. ${b.text}`), {style:'Heading1'});
+    else if(b.t === 'h2') body += wP(wR(b.text), {style:'Heading2'});
+    else if(b.t === 'p') body += wP(wR(b.text, {sz:Math.round(((b.o.size || 8.6) + 0.8)*2), color:hexOf(b.o.color), b:b.o.bold}), {after:Math.round((b.o.gap ?? 6)*20)});
+    else if(b.t === 'callout') body += callout(b.title, b.text, b.color);
+    else if(b.t === 'eq') body += equations(b.title, b.rows);
+    else if(b.t === 'table') body += table(b.o);
+    else if(b.t === 'kpis') body += kpis(b.items);
+    else if(b.t === 'toc') body += toc();
+    else if(b.t === 'break') body += '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+    else if(b.t === 'aichart') body += chartXml;
+  });
+  const NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"';
+  const HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  const document = `${HEAD}<w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:footerReference w:type="default" r:id="rIdFtr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1780" w:right="1134" w:bottom="1320" w:left="1134" w:header="500" w:footer="460" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  // header: logo, title, project and revision; footer: company, address, page numbers
+  const logo = Uint8Array.from(atob(LOGO_B64.split(',')[1]), ch => ch.charCodeAt(0));
+  const lw = 122*20, lh = lw*104/355;
+  const header = `${HEAD}<w:hdr ${NS}><w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="3400"/><w:gridCol w:w="${TW - 3400}"/></w:tblGrid><w:tr>`
+    + `<w:tc><w:tcPr><w:tcW w:w="3400" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${wP(wImg('rIdLogo', lw, lh, 'Riello UPS'), {after:0})}</w:tc>`
+    + `<w:tc><w:tcPr><w:tcW w:w="${TW - 3400}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${wP(wR('BATTERY SIZING REPORT', {b:1, color:C.navy, sz:21, sp:8}), {after:20, jc:'right'})}${wP(wR([info.customer, info.project].filter(Boolean).join(' · ') || name, {color:C.dim, sz:16}), {after:0, jc:'right'})}${wP(wR(`${info.ref ? `Ref. ${info.ref} · ` : ''}Rev. ${info.rev} · ${info.date}`, {color:C.dim, sz:16}), {after:0, jc:'right'})}</w:tc>`
+    + `</w:tr></w:tbl><w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="9" w:space="1" w:color="${C.red}"/></w:pBdr><w:spacing w:before="60" w:after="0" w:line="120" w:lineRule="exact"/><w:rPr><w:sz w:val="4"/></w:rPr></w:pPr></w:p></w:hdr>`;
+  const tabR = `<w:tabs><w:tab w:val="right" w:pos="${TW}"/></w:tabs>`;
+  const footer = `${HEAD}<w:ftr ${NS}><w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:space="6" w:color="${C.border}"/></w:pBdr>${tabR}<w:spacing w:before="0" w:after="20"/></w:pPr>${wR('RPS S.p.A. ', {b:1, sz:15})}${wR('Riello Power Solutions', {sz:15})}<w:r><w:tab/></w:r>${wR('Page ', {b:1, color:C.navy, sz:15})}${fld('PAGE', '1', {b:1, color:C.navy, sz:15})}${wR(' of ', {b:1, color:C.navy, sz:15})}${fld('NUMPAGES', '1', {b:1, color:C.navy, sz:15})}</w:p>`
+    + `<w:p><w:pPr>${tabR}<w:spacing w:before="0" w:after="0"/></w:pPr>${wR('37045 Legnago (VR) - ITALY - Viale Europa 7 - T +39 0442 635811 - www.riello-ups.com', {color:C.dim, sz:13})}<w:r><w:tab/></w:r>${wR(`Battery Sizing ${APP_VERSION}`, {color:C.dim, sz:13})}</w:p></w:ftr>`;
+  const styles = `${HEAD}<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:eastAsia="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:color w:val="${C.text}"/><w:sz w:val="19"/><w:szCs w:val="19"/><w:lang w:val="en-GB" w:eastAsia="en-US" w:bidi="ar-SA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="259" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>`
+    + `<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>`
+    + `<w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont"><w:name w:val="Default Paragraph Font"/><w:uiPriority w:val="1"/><w:semiHidden/><w:unhideWhenUsed/></w:style>`
+    + `<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`
+    + `<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/><w:pPr><w:keepNext/><w:keepLines/><w:pBdr><w:left w:val="single" w:sz="24" w:space="6" w:color="${C.red}"/><w:bottom w:val="single" w:sz="4" w:space="4" w:color="${C.border}"/></w:pBdr><w:spacing w:before="360" w:after="160"/><w:ind w:left="150"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:bCs/><w:color w:val="${C.navy}"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr></w:style>`
+    + `<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:unhideWhenUsed/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="160" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:bCs/><w:caps/><w:color w:val="${C.accent}"/><w:spacing w:val="8"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:style>`
+    + `<w:style w:type="paragraph" w:styleId="TOC1"><w:name w:val="toc 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="39"/><w:unhideWhenUsed/><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${TW}"/></w:tabs><w:spacing w:after="60"/></w:pPr><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style>`
+    + `</w:styles>`;
+  const settings = `${HEAD}<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:zoom w:percent="100"/><w:defaultTabStop w:val="709"/><w:characterSpacingControl w:val="doNotCompress"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat><m:mathPr><m:mathFont m:val="Cambria Math"/><m:brkBin m:val="before"/><m:brkBinSub m:val="--"/><m:smallFrac m:val="0"/><m:dispDef/><m:lMargin m:val="0"/><m:rMargin m:val="0"/><m:defJc m:val="left"/><m:wrapIndent m:val="1440"/><m:intLim m:val="subSup"/><m:naryLim m:val="undOvr"/></m:mathPr></w:settings>`;
+  const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const docRels = `${HEAD}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="${REL}/styles" Target="styles.xml"/><Relationship Id="rIdSettings" Type="${REL}/settings" Target="settings.xml"/><Relationship Id="rIdHdr" Type="${REL}/header" Target="header1.xml"/><Relationship Id="rIdFtr" Type="${REL}/footer" Target="footer1.xml"/>${media.map(m => `<Relationship Id="${m.rid}" Type="${REL}/image" Target="${m.name.replace('word/', '')}"/>`).join('')}</Relationships>`;
+  const hdrRels = `${HEAD}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLogo" Type="${REL}/image" Target="media/logo.png"/></Relationships>`;
+  const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  const core = `${HEAD}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xmlEsc(`Battery Sizing Report${info.project ? ' — ' + info.project : ''}`)}</dc:title><dc:subject>${xmlEsc(name)}</dc:subject><dc:creator>${xmlEsc(info.prepared || 'RPS S.p.A.')}</dc:creator><cp:lastModifiedBy>${xmlEsc(info.prepared || 'RPS S.p.A.')}</cp:lastModifiedBy><cp:revision>1</cp:revision><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`;
+  const app = `${HEAD}<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Battery Sizing ${APP_VERSION}</Application><Company>RPS S.p.A. — Riello Power Solutions</Company></Properties>`;
+  const types = `${HEAD}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`;
+  const rootRels = `${HEAD}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="${REL}/extended-properties" Target="docProps/app.xml"/></Relationships>`;
+  const blob = zipStore([
+    {name:'[Content_Types].xml', data:types}, {name:'_rels/.rels', data:rootRels}, {name:'docProps/core.xml', data:core}, {name:'docProps/app.xml', data:app},
+    {name:'word/document.xml', data:document}, {name:'word/styles.xml', data:styles}, {name:'word/settings.xml', data:settings},
+    {name:'word/header1.xml', data:header}, {name:'word/footer1.xml', data:footer}, {name:'word/_rels/document.xml.rels', data:docRels}, {name:'word/_rels/header1.xml.rels', data:hdrRels},
+    {name:'word/media/logo.png', data:logo}, ...media.map(m => ({name:m.name, data:m.data}))
+  ], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  return {blob, filename:built.filename.replace(/\.pdf$/i, '.docx'), blocks:rec.length};
+}
+async function downloadDocx(){
+  let r;
+  try{ r = await buildReportDocx(); }catch(err){ alert(err.message); return; }
+  saveBlob(r.blob, r.filename);
+  toast(`Word report downloaded — ${r.filename}`);
+}
 let PREVIEW = null, PREVIEW_URL = '';
 function showPreview(kind, title, sub, url){
   if(PREVIEW_URL) try{ URL.revokeObjectURL(PREVIEW_URL); }catch(e){}
   PREVIEW_URL = url;
   $('previewTitle').textContent = title; $('previewSub').textContent = sub; $('previewMsg').textContent = '';
   const pdf = kind === 'pdf';
+  $('btnPreviewWord').style.display = pdf && PREVIEW && !PREVIEW.row ? '' : 'none';
   $('previewFrame').style.display = pdf ? 'block' : 'none'; $('previewImg').style.display = pdf ? 'none' : 'block';
   if(pdf){ $('previewFrame').src = url; $('previewImg').removeAttribute('src'); } else { $('previewImg').src = url; $('previewFrame').src = 'about:blank'; }
   $('btnPreviewCopy').style.display = pdf ? 'none' : '';
@@ -2887,7 +3237,7 @@ function showPreview(kind, title, sub, url){
 function openPdfPreview(opts){
   let built;
   try{ built = buildReportPdf(opts); }catch(err){ alert(err.message); return; }
-  PREVIEW = Object.assign({kind:'pdf'}, built);
+  PREVIEW = Object.assign({kind:'pdf', row:!!(opts && opts.row)}, built);
   showPreview('pdf', 'PDF report — preview', `${built.filename} · ${built.pages} pages`, URL.createObjectURL(built.doc.output('blob')));
 }
 async function openPngPreview(){
@@ -3000,11 +3350,11 @@ async function buildSummaryPng(){
     ['UPS rated power / load', `${fmt(I.upsKva,0)} kVA · ${fmt(I.pLoadEff,0)} kW load`],
     ['UPS efficiency, battery mode', `η ${fmt(I.eff,3)} → ${fmt(s1.pdc,1)} kW DC`],
     ['Required autonomy', `${fmt(I.reqTime,1)} min EOL`],
-    [`${I.rk.short} racks per UPS`, `${fmt(A.nGpu, A.nGpu % 1 ? 1 : 0)} × ${fmt(I.pEdp,0)} kW EDP`],
+    ['Ramp-up', `${I.upS} in ${fmt(I.rampUpT,0)} s · ${fmt(A.eUp,2)} kWh out`],
+    ['Ramp-down', `${I.dnS} in ${fmt(I.rampDnT,0)} s · ${fmt(A.eDn,2)} kWh in`],
+    ['Max AI racks per UPS', `${fmt(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0)} × ${I.rk.short} (indication)`],
     ['UPS charger limit', `${fmt(A.kch*100,0)} % (UPS load ${fmt(A.upsLoad*100,1)} %)`],
-    ['Ramp C-rate', `${fmt(I.cDis,1)}C discharge / ${fmt(I.cCh,1)}C charge`],
-    ['AI-cycling ageing', `+${fmt(I.agePct,0)} %${A.lifeOK ? ' · ' + cycLabel(I.cycles) : ''}`],
-    ['SOC set-point', `${fmt(I.soc,0)} %`]
+    ['SOC set-point (reserve)', `${AI_REF.soc} % · life ≈ ${AI_REF.lifeYears} years (to confirm)`]
   ] : [
     ['UPS rated power', `${fmt(I.upsKva,0)} kVA · PF ${fmt(I.pf,2)}`],
     ['UPS efficiency, battery mode', `η ${fmt(I.eff,3)} → ${fmt(s1.pdc,1)} kW DC`],
@@ -3033,7 +3383,7 @@ async function buildSummaryPng(){
   txt(useAI ? 'PER IT FEEDER' : 'TOTAL MODULES', cx + cw - 24, cy + 36, F('b', 12), col.dim, 'right', 1.2);
   txt(useAI ? `${A.nFeeder}` : `${cfg.total}`, cx + cw - 24, cy + 92, F('b', 46), col.navy, 'right');
   txt(useAI ? `${I.upsFeeder} UPS × ${A.nCab} cabinets` : `${cfg.racks} × ${cfg.mpr} modules`, cx + cw - 24, cy + 120, F('l', 15), col.dim, 'right');
-  const parts = useAI ? [[A.s2.racks, col.navy, 'Autonomy + AI ageing'], [A.nRamp, col.accent, 'Ramp up / down'], [A.nSmooth, col.teal, 'Power smoothing']] : [[cfg.racks, col.navy, 'Autonomy']];
+  const parts = useAI ? [[A.nCabBut, col.navy, 'Standard BUT'], [A.nCabAi, col.accent, `Ramps / SOC ${AI_REF.soc} % reserve`]] : [[cfg.racks, col.navy, 'Autonomy']];
   const slots = Math.max(nCab, useAI && I.maxParallel ? Math.min(I.maxParallel, 16) : nCab);
   const gap = 10, iw = Math.min(48, (cw - 48 - (slots - 1)*gap)/slots), ih = 78, iy = cy + 144;
   let x = cx + 24;
@@ -3058,7 +3408,7 @@ async function buildSummaryPng(){
 
   // KPI tiles
   const tiles = useAI ? [
-    ['EOL AUTONOMY', `${fmt(A.final.eol,1)} min`, `full load · ${fmt(A.tSoc,1)} min from ${fmt(I.soc,0)} % SOC`],
+    ['EOL AUTONOMY', `${fmt(A.final.eol,1)} min`, `full load · ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC`],
     ['INSTALLED ENERGY', `${fmt(A.eInst,0)} kWh`, `${A.nModTot} modules · ${fmt(A.eEol,0)} kWh usable at EOL`],
     ['DC WINDOW', `${fmt(A.final.vmin,0)}–${fmt(A.final.vmax,0)} V`, `${fmt(A.final.current,0)} A per rack (limit ${d.currentLimit} A)`]
   ] : [
@@ -3088,6 +3438,7 @@ function configObject(){
   const I = readInputs(), o = {version:'4.0', tool:'Battery Sizing'};
   NUM_FIELDS.forEach(id => o[id] = I._empty.has(id) ? '' : I[id]);
   SEL_FIELDS.forEach(id => o[id] = I[id]);
+  o.vAge = I.vAge;
   TEXT_FIELDS.forEach(id => o[id] = I[id]);
   const b = battById(I.model);
   if(b){ const c = JSON.parse(JSON.stringify(b)); delete c.builtin; o.battery = c; }
@@ -3672,7 +4023,7 @@ if(EMBED){
 // ---------------------------------------------------------------- collapsible panels
 function setPanel(p, collapsed){ p.classList.toggle('pnl-collapsed', collapsed); }
 document.querySelectorAll('.panel.pnl-c > .panel-title').forEach(t => t.addEventListener('click', e => {
-  if(e.target.closest('select, input, a')) return;
+  if(e.target.closest('select, input, a, .seg, .pnl-head-r button')) return;
   const p = t.parentElement; setPanel(p, !p.classList.contains('pnl-collapsed'));
 }));
 function goTo(id){ const p = $(id); if(!p) return; setPanel(p, false); p.scrollIntoView({behavior:'smooth', block:'start'}); }
@@ -3688,6 +4039,7 @@ const RIBBON = (function(){
     upload:'<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
     print:'<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/>',
     pdf:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M8.5 16v-4h1.5a1.3 1.3 0 0 1 0 2.6H8.5"/>',
+    word:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M8 12l1.4 5 1.6-3.6 1.6 3.6L14 12"/>',
     chart:'<path d="M4 20V11M10 20V5M16 20v-6M3 20h18"/>',
     battery:'<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2M6 10v4M10 10v4"/>',
     eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -3711,30 +4063,30 @@ const RIBBON = (function(){
   const svg = (n, s) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${s > 20 ? 1.6 : 1.9}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
   const L = {home:'Home', documents:'Documents', library:'Library', view:'View',
     g_host:'DC Configurator', hostApply:'Apply to configurator',
-    g_sp:'SharePoint', spProject:'Reference project', spAccount:'Microsoft 365', g_tech:'Technology', techLi:'Li-ion', techVrla:'VRLA',
+    g_sp:'SharePoint', spProject:'Reference project', spAccount:'Microsoft 365', g_tech:'Technology', techLi:'Li-ion · Ampace', techVrla:'VRLA · lead-acid',
     g_lib:'Battery library', libOpen:'Open library', libAdd:'Add battery', g_libio:'Library file', libImport:'Import library', libExport:'Export library', collapse:'Collapse the ribbon (Ctrl+F1)', pin:'Keep the ribbon open (Ctrl+F1)',
     g_sizing:'Sizing', calc:'Calculate sizing', reset:'Reset page', g_mode:'Sizing mode', modeAI:'AI load', modeBk:'Standard backup',
-    g_cfg:'Configuration', saveProj:'Save project configuration', load:'Load configuration', g_report:'Report', pdfReport:'PDF report', pdfDownload:'Download PDF', printPage:'Print page', g_page:'Page', g_image:'Document image', pngSummary:'Summary PNG', pngCopy:'Copy summary', pngDownload:'Download PNG',
-    g_sections:'Sections', sInputs:'Project & UPS data', sStep1:'Step 1 — Autonomy', sAI:'Steps 0 · 2–5 — AI load', sVerify:'Step 6 — Verification', sModel:'Mathematical model', sNotes:'Assumptions to confirm', sLib:'Battery library', sVEnd:'End voltage', sVSite:'Recharge & site',
+    g_cfg:'Configuration', saveProj:'Save project configuration', load:'Load configuration', g_report:'Report', pdfReport:'PDF report', pdfDownload:'Download PDF', wordReport:'Word report (editable)', wordDownload:'Download Word', printPage:'Print page', g_page:'Page', g_image:'Document image', pngSummary:'Summary PNG', pngCopy:'Copy summary', pngDownload:'Download PNG',
+    g_sections:'Sections', sInputs:'Project & UPS data', sStep1:'Step 1 — Standard BUT', sAI:'AI load — ramps', sVerify:'Step 6 — Verification', sModel:'Mathematical model', sNotes:'Assumptions to confirm', sLib:'Battery library', sVEnd:'End voltage', sVSite:'Recharge & site',
     g_panels:'Panels', expand:'Expand all', shrink:'Collapse all'};
   const big = (icon, key, run, o = {}) => Object.assign({type:'big', icon, key, run}, o);
   const sm = (icon, key, run, o = {}) => Object.assign({type:'sm', icon, key, run}, o);
   const col = (...items) => ({type:'col', items});
   const mode = () => $('mode').value;
-  const setMode = m => { $('mode').value = m; calculate(); render(); };
+  const setMode = m => { if(m === 'AI' && isV()){ toast('AI load sizing is for Li-ion batteries only.', true); return; } $('mode').value = m; calculate(); render(); };
   const tech = () => $('tech').value, isV = () => tech() === 'VRLA';
   const setTech = t => { if(tech() === t) return; $('tech').value = t; $('vStrings').value = ''; refreshNotes(); calculate(); render(); };
   const TABS = {
     home: [
       ['g_sizing', [big('bolt', 'calc', () => calculate(), {pri:1}), big('reset', 'reset', () => resetTool(), {red:1})]],
-      ['g_tech', [big('battery', 'techLi', () => setTech('LI'), {on: () => !isV()}), big('blocks', 'techVrla', () => setTech('VRLA'), {on: () => isV()})]],
-      ['g_mode', [big('chart', 'modeAI', () => setMode('AI'), {on: () => mode() === 'AI'}), big('battery', 'modeBk', () => setMode('BACKUP'), {on: () => mode() === 'BACKUP'})]],
+      ['g_tech', [{type:'seg', label:'Battery technology', items:[{key:'techLi', run: () => setTech('LI'), on: () => !isV()}, {key:'techVrla', run: () => setTech('VRLA'), on: () => isV()}]}]],
+      ['g_mode', [big('chart', 'modeAI', () => setMode('AI'), {on: () => mode() === 'AI' && !isV()}), big('battery', 'modeBk', () => setMode('BACKUP'), {on: () => mode() === 'BACKUP' || isV()})]],
       ['g_cfg', [big('save', 'saveProj', () => saveProjectConfiguration(), {pri:1}), big('upload', 'load', () => $('loadFile').click())]],
-      ['g_report', [big('pdf', 'pdfReport', () => openPdfPreview(), {pri:1}), big('copy', 'pngCopy', () => copySummary()), big('image', 'pngSummary', () => openPngPreview())]],
+      ['g_report', [big('pdf', 'pdfReport', () => openPdfPreview(), {pri:1}), big('word', 'wordReport', () => downloadDocx()), big('copy', 'pngCopy', () => copySummary()), big('image', 'pngSummary', () => openPngPreview())]],
       ['g_sp', [big('folder', 'spProject', () => openProjectPicker()), big('user', 'spAccount', () => openSpPanel())]]
     ],
     documents: [
-      ['g_report', [big('eye', 'pdfReport', () => openPdfPreview(), {pri:1}), big('pdf', 'pdfDownload', () => downloadPdf())]],
+      ['g_report', [big('eye', 'pdfReport', () => openPdfPreview(), {pri:1}), big('pdf', 'pdfDownload', () => downloadPdf()), big('word', 'wordDownload', () => downloadDocx())]],
       ['g_image', [big('copy', 'pngCopy', () => copySummary(), {pri:1}), big('image', 'pngSummary', () => openPngPreview()), big('download', 'pngDownload', () => downloadPng())]],
       ['g_page', [big('print', 'printPage', () => printPage())]],
       ['g_cfg', [big('save', 'saveProj', () => saveProjectConfiguration(), {pri:1}), big('upload', 'load', () => $('loadFile').click())]],
@@ -3745,7 +4097,7 @@ const RIBBON = (function(){
       ['g_libio', [big('upload', 'libImport', () => $('libFile').click()), big('download', 'libExport', () => exportLibrary())]]
     ],
     view: [
-      ['g_sections', [col(sm('doc', 'sInputs', () => goTo('pnlInputs')), sm('battery', 'sStep1', () => goTo(isV() ? 'pnlVStep1' : 'pnlStep1')), sm('chart', 'sAI', () => goTo(isV() ? 'pnlVAI' : 'pnlAI'), {hide: () => mode() !== 'AI'}), sm('battery', 'sLib', () => goTo('pnlLibrary'), {hide: isV})),
+      ['g_sections', [col(sm('doc', 'sInputs', () => goTo('pnlInputs')), sm('battery', 'sStep1', () => goTo(isV() ? 'pnlVStep1' : 'pnlStep1')), sm('chart', 'sAI', () => goTo('pnlAI'), {hide: () => mode() !== 'AI' || isV()}), sm('battery', 'sLib', () => goTo('pnlLibrary'), {hide: isV})),
                       col(sm('blocks', 'sVEnd', () => goTo('pnlVEnd'), {hide: () => !isV()}), sm('doc', 'sVSite', () => goTo('pnlVSite'), {hide: () => !isV()}), sm('shield', 'sVerify', () => goTo('pnlVerify')), sm('eye', 'sNotes', () => goTo('pnlNotes')))]],
       ['g_panels', [big('expand', 'expand', () => allPanels(false)), big('shrink', 'shrink', () => allPanels(true))]]
     ]
@@ -3795,6 +4147,7 @@ const RIBBON = (function(){
   let reg = [];
   function itemHtml(it){
     if(it.type === 'col') return `<div class="rb-col">${it.items.map(itemHtml).join('')}</div>`;
+    if(it.type === 'seg') return `<div class="seg rb-seg" role="group" aria-label="${esc(it.label || '')}">${it.items.map(x => { reg.push(x); return `<button type="button" data-rb="${reg.length - 1}" aria-pressed="${x.on() ? 'true' : 'false'}">${esc(L[x.key] || x.key)}</button>`; }).join('')}</div>`;
     if(it.hide && it.hide()) return '';
     const lab = esc(L[it.key] || it.key); reg.push(it);
     const on = it.on ? (it.on() ? ' rb-on' : ' rb-off') : '';
@@ -3943,6 +4296,7 @@ $('btnReset').addEventListener('click', resetTool);
 $('loadFile').addEventListener('change', loadJSON);
 $('configTable').addEventListener('click', e => { const b = e.target.closest('[data-row]'); if(b && LAST) openPdfPreview({row: LAST.s1.rows[+b.dataset.row]}); });
 $('btnPdf').addEventListener('click', () => openPdfPreview());
+$('btnPreviewWord').addEventListener('click', () => downloadDocx());
 $('btnPreviewClose').addEventListener('click', closePdfPreview);
 $('btnPreviewCancel').addEventListener('click', closePdfPreview);
 $('btnPreviewDownload').addEventListener('click', () => { if(!PREVIEW) return; if(PREVIEW.kind === 'pdf') PREVIEW.doc.save(PREVIEW.filename); else saveBlob(PREVIEW.blob, PREVIEW.filename); });
@@ -3996,6 +4350,16 @@ $('vModel').addEventListener('input', () => { const vb = vBattById($('vModel').v
 $('pnlVStep1').addEventListener('click', e => { const b = e.target.closest('[data-vstr]'); if(!b) return; $('vStrings').value = b.dataset.vstr; calculate(); RIBBON.render(); });
 $('pnlVEnd').addEventListener('click', e => { const t = e.target.closest('[data-veod]'); if(!t) return; $('vEodv').value = t.dataset.veod; refreshNotes(); calculate(); });
 $('vCfgAuto').addEventListener('click', () => { $('vStrings').value = ''; calculate(); });
+$('butBody').addEventListener('click', e => { const t = e.target.closest('[data-but]'); if(!t) return; $('butSel').value = t.dataset.but; $('aiCab').value = ''; calculate(); RIBBON.render(); });
+$('butAuto').addEventListener('click', () => { $('butSel').value = ''; $('aiCab').value = ''; calculate(); RIBBON.render(); });
+['rampUp', 'rampDn'].forEach(id => { const u = $(id + 'Unit'); u.dataset.prev = u.value; u.addEventListener('change', () => {
+  const v = parseFloat($(id).value), P = loadPower(readInputs());
+  if(isFinite(v) && P > 0) $(id).value = u.value === 'KW' && u.dataset.prev === 'PCT' ? Math.round(v/100*P) : u.value === 'PCT' && u.dataset.prev === 'KW' ? Math.round(v/P*10000)/100 : v;
+  u.dataset.prev = u.value; calculate(); }); });
+$('aiCabSeg').addEventListener('click', e => { const b = e.target.closest('[data-aicab]'); if(!b) return; $('aiCab').value = b.dataset.aicab; calculate(); RIBBON.render(); });
+$('modeSeg').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if(!b) return; e.stopPropagation(); $('mode').value = b.dataset.mode; refreshNotes(); calculate(); RIBBON.render(); });
+$('vBlocksSeg').addEventListener('click', e => { const b = e.target.closest('[data-vblk]'); if(!b) return; $('vBlocks').value = b.dataset.vblk; $('vStrings').value = ''; refreshNotes(); calculate(); RIBBON.render(); });
+$('aiRackCards').addEventListener('click', e => { const b = e.target.closest('[data-rack]'); if(!b) return; $('aiRack').value = b.dataset.rack; refreshNotes(); calculate(); RIBBON.render(); });
 [...NUM_FIELDS, 'mode', 'threeWire', 'rackRule', 'aiRack', 'tech', 'vModel', 'vBlocks', 'vEodv', 'vAge', 'vMargin', 'vLife'].forEach(id => $(id).addEventListener('input', () => { refreshNotes(); calculate(); RIBBON.render(); }));
 
 document.querySelectorAll('.doc-ref[data-doc]').forEach(p => { const k = p.dataset.doc; p.innerHTML = `Explanatory document: ${docLink(k)} — ${esc(DOCS[k].sub.charAt(0).toLowerCase() + DOCS[k].sub.slice(1))}.`; });

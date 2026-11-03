@@ -635,6 +635,7 @@ body.dark-theme .dt-fly .df-acts button.pri{background:#3A7BE0; border-color:#3A
 
 /* ---- VRLA technology (lead-acid strings) ---- */
 body.tech-vrla .li-only{display:none !important;}
+body:not(.meth-mt) .mt-only{display:none !important;}
 body:not(.tech-vrla) .vrla-only{display:none !important;}
 body.mode-backup .vrla-ai-only, body.mode-backup .ai-only{display:none !important;}
 .v-split{display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start;}
@@ -786,7 +787,9 @@ body.dark-theme .settings-note.note-warn{color:#F2C777;}
         <div class="field li-only"><label for="threeWire">3-wire / topology constraint</label><select id="threeWire"><option value="NO">No</option><option value="YES">Yes</option></select></div>
         <div class="field"><label for="altitude">Altitude (m)</label><input id="altitude" type="number" min="0" step="1" placeholder="0"><div class="settings-note">Above 2000 m the manufacturer must confirm.</div></div>
         <div class="field li-only"><label for="rackRule">Rack count rule (Step 1)</label><select id="rackRule"><option value="EI">Energy + rack current limit (recommended)</option><option value="E">Energy only (original rule)</option></select></div>
-        <div class="field li-only"><label for="emod">Module usable energy at EOL (kWh)</label><input id="emod" type="number" min="0" step=".001" placeholder="from library"><div class="settings-note" id="emodNote"></div></div>
+        <div class="field li-only"><label for="emod">Module usable energy at EOL (kWh)</label><input id="emod" type="number" readonly tabindex="-1" placeholder="automatic"><div class="settings-note" id="emodNote"></div></div>
+        <div class="field li-only mt-only"><label for="mtCase">Duty cycle (ageing tables)</label><select id="mtCase"><option value="1">Case 1 — 2 full cycles/year + 24 at 5 % DOD</option><option value="2">Case 2 — 5 full cycles/year + 24 at 5 % DOD</option><option value="3">Case 3 — 10 full cycles/year + 24 at 5 % DOD</option></select><div class="settings-note" id="mtCaseNote"></div></div>
+        <div class="field li-only mt-only"><label for="mtLife">Design life — autonomy checked at</label><select id="mtLife"><option value="0">Begin of life (new battery)</option><option value="5">5 years</option><option value="7.5">7.5 years</option><option value="10">10 years</option><option value="12">12 years</option><option value="15">15 years</option></select><div class="settings-note" id="mtLifeNote"></div></div>
       </div>
 
       <div id="vrlaInputs" class="vrla-only">
@@ -917,11 +920,11 @@ body.dark-theme .settings-note.note-warn{color:#F2C777;}
       <div class="vc-head"><span class="vc-title">Choose the BUT configuration — from the minimum up</span><button type="button" class="st-act" id="butAuto" hidden>Back to the minimum</button></div>
       <input id="butSel" type="text" class="hidden" aria-hidden="true" tabindex="-1">
       <div class="card-hint" id="butMinNote" style="margin:0 0 10px"></div>
-      <div class="table-wrap"><table class="bom" style="min-width:780px"><thead><tr><th>Option</th><th class="num">Racks × modules</th><th class="num">Total modules</th><th class="num">EOL time</th><th class="num">BOL time</th><th class="num">I rack</th><th class="num">V min–max</th></tr></thead><tbody id="butBody"></tbody></table></div>
+      <div class="table-wrap"><table class="bom" style="min-width:780px"><thead><tr><th>Option</th><th class="num" id="butHeadCfg">Racks × modules</th><th class="num">Total modules</th><th class="num">EOL time</th><th class="num">BOL time</th><th class="num">I rack</th><th class="num">V min–max</th></tr></thead><tbody id="butBody"></tbody></table></div>
       <div class="vc-head" style="margin-top:20px"><span class="vc-title">Configuration matrix — minimum racks for each modules / rack</span></div>
       <div class="table-wrap">
         <table class="bom" id="configTable" style="min-width:1100px"><thead><tr>
-          <th>Configuration</th><th class="num">Modules / rack</th><th class="num">Racks</th><th>Driver</th><th class="num">Total modules</th>
+          <th>Configuration</th><th class="num" id="cfgHeadMpr">Modules / rack</th><th class="num">Racks</th><th>Driver</th><th class="num">Total modules</th>
           <th class="num">V min</th><th class="num">V max</th><th class="num">EOL time</th><th class="num">BOL time</th>
           <th class="num">I rack</th><th>Voltage</th><th>Time</th><th>Current</th><th>3-wire</th><th>Final</th>
         </tr></thead><tbody></tbody></table>
@@ -1068,7 +1071,7 @@ const WORKSANS_BOLD_B64 = 'AAEAAAAQAQAABAAAR0RFRgmmCYcAAJccAAAAXkdQT1PUJ1QsAACXf
 </script>
 <script>
 'use strict';
-const APP_VERSION = 'v5.1';
+const APP_VERSION = 'v5.4';
 // Technical documents (PDF) — on SharePoint, in the same folder as the DC Configurator manuals
 const DOCS_BASE = 'https://rielloups.sharepoint.com/sites/DCSales2/Shared%20Documents/03_Tools/PreSales_Execution/DEF/';
 const DOCS = {
@@ -1083,9 +1086,9 @@ const docLink = (k, text) => `<a class="doc-link" href="${docUrl(k)}" target="_b
 // ---------------------------------------------------------------- battery library (built-in defaults + batteries added by the user)
 const DEFAULT_LIBRARY = [
   {id:'ampace-pu100', manufacturer:'Ampace', model:'PU-100', variant:'6C', chemistry:'LFP',
-   source:'Ampace configurator (Excel) and PU-100 datasheet (RPS GB300 reference design, Rev.01, Oct 2026). Usable EOL energy 4.075 kWh/module from the configurator; the Ampace EOL tables correspond to ≈ 3.81 kWh/module. Ramp C-rates 6C / 2C from the Ampace AI-load slide.',
-   cellsPerModule:16, cellVmin:2.80, cellVmax:3.45, moduleEnergyEOL:4.075, moduleEnergyRated:5.324, modulePower:26.88, rackCurrentLimit:600, rackOptions:[8,9,10,11,12],
-   maxParallel:8, sohEOL:80, altitudeMax:3000, cDisRamp:6, cChRamp:2, cDisCont:5.05, cChCont:1, life:{0:80, 5:73, 10:70, 50:66},
+   source:'PU-100 datasheet and Ampace end-of-life backup tables. Usable EOL energy 3.79 kWh/module = P × t / 60 / modules from the EOL tables at the maximum discharge power (about 26 kW per module; 3.97 kWh at 0.4C). Ramp C-rates 6C discharge / 1C charge (104 A on 104 Ah).',
+   cellsPerModule:16, cellVmin:2.80, cellVmax:3.45, moduleEnergyEOL:3.79, moduleEnergyRated:5.324, modulePower:26.88, rackCurrentLimit:600, rackOptions:[8,9,10,11,12],
+   maxParallel:8, sohEOL:80, altitudeMax:3000, cDisRamp:6, cChRamp:1, cDisCont:5.05, cChCont:1, life:{0:80, 5:73, 10:70, 50:66},
    info:{capacityAh:'106.6 Ah / 104 Ah', energyModule:'5.458 kWh / 5.324 kWh', nominalVoltage:'51.2 V × n (16 cells × 3.2 V)', voltageRange:'40 V × n ~ 57.6 V × n',
      maxChargeCurrent:'26 A (0–15 °C) · 104 A (15–45 °C) · 26 A (45–60 °C)', peakChargeCurrent:'122 A @ 5 s (25 °C)', maxDischargePower:'26.88 kW × n (0–65 °C)', peakDischargePower:'31.72 kW × n @ 5 s (25 °C)',
      cabinet:'12 modules: 63.8 kWh nominal, 329 kW max output, 537.6–662.4 V', dimensions:'600 × 1000 × 2000 mm', calendarLife:'15 years (25 °C ± 2 °C)', cycleLife:'1000 cycles, ≥ 80 % SOH @ 1C/6CP, 25 °C',
@@ -1097,14 +1100,26 @@ const DEFAULT_LIBRARY = [
    cellsPerModule:16, cellVmin:2.70, cellVmax:3.45, moduleEnergyEOL:3.227, moduleEnergyRated:null, modulePower:38.5, rackCurrentLimit:890, rackOptions:[7,8,9,10,11,12],
    maxParallel:null, sohEOL:80, altitudeMax:null, cDisRamp:10, cChRamp:1, cDisCont:null, cChCont:null, life:{},
    info:{maxChargeCurrent:'1C (Ampace AI-load slide)'}},
-  {id:'samsung-u6a4', manufacturer:'Samsung SDI', model:'U6A4', variant:'8S module · 67 Ah', chemistry:'Li-ion (3.8 V cell)',
-   source:'Samsung SDI "Lithium Ion Battery System for UPS" U6A4 — product specification (Vertiv / Mitsubishi editions, 2025). Racks 80S / 104S / 112S / 128S / 136S = 10 / 13 / 14 / 16 / 17 modules of 8S1P 67 Ah. Module power = 183.6 kW continuous (136S rack, constant power) / 17 modules. Rack current = 450 A peak at end-of-discharge voltage. The specification does not define the end-of-life capacity: usable energy at EOL = rated 2.04 kWh × 80 % (derived, confirm with Samsung SDI). After a full discharge at maximum power allow 12 h of cooling.',
-   cellsPerModule:8, cellVmin:3.0, cellVmax:4.2, moduleEnergyEOL:1.629, moduleEnergyRated:2.037, modulePower:10.8, rackCurrentLimit:450, rackOptions:[10,13,14,16,17],
+  {id:'samsung-u6a4', manufacturer:'Samsung SDI', model:'U6A4', variant:'1P128S / 1P136S rack · 67 Ah', chemistry:'Li-ion (3.8 V cell)',
+   source:'Samsung SDI rack data: 1P128S PHR3262-001A and 1P136S PHR3462-001A, with the U6A4 product specification. Racks of 16 / 17 modules of 8S1P 67 Ah. Rack nominal voltage 128S read as 486.4 V (the sheet says 468.4 V; 128 × 3.8 V = 486.4 V and 32.6 kWh / 67 Ah = 486.6 V). Rack current limit at the 3.2 V/cell end of discharge: 422 A for the 128S (16 modules) and 450 A for the 136S (17 modules), as stated. Sizing at the 3.2 V/cell end of discharge; the battery operates down to 3.0 V/cell (384 / 408 V). Back-up times from the manufacturer tables: C-rate efficiency, cut-off loss at the end current, capacity retention by duty cycle and years. Not applicable to AI loads: standard backup sizing only. After a full discharge at maximum power allow 12 h of cooling.',
+   cellsPerModule:8, cellVmin:3.2, cellVmax:4.2, moduleEnergyEOL:null, moduleEnergyRated:2.037, modulePower:10.8, rackCurrentLimit:422, rackCurrentByMpr:{16:422, 17:450}, rackOptions:[16,17],
+   method:'mt', cellAh:67, aiDuty:false, rackName:'series',
    maxParallel:null, sohEOL:80, altitudeMax:2000, cDisRamp:5.3, cChRamp:1, cDisCont:5.3, cChCont:1, life:{},
-   info:{capacityAh:'67 Ah (module 8S1P, cell CM0630R0002A)', energyModule:'2.04 kWh (67 Ah × 30.4 V)', nominalVoltage:'30.4 V × n (8 cells × 3.8 V)', voltageRange:'3.0–4.2 V per cell (recommended end of discharge 3.2 V)',
-     maxChargeCurrent:'67 A (1C) continuous · 250 A for 2 s', maxDischargePower:'183.6 kW per 136S rack (17 modules), constant power', peakDischargePower:'450 A peak at end-of-discharge voltage',
-     cabinet:'136S rack: 17 modules, 34.6 kWh, 408–571.2 V (128S: 16 modules, 32.6 kWh, 384–537.6 V)', dimensions:'Rack 650 × 530 × 2055 mm · module 403.5 × 214 × 163 mm', weight:'Module ≈ 16.5 kg · 136S rack ≈ 510 kg',
-     optTemp:'23 ± 5 °C', humidity:'< 60 % RH, no condensation', altitude:'≤ 2000 m'}},
+   info:{capacityAh:'67 Ah (module 8S1P)', energyModule:'2.04 kWh (32.6 kWh / 16 modules · 34.6 kWh / 17 modules)', nominalVoltage:'30.4 V × n (8 cells × 3.8 V) · rack 486.4 V (128S) / 516.8 V (136S)',
+     voltageRange:'384.0–537.6 V (128S) · 408.0–571.2 V (136S): 3.0–4.2 V per cell', maxChargeCurrent:'67 A (1C) continuous · 250 A for 2 s · recommended CC 22.3 A, CV 537.6 V (128S) / 571.2 V (136S), end of charge 1.34 A',
+     maxDischargePower:'173 kW (128S) · 183.6 kW (136S) per rack', peakDischargePower:'Max current at end of discharge (3.2 V/cell): 422 A (128S) · 450 A (136S, as stated)',
+     cabinet:'1P128S PHR3262-001A: 16 modules, 32.6 kWh · 1P136S PHR3462-001A: 17 modules, 34.6 kWh · BCU MCCB 600 A, cable ≤ 300 mm², M12 single-hole terminal',
+     dimensions:'650 × 530 × 2055 mm (L × W × H)', weight:'493 kg (128S) · 510 kg (136S)', optTemp:'23 ± 5 °C', humidity:'< 60 % RH, no condensation', altitude:'≤ 2000 m'}},
+  {id:'samsung-u8a1', manufacturer:'Samsung SDI', model:'U8A1', variant:'1P128S / 1P136S rack · 65.3 Ah', chemistry:'Li-ion (3.8 V cell)',
+   source:'Samsung SDI rack data: 1P136S PHR3302-001A and 1P128S PHR3112-001A. Racks of 17 / 16 modules of 8 cells, 65.3 Ah. Rack nominal voltage 128S read as 486.4 V (the sheet says 468.4 V; 31.76 kWh / 65.3 Ah = 486.4 V). Rack current limit at the 3.2 V/cell end of discharge: 570 A for the 128S (16 modules) and 605 A for the 136S (17 modules), as stated. Sizing at the 3.2 V/cell end of discharge. Back-up times from the manufacturer tables (C-rate efficiency, cut-off loss, capacity retention), given with the U6 platforms and up to 7.5C: for the U8A1 confirm them with Samsung SDI; above 7.5C the cut-off loss is extrapolated. Not applicable to AI loads: standard backup sizing only.',
+   cellsPerModule:8, cellVmin:3.2, cellVmax:4.17, moduleEnergyEOL:null, moduleEnergyRated:1.985, modulePower:15.48, rackCurrentLimit:570, rackCurrentByMpr:{16:570, 17:605}, rackOptions:[16,17],
+   method:'mt', cellAh:65.3, aiDuty:false, rackName:'series',
+   maxParallel:null, sohEOL:80, altitudeMax:null, cDisRamp:7.8, cChRamp:null, cDisCont:7.8, cChCont:0.33, life:{},
+   info:{capacityAh:'65.3 Ah', energyModule:'1.985 kWh (33.75 kWh / 17 modules · 31.76 kWh / 16 modules)', nominalVoltage:'30.4 V × n (8 cells × 3.8 V) · rack 486.4 V (128S) / 516.8 V (136S)',
+     voltageRange:'384.0–533.76 V (128S) · 408.0–567.12 V (136S)', maxChargeCurrent:'Not given · recommended CC 21.77 A (0.33C), CV 533.76 V (128S) / 567.12 V (136S), end of charge 3.27 A',
+     maxDischargePower:'247.68 kW (128S) · 263.16 kW (136S) per rack', peakDischargePower:'Max current at end of discharge (3.2 V/cell): 570 A (128S) · 605 A (136S)',
+     cabinet:'1P136S PHR3302-001A: 17 modules, 33.75 kWh · 1P128S PHR3112-001A: 16 modules, 31.76 kWh · BCU MCCB 750 A, cable ≤ 300 mm², M12 single-hole terminal',
+     dimensions:'650 × 530 × 2055 mm (L × W × H)', weight:'545 kg (128S) · 565 kg (136S)'}},
   {id:'exide-solition-dc', manufacturer:'Exide', model:'Solition Data Center', variant:'LI-Ion DC 1.0 · 2 strings per cabinet', chemistry:'LFP',
    source:'Exide Solition Data Center technical data sheet (Oct 2024). In this tool a rack is one string of 6, 7 or 8 modules (20 cells, 64 V); a full cabinet holds 2 strings ([6+6], [7+7], [8+8]). Module power = 300 kW for 10 min ([7+7] cabinet, 16–30 °C) / 14 modules. Rack current = 6C × 81 Ah (derived). Usable energy at EOL = back-up basis 76.5 Ah × 64 V × 80 % (derived; Exide gives the design life to 70 % capacity). Minimum cell voltage read from the discharge curve (≈ 2.5 V) — confirm the UPS cut-off with Exide.',
    cellsPerModule:20, cellVmin:2.5, cellVmax:3.4, moduleEnergyEOL:3.917, moduleEnergyRated:5.184, modulePower:21.43, rackCurrentLimit:486, rackOptions:[6,7,8],
@@ -1132,13 +1147,18 @@ const BATT_SCHEMA = [
     {k:'cellsPerModule', l:'Cells in series per module', t:'num', req:1, ph:'e.g. 16'},
     {k:'cellVmin', l:'Cell voltage min (sizing)', t:'num', req:1, u:'V', ph:'e.g. 2.80'},
     {k:'cellVmax', l:'Cell voltage max (sizing)', t:'num', req:1, u:'V', ph:'e.g. 3.45'},
-    {k:'moduleEnergyEOL', l:'Module usable energy at EOL', t:'num', req:1, u:'kWh'},
+    {k:'moduleEnergyEOL', l:'Module usable energy at EOL', t:'num', u:'kWh', ph:'EOL tables: P × t / 60 / modules at max power · empty = rated × 0.80 × 0.89'},
     {k:'moduleEnergyRated', l:'Module rated energy', t:'num', u:'kWh', ai:1},
     {k:'modulePower', l:'Module discharge power (continuous)', t:'num', req:1, u:'kW'},
     {k:'rackCurrentLimit', l:'Rack current limit', t:'num', req:1, u:'A'},
+    {k:'rackCurrentByMpr', l:'Rack current limit by modules per rack', t:'text', ph:'e.g. 16:422, 17:450 · empty = the limit above for every rack'},
     {k:'rackOptions', l:'Modules per rack (options)', t:'list', req:1, ph:'e.g. 8, 9, 10, 11, 12'},
+    {k:'rackName', l:'Rack name in reports', t:'sel', opts:[['modules', 'Modules per rack — e.g. 10BB'], ['series', 'Cells in series — e.g. 136S']]},
     {k:'maxParallel', l:'Max racks in parallel per UPS', t:'num'},
     {k:'sohEOL', l:'SOH at EOL in the sizing', t:'num', u:'%', ph:'80'},
+    {k:'method', l:'Back-up time method', t:'sel', opts:[['std', 'Module EOL energy (standard)'], ['mt', 'Manufacturer tables — C-rate efficiency, cut-off loss, ageing']]},
+    {k:'cellAh', l:'Cell capacity (manufacturer tables)', t:'num', u:'Ah'},
+    {k:'aiDuty', l:'Applicable to AI loads', t:'sel', opts:[['yes', 'Yes — AI load and standard backup'], ['no', 'No — standard backup only']]},
     {k:'altitudeMax', l:'Altitude limit', t:'num', u:'m'}]},
   {g:'AI duty — Steps 2–4', f:[
     {k:'cDisRamp', l:'Ramp discharge C-rate', t:'num', u:'C', ai:1},
@@ -1169,12 +1189,19 @@ const LEGACY_IDS = {PU100:'ampace-pu100', PU200:'ampace-pu200'};
 const LIB_KEY = 'battSizing.library.v1';
 let LIBRARY = [];
 const numOrNull = v => (v === '' || v === null || v === undefined || !isFinite(Number(v))) ? null : Number(v);
-const NUM_KEYS = ['cellsPerModule','cellVmin','cellVmax','moduleEnergyEOL','moduleEnergyRated','modulePower','rackCurrentLimit','maxParallel','sohEOL','altitudeMax','cDisRamp','cChRamp','cDisCont','cChCont'];
+const NUM_KEYS = ['cellsPerModule','cellVmin','cellVmax','moduleEnergyEOL','moduleEnergyRated','modulePower','rackCurrentLimit','maxParallel','sohEOL','altitudeMax','cDisRamp','cChRamp','cDisCont','cChCont','cellAh'];
 function normBattery(b){
   const o = Object.assign({}, b);
   NUM_KEYS.forEach(k => o[k] = numOrNull(o[k]));
   const ro = (Array.isArray(o.rackOptions) ? o.rackOptions : String(o.rackOptions || '').split(/[,;\s]+/)).map(Number).filter(x => Number.isInteger(x) && x > 0);
   o.rackOptions = [...new Set(ro)].sort((a, c) => a - c);
+  const ib = {};   // rack current limit by modules per rack: {16:422, 17:450} or the text "16:422, 17:450"
+  (o.rackCurrentByMpr && typeof o.rackCurrentByMpr === 'object' ? Object.entries(o.rackCurrentByMpr) : String(o.rackCurrentByMpr || '').split(/[,;]+/).map(x => x.split(/[:=]/)))
+    .forEach(([k, v]) => { const m = Number(String(k).trim()), a = Number(String(v ?? '').trim()); if(Number.isInteger(m) && m > 0 && a > 0) ib[m] = a; });
+  o.rackCurrentByMpr = ib;
+  o.method = o.method === 'mt' ? 'mt' : 'std';
+  o.aiDuty = !(o.aiDuty === false || o.aiDuty === 'no');
+  o.rackName = o.rackName === 'series' ? 'series' : 'modules';   // false: the battery is for standard backup only
   const life = {};
   Object.entries(o.life || {}).forEach(([k, v]) => { const n = numOrNull(v); if(n !== null && n > 0 && isFinite(Number(k))) life[String(Number(k))] = n; });
   o.life = life;
@@ -1194,27 +1221,41 @@ const battById = id => LIBRARY.find(b => b.id === id) || null;
 const battName = b => `${b.manufacturer} ${b.model}`.trim();
 const battLabel = b => `${battName(b)}${b.variant ? ' — ' + b.variant : ''}`;
 const cycLabel = c => Number(c) === 0 ? 'standard backup' : `${c} cycles/day`;
+const EOL_USABLE = 0.89;   // usable share at the maximum discharge power: Ampace EOL tables 3.79 kWh = 5.324 kWh × 0.80 × 0.89
+const emodAuto = b => !b ? null : b.moduleEnergyEOL > 0 ? {v:b.moduleEnergyEOL, how:'library'}
+  : b.moduleEnergyRated > 0 ? {v:Math.round(b.moduleEnergyRated*((b.sohEOL || 80)/100)*EOL_USABLE*1000)/1000, how:'rule'} : null;
 function battMissing(b){
   const m = [];
   if(!b.cellsPerModule) m.push('cells per module'); if(!b.cellVmin) m.push('cell V min'); if(!b.cellVmax) m.push('cell V max');
   if(!b.modulePower) m.push('module power'); if(!b.rackCurrentLimit) m.push('rack current limit'); if(!b.rackOptions.length) m.push('modules per rack');
+  if(b.method === 'mt' && !(b.cellAh > 0)) m.push('cell capacity (Ah)');
   return m;
 }
 function calcBattery(b){
-  return {id:b.id, b, mfr:b.manufacturer, name:b.model, full:battName(b), system:b.variant, chem:b.chemistry,
+  const d = {id:b.id, b, mfr:b.manufacturer, name:b.model, full:battName(b), system:b.variant, chem:b.chemistry,
     cells:b.cellsPerModule, cellVmin:b.cellVmin, cellVmax:b.cellVmax, currentLimit:b.rackCurrentLimit, rackOptions:b.rackOptions,
-    modulePower:b.modulePower, moduleEnergy:b.moduleEnergyEOL, ratedEnergy:b.moduleEnergyRated, maxParallel:b.maxParallel,
-    cDis:b.cDisRamp, cCh:b.cChRamp, dsCDis:b.cDisCont, dsCCh:b.cChCont, sohEOL:(b.sohEOL || 80)/100, life:b.life, altitudeMax:b.altitudeMax, info:b.info, source:b.source};
+    modulePower:b.modulePower, moduleEnergy:(emodAuto(b) || {}).v, ratedEnergy:b.moduleEnergyRated, maxParallel:b.maxParallel,
+    cDis:b.cDisRamp, cCh:b.cChRamp, dsCDis:b.cDisCont, dsCCh:b.cChCont, sohEOL:(b.sohEOL || 80)/100, life:b.life, altitudeMax:b.altitudeMax, info:b.info, source:b.source,
+    method:b.method === 'mt' ? 'mt' : 'std', ah:b.cellAh, iByMpr:b.rackCurrentByMpr || {}, aiDuty:b.aiDuty !== false, rackS:b.rackName === 'series'};
+  d.vNom = cellVnom(d);   // nominal cell voltage
+  return d;
 }
+const rkTag = (d, mpr) => d.rackS && d.cells ? `${mpr*d.cells}S` : `${mpr}BB`;   // rack name: cells in series (136S) or modules (10BB)
+const rkCfg = (d, r) => `${r.racks} × ${d.rackS ? rkTag(d, r.mpr) : r.mpr}`;      // racks × rack
+const rkMod = (d, mpr) => d.rackS ? `${rkTag(d, mpr)} (${mpr} modules)` : `${mpr} modules`;
+const rkLong = (d, r) => `${r.racks} racks × ${d.rackS ? rkMod(d, r.mpr) : `${r.mpr} modules/rack`}`;
+const backupOnly = () => $('tech').value !== 'VRLA' && (battById($('model').value) || {}).aiDuty === false;   // selected battery not applicable to AI loads
+const iLim = (d, mpr) => (d.iByMpr && d.iByMpr[mpr]) || d.currentLimit;   // rack current limit for racks of mpr modules
+const limTxt = d => { const e = d.rackOptions.filter(m => d.iByMpr && d.iByMpr[m]); return e.length ? e.map(m => `${d.iByMpr[m]} A (${m} mod.)`).join(' / ') : `${d.currentLimit} A`; };
 
 // ---------------------------------------------------------------- project inputs (the page starts empty)
-const DEFAULTS = {mode:'AI', model:'', threeWire:'NO', rackRule:'EI', aiRack:'GB300', rampUnit:'PCT',
+const DEFAULTS = {mode:'AI', model:'', threeWire:'NO', rackRule:'EI', aiRack:'GB300', rampUnit:'PCT', mtCase:'1', mtLife:'15',
   vModel:'enersys-12hx600t-fr', vBlocks:'40', vEodv:'1.67', vMargin:'1', vLife:'10'};
 const V_NUM_DEFAULTS = {vTemp:25};   // VRLA fields start filled (the technology itself is kept)
 const NUM_FIELDS = ['upsKva','pf','eff','pLoad','upsSys','reqTime','upsVmin','upsVmax','altitude','emod','ramp','rampT','upsMod','upsModIch','effCh','aiCab','vTemp','vStrings'];
-const SEL_FIELDS = ['tech','mode','model','threeWire','rackRule','aiRack','rampUnit','vModel','vBlocks','vEodv','vMargin','vLife'];
+const SEL_FIELDS = ['tech','mode','model','threeWire','rackRule','aiRack','rampUnit','vModel','vBlocks','vEodv','vMargin','vLife','mtCase','mtLife'];
 const TEXT_FIELDS = ['rpCustomer','rpProject','rpCountry','rpRef','rpPrepared','rpApproved','rpRev','rpRevDesc','butSel'];
-const BATT_FIELDS = {emod:'moduleEnergyEOL'};   // prefilled from the library, editable per project (the AI-duty data come from the library as they are)
+const BATT_FIELDS = {};   // battery data come from the library as they are (the module EOL energy is computed: emodAuto)
 let LAST = null;   // last calculation result
 
 const $ = id => document.getElementById(id);
@@ -1230,6 +1271,7 @@ function readInputs(){
   SEL_FIELDS.forEach(id => I[id] = $(id).value);
   TEXT_FIELDS.forEach(id => I[id] = $(id).value.trim());
   I.vAge = $('vAge').checked ? '1.25' : '1';          // size for end of life (80 % capacity)
+  I.mtCase = Number(I.mtCase) || 1; I.mtLife = Number(I.mtLife) || 0;   // manufacturer tables: duty cycle and design life
   return I;
 }
 function writeInputs(x){
@@ -1257,32 +1299,85 @@ function populateBatterySelect(selected){
   const groups = {};
   LIBRARY.forEach(b => (groups[b.manufacturer || '—'] = groups[b.manufacturer || '—'] || []).push(b));
   $('model').innerHTML = '<option value="">— Select a battery from the library —</option>' +
-    Object.keys(groups).sort().map(m => `<optgroup label="${esc(m)}">${groups[m].map(b => `<option value="${esc(b.id)}">${esc(battLabel(b))}${b.builtin ? '' : ' · custom'}</option>`).join('')}</optgroup>`).join('');
+    Object.keys(groups).sort().map(m => `<optgroup label="${esc(m)}">${groups[m].map(b => `<option value="${esc(b.id)}">${esc(battLabel(b))}${b.aiDuty === false ? ' · backup only' : ''}${b.builtin ? '' : ' · custom'}</option>`).join('')}</optgroup>`).join('');
   $('model').value = battById(selected) ? selected : '';
 }
 function applyBatteryToFields(b){
   Object.entries(BATT_FIELDS).forEach(([field, key]) => $(field).value = b && b[key] !== null && b[key] !== undefined ? b[key] : '');
+  const em = emodAuto(b); $('emod').value = em && b.method !== 'mt' ? em.v : '';
 }
 
 // ---------------------------------------------------------------- Step 1 (Ampace configurator logic, battery data from the library)
 function rackEval(mpr, racks, I, d, pdc){
   const total = racks * mpr, vmin = mpr*d.cells*d.cellVmin, vmax = mpr*d.cells*d.cellVmax;
-  const eol = total*I.emod/pdc*60, bol = eol/d.sohEOL;
-  const current = pdc*1000/(total*d.cells*d.cellVmin);
+  const current = pdc*1000/(total*d.cells*d.cellVmin), lim = iLim(d, mpr);
+  let eol, bol, mt = null;
+  if(d.method === 'mt'){   // manufacturer tables
+    const S = mpr*d.cells, c = mtCp(I.reqTime), eta = mtEta(c), eRack = S*d.vNom*d.ah/1000, cEnd = current/d.ah, cut = mtCut(cEnd, d.cellVmin), k = mtK(c), ret = mtRet(I.mtCase, I.mtLife);
+    bol = 60*racks*eRack*eta*(1 - cut.v)*k/pdc; eol = bol*ret;
+    mt = {S, c, eta, eRack, cEnd, cut:cut.v, beyond:cut.beyond, k, ret, life:MT.years.map(y => bol*mtRet(I.mtCase, y))};
+  } else { eol = total*I.emod/pdc*60; bol = eol/d.sohEOL; }
   const voltageOK = vmin > I.upsVmin && vmax < I.upsVmax;
   const timeOK = eol >= I.reqTime - 1e-9;
-  const currentOK = current <= d.currentLimit + 1e-9;
+  const currentOK = current <= lim + 1e-9;
   const threeWireOK = I.threeWire !== 'YES' || mpr % 2 === 0;
-  return {mpr, racks, total, vmin, vmax, eol, bol, current, voltageOK, timeOK, currentOK, threeWireOK, finalOK: voltageOK && timeOK && currentOK && threeWireOK};
+  return {mpr, racks, total, vmin, vmax, eol, bol, current, lim, mt, voltageOK, timeOK, currentOK, threeWireOK, finalOK: voltageOK && timeOK && currentOK && threeWireOK};
 }
 const byBest = (a, b) => a.total - b.total || a.racks - b.racks || a.mpr - b.mpr;
 
 const cellVnom = d => { const m = /×\s*([\d.]+)\s*V\s*\)/.exec((d.info && d.info.nominalVoltage) || ''); return m ? +m[1] : /LFP|LiFePO/i.test(d.chem || '') ? 3.2 : (d.cellVmin + d.cellVmax)/2; };   // nominal cell voltage (library text; LFP 3.2 V)
 const sameCfg = (a, b) => !!a && !!b && a.racks === b.racks && a.mpr === b.mpr;
+// manufacturer-table method: back-up time from the rack energy, the C-rate efficiency, the cut-off loss at the end current, a margin and the capacity retention
+const MT = {
+  cp:[0.33, 1, 2, 3, 4, 5, 6], eta:[1, 0.968, 0.947, 0.933, 0.918, 0.903, 0.886],
+  cutC:[1, 2, 3, 4, 5, 6, 6.5, 7, 7.5], cutV:[3.0, 3.1, 3.15, 3.2, 3.25, 3.3, 3.35, 3.4],
+  cut:[[0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0.0052, 0.0064, 0.0075, 0.0081, 0.0091, 0.0113, 0.0126, 0.0148, 0.0165],
+       [0.0089, 0.011, 0.0129, 0.0144, 0.0171, 0.0211, 0.027, 0.0305, 0.0378],
+       [0.0132, 0.0153, 0.0192, 0.0228, 0.0278, 0.0391, 0.0487, 0.058, 0.0676],
+       [0.0187, 0.0233, 0.0277, 0.0355, 0.0479, 0.0669, 0.083, 0.0933, 0.1059],
+       [0.0254, 0.0325, 0.0417, 0.0566, 0.0801, 0.1046, 0.1227, 0.1365, 0.1527],
+       [0.0344, 0.0473, 0.0666, 0.0924, 0.1189, 0.1455, 0.1678, 0.1836, 0.2017],
+       [0.0492, 0.0759, 0.1063, 0.1346, 0.1617, 0.193, 0.2184, 0.2386, 0.2634]],
+  years:[5, 7.5, 10, 12, 15],
+  cases:{1:{l:'Case 1 — 2 full cycles/year + 24 at 5 % DOD', r:[0.8733, 0.837, 0.8032, 0.7775, 0.7404]},
+         2:{l:'Case 2 — 5 full cycles/year + 24 at 5 % DOD', r:[0.864, 0.8231, 0.7849, 0.7554, 0.7128]},
+         3:{l:'Case 3 — 10 full cycles/year + 24 at 5 % DOD', r:[0.8499, 0.802, 0.7567, 0.7217, null]}}
+};
+const mtCp = t => { const c = 60/t; return c > 6 ? 6 : c >= 0.334 ? c : 0.33; };   // reference C-rate of the required time, 0.33C–6C
+function mtEta(c){   // C-rate efficiency of the table
+  const R = MT.cp, E = MT.eta, L = R.length - 1;
+  if(c < R[0]) return E[0];
+  if(c === R[L]) return E[L];
+  let k = 0; for(let i = L; i >= 0; i--){ if(c >= R[i]){ k = i; break; } }
+  if(k) return E[k - 1] + (c - R[k - 1])/(R[k] - R[k - 1])*(E[k] - E[k - 1]);
+  return c > 0.33 ? E[1] : E[0];
+}
+function mtCutRow(row, c){   // cut-off loss along a row: linear between the C-rates, extrapolated above the last one
+  const X = MT.cutC, Y = MT.cut[row], L = X.length - 1;
+  if(c <= X[0]) return Y[0];
+  if(c > X[L]) return Y[L] + (c - X[L])/(X[L] - X[L - 1])*(Y[L] - Y[L - 1]);
+  let k = 0; while(k < L && c > X[k]) k++;
+  return Y[k - 1] + (c - X[k - 1])/(X[k] - X[k - 1])*(Y[k] - Y[k - 1]);
+}
+function mtCut(c, v){   // cut-off loss at the end C-rate c and the end voltage v per cell (rows interpolated)
+  const V = MT.cutV, L = V.length - 1, beyond = c > MT.cutC[MT.cutC.length - 1] + 1e-9;
+  let x;
+  if(v <= V[0]) x = mtCutRow(0, c);
+  else if(v >= V[L]) x = mtCutRow(L, c);
+  else { let k = 0; while(k < L && v > V[k] + 1e-9) k++; x = Math.abs(v - V[k]) < 1e-9 ? mtCutRow(k, c) : mtCutRow(k - 1, c) + (v - V[k - 1])/(V[k] - V[k - 1])*(mtCutRow(k, c) - mtCutRow(k - 1, c)); }
+  return {v:Math.min(1, Math.max(0, x)), beyond};
+}
+const mtK = c => c >= 4 ? 0.95 : 0.98;   // margin: 0.95 up to 15 min, 0.98 above
+const mtRet = (cs, y) => !y ? 1 : (MT.cases[cs] || MT.cases[1]).r[MT.years.indexOf(y)];   // capacity retention after y years (0 = new battery)
+const mtLifeTxt = I => !I.mtLife ? 'new battery (BOL)' : `${fmt(I.mtLife, I.mtLife % 1 ? 1 : 0)} years, case ${I.mtCase}`;
 function step1(I, d){
-  const pdc = I.pLoadEff/I.eff;
-  const nmin = Math.ceil(pdc*I.reqTime/(60*I.emod) - 1e-9);
-  const racksFor = mpr => { const rE = Math.max(1, Math.ceil(nmin/mpr - 1e-9)), rI = Math.ceil(pdc*1000/(mpr*d.cells*d.cellVmin*d.currentLimit) - 1e-9); return {rE, rI, racks: I.rackRule === 'EI' ? Math.max(rE, rI) : rE}; };
+  const pdc = I.pLoadEff/I.eff, mtm = d.method === 'mt';
+  let nmin = mtm ? 0 : Math.ceil(pdc*I.reqTime/(60*I.emod) - 1e-9);
+  const rEmt = {};   // manufacturer tables: the smallest rack count whose EOL time reaches the requirement (the cut-off loss depends on the racks)
+  const rEof = mpr => { if(rEmt[mpr] === undefined){ let n = 1; while(n < 500 && !(rackEval(mpr, n, I, d, pdc).eol >= I.reqTime - 1e-9)) n++; rEmt[mpr] = n; } return rEmt[mpr]; };
+  const racksFor = mpr => { const rE = mtm ? rEof(mpr) : Math.max(1, Math.ceil(nmin/mpr - 1e-9)), rI = Math.ceil(pdc*1000/(mpr*d.cells*d.cellVmin*iLim(d, mpr)) - 1e-9); return {rE, rI, racks: I.rackRule === 'EI' ? Math.max(rE, rI) : rE}; };
+  if(mtm) nmin = Math.min(...d.rackOptions.map(m => rEof(m)*m));
   const rows = d.rackOptions.map(mpr => {
     const m = racksFor(mpr), r = rackEval(mpr, m.racks, I, d, pdc);
     r.driver = (I.rackRule === 'EI' && m.rI > m.rE) ? 'Current' : 'Energy';
@@ -1346,8 +1441,8 @@ function aiSizing(I, d, s1){
   A.aiChosen = A.nCab !== A.nCabMin;
   A.nCabAi = A.nCab - A.nCabBut;          // cabinets above the standard BUT (ramps and SOC reserve)
   A.nFeeder = A.nCab*I.upsFeeder; A.nModTot = A.nCab*A.mpr;
-  A.eCab = A.mpr*I.eRated; A.eInst = A.nModTot*I.eRated; A.eEol = A.nModTot*I.emod;
   A.final = rackEval(A.mpr, A.nCab, I, d, s1.pdc);
+  A.eCab = A.mpr*I.eRated; A.eInst = A.nModTot*I.eRated; A.eEol = d.method === 'mt' ? A.final.eol*s1.pdc/60 : A.nModTot*I.emod;
   // life table (information): capacity left after AI cycling at the maximum cycles of the reference design
   A.lifeOK = I.cycles !== '' && d.life[I.cycles] !== undefined;
   A.sohPred = A.lifeOK ? d.life[I.cycles]/100 : d.sohEOL;
@@ -1363,7 +1458,7 @@ function aiSizing(I, d, s1){
   C.push({k:'Step 6', name:'UPS DC window', st: A.final.voltageOK ? 'ok' : 'bad', title: `${fmt(A.final.vmin,1)}–${fmt(A.final.vmax,1)} V`, detail: `UPS ${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V`});
   const pw = A.nModTot*d.modulePower, pNeed = Math.max(s1.pdc, A.pUp);
   C.push({k:'Step 6', name:'Discharge power', st: pw >= pNeed ? 'ok' : 'bad', title: `${fmt(pw,0)} kW ≥ ${fmt(pNeed,0)} kW`, detail: `${A.nModTot} modules × ${d.modulePower} kW`});
-  C.push({k:'Step 6', name:'Rack current at full load', st: A.final.currentOK ? 'ok' : 'bad', title: `${fmt(A.final.current,0)} A ≤ ${d.currentLimit} A`, detail: `${A.nCab} racks sharing ${fmt(s1.pdc,0)} kW`});
+  C.push({k:'Step 6', name:'Rack current at full load', st: A.final.currentOK ? 'ok' : 'bad', title: `${fmt(A.final.current,0)} A ≤ ${A.final.lim} A`, detail: `${A.nCab} racks sharing ${fmt(s1.pdc,0)} kW`});
   C.push({k:'Step 6', name:'Ramp-up C-rate', st: A.pUp <= I.cDis*A.eInst + 1e-9 ? 'ok' : 'bad', title:`${fmt(A.pUp/A.eInst,2)}C ≤ ${fmt(I.cDis,1)}C`, detail:`${fmt(A.pUp,0)} kW on ${fmt(A.eInst,0)} kWh rated · ${fmt(A.eUp,2)} kWh discharged`});
   C.push({k:'Step 6', name:'Ramp-down charge acceptance', st: I.cCh*A.eInst >= A.pDn - 1e-9 ? 'ok' : 'bad', title:`${fmt(I.cCh*A.eInst,0)} kW ≥ ${fmt(A.pDn,0)} kW`, detail:`${fmt(I.cCh,1)}C × ${fmt(A.eInst,0)} kWh rated · ${fmt(A.eDn,2)} kWh charged`});
   const modOK = A.nMod <= A.modRate;
@@ -1566,8 +1661,8 @@ function vBlocksOptions(vb, keep){
 // pressed state of the segmented controls from the values they stand for
 function syncSegs(){
   document.querySelectorAll('#vBlocksSeg [data-vblk]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vblk === $('vBlocks').value)));
-  const vr = $('tech').value === 'VRLA', effMode = vr ? 'BACKUP' : $('mode').value;
-  document.querySelectorAll('#modeSeg [data-mode]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.mode === effMode)); b.disabled = vr && b.dataset.mode === 'AI'; b.title = b.disabled ? 'AI load sizing is for Li-ion batteries only' : ''; });
+  const vr = $('tech').value === 'VRLA', bo = backupOnly(), effMode = vr || bo ? 'BACKUP' : $('mode').value;
+  document.querySelectorAll('#modeSeg [data-mode]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.mode === effMode)); b.disabled = (vr || bo) && b.dataset.mode === 'AI'; b.title = !b.disabled ? '' : vr ? 'AI load sizing is for Li-ion batteries only' : 'The selected battery is not applicable to AI loads: standard backup only'; });
   document.querySelectorAll('#aiRackCards [data-rack]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.rack === $('aiRack').value)));
 }
 
@@ -1752,17 +1847,24 @@ function renderVrla(R){
 }
 
 // ---------------------------------------------------------------- main calculation + rendering
-const REQ = [['upsKva','UPS rated power'],['pf','power factor'],['eff','UPS efficiency'],['reqTime','required autonomy'],['upsVmin','UPS min DC voltage'],['upsVmax','UPS max DC voltage'],['emod','module EOL energy']];
+const REQ = [['upsKva','UPS rated power'],['pf','power factor'],['eff','UPS efficiency'],['reqTime','required autonomy'],['upsVmin','UPS min DC voltage'],['upsVmax','UPS max DC voltage']];
 // the load power entered must fit the UPS
 function loadChecks(I, invalid){
   if(I.mode === 'AI' && !upsPerSystem(I)) invalid.push('UPS per system: a whole number ≥ 1');
   if(!I._empty.has('pLoad') && !(I.pLoad > 0)) invalid.push('load power > 0');
   else if(!I._empty.has('pLoad') && !I._empty.has('upsKva') && !I._empty.has('pf') && I.pLoad > I.upsKva*I.pf + 1e-6) invalid.push(`load power ≤ UPS rating × PF (${fmt(I.upsKva*I.pf,0)} kW)`);
 }
+const syncMtLife = () => { const o = $('mtLife').querySelector('option[value="15"]'); o.disabled = $('mtCase').value === '3'; if(o.disabled && $('mtLife').value === '15') $('mtLife').value = '12'; };   // case 3: values up to 12 years
 function calculate(){
+  syncMtLife();
   const I = readInputs();
+  I.modeReq = I.mode;
   if(I.tech === 'VRLA') I.mode = 'BACKUP';             // AI load sizing is for Li-ion only
   const b = battById(I.model), d = b ? calcBattery(b) : null;
+  if(I.tech !== 'VRLA' && b && b.aiDuty === false) I.mode = 'BACKUP';   // battery not applicable to AI loads
+  const em = emodAuto(b);                              // module EOL energy: automatic, never typed
+  I.emod = em ? em.v : NaN; if(em) I._empty.delete('emod'); else I._empty.add('emod');
+  if(I.tech !== 'VRLA') $('emod').value = em && !(b && b.method === 'mt') ? em.v : '';
   const ai = I.mode === 'AI';
   I.pLoadEff = loadPower(I);
   $('inputsTitle').textContent = I.tech === 'VRLA' ? 'Project & UPS data — VRLA' : 'Project & UPS data — Li-ion';
@@ -1774,6 +1876,7 @@ function calculate(){
   $('verifyStepNo').textContent = ai ? 'STEP 6' : 'STEP 1';
   const vr = I.tech === 'VRLA';
   document.body.classList.toggle('tech-vrla', vr);
+  document.body.classList.toggle('meth-mt', !vr && !!d && d.method === 'mt');
   if(vr){
     if(!vBattById(I.vModel)){ $('vModel').value = DEFAULTS.vModel; I.vModel = DEFAULTS.vModel; }
     if($('vBlocks').dataset.vb !== I.vModel){ vBlocksOptions(vBattById(I.vModel), I.vBlocks); vEodvOptions(vBattById(I.vModel), I.vEodv); $('vBlocks').dataset.vb = I.vModel; I.vEodv = $('vEodv').value; }
@@ -1784,7 +1887,7 @@ function calculate(){
   if(!b) missing.push('battery');
   REQ.forEach(([id, l]) => { if(I._empty.has(id)) missing.push(l); });
   const invalid = [];
-  if(b){ const bm = battMissing(b); if(bm.length) invalid.push(`battery data incomplete (${bm.join(', ')}) — complete it in the library`); }
+  if(b){ const bm = battMissing(b); if(!emodAuto(b) && b.method !== 'mt') bm.push('module energy (EOL or rated)'); if(bm.length) invalid.push(`battery data incomplete (${bm.join(', ')}) — complete it in the library`); }
   if(b && ai){ const am = [!(b.moduleEnergyRated > 0) && 'rated module energy', !(b.cDisRamp > 0) && 'ramp discharge C-rate', !(b.cChRamp > 0) && 'ramp charge C-rate'].filter(Boolean);
     if(am.length) invalid.push(`battery data for AI duty missing (${am.join(', ')}) — complete it in the library`); }
   loadChecks(I, invalid);
@@ -1797,6 +1900,10 @@ function calculate(){
   if(missing.length || invalid.length){ LAST = null; renderPending(I, d, missing, invalid); clearTimeout(spTimer); spIdleStatus(); hostSendState(); renderEmbedBar(); return; }
   if(I._empty.has('altitude')) I.altitude = 0;
   const s1 = step1(I, d);
+  if(d.method === 'mt'){   // the EOL energy per module is the result of the tables: equivalent for the configuration
+    I.emodStd = I.emod; const r = s1.rec;
+    I.emod = r ? r.eol*s1.pdc/60/r.total : NaN; $('emod').value = r ? I.emod.toFixed(3) : '';
+  }
   const R = {I, d, s1, A: null};
   if(ai && s1.rec) R.A = aiSizing(I, d, s1);
   if(ai) renderAiAuto(I, R.A && !R.A.error ? {A:R.A} : {});
@@ -1811,7 +1918,7 @@ function setStatus(n, dot, title, detail){
 }
 
 function renderPending(I, d, missing, invalid){
-  setStatus(1, d ? 'info' : '', d ? `${d.full}${d.system ? ' · ' + d.system : ''}` : 'No battery selected', d ? `${fmt(d.moduleEnergy,3)} kWh EOL / module · ${d.currentLimit || '—'} A per rack` : 'Choose one from the battery library');
+  setStatus(1, d ? 'info' : '', d ? `${d.full}${d.system ? ' · ' + d.system : ''}` : 'No battery selected', d ? `${d.method === 'mt' ? 'manufacturer tables' : `${fmt(d.moduleEnergy,3)} kWh EOL / module`} · ${d.currentLimit ? limTxt(d) : '—'} per rack` : 'Choose one from the battery library');
   if(invalid.length) setStatus(2, 'err', 'Check input values', invalid.join(' · '));
   else setStatus(2, '', 'Enter the project data', `Missing: ${missing.slice(0, 6).join(', ')}${missing.length > 6 ? ` +${missing.length - 6}` : ''}`);
   setStatus(3, '', 'No sizing yet', 'The result appears when all the data are entered');
@@ -1836,32 +1943,37 @@ function renderStep1(R){
   $('kPdc').innerHTML = `${fmt(s1.pdc,1)}<small>kW</small>`;
   $('kNmin').textContent = s1.nmin;
   $('kValid').textContent = s1.valid.length;
-  $('kRec').textContent = rec ? `${rec.racks} × ${rec.mpr}` : '—';
+  $('kRec').textContent = rec ? rkCfg(d, rec) : '—';
+  $('butHeadCfg').textContent = d.rackS ? 'Racks × rack' : 'Racks × modules'; $('cfgHeadMpr').textContent = d.rackS ? 'Rack (modules)' : 'Modules / rack';
   $('kTime').innerHTML = `${rec ? fmt(rec.eol,2) : '—'}<small>min</small>`;
   $('kCurrent').innerHTML = `${rec ? fmt(rec.current,0) : '—'}<small>A</small>`;
   // options from the minimum up
   $('butAuto').hidden = !s1.chosen;
-  $('butMinNote').innerHTML = min ? `Minimum modules: <b>${s1.nmin}</b> for the energy (${fmt(I.reqTime,1)} min at ${fmt(s1.pdc,1)} kW, EOL); the smallest valid configuration is <b>${min.racks} × ${min.mpr} = ${min.total} modules</b>${min.total > s1.nmin ? ` (rack current${min.driver === 'Current' ? '' : ' / voltage'} limit)` : ''}. Click a row to choose a larger one${I.mode === 'AI' ? ' — the AI cabinets take the same modules per rack' : ''}.` : '<b>No valid configuration</b> — review the UPS DC window, the current limit or the battery.';
+  $('butMinNote').innerHTML = min ? `Minimum modules: <b>${s1.nmin}</b> for the energy (${fmt(I.reqTime,1)} min at ${fmt(s1.pdc,1)} kW, EOL); the smallest valid configuration is <b>${rkCfg(d, min)} = ${min.total} modules</b>${min.total > s1.nmin ? ` (rack current${min.driver === 'Current' ? '' : ' / voltage'} limit)` : ''}. Click a row to choose a larger one${I.mode === 'AI' ? ' — the AI cabinets take the same modules per rack' : ''}.` : '<b>No valid configuration</b> — review the UPS DC window, the current limit or the battery.';
   $('butBody').innerHTML = s1.opts.length ? s1.opts.map((r, i) => `<tr class="v-pick${sameCfg(r, rec) ? ' recommended' : ''}" data-but="${r.racks}x${r.mpr}">
       <td>${sameCfg(r, min) ? '<span class="rec-tag">MINIMUM</span>' : ''}Option ${i + 1}${sameCfg(r, rec) ? ' · selected' : ''}</td>
-      <td class="num">${r.racks} × ${r.mpr}</td><td class="num">${r.total}</td><td class="num">${fmt(r.eol,2)} min</td><td class="num">${fmt(r.bol,2)} min</td><td class="num">${fmt(r.current,0)} A</td><td class="num">${fmt(r.vmin,0)}–${fmt(r.vmax,0)} V</td></tr>`).join('')
+      <td class="num">${rkCfg(d, r)}</td><td class="num">${r.total}</td><td class="num">${fmt(r.eol,2)} min</td><td class="num">${fmt(r.bol,2)} min</td><td class="num">${fmt(r.current,0)} A</td><td class="num">${fmt(r.vmin,0)}–${fmt(r.vmax,0)} V</td></tr>`).join('')
     : '<tr><td colspan="7" class="empty-row">No valid configuration.</td></tr>';
   // matrix (Ampace logic): minimum racks for each modules / rack
   $('configTable').querySelector('tbody').innerHTML = s1.rows.map((r, i) => `
     <tr class="${sameCfg(r, rec) ? 'recommended' : ''}">
       <td>${sameCfg(r, min) ? '<span class="rec-tag">MINIMUM</span>' : ''}Configuration ${i+1}<button type="button" class="row-print" title="PDF report for this configuration" data-row="${i}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg></button></td>
-      <td class="num">${r.mpr}</td><td class="num">${r.racks}</td><td>${r.driver === 'Current' ? '<span class="chip info">Current</span>' : '<span class="chip ok">Energy</span>'}</td><td class="num">${r.total}</td>
+      <td class="num">${d.rackS ? `${rkTag(d, r.mpr)} (${r.mpr})` : r.mpr}</td><td class="num">${r.racks}</td><td>${r.driver === 'Current' ? '<span class="chip info">Current</span>' : '<span class="chip ok">Energy</span>'}</td><td class="num">${r.total}</td>
       <td class="num">${fmt(r.vmin,1)}</td><td class="num">${fmt(r.vmax,1)}</td>
       <td class="num">${fmt(r.eol,2)}</td><td class="num">${fmt(r.bol,2)}</td><td class="num">${fmt(r.current,0)}</td>
       <td>${chip(r.voltageOK)}</td><td>${chip(r.timeOK)}</td><td>${chip(r.currentOK)}</td><td>${chip(r.threeWireOK)}</td>
       <td>${r.finalOK ? '<span class="chip ok">VALID</span>' : '<span class="chip bad">INVALID</span>'}</td>
     </tr>`).join('');
-  const energyOnly = s1.rows.map(r => Math.ceil(s1.nmin/r.mpr - 1e-9));
+  const energyOnly = s1.rows.map(r => s1.racksFor(r.mpr).rE);
   const anyCurrent = s1.rows.some(r => r.driver === 'Current');
   let note = `Energy alone needs <b>${s1.nmin} modules</b> for ${fmt(I.reqTime,1)} min at ${fmt(s1.pdc,1)} kW.`;
-  if(I.rackRule === 'EI' && anyCurrent) note += ` The rack count is driven by the <b>${d.currentLimit} A rack current limit</b>: this sizing is power-limited, not energy-limited. With the original rule (racks = ${energyOnly.join(' / ')}) the currents would exceed ${d.currentLimit} A.`;
+  if(I.rackRule === 'EI' && anyCurrent) note += ` The rack count is driven by the <b>${limTxt(d)} rack current limit</b>: this sizing is power-limited, not energy-limited. With the original rule (racks = ${energyOnly.join(' / ')}) the currents would exceed the limit.`;
   if(I.rackRule === 'E' && !rec) note += ` <b>No valid configuration</b> with the original rule — switch the rack count rule to “Energy + rack current limit”.`;
-  note += ` EOL times are at ${fmt(d.sohEOL*100,0)} % SOH (end of life of the battery), BOL times with the new battery.`;
+  if(d.method === 'mt'){
+    const q = rec && rec.mt;
+    note += ` Back-up times from the manufacturer tables: C-rate efficiency at ${fmt(mtCp(I.reqTime),2)}C (60 / ${fmt(I.reqTime,1)} min, 0.33–6C), cut-off loss at the end current per rack (${fmt(d.cellVmin,2)} V/cell), margin ${fmt(mtK(mtCp(I.reqTime)),2)} (0.95 up to 15 min, 0.98 above), capacity retention ${fmt(mtRet(I.mtCase, I.mtLife)*100,1)} % — EOL = ${mtLifeTxt(I)}, BOL = new battery.`;
+    if(q) note += ` Over the life (${rkCfg(d, rec)}, case ${I.mtCase}): BOL ${fmt(rec.bol,2)} · ${MT.years.map((y, i) => q.life[i] ? `${fmt(y, y % 1 ? 1 : 0)} y ${fmt(q.life[i],2)}` : `${y} y —`).join(' · ')} min.`;
+  } else note += ` EOL times are at ${fmt(d.sohEOL*100,0)} % SOH (end of life of the battery), BOL times with the new battery.`;
   $('step1Note').innerHTML = note;
 }
 
@@ -1876,7 +1988,7 @@ function renderAI(R){
     body.innerHTML = `<tr><td colspan="5"><span class="chip bad">NOT AVAILABLE</span> ${esc(!s1.rec ? 'Step 1 has no valid configuration.' : A.error)}</td></tr>`;
     return;
   }
-  const bb = m => `${d.name} ${m}BB`, nU = I.upsFeeder, but = A.but, up = A.gov === 'up';
+  const bb = m => `${d.name} ${rkTag(d, m)}`, nU = I.upsFeeder, but = A.but, up = A.gov === 'up';
   $('aGpu').textContent = fmt(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0); $('aGpuS').textContent = `${I.rk.short} · ${I.gpuFeeder || 0} per IT feeder · indication`;
   $('aUp').innerHTML = `${fmt(A.eUp,2)} / ${fmt(A.eDn,2)}<small>kWh</small>`; $('aUpS').textContent = `${I.upS} in ${fmt(I.rampT,0)} s · ${fmt(A.pUp,0)} / ${fmt(A.pDn,0)} kW`;
   $('aDn').textContent = A.nMod; $('aDnS').textContent = `× ${fmt(I.upsMod,0)} kW per UPS · ${A.modGov} governs`;
@@ -1907,8 +2019,8 @@ function renderAI(R){
 function backupChecks(I, d, r){
   return r ? [
     {k:'Step 1', name:'Voltage window', st: r.voltageOK ? 'ok' : 'bad', title:`${fmt(r.vmin,0)}–${fmt(r.vmax,0)} V`, detail:`UPS ${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V`},
-    {k:'Step 1', name:'Backup time', st: r.timeOK ? 'ok' : 'bad', title:`${fmt(r.eol,2)} min EOL`, detail:`BOL ${fmt(r.bol,2)} min · required ${fmt(I.reqTime,1)} min`},
-    {k:'Step 1', name:'Discharge current', st: r.currentOK ? 'ok' : 'bad', title:`${fmt(r.current,1)} A / ${d.currentLimit} A`, detail:'Per rack at the minimum cell voltage'},
+    {k:'Step 1', name:'Backup time', st: r.timeOK ? 'ok' : 'bad', title:`${fmt(r.eol,2)} min EOL`, detail:`BOL ${fmt(r.bol,2)} min · required ${fmt(I.reqTime,1)} min${r.mt ? ` · EOL = ${mtLifeTxt(I)}` : ''}`},
+    {k:'Step 1', name:'Discharge current', st: r.currentOK ? 'ok' : 'bad', title:`${fmt(r.current,1)} A / ${r.lim} A`, detail:`Per rack at the minimum cell voltage${r.mt ? ` · ${fmt(r.mt.cEnd,2)}C at the end of discharge` : ''}`},
     {k:'Step 1', name:'Topology / 3-wire', st: r.threeWireOK ? 'ok' : 'bad', title: I.threeWire === 'YES' ? 'Constraint met' : 'Not required', detail:'Even modules per rack for 3-wire'},
     altitudeCheck(I, d)
   ] : [{k:'Step 1', name:'Configuration', st:'bad', title:'No valid configuration', detail:'Review the matrix'}];
@@ -1928,7 +2040,7 @@ function renderChecks(R){
     note.innerHTML = `Configuration per UPS: <b>${A.nCab} × ${esc(d.full)} with ${A.mpr} modules</b> (max of ${A.nCabBut} standard BUT and ${A.nCabRamp} for the ramps, with the ${AI_REF.soc} % SOC reserve) — <b>${A.nFeeder} per IT feeder</b>. ${A.nModTot} modules, ${fmt(A.eInst,0)} kWh rated, ${fmt(A.final.vmin,1)}–${fmt(A.final.vmax,1)} V, ${fmt(A.final.eol,1)} min EOL at full load, ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC.`;
   } else if(s1.rec){
     const r = s1.rec;
-    note.innerHTML = `${s1.chosen ? 'Selected' : 'Minimum'} configuration: <b>${r.racks} racks × ${r.mpr} modules/rack = ${r.total} modules</b> (${esc(d.full)}). EOL autonomy ${fmt(r.eol,2)} min, BOL autonomy ${fmt(r.bol,2)} min, maximum discharge current ${fmt(r.current,1)} A.`;
+    note.innerHTML = `${s1.chosen ? 'Selected' : 'Minimum'} configuration: <b>${rkLong(d, r)} = ${r.total} modules</b> (${esc(d.full)}). EOL autonomy ${fmt(r.eol,2)} min, BOL autonomy ${fmt(r.bol,2)} min, maximum discharge current ${fmt(r.current,1)} A.`;
   } else {
     note.textContent = 'No configuration satisfies all active constraints. Increase the battery configuration, reduce the required load/autonomy, or review the UPS voltage/current limits.';
   }
@@ -1936,11 +2048,11 @@ function renderChecks(R){
 
 function renderStatusBar(R){
   const {I, d, s1, A} = R;
-  setStatus(1, 'info', `${d.full}${d.system ? ' · ' + d.system : ''}`, `${fmt(I.emod,3)} kWh EOL / module · ${d.currentLimit} A per rack · ${I.mode === 'AI' ? 'AI-load sizing' : 'backup sizing'}`);
+  setStatus(1, 'info', `${d.full}${d.system ? ' · ' + d.system : ''}`, `${d.method === 'mt' ? `manufacturer tables · ${mtLifeTxt(I)}` : `${fmt(I.emod,3)} kWh EOL / module`} · ${limTxt(d)} per rack · ${I.mode === 'AI' ? 'AI-load sizing' : d.aiDuty ? 'backup sizing' : 'backup sizing only (not for AI loads)'}`);
   setStatus(2, 'ok', 'Calculated ' + new Date().toLocaleTimeString(), `${fmt(I.upsKva,0)} kVA · η ${fmt(I.eff,3)} · ${fmt(I.reqTime,1)} min EOL`);
   const st = R.verdict === 'bad' ? 'err' : R.verdict === 'warn' ? 'warn' : 'ok';
-  if(I.mode === 'AI' && A && !A.error) setStatus(3, st, `${A.nCab} × ${d.name} ${A.mpr}BB per UPS`, `${A.nFeeder} per IT feeder · ${R.verdict === 'bad' ? 'check the verification' : R.verdict === 'warn' ? 'valid with notes' : 'all checks passed'}`);
-  else if(s1.rec) setStatus(3, st, `${s1.rec.racks} rack × ${s1.rec.mpr} modules/rack`, `${s1.rec.total} modules · ${fmt(s1.rec.eol,2)} min EOL`);
+  if(I.mode === 'AI' && A && !A.error) setStatus(3, st, `${A.nCab} × ${d.name} ${rkTag(d, A.mpr)} per UPS`, `${A.nFeeder} per IT feeder · ${R.verdict === 'bad' ? 'check the verification' : R.verdict === 'warn' ? 'valid with notes' : 'all checks passed'}`);
+  else if(s1.rec) setStatus(3, st, d.rackS ? `${s1.rec.racks} rack × ${rkTag(d, s1.rec.mpr)}` : `${s1.rec.racks} rack × ${s1.rec.mpr} modules/rack`, `${s1.rec.total} modules · ${fmt(s1.rec.eol,2)} min EOL`);
   else setStatus(3, 'err', 'No valid configuration', 'Review the matrix');
 }
 
@@ -1959,8 +2071,8 @@ function renderPipe(R, aiPending){
 function renderSummaries(R){
   const {I, d, s1, A} = R;
   $('sumInputs').innerHTML = `<b>${fmt(I.upsKva,0)} kVA</b> <span class="ps-k">· ${fmt(I.pLoadEff,0)} kW load · η ${fmt(I.eff,3)} · ${fmt(I.reqTime,1)} min EOL · ${esc(d.full)}${I.mode === 'AI' ? ` · ramp ${I.upS} in ${fmt(I.rampT,0)} s` : ''}</span>`;
-  $('sumStep1').innerHTML = s1.rec ? `<span class="ps-k">${s1.chosen ? 'Selected' : 'Minimum'}</span> <b>${s1.rec.racks} × ${s1.rec.mpr} = ${s1.rec.total} modules</b> <span class="ps-k">· ${fmt(s1.rec.eol,2)} min EOL</span>` : '<b>No valid configuration</b>';
-  $('sumAI').innerHTML = A && !A.error ? `<b>${A.nCab} × ${esc(d.name)} ${A.mpr}BB per UPS</b> <span class="ps-k">· max(${A.nCabBut} BUT ; ${A.nCabRamp} ramps) / ${fmt(A.socF,2)} · ${A.nFeeder} per IT feeder</span>` : '—';
+  $('sumStep1').innerHTML = s1.rec ? `<span class="ps-k">${s1.chosen ? 'Selected' : 'Minimum'}</span> <b>${rkCfg(d, s1.rec)} = ${s1.rec.total} modules</b> <span class="ps-k">· ${fmt(s1.rec.eol,2)} min EOL</span>` : '<b>No valid configuration</b>';
+  $('sumAI').innerHTML = A && !A.error ? `<b>${A.nCab} × ${esc(d.name)} ${rkTag(d, A.mpr)} per UPS</b> <span class="ps-k">· max(${A.nCabBut} BUT ; ${A.nCabRamp} ramps) / ${fmt(A.socF,2)} · ${A.nFeeder} per IT feeder</span>` : '—';
   $('sumVerify').innerHTML = '';
 }
 
@@ -1973,7 +2085,12 @@ function renderNotes(R){
   if(ai && d.dsCDis && d.dsCCh && (Math.abs(d.dsCDis - I.cDis) > 1e-6 || Math.abs(d.dsCCh - I.cCh) > 1e-6))
     items.push(['warn', 'Charge / discharge C-rate', `The ramp sizing uses ${fmt(I.cDis,2)}C discharge / ${fmt(I.cCh,2)}C charge; the ${d.full} datasheet continuous values are ≈ ${fmt(d.dsCDis,2)}C / ${fmt(d.dsCCh,2)}C. Confirm with the manufacturer.`, 1]);
   if(ai && ok) items.push(['warn', 'UPS power modules', `Recharge of the ramp-down with ${fmt(I.upsModIch,0)} A per ${fmt(I.upsMod,0)} kW module while the UPS load is below ${AI_REF.ups.loadMax} %, recharge efficiency ${fmt(I.effCh,2)}, at the nominal battery voltage ${fmt(A.vCh,0)} V: ${A.nMod} modules per UPS${A.nMod > A.modRate ? `, more than the ${A.modRate} of the UPS rating — add modules or reduce the ramp` : ''}. Confirm the charge current for the UPS model with Riello.`, 1]);
-  if(cfg) items.push(['info', 'UPS DC window', `Racks of ${cfg.mpr} modules operate at ${fmt(cfg.vmin,1)}–${fmt(cfg.vmax,1)} V; the UPS battery window entered is ${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V — confirm it for the UPS model.`, 0]);
+  if(d.aiDuty === false && I.modeReq === 'AI') items.push(['info', 'Not applicable to AI loads', `${d.full} is not applicable to AI loads: the sizing is the standard backup (BUT) only. For an AI load choose a battery for AI duty.`, 0]);
+  if(d.method === 'mt'){
+    items.push(['warn', 'Back-up time — manufacturer tables', `Times from the manufacturer tables: C-rate efficiency, cut-off loss at the end current (${fmt(d.cellVmin,2)} V/cell), margin 0.95 up to 15 min / 0.98 above, capacity retention ${fmt(mtRet(I.mtCase, I.mtLife)*100,1)} % (${MT.cases[I.mtCase].l}, ${I.mtLife ? fmt(I.mtLife, I.mtLife % 1 ? 1 : 0) + ' years' : 'new battery'}). Confirm the duty cycle and the design life with the customer.`, 0]);
+    if(cfg && cfg.mt && cfg.mt.beyond) items.push(['warn', 'Cut-off loss above 7.5C', `The end current ${fmt(cfg.current,0)} A is ${fmt(cfg.mt.cEnd,2)}C on ${fmt(d.ah,1)} Ah, above the 7.5C of the table: the cut-off loss (${fmt(cfg.mt.cut*100,1)} %) is extrapolated — confirm with the manufacturer.`, 0]);
+  }
+  if(cfg) items.push(['info', 'UPS DC window', `Racks of ${rkMod(d, cfg.mpr)} operate at ${fmt(cfg.vmin,1)}–${fmt(cfg.vmax,1)} V; the UPS battery window entered is ${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V — confirm it for the UPS model.`, 0]);
   if(ai && d.info.maxChargeCurrent) items.push(['info', 'Charge current vs temperature', `${d.full}: ${d.info.maxChargeCurrent} — the ramp-down capability depends on the battery room temperature.`, 1]);
   if(d.source) items.push(['info', 'Battery data source', d.source, 0]);
   R.notes = items.map(([c, t, x, a]) => ({c, t, x, ai: !!a}));
@@ -2006,7 +2123,13 @@ function renderBatteryInfo(d){
 function refreshNotes(){
   const I = readInputs(), b = battById(I.model);
   const from = (k, u) => b ? (b[k] !== null && b[k] !== undefined ? `Library: ${b[k]}${u ? ' ' + u : ''}` : 'Not in the library — enter it from the datasheet') : 'Filled in from the battery library';
-  $('emodNote').textContent = from('moduleEnergyEOL', 'kWh');
+  const em = emodAuto(b);
+  const cs = MT.cases[Number($('mtCase').value)] || MT.cases[1], ly = Number($('mtLife').value) || 0;
+  $('mtCaseNote').textContent = `Capacity retention after 5 / 7.5 / 10 / 12 / 15 years: ${cs.r.map(x => x ? fmt(x*100, 1) : '—').join(' / ')} %`;
+  $('mtLifeNote').textContent = ly ? `Retention ${fmt(mtRet(Number($('mtCase').value), ly)*100, 1)} % after ${fmt(ly, ly % 1 ? 1 : 0)} years · the back-up time must be met at this age` : 'The back-up time is checked with the new battery only';
+  $('emodNote').textContent = !b ? 'Automatic when the battery is chosen.' : b.method === 'mt' ? 'Equivalent per module of the configuration: manufacturer tables (rack energy × C-rate efficiency × (1 − cut-off loss) × margin × retention).' : !em ? 'Missing in the library: enter the EOL or the rated module energy.'
+    : em.how === 'library' ? 'Automatic: manufacturer end-of-life energy at the maximum discharge power (library).'
+    : `Automatic: rated ${b.moduleEnergyRated} kWh × ${b.sohEOL || 80} % SOH × ${EOL_USABLE} (no end-of-life value in the library).`;
   const S0 = !I._empty.has('upsKva') && !I._empty.has('pf') ? I.upsKva*I.pf : null;
   $('pLoadNote').textContent = `Load on the UPS in battery mode. Empty = UPS rating × PF${S0 ? ` (${fmt(S0,0)} kW)` : ''}.`;
   const vmaxRack = b && b.rackOptions.length && b.cellsPerModule && b.cellVmax ? Math.max(...b.rackOptions)*b.cellsPerModule*b.cellVmax : null;
@@ -2027,10 +2150,12 @@ function refreshNotes(){
 
 // ---------------------------------------------------------------- battery library panel, editor, import / export
 let LIB_OPEN = null, EDIT = null;
-const libVal = (b, f) => f.src === 'life' ? b.life[f.k] : f.src === 'info' ? b.info[f.k] : f.k === 'rackOptions' ? b.rackOptions.join(', ') : b[f.k];
+const libVal = (b, f) => f.src === 'life' ? b.life[f.k] : f.src === 'info' ? b.info[f.k] : f.k === 'rackOptions' ? b.rackOptions.join(', ')
+  : f.k === 'rackCurrentByMpr' ? Object.entries(b.rackCurrentByMpr || {}).map(([m, a]) => `${m}:${a}`).join(', ') : f.k === 'method' ? (b.method || 'std') : f.k === 'aiDuty' ? (b.aiDuty === false ? 'no' : 'yes') : f.k === 'rackName' ? (b.rackName || 'modules') : b[f.k];
 function libValTxt(b, f){
   const v = libVal(b, f);
   if(v === null || v === undefined || v === '') return '—';
+  if(f.t === 'sel'){ const o = f.opts.find(x => x[0] === v); return o ? o[1] : String(v); }
   return f.u ? `${v} ${f.u}` : String(v);
 }
 function renderLibrary(){
@@ -2047,7 +2172,7 @@ function renderLibrary(){
       <td class="num">${v(b.cellsPerModule)}</td><td class="num">${v(b.cellVmin)}–${v(b.cellVmax)}</td><td class="num">${v(b.modulePower)}</td>
       <td class="num">${v(b.moduleEnergyRated)} / ${v(b.moduleEnergyEOL)}</td><td class="num">${v(b.rackCurrentLimit)}</td><td class="num">${rng}</td><td class="num">${v(b.maxParallel)}</td>
       <td class="num">${v(b.cDisRamp)} / ${v(b.cChRamp)}</td>
-      <td>${b.builtin ? '<span class="chip info">Default</span>' : '<span class="chip ok">Custom</span>'}${battMissing(b).length ? ' <span class="chip bad">Incomplete</span>' : (!b.moduleEnergyRated || !b.cDisRamp || !b.cChRamp) ? ' <span class="chip warn">AI data missing</span>' : ''}</td>
+      <td>${b.builtin ? '<span class="chip info">Default</span>' : '<span class="chip ok">Custom</span>'}${battMissing(b).length ? ' <span class="chip bad">Incomplete</span>' : b.aiDuty === false ? ' <span class="chip info">Backup only</span>' : (!b.moduleEnergyRated || !b.cDisRamp || !b.cChRamp) ? ' <span class="chip warn">AI data missing</span>' : ''}</td>
       <td class="lib-acts">${b.id === sel ? '<span class="chip ok">In use</span>' : `<button type="button" class="lib-act use" data-act="use">Use</button>`}<button type="button" class="lib-act" data-act="view">${LIB_OPEN === b.id ? 'Hide' : 'Details'}</button>${b.builtin ? '' : '<button type="button" class="lib-act" data-act="edit">Edit</button>'}<button type="button" class="lib-act" data-act="dup">Duplicate</button>${b.builtin ? '' : '<button type="button" class="lib-act danger" data-act="del">Delete</button>'}</td></tr>`;
     if(LIB_OPEN !== b.id) return main;
     const groups = BATT_SCHEMA.map((g, gi) => { const wide = gi === BATT_SCHEMA.length - 1;
@@ -2070,7 +2195,7 @@ function onBatteryChange(){
 const slug = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 function openEditor(id, mode){
   const src = id ? battById(id) : null;
-  const b = src ? JSON.parse(JSON.stringify(src)) : {life:{}, info:{}, rackOptions:[], sohEOL:80};
+  const b = src ? JSON.parse(JSON.stringify(src)) : {life:{}, info:{}, rackOptions:[], sohEOL:80, method:'std', rackCurrentByMpr:{}, aiDuty:true};
   if(mode === 'dup'){ b.model = `${b.model} (copy)`; b.builtin = false; }
   EDIT = {mode, id: mode === 'edit' && src ? src.id : null};
   $('editorTitle').textContent = mode === 'edit' ? `Edit battery — ${battLabel(src)}` : mode === 'dup' ? `Duplicate battery — ${battLabel(src)}` : 'Add battery to the library';
@@ -2083,7 +2208,8 @@ function openEditor(id, mode){
   $('editorBody').innerHTML = legend + BATT_SCHEMA.map(g => `<div class="section-label">${esc(g.g)}</div><div class="grid">${[...g.f].sort((x, y) => rank(x) - rank(y)).map(f => {
     const val = libVal(b, f);
     const idv = `be_${f.src || 'b'}_${f.k}`;
-    const input = f.t === 'num' ? `<input id="${idv}" type="number" step="any" value="${val === null || val === undefined ? '' : esc(val)}" placeholder="${esc(f.ph || '')}">`
+    const input = f.t === 'sel' ? `<select id="${idv}">${f.opts.map(o => `<option value="${esc(o[0])}"${o[0] === (val || f.opts[0][0]) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`
+                : f.t === 'num' ? `<input id="${idv}" type="number" step="any" value="${val === null || val === undefined ? '' : esc(val)}" placeholder="${esc(f.ph || '')}">`
                                 : `<input id="${idv}" type="text" value="${esc(val ?? '')}" placeholder="${esc(f.ph || '')}">`;
     const tag = f.req ? '<span class="ed-tag req">Required</span>' : f.ai ? '<span class="ed-tag ai">AI sizing</span>' : '';
     return `<div class="field${f.wide ? ' wide' : ''}${f.req ? ' f-req' : f.ai ? ' f-ai' : ''}" data-key="${esc(f.k)}"><label for="${idv}"><span>${esc(f.l)}${f.u ? ` (${esc(f.u)})` : ''}</span>${tag}</label>${input}</div>`;
@@ -2434,7 +2560,7 @@ function buildReportPdf(opts = {}){
     return rows;
   };
   const statusCell = st => ({content: st === 'ok' ? 'OK' : st === 'warn' ? 'NOTE' : st === 'info' ? 'INFO' : 'FAIL', styles:{halign:'center', fontStyle:'bold', fillColor: st === 'ok' ? PDF_C.okBg : st === 'warn' ? PDF_C.warnBg : st === 'info' ? PDF_C.soft : PDF_C.badBg, textColor: st === 'ok' ? PDF_C.ok : st === 'warn' ? PDF_C.warn : st === 'info' ? PDF_C.accent : PDF_C.bad}});
-  const bb = m => `${d.name} ${m}BB`;
+  const bb = m => `${d.name} ${rkTag(d, m)}`;
   const n = (x, dd = 2) => fmt(x, dd);
 
   // ---------- page 1: title, project data, result summary, revisions
@@ -2449,12 +2575,12 @@ function buildReportPdf(opts = {}){
   font('bold', 11, PDF_C.navy); T('Sizing result', M, y); y += 18;
   const vColor = nBad ? PDF_C.bad : nWarn ? PDF_C.warn : PDF_C.ok, vBg = nBad ? PDF_C.badBg : nWarn ? PDF_C.warnBg : PDF_C.okBg;
   const kpis = useAI ? [
-    {k:'BATTERY CABINETS PER UPS', v:`${A.nCab} × ${d.name}`, s:`${A.mpr} modules per cabinet (${A.mpr}BB)`, hl:1},
+    {k:'BATTERY CABINETS PER UPS', v:`${A.nCab} × ${d.name}`, s:`${A.mpr} modules per cabinet (${rkTag(d, A.mpr)})`, hl:1},
     {k:'PER IT FEEDER', v:`${A.nFeeder} × ${d.name}`, s:`${I.upsFeeder} UPS × ${A.nCab} cabinets`, hl:1},
     {k:'EOL AUTONOMY', v:`${n(A.final.eol,1)} min`, s:`full load · ${n(A.tSoc,1)} min from ${n(I.soc,0)} % SOC`},
     {k:'VERIFICATION', v:verdict, s: nBad ? `${nBad} failed check(s)` : nWarn ? `${nWarn} note(s) — see section 5` : 'all checks passed', color:vColor, bg:vBg}
   ] : [
-    {k:sel || s1.chosen ? 'SELECTED CONFIGURATION' : 'MINIMUM CONFIGURATION', v:`${cfg.racks} × ${cfg.mpr}`, s:'racks × modules per rack', hl:1},
+    {k:sel || s1.chosen ? 'SELECTED CONFIGURATION' : 'MINIMUM CONFIGURATION', v:rkCfg(d, cfg), s:d.rackS ? `racks × rack (${cfg.mpr} modules each)` : 'racks × modules per rack', hl:1},
     {k:'TOTAL MODULES', v:`${cfg.total}`, s:`${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V`},
     {k:'EOL AUTONOMY', v:`${n(cfg.eol,2)} min`, s:`BOL ${n(cfg.bol,2)} min · required ${n(I.reqTime,1)} min`},
     {k:'VERIFICATION', v:verdict, s: nBad ? `${nBad} failed check(s)` : nWarn ? `${nWarn} note(s)` : 'all checks passed', color:vColor, bg:vBg}
@@ -2472,7 +2598,7 @@ function buildReportPdf(opts = {}){
   y += bh + 16;
   callout('Summary', useAI
     ? `Per UPS (${n(I.upsKva,0)} kVA, ${n(I.pLoadEff,0)} kW load): ${A.nCab} × ${d.full} cabinets with ${A.mpr} modules — the larger of the standard BUT of ${n(I.reqTime,1)} min (EOL, ${A.nCabBut} cabinets) and the ramps (${A.nCabRamp} cabinets; ramp-up = ramp-down ${I.upL} in ${n(I.rampT,0)} s: ${n(A.eUp,2)} kWh discharged, ${n(A.eDn,2)} kWh charged), with the ${AI_REF.soc} % SOC reserve${A.aiChosen ? ` (minimum ${A.nCabMin}, ${A.nCab} chosen)` : ''}. ${A.nFeeder} cabinets per IT feeder. Installed ${A.nModTot} modules, ${n(A.eInst,0)} kWh rated (${n(A.eEol,0)} kWh usable at EOL), ${n(A.final.vmin,1)}–${n(A.final.vmax,1)} V. UPS: ${A.nMod} power modules of ${n(I.upsMod,0)} kW (${A.nMod*I.upsFeeder} per IT feeder) for the recharge of the ramp-down. Expected life in AI duty ≈ ${AI_REF.lifeYears} years, to be confirmed by the manufacturer.`
-    : `${cfg.racks} racks × ${cfg.mpr} modules = ${cfg.total} ${d.full} modules for a ${n(I.upsKva,0)} kVA UPS: ${n(cfg.eol,2)} min EOL (${n(cfg.bol,2)} min BOL) at ${n(s1.pdc,1)} kW DC, ${n(cfg.current,0)} A per rack, ${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V.`);
+    : `${rkLong(d, cfg)} = ${cfg.total} ${d.full} modules for a ${n(I.upsKva,0)} kVA UPS: ${n(cfg.eol,2)} min EOL (${n(cfg.bol,2)} min BOL) at ${n(s1.pdc,1)} kW DC, ${n(cfg.current,0)} A per rack, ${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V.`);
   table({head:[['Date', 'Rev.', 'Description', 'Prepared', 'Approved']], body:[[info.date, info.rev, info.revDesc, info.prepared || '—', info.approved || '—']],
     headStyles:{fillColor:PDF_C.fieldBg, textColor:PDF_C.dim}, columnStyles:{0:{cellWidth:72}, 1:{cellWidth:40, halign:'center'}, 3:{cellWidth:92}, 4:{cellWidth:92}}, gap:22});
   const tocY = y; rec({t:'toc'});
@@ -2482,7 +2608,7 @@ function buildReportPdf(opts = {}){
   section('Design input data');
   const upsPairs = [['UPS rated power', `${n(I.upsKva,0)} kVA`], ['Power factor', n(I.pf,2)], ['Load power', `${n(I.pLoadEff,0)} kW${I._empty.has('pLoad') ? ' (UPS rating × PF)' : ''}`], ...(useAI ? [['UPS per system (= per IT feeder)', `${I.upsFeeder}`]] : []), ['UPS efficiency, battery mode (η)', n(I.eff,3)], ['DC power to the batteries', `${n(s1.pdc,1)} kW`],
     ['Required EOL autonomy', `${n(I.reqTime,1)} min`], ['UPS DC voltage window', `${n(I.upsVmin,0)}–${n(I.upsVmax,0)} V`], ['3-wire constraint', I.threeWire === 'YES' ? 'Yes' : 'No'], ['Altitude', `${n(I.altitude,0)} m`],
-    ['Rack count rule', I.rackRule === 'EI' ? 'Energy + rack current limit' : 'Energy only'], ['Module usable energy (EOL)', `${n(I.emod,3)} kWh`]];
+    ['Rack count rule', I.rackRule === 'EI' ? 'Energy + rack current limit' : 'Energy only'], d.method === 'mt' ? ['EOL autonomy at', `${mtLifeTxt(I)}`] : ['Module usable energy (EOL)', `${n(I.emod,3)} kWh`]];
   if(useAI){
     const aiPairs = [['Ramp (up = down)', `${I.upL} in ${n(I.rampT,0)} s`], ['UPS power modules', `${A.nMod} × ${n(I.upsMod,0)} kW (${n(I.upsModIch,0)} A each, load < ${AI_REF.ups.loadMax} %)`],
       ['AI rack type (indication)', I.rk.name], ['Max AI racks per UPS', `${n(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0)} (${I.gpuFeeder || 0} per IT feeder of ${I.upsFeeder} UPS)`],
@@ -2500,9 +2626,12 @@ function buildReportPdf(opts = {}){
 
   // ---------- 2. battery data
   section('Battery data');
-  const batPairs = [['Model', `${d.full}${d.system ? ` (${d.system})` : ''}${d.chem ? ', ' + d.chem : ''}`], ['Modules per rack (options)', d.rackOptions.join(', ')], ['Module discharge power', `${d.modulePower} kW`], ['Module usable energy (EOL)', `${n(I.emod,3)} kWh`],
-    ['Module rated energy', I.eRated > 0 ? `${n(I.eRated,3)} kWh` : '—'], ['Cell voltage min / max', `${d.cellVmin} / ${d.cellVmax} V (${d.cells} cells per module)`], ['Rack current limit', `${d.currentLimit} A`], ['Max cabinets in parallel', I.maxParallel ? `${I.maxParallel}` : '—'],
-    ['SOH at EOL in the sizing', `${n(d.sohEOL*100,0)} %`], ['Life table, SOH year 10', Object.keys(d.life).length ? Object.keys(d.life).map(Number).sort((a, b) => a - b).map(k => `${k === 0 ? 'standard' : k + '/day'} ${d.life[k]} %`).join(' · ') : '—']];
+  const mtB = d.method === 'mt';
+  const batPairs = [['Model', `${d.full}${d.system ? ` (${d.system})` : ''}${d.chem ? ', ' + d.chem : ''}`], [d.rackS ? 'Racks (options)' : 'Modules per rack (options)', d.rackS ? d.rackOptions.map(m => rkMod(d, m)).join(', ') : d.rackOptions.join(', ')], ['Module discharge power', `${d.modulePower} kW`],
+    mtB ? ['Back-up time method', 'Manufacturer tables: C-rate efficiency, cut-off loss, ageing'] : ['Module usable energy (EOL)', `${n(I.emod,3)} kWh`],
+    ['Module rated energy', I.eRated > 0 ? `${n(I.eRated,3)} kWh` : '—'], ['Cell voltage min / max', `${d.cellVmin} / ${d.cellVmax} V (${d.cells} cells per module)`], ['Rack current limit', limTxt(d)], ['Max cabinets in parallel', I.maxParallel ? `${I.maxParallel}` : '—'],
+    mtB ? ['Cell capacity / nominal voltage', `${n(d.ah,1)} Ah / ${n(d.vNom,2)} V`] : ['SOH at EOL in the sizing', `${n(d.sohEOL*100,0)} %`],
+    mtB ? ['Duty cycle (ageing tables)', MT.cases[I.mtCase].l] : ['Life table, SOH year 10', Object.keys(d.life).length ? Object.keys(d.life).map(Number).sort((a, b) => a - b).map(k => `${k === 0 ? 'standard' : k + '/day'} ${d.life[k]} %`).join(' · ') : '—']];
   table({head:[[{content:`${d.full.toUpperCase()} BATTERY CABINET — SIZING DATA`, colSpan:4}]], body:kvRows(batPairs), columnStyles:{0:{cellWidth:118}, 1:{cellWidth:CW/2 - 118}, 2:{cellWidth:118}, 3:{cellWidth:CW/2 - 118}}});
   const infoPairs = INFO_FIELDS.filter(f => d.info[f.k]).map(f => [f.l, d.info[f.k]]);
   if(infoPairs.length) table({head:[[{content:'DATASHEET INFORMATION (BATTERY LIBRARY)', colSpan:4}]], body:kvRows(infoPairs), columnStyles:{0:{cellWidth:118}, 1:{cellWidth:CW/2 - 118}, 2:{cellWidth:118}, 3:{cellWidth:CW/2 - 118}}});
@@ -2514,10 +2643,24 @@ function buildReportPdf(opts = {}){
     const r1 = sel || s1.rec;
     const rows = [
       {f:`${I._empty.has('pLoad') ? `@P_load = @S · @PF = ${f1(I.upsKva,0)} · ${f1(I.pf,2)} = ${f1(I.pLoadEff,1)} kW          ` : ''}@P_DC = [[@P_load // @η]] = [[${f1(I.pLoadEff,1)} // ${f1(I.eff,3)}]] = ${f1(s1.pdc,1)} kW`},
-      {f:`@N_min = ⌈ [[@P_DC · @t_req // 60 · @E_mod]] ⌉ = ⌈ [[${f1(s1.pdc,1)} · ${f1(I.reqTime,1)} // 60 · ${f1(I.emod,3)}]] ⌉ = ${s1.nmin} modules`}];
-    if(r1){
+      ...(d.method === 'mt' ? [] : [{f:`@N_min = ⌈ [[@P_DC · @t_req // 60 · @E_mod]] ⌉ = ⌈ [[${f1(s1.pdc,1)} · ${f1(I.reqTime,1)} // 60 · ${f1(I.emod,3)}]] ⌉ = ${s1.nmin} modules`}])];
+    if(r1 && r1.mt){   // manufacturer tables
+      const q = r1.mt, m = r1.mpr, rf = s1.racksFor(m), rMin = I.rackRule === 'EI' ? Math.max(rf.rE, rf.rI) : rf.rE, more = r1.racks > rMin ? `  →  ${r1.racks} racks chosen` : '';
+      const c0 = 60/I.reqTime;
+      rows.push({f:`@C_ref = [[60 // @t_req]] = [[60 // ${f1(I.reqTime,1)}]] = ${f1(c0,2)}${Math.abs(c0 - q.c) > 1e-9 ? `  →  ${f1(q.c,2)} (limits 0.33–6)` : ''}          @η_C = ${f1(q.eta,4)}          @k = ${f1(q.k,2)}  (${q.c >= 4 ? 'up to 15 min' : 'above 15 min'})`});
+      rows.push({f:`@E_rack = [[mpr · @n_cell · @V_{cell,nom} · @Q_cell // 1000]] = [[${m} · ${d.cells} · ${f1(d.vNom,2)} · ${f1(d.ah,1)} // 1000]] = ${f1(q.eRack,3)} kWh`});
+      rows.push({h:`${sel || s1.chosen ? 'Selected' : 'Minimum'} configuration — ${d.rackS ? `${rkTag(d, m)} racks (${m} modules)` : `${m} modules per rack`}`});
+      rows.push(I.rackRule === 'EI'
+        ? {f:`@N_rack = max⦅@N_E ; ⌈ [[1000 · @P_DC // mpr · @n_cell · @V_{cell,min} · @I_lim]] ⌉⦆ = max⦅${rf.rE} ; ⌈ [[1000 · ${f1(s1.pdc,1)} // ${m} · ${d.cells} · ${f1(d.cellVmin,2)} · ${f1(r1.lim,0)}]] ⌉⦆ = max( ${rf.rE} ; ${rf.rI} ) = ${rMin} racks${more}          @N_E = smallest @N_rack with @t_EOL ≥ @t_req`}
+        : {f:`@N_rack = @N_E = ${rMin} racks${more}          @N_E = smallest @N_rack with @t_EOL ≥ @t_req`});
+      rows.push({f:`@N_tot = @N_rack · mpr = ${r1.racks} · ${m} = ${r1.total} modules          @V_min = ${m} · ${d.cells} · ${f1(d.cellVmin,2)} = ${f1(r1.vmin,1)} V          @V_max = ${m} · ${d.cells} · ${f1(d.cellVmax,2)} = ${f1(r1.vmax,1)} V`});
+      rows.push({f:`@I_rack = [[1000 · @P_DC // @N_tot · @n_cell · @V_{cell,min}]] = [[1000 · ${f1(s1.pdc,1)} // ${r1.total} · ${d.cells} · ${f1(d.cellVmin,2)}]] = ${f1(r1.current,1)} A  ≤  @I_lim = ${f1(r1.lim,0)} A          @C_end = [[@I_rack // @Q_cell]] = [[${f1(r1.current,1)} // ${f1(d.ah,1)}]] = ${f1(q.cEnd,3)}`});
+      rows.push({f:`@L_cut = ${f1(q.cut*100,2)} %  (table at ${f1(d.cellVmin,2)} V/cell and ${f1(q.cEnd,2)}C${q.beyond ? ', extrapolated above 7.5C' : ''})`});
+      rows.push({f:`@t_BOL = [[60 · @N_rack · @E_rack · @η_C · (1 − @L_cut) · @k // @P_DC]] = [[60 · ${r1.racks} · ${f1(q.eRack,3)} · ${f1(q.eta,4)} · ${f1(1 - q.cut,4)} · ${f1(q.k,2)} // ${f1(s1.pdc,1)}]] = ${f1(r1.bol,2)} min`});
+      rows.push({f:`@t_EOL = @t_BOL · @R_life = ${f1(r1.bol,2)} · ${f1(q.ret,4)} = ${f1(r1.eol,2)} min  ${r1.eol >= I.reqTime - 1e-9 ? '≥' : '<'}  @t_req = ${f1(I.reqTime,1)} min          (@R_life: ${mtLifeTxt(I)})`});
+    } else if(r1){
       const m = r1.mpr, nI = Math.ceil(s1.pdc*1000/(m*d.cells*d.cellVmin*d.currentLimit) - 1e-9), nE = Math.max(1, Math.ceil(s1.nmin/m - 1e-9));
-      rows.push({h:`${sel || s1.chosen ? 'Selected' : 'Minimum'} configuration — ${m} modules per rack`});
+      rows.push({h:`${sel || s1.chosen ? 'Selected' : 'Minimum'} configuration — ${d.rackS ? `${rkTag(d, m)} racks (${m} modules)` : `${m} modules per rack`}`});
       const rMin = I.rackRule === 'EI' ? Math.max(nE, nI) : nE, more = r1.racks > rMin ? `  →  ${r1.racks} racks chosen` : '';
       rows.push(I.rackRule === 'EI'
         ? {f:`@N_rack = max⦅⌈ [[@N_min // mpr]] ⌉ ; ⌈ [[1000 · @P_DC // mpr · @n_cell · @V_{cell,min} · @I_lim]] ⌉⦆ = max⦅⌈ [[${s1.nmin} // ${m}]] ⌉ ; ⌈ [[1000 · ${f1(s1.pdc,1)} // ${m} · ${d.cells} · ${f1(d.cellVmin,2)} · ${f1(d.currentLimit,0)}]] ⌉⦆ = max( ${nE} ; ${nI} ) = ${rMin} racks${more}`}
@@ -2531,8 +2674,8 @@ function buildReportPdf(opts = {}){
   }
   const failList = r => [!r.voltageOK && 'voltage', !r.timeOK && 'time', !r.currentOK && 'current', !r.threeWireOK && '3-wire'].filter(Boolean).join(', ');
   const hlRow = sel || s1.rec;
-  table({head:[['Config.', 'Mod./rack', 'Racks', 'Driver', 'Total', 'V min', 'V max', 'EOL min', 'BOL min', 'I rack A', 'Result']],
-    body: s1.rows.map((r, i) => [`${i + 1}${sameCfg(r, hlRow) ? ' · selected' : sameCfg(r, s1.min) ? ' · minimum' : ''}`, r.mpr, r.racks, r.driver, r.total, n(r.vmin,1), n(r.vmax,1), n(r.eol,2), n(r.bol,2), n(r.current,0), r.finalOK ? 'VALID' : `NO: ${failList(r)}`]),
+  table({head:[['Config.', d.rackS ? 'Rack' : 'Mod./rack', 'Racks', 'Driver', 'Total', 'V min', 'V max', 'EOL min', 'BOL min', 'I rack A', 'Result']],
+    body: s1.rows.map((r, i) => [`${i + 1}${sameCfg(r, hlRow) ? ' · selected' : sameCfg(r, s1.min) ? ' · minimum' : ''}`, d.rackS ? `${rkTag(d, r.mpr)} (${r.mpr})` : r.mpr, r.racks, r.driver, r.total, n(r.vmin,1), n(r.vmax,1), n(r.eol,2), n(r.bol,2), n(r.current,0), r.finalOK ? 'VALID' : `NO: ${failList(r)}`]),
     styles:{fontSize:7.8, halign:'right'}, headStyles:{halign:'center'}, columnStyles:{0:{halign:'left', cellWidth:86}, 3:{halign:'left'}, 10:{halign:'left', cellWidth:78}},
     didParseCell: data => {
       if(data.section !== 'body') return;
@@ -2541,6 +2684,21 @@ function buildReportPdf(opts = {}){
       if(data.column.index === 10){ data.cell.styles.textColor = r.finalOK ? PDF_C.ok : PDF_C.bad; data.cell.styles.fontStyle = 'bold'; }
     }});
   para($('step1Note').textContent, {size:7.8, color:PDF_C.dim});
+  if(d.method === 'mt' && hlRow && hlRow.mt){   // manufacturer tables used, and the autonomy over the life
+    const q = hlRow.mt, rowFor = cs => MT.cases[cs].r.map(x => x ? `${f1(x*100,1)} %` : '—');
+    table({head:[['Manufacturer tables', ...MT.cp.map(c => `${c}C`)]], body:[['C-rate efficiency', ...MT.eta.map(x => f1(x,3))]],
+      styles:{fontSize:7.6, halign:'center'}, columnStyles:{0:{halign:'left', cellWidth:150, fontStyle:'bold'}}, gap:8});
+    const vRow = MT.cutV.findIndex(v => Math.abs(v - d.cellVmin) < 1e-9);
+    if(vRow >= 0) table({head:[[`Cut-off loss at ${f1(d.cellVmin,2)} V/cell`, ...MT.cutC.map(c => `${c}C`)]], body:[['Loss', ...MT.cut[vRow].map(x => `${f1(x*100,2)} %`)]],
+      styles:{fontSize:7.6, halign:'center'}, columnStyles:{0:{halign:'left', cellWidth:150, fontStyle:'bold'}}, gap:8});
+    table({head:[['Capacity retention', ...MT.years.map(y => `${y} years`)]], body:[1, 2, 3].map(cs => [`Case ${cs}${cs === I.mtCase ? ' (used)' : ''}`, ...rowFor(cs)]),
+      styles:{fontSize:7.6, halign:'center'}, columnStyles:{0:{halign:'left', cellWidth:150, fontStyle:'bold'}},
+      didParseCell: data => { if(data.section === 'body' && data.row.index === I.mtCase - 1){ data.cell.styles.fillColor = PDF_C.soft; data.cell.styles.fontStyle = 'bold'; } }, gap:8});
+    table({head:[[`Autonomy over the life — ${rkCfg(d, hlRow)} (case ${I.mtCase})`, 'BOL', ...MT.years.map(y => `${y} years`)]],
+      body:[['Back-up time (min)', f1(hlRow.bol,2), ...q.life.map(t => t ? f1(t,2) : '—')], ['Required (min)', f1(I.reqTime,1), ...MT.years.map(() => f1(I.reqTime,1))]],
+      styles:{fontSize:7.8, halign:'center'}, columnStyles:{0:{halign:'left', cellWidth:150, fontStyle:'bold'}},
+      didParseCell: data => { if(data.section === 'body' && data.row.index === 0 && data.column.index > 0){ const t = data.column.index === 1 ? hlRow.bol : q.life[data.column.index - 2]; if(t){ data.cell.styles.textColor = t >= I.reqTime - 1e-9 ? PDF_C.ok : PDF_C.bad; data.cell.styles.fontStyle = 'bold'; } } }});
+  }
 
   // ---------- 4. AI load sizing
   if(useAI){
@@ -2572,7 +2730,9 @@ function buildReportPdf(opts = {}){
       e.push({h:`Step 5 — the larger of standard BUT and ramps, with the ${AI_REF.soc} % SOC reserve`});
       e.push({f:`@N_cab = ⌈ [[max⦅@N_{cab,BUT} ; @N_{cab,ramp}⦆ // @SOC]] ⌉ = ⌈ [[max⦅${A.nCabBut} ; ${A.nCabRamp}⦆ // ${f1(A.socF,2)}]] ⌉ = ${A.nCabMin} per UPS${A.aiChosen ? `  →  ${A.nCab} chosen` : ''}          @N_{cab,feeder} = @N_cab · @n_UPS = ${A.nCab} · ${I.upsFeeder} = ${A.nFeeder}`});
       e.push({h:`Step 6 — autonomy at the ${AI_REF.soc} % SOC set-point`});
-      e.push({f:`@t_SOC = @SOC · [[60 · @N_tot · @E_mod // @P_DC]] = ${f1(A.socF,2)} · [[60 · ${A.nModTot} · ${f1(I.emod,3)} // ${f1(s1.pdc,1)}]] = ${f1(A.tSoc,2)} min ${A.tSoc >= I.reqTime - 1e-9 ? '≥' : '<'} @t_req = ${f1(I.reqTime,1)} min`});
+      e.push(d.method === 'mt' && A.final.mt
+        ? {f:`@t_SOC = @SOC · @t_EOL = ${f1(A.socF,2)} · ${f1(A.final.eol,2)} = ${f1(A.tSoc,2)} min ${A.tSoc >= I.reqTime - 1e-9 ? '≥' : '<'} @t_req = ${f1(I.reqTime,1)} min          (@t_EOL of ${A.nCab} × ${A.mpr}: tables, ${mtLifeTxt(I)})`}
+        : {f:`@t_SOC = @SOC · [[60 · @N_tot · @E_mod // @P_DC]] = ${f1(A.socF,2)} · [[60 · ${A.nModTot} · ${f1(I.emod,3)} // ${f1(s1.pdc,1)}]] = ${f1(A.tSoc,2)} min ${A.tSoc >= I.reqTime - 1e-9 ? '≥' : '<'} @t_req = ${f1(I.reqTime,1)} min`});
       equations('Calculation', e);
     }
     callout('Ramp check', $('rampCross').textContent.replace(/^Ramp check\.\s*/, ''));
@@ -2583,15 +2743,15 @@ function buildReportPdf(opts = {}){
   table({head:[['Step', 'Check', 'Result', 'Detail', 'Status']], body: checks.map(c => [c.k, c.name, c.title, c.detail, statusCell(c.st)]),
     styles:{fontSize:7.9}, columnStyles:{0:{cellWidth:40, textColor:PDF_C.dim}, 1:{cellWidth:108, fontStyle:'bold'}, 2:{cellWidth:118}, 4:{cellWidth:46}}});
   callout(`Result: ${verdict}${!nBad && nWarn ? ` with ${nWarn} note${nWarn > 1 ? 's' : ''}` : ''}`, useAI
-    ? `${A.nCab} × ${d.full} ${A.mpr}BB per UPS (${A.nFeeder} per IT feeder). ${n(A.final.eol,1)} min EOL at full load; ${n(A.tSoc,1)} min from ${n(I.soc,0)} % SOC (${n(A.tSocAged,1)} min with AI ageing). Rack current ${n(A.final.current,0)} A at ${n(s1.pdc,0)} kW.`
-    : `${cfg.racks} × ${cfg.mpr} modules: ${n(cfg.eol,2)} min EOL, ${n(cfg.current,1)} A per rack, ${n(cfg.vmin,0)}–${n(cfg.vmax,0)} V.`, vColor);
+    ? `${A.nCab} × ${d.full} ${rkTag(d, A.mpr)} per UPS (${A.nFeeder} per IT feeder). ${n(A.final.eol,1)} min EOL at full load; ${n(A.tSoc,1)} min from ${n(I.soc,0)} % SOC (${n(A.tSocAged,1)} min with AI ageing). Rack current ${n(A.final.current,0)} A at ${n(s1.pdc,0)} kW.`
+    : `${d.rackS ? rkCfg(d, cfg) : `${cfg.racks} × ${cfg.mpr} modules`}: ${n(cfg.eol,2)} min EOL, ${n(cfg.current,1)} A per rack, ${n(cfg.vmin,0)}–${n(cfg.vmax,0)} V.`, vColor);
 
   // ---------- 6. battery configuration and quantities
   section('Battery configuration');
-  table({head:[['Modules per rack', 'Rack qty (per UPS)', 'Min VDC (V)', 'Max VDC (V)', 'Backup time EOL (min)', 'Max discharge current (A)']],
-    body:[[cfg.mpr, cfg.racks, n(cfg.vmin,1), n(cfg.vmax,1), n(cfg.eol,2), n(cfg.current,1)]],
+  table({head:[[d.rackS ? 'Rack' : 'Modules per rack', 'Rack qty (per UPS)', 'Min VDC (V)', 'Max VDC (V)', 'Backup time EOL (min)', 'Max discharge current (A)']],
+    body:[[d.rackS ? rkMod(d, cfg.mpr) : cfg.mpr, cfg.racks, n(cfg.vmin,1), n(cfg.vmax,1), n(cfg.eol,2), n(cfg.current,1)]],
     styles:{halign:'center', fontStyle:'bold', fontSize:9, fillColor:PDF_C.cream}, headStyles:{halign:'center'}});
-  const cabDesc = `${d.full}${d.chem ? ' ' + d.chem : ''} battery cabinet, ${cfg.mpr} modules (${cfg.mpr}BB)${I.eRated > 0 ? `, ${n(cfg.mpr*I.eRated,1)} kWh rated` : ''}, ${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V${d.info.dimensions ? `, ${d.info.dimensions}` : ''}`;
+  const cabDesc = `${d.full}${d.chem ? ' ' + d.chem : ''} battery cabinet, ${cfg.mpr} modules (${rkTag(d, cfg.mpr)})${I.eRated > 0 ? `, ${n(cfg.mpr*I.eRated,1)} kWh rated` : ''}, ${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V${d.info.dimensions ? `, ${d.info.dimensions}` : ''}`;
   if(useAI){
     table({head:[['Item', 'Description', 'Qty per UPS', 'Qty per IT feeder']],
       body:[['Battery cabinet', cabDesc, A.nCab, A.nFeeder], ['of which', `Standard BUT / added for the ramps and the ${AI_REF.soc} % SOC reserve`, `${A.nCabBut} / ${A.nCabAi}`, `${A.nCabBut*I.upsFeeder} / ${A.nCabAi*I.upsFeeder}`]],
@@ -3383,7 +3543,7 @@ async function buildSummaryPng(){
     ['UPS DC window', `${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V`],
     ['Rack count rule', I.rackRule === 'EI' ? 'Energy + rack current limit' : 'Energy only'],
     ['Battery', `${d.full}${d.system ? ' ' + d.system : ''}`],
-    ['Module usable energy (EOL)', `${fmt(I.emod,3)} kWh`],
+    d.method === 'mt' ? ['EOL autonomy at', mtLifeTxt(I)] : ['Module usable energy (EOL)', `${fmt(I.emod,3)} kWh`],
     ['3-wire constraint', I.threeWire === 'YES' ? 'Yes' : 'No']
   ];
   rows.forEach(([k, v], i) => {
@@ -3398,12 +3558,12 @@ async function buildSummaryPng(){
   rr(cx, cy, cw, ch, 14, col.soft, col.accent, 1.5);
   const nCab = useAI ? A.nCab : cfg.racks;
   txt(useAI ? 'BATTERY CABINETS PER UPS' : 'BATTERY RACKS PER UPS', cx + 24, cy + 36, F('b', 12), col.dim, 'left', 1.2);
-  const big = `${nCab} × ${d.name} ${cfg.mpr}BB`;
+  const big = `${nCab} × ${d.name} ${rkTag(d, cfg.mpr)}`;
   txt(big, cx + 24, cy + 92, F('b', fit(big, 390, 'b', 46, 24)), col.navy);
   txt(`${cfg.mpr} modules per cabinet${I.eRated > 0 ? ` · ${fmt(cfg.mpr*I.eRated,1)} kWh each` : ''}`, cx + 24, cy + 120, F('l', 15), col.dim);
   txt(useAI ? 'PER IT FEEDER' : 'TOTAL MODULES', cx + cw - 24, cy + 36, F('b', 12), col.dim, 'right', 1.2);
   txt(useAI ? `${A.nFeeder}` : `${cfg.total}`, cx + cw - 24, cy + 92, F('b', 46), col.navy, 'right');
-  txt(useAI ? `${I.upsFeeder} UPS × ${A.nCab} cabinets` : `${cfg.racks} × ${cfg.mpr} modules`, cx + cw - 24, cy + 120, F('l', 15), col.dim, 'right');
+  txt(useAI ? `${I.upsFeeder} UPS × ${A.nCab} cabinets` : d.rackS ? `${rkCfg(d, cfg)} · ${cfg.mpr} modules each` : `${cfg.racks} × ${cfg.mpr} modules`, cx + cw - 24, cy + 120, F('l', 15), col.dim, 'right');
   const parts = useAI ? [[A.nCabBut, col.navy, 'Standard BUT'], [A.nCabAi, col.accent, `Ramps / SOC ${AI_REF.soc} % reserve`]] : [[cfg.racks, col.navy, 'Autonomy']];
   const slots = Math.max(nCab, useAI && I.maxParallel ? Math.min(I.maxParallel, 16) : nCab);
   const gap = 10, iw = Math.min(48, (cw - 48 - (slots - 1)*gap)/slots), ih = 78, iy = cy + 144;
@@ -3425,17 +3585,17 @@ async function buildSummaryPng(){
   });
   if(useAI){
     txt(I.maxParallel ? `${nCab} of max ${I.maxParallel} cabinets in parallel per UPS` : `${nCab} cabinets per UPS · ${d.full}`, cx + 24, cy + ch - 16, F('l', 13), col.dim);
-  } else txt(`${fmt(s1.pdc,1)} kW DC · ${fmt(cfg.current,0)} A per rack (limit ${d.currentLimit} A)`, cx + 24, cy + ch - 16, F('l', 13), col.dim);
+  } else txt(`${fmt(s1.pdc,1)} kW DC · ${fmt(cfg.current,0)} A per rack (limit ${cfg.lim} A)`, cx + 24, cy + ch - 16, F('l', 13), col.dim);
 
   // KPI tiles
   const tiles = useAI ? [
     ['EOL AUTONOMY', `${fmt(A.final.eol,1)} min`, `full load · ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC`],
     ['INSTALLED ENERGY', `${fmt(A.eInst,0)} kWh`, `${A.nModTot} modules · ${fmt(A.eEol,0)} kWh usable at EOL`],
-    ['DC WINDOW', `${fmt(A.final.vmin,0)}–${fmt(A.final.vmax,0)} V`, `${fmt(A.final.current,0)} A per rack (limit ${d.currentLimit} A)`]
+    ['DC WINDOW', `${fmt(A.final.vmin,0)}–${fmt(A.final.vmax,0)} V`, `${fmt(A.final.current,0)} A per rack (limit ${A.final.lim} A)`]
   ] : [
     ['EOL AUTONOMY', `${fmt(cfg.eol,2)} min`, `BOL ${fmt(cfg.bol,2)} min · required ${fmt(I.reqTime,1)} min`],
-    ['TOTAL MODULES', `${cfg.total}`, `${cfg.racks} racks × ${cfg.mpr} modules`],
-    ['DC WINDOW', `${fmt(cfg.vmin,0)}–${fmt(cfg.vmax,0)} V`, `${fmt(cfg.current,0)} A per rack (limit ${d.currentLimit} A)`]
+    ['TOTAL MODULES', `${cfg.total}`, rkLong(d, cfg)],
+    ['DC WINDOW', `${fmt(cfg.vmin,0)}–${fmt(cfg.vmax,0)} V`, `${fmt(cfg.current,0)} A per rack (limit ${cfg.lim} A)`]
   ];
   const tw = (W - 72 - (tiles.length - 1)*16)/tiles.length, ty = 440, th = 108;
   tiles.forEach(([k, v, sub], i) => {
@@ -3931,12 +4091,15 @@ function sizingResult(){
   const fin = ai ? R.A.final : R.s1.rec;
   if(!fin) return null;
   const isAmpace = /ampace/i.test(b.manufacturer || '');
-  const fam = isAmpace && /pu\s*-?\s*100/i.test(b.model) ? 'pu100' : isAmpace && /pu\s*-?\s*200/i.test(b.model) ? 'pu200' : null;
+  const isSamsung = /samsung/i.test(b.manufacturer || '');   // configurator catalog families: Ampace PU-100 / PU-200, Samsung U6A4 / U8A1
+  const fam = isAmpace && /pu\s*-?\s*100/i.test(b.model) ? 'pu100' : isAmpace && /pu\s*-?\s*200/i.test(b.model) ? 'pu200'
+    : isSamsung && /u6a4/i.test(b.model) ? 'u6a4' : isSamsung && /u8a1/i.test(b.model) ? 'u8a1' : null;
+  const rackLabel = b.rackName === 'series' && b.cellsPerModule ? `${fin.mpr*b.cellsPerModule}S` : '';   // racks named by cells in series (128S / 136S)
   const vc = /^\s*(\d+)\s*C\s*$/i.exec(b.variant || '');
-  const cabinetModel = isAmpace ? `${String(b.model).replace(/[-\s]/g, '')}${vc ? ` (C${vc[1]})` : b.variant ? ` (${b.variant})` : ''}` : `${b.model}${b.variant ? ` (${b.variant})` : ''}`;
+  const cabinetModel = isAmpace ? `${String(b.model).replace(/[-\s]/g, '')}${vc ? ` (C${vc[1]})` : b.variant ? ` (${b.variant})` : ''}` : b.rackName === 'series' && b.cellsPerModule ? `${b.model} ${fin.mpr*b.cellsPerModule}S` : `${b.model}${b.variant ? ` (${b.variant})` : ''}`;
   const n1 = x => (Math.round(x*10)/10).toFixed(1);
   return {
-    battery:{id:b.id, manufacturer:b.manufacturer, model:b.model, variant:b.variant || '', name:battLabel(b)}, family:fam,
+    battery:{id:b.id, manufacturer:b.manufacturer, model:b.model, variant:b.variant || '', name:battLabel(b)}, family:fam, rackLabel,
     mode:ai ? 'AI' : 'BACKUP', cabinetsPerUps:fin.racks, modulesPerCabinet:fin.mpr, threeWire:I.threeWire === 'YES' ? 'YES' : 'NO',
     backupMin:I.reqTime, eolMin:fin.eol, bolMin:fin.bol, verdict:R.verdict || '', upsFeeder:ai ? I.upsFeeder : null, perFeeder:ai ? R.A.nFeeder : null,
     tn:{backup:String(I.reqTime), cabinetModel, cabinets:String(fin.racks), modules:String(fin.mpr), threeWire:I.threeWire === 'YES' ? 'YES' : 'NO', eol:`${n1(fin.eol)} min`, bol:`${n1(fin.bol)} min`},
@@ -4094,14 +4257,14 @@ const RIBBON = (function(){
   const sm = (icon, key, run, o = {}) => Object.assign({type:'sm', icon, key, run}, o);
   const col = (...items) => ({type:'col', items});
   const mode = () => $('mode').value;
-  const setMode = m => { if(m === 'AI' && isV()){ toast('AI load sizing is for Li-ion batteries only.', true); return; } $('mode').value = m; calculate(); render(); };
+  const setMode = m => { if(m === 'AI' && isV()){ toast('AI load sizing is for Li-ion batteries only.', true); return; } if(m === 'AI' && backupOnly()){ toast('The selected battery is not applicable to AI loads: standard backup only.', true); return; } $('mode').value = m; calculate(); render(); };
   const tech = () => $('tech').value, isV = () => tech() === 'VRLA';
   const setTech = t => { if(tech() === t) return; $('tech').value = t; $('vStrings').value = ''; refreshNotes(); calculate(); render(); };
   const TABS = {
     home: [
       ['g_sizing', [big('bolt', 'calc', () => calculate(), {pri:1}), big('reset', 'reset', () => resetTool(), {red:1})]],
       ['g_tech', [{type:'seg', label:'Battery technology', items:[{key:'techLi', run: () => setTech('LI'), on: () => !isV()}, {key:'techVrla', run: () => setTech('VRLA'), on: () => isV()}]}]],
-      ['g_mode', [big('chart', 'modeAI', () => setMode('AI'), {on: () => mode() === 'AI' && !isV()}), big('battery', 'modeBk', () => setMode('BACKUP'), {on: () => mode() === 'BACKUP' || isV()})]],
+      ['g_mode', [big('chart', 'modeAI', () => setMode('AI'), {on: () => mode() === 'AI' && !isV() && !backupOnly()}), big('battery', 'modeBk', () => setMode('BACKUP'), {on: () => mode() === 'BACKUP' || isV() || backupOnly()})]],
       ['g_cfg', [big('save', 'saveProj', () => saveProjectConfiguration(), {pri:1}), big('upload', 'load', () => $('loadFile').click())]],
       ['g_report', [big('pdf', 'pdfReport', () => openPdfPreview(), {pri:1}), big('word', 'wordReport', () => downloadDocx()), big('copy', 'pngCopy', () => copySummary()), big('image', 'pngSummary', () => openPngPreview())]],
       ['g_sp', [big('folder', 'spProject', () => openProjectPicker()), big('user', 'spAccount', () => openSpPanel())]]
@@ -4345,6 +4508,7 @@ $('btnEditorClose').addEventListener('click', closeEditor);
 $('btnEditorCancel').addEventListener('click', closeEditor);
 $('btnEditorSave').addEventListener('click', saveEditor);
 $('editorBody').addEventListener('input', () => updateEditorState());
+$('editorBody').addEventListener('change', () => updateEditorState());
 $('btnSignIn').addEventListener('click', openSpPanel);
 $('userChip').addEventListener('click', openSpPanel);
 $('btnSignOut').addEventListener('click', signOut);
@@ -4381,7 +4545,7 @@ $('aiCabSeg').addEventListener('click', e => { const b = e.target.closest('[data
 $('modeSeg').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if(!b) return; e.stopPropagation(); $('mode').value = b.dataset.mode; refreshNotes(); calculate(); RIBBON.render(); });
 $('vBlocksSeg').addEventListener('click', e => { const b = e.target.closest('[data-vblk]'); if(!b) return; $('vBlocks').value = b.dataset.vblk; $('vStrings').value = ''; refreshNotes(); calculate(); RIBBON.render(); });
 $('aiRackCards').addEventListener('click', e => { const b = e.target.closest('[data-rack]'); if(!b) return; $('aiRack').value = b.dataset.rack; refreshNotes(); calculate(); RIBBON.render(); });
-[...NUM_FIELDS, 'mode', 'threeWire', 'rackRule', 'aiRack', 'tech', 'vModel', 'vBlocks', 'vEodv', 'vAge', 'vMargin', 'vLife'].forEach(id => $(id).addEventListener('input', () => { refreshNotes(); calculate(); RIBBON.render(); }));
+[...NUM_FIELDS, 'mode', 'threeWire', 'rackRule', 'aiRack', 'tech', 'vModel', 'vBlocks', 'vEodv', 'vAge', 'vMargin', 'vLife', 'mtCase', 'mtLife'].forEach(id => $(id).addEventListener('input', () => { refreshNotes(); calculate(); RIBBON.render(); }));
 
 document.querySelectorAll('.doc-ref[data-doc]').forEach(p => { const k = p.dataset.doc; p.innerHTML = `Explanatory document: ${docLink(k)} — ${esc(DOCS[k].sub.charAt(0).toLowerCase() + DOCS[k].sub.slice(1))}.`; });
 loadLibrary();

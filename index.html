@@ -637,7 +637,6 @@ body.dark-theme .user-chip.costs .uc-coin{background:#2B4A6B; color:#A9C7FF;}
 body.dark-theme .user-chip:not(.costs) .uc-coin{background:#1F4636; color:#8FE0B0;}
 body.dark-theme .user-chip.noperm .uc-coin{background:var(--accent-soft); color:#A9C7FF;}
 body.dark-theme .user-chip #ucRole{color:#A9C7FF;}
-body.dark-theme .user-chip.pricing #ucRole{color:#8FE0B0;}
 body.dark-theme .user-chip:not(.costs) #ucName{color:var(--text);}
 
 .wrap{width:100%; max-width:none; margin:0 auto;}
@@ -859,8 +858,7 @@ body.dark-theme .rb-big.rb-on{background:var(--accent-soft); box-shadow:inset 0 
 .user-chip #ucRole{font-size:11px; color:#3D6C9C;}
 /* beta_6.42: Costs.Read = the light blue of the Riello UPS livery (logo); without costs and margins = light green */
 .user-chip .uc-coin{width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#75A1C9; color:#00257A;}
-.user-chip:not(.costs):not(.pricing) #ucRole{display:none;}
-.user-chip.pricing #ucRole{color:#1E7B45;}   /* beta_6.52: Pricing role under the name */
+.user-chip:not(.costs) #ucRole{display:none;}
 .user-chip:not(.costs) .uc-coin{background:#CFEFDB; color:#1E7B45;}
 .user-chip:not(.costs) #ucName{color:#4B5260; font-weight:500;}
 .user-chip.noperm #ucName{color:var(--text); font-weight:600;}
@@ -3018,7 +3016,7 @@ body.dark-theme .offer-tabs .ot-new{color:#D6DBE4;}
 
       <div class="page-header u10">
         <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-        <h1>UPS Configurator <span class="version-badge">beta_6.52</span></h1>
+        <h1>UPS Configurator <span class="version-badge">beta_6.51</span></h1>
         <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
       </div>
 
@@ -3507,9 +3505,10 @@ body.dark-theme .offer-tabs .ot-new{color:#D6DBE4;}
         <button type="button" class="btn-ghost act" id="btnAdminLockBeta" style="margin-top:8px;">🔒 Nascondi le beta functions</button>
       </div>
       <div class="beta-fn-panel" id="costRolePanel">
-        <div><b>Costi e margini — ruoli</b> <span class="beta-fn-badge" style="margin-left:6px">Azure · Cost.Read / Pricing</span>
-          <p class="acc-modal-sub" style="margin:4px 0 0">Ruoli dell'app (App registration → App roles; assegnazione in Entra ID → Enterprise applications → Users and groups): <b>Cost.Read</b> vede costi e margini (Unit Cost, Total Cost, Margin %, offerte «with margin»); <b>Pricing</b> vede solo i prezzi, senza costi e margini. Senza ruolo, o non connesso = <b>Pricing</b>. Il vecchio ruolo Costs.Read vale come Cost.Read.</p></div>
+        <div><b>Costi e margini</b> <span class="beta-fn-badge" style="margin-left:6px">Azure · Costs.Read</span>
+          <p class="acc-modal-sub" style="margin:4px 0 0">Chi ha il ruolo dell'app <b>Costs.Read</b> (Entra ID → Enterprise applications → Users and groups) vede costi e margini; chi non ce l'ha no. Se il token non contiene ruoli (ruoli non ancora creati su Azure), i costi restano visibili — a meno di attivare l'opzione sotto.</p></div>
         <p class="acc-modal-sub" id="costRoleStatus" style="margin:8px 0 0"></p>
+        <label style="display:flex; gap:8px; align-items:center; margin-top:8px; font-size:12.5px;"><input type="checkbox" id="costRoleRequired"> Richiedi sempre il ruolo Costs.Read (anche per gli ospiti e per i token senza ruoli) — impostazione di questo browser</label>
       </div>
       <table class="batt-table" id="adminChangelogTable">
         <thead><tr><th style="width:110px;">Versione</th><th style="width:110px;">Data</th><th>Modifiche</th></tr></thead>
@@ -12080,20 +12079,23 @@ const CFG_CARDS = (function(){
 })();
 
 
-// ---- beta_6.52: two Azure app roles (idTokenClaims.roles of the Microsoft sign-in) ----
-//   Cost.Read → costs and margins (Unit Cost / Total Cost / Margin %, offers "with margin");
-//   Pricing   → prices only: no costs, no margins.
-// No role in the token, or not signed in = Pricing. "Costs.Read" (the role name of beta_6.32–6.51) still counts as Cost.Read.
+// ---- beta_6.32: costs & margins only for the Azure app role "Costs.Read" ----
+// The role arrives in the Microsoft sign-in token (idTokenClaims.roles). No roles in the token at all
+// (roles not created on Azure yet) = costs visible, unless the Admin option "always require" is on.
+// beta_6.39 switched the permissions off (COST_PERMISSIONS = false: everyone sees costs and margins);
+// beta_6.40: back on, as in beta_6.38.
 const COST_PERMISSIONS = true;
-const COST_ROLES = ['Cost.Read', 'Costs.Read'];
-const PRICING_ROLE = 'Pricing';
+const COST_ROLE = 'Costs.Read';
+const COST_ROLE_KEY = 'upsConfigurator.requireCostsRole';
+function costRoleRequired(){ try{ return localStorage.getItem(COST_ROLE_KEY) === '1'; }catch(e){ return false; } }
 function tokenRoles(){
   try{ const r = msalAccount && msalAccount.idTokenClaims && msalAccount.idTokenClaims.roles; return Array.isArray(r) ? r : null; }catch(e){ return null; }
 }
-function userRole(){ const roles = tokenRoles() || []; return roles.some(r => COST_ROLES.includes(r)) ? 'Cost.Read' : PRICING_ROLE; }   // the higher role wins
 function costsAllowed(){
   if(!COST_PERMISSIONS) return true;
-  return userRole() === 'Cost.Read';
+  const roles = tokenRoles();
+  if(roles) return roles.includes(COST_ROLE);
+  return !costRoleRequired();
 }
 const COST_HEAD_RX = /^(unit\s*)?cost\b|^total\s*cost|^margin|^mrg\b|^cost\s*\/|^costo|^margine|^marge|^margen|kosten$|^coût/i;
 function markCostColumns(){
@@ -12119,15 +12121,18 @@ function applyCostVisibility(){
   if(st && !COST_PERMISSIONS){
     st.innerHTML = '<b>Permessi disattivati</b> in questa versione: costi e margini sono visibili a tutti, connessi o ospiti, con o senza ruolo. Il controllo del ruolo Costs.Read è pronto per essere riattivato in una versione successiva.';
   } else if(st){
-    const roles = tokenRoles(), res = ok ? 'ruolo effettivo <b>Cost.Read</b>: costi e margini visibili' : 'ruolo effettivo <b>Pricing</b>: solo prezzi, costi e margini nascosti';
-    st.innerHTML = !(msalInstance && msalAccount) ? `Ora: ospite (non connesso) — nessun ruolo → ${res}.`
-      : roles && roles.length ? `Ora: ${escapeHtml(msalAccount.name || msalAccount.username || '')} — ruoli nel token: <b>${escapeHtml(roles.join(', '))}</b> → ${res}.`
-      : `Ora: ${escapeHtml(msalAccount.name || msalAccount.username || '')} — nessun ruolo nel token → ${res}.`;
+    const roles = tokenRoles();
+    st.innerHTML = !(msalInstance && msalAccount) ? 'Ora: ospite (non connesso) — costi ' + (ok ? '<b>visibili</b>' : '<b>nascosti</b>') + '.'
+      : roles ? `Ora: ${escapeHtml(msalAccount.name || msalAccount.username || '')} — ruoli nel token: <b>${escapeHtml(roles.join(', ') || '—')}</b> → costi ${ok ? '<b>visibili</b>' : '<b>nascosti</b>'}.`
+      : `Ora: ${escapeHtml(msalAccount.name || msalAccount.username || '')} — nessun ruolo nel token → costi ${ok ? '<b>visibili</b>' : '<b>nascosti</b>'}.`;
   }
 }
 (function(){
+  const cb = document.getElementById('costRoleRequired');
+  if(cb && !COST_PERMISSIONS){ cb.disabled = true; cb.checked = false; cb.closest('label').style.opacity = '.5'; }
   const bdg = document.querySelector('#costRolePanel .beta-fn-badge');
-  if(bdg && !COST_PERMISSIONS) bdg.textContent = 'Azure · Cost.Read / Pricing · disattivato';
+  if(bdg && !COST_PERMISSIONS) bdg.textContent = 'Azure · Costs.Read · disattivato';
+  if(cb){ cb.checked = COST_PERMISSIONS && costRoleRequired(); cb.addEventListener('change', () => { try{ localStorage.setItem(COST_ROLE_KEY, cb.checked ? '1' : '0'); }catch(e){} applyCostVisibility(); }); }
   new MutationObserver(() => { if(document.body.classList.contains('no-costs') && !_costMarkRaf) _costMarkRaf = requestAnimationFrame(() => { _costMarkRaf = 0; markCostColumns(); }); })
     .observe(document.body, {childList: true, subtree: true});
   setInterval(applyCostVisibility, 1500);   // follows sign-in / sign-out / silent restore without hooking each of them
@@ -12141,12 +12146,12 @@ const ST_TXT = {
        noProj: 'No project data', noProjD: 'Sign in with Microsoft 365 to load the list', projList: 'Project list', projErr: 'Project list not loaded',
        refresh: 'Refresh', signIn: 'Sign in', builtin: 'Built-in price list', builtinD: 'codes and descriptions, no prices', importPrices: 'Import prices',
        noPl: 'No price list', noPlD: 'reference table and manual pricing', importPl: 'Import price list', changePl: 'Change',
-       rev: r => `Revision R${r}`, open: 'open, editable', closedRo: 'closed, read only', closedNext: r => `closed — saves go to R${r}`, history: 'History', costs: 'Costs & margins', pricing: 'prices only, no costs and margins'},
+       rev: r => `Revision R${r}`, open: 'open, editable', closedRo: 'closed, read only', closedNext: r => `closed — saves go to R${r}`, history: 'History', costs: 'Costs & margins'},
   it: {projFrom: n => `${n} progetti da SharePoint`, projFromFile: (n, f) => `${n} progetti da ${f}`, missing: c => `${c} non trovata, lasciata vuota`, missingN: n => `${n} colonne non trovate, lasciate vuote`, live: 'connessione attiva', allCols: 'tutte le colonne trovate',
        noProj: 'Nessun dato progetto', noProjD: 'Accedi con Microsoft 365 per caricare la lista', projList: 'Lista progetti', projErr: 'Lista progetti non caricata',
        refresh: 'Aggiorna', signIn: 'Accedi', builtin: 'Listino integrato', builtinD: 'codici e descrizioni, senza prezzi', importPrices: 'Importa prezzi',
        noPl: 'Nessun listino', noPlD: 'tabella di riferimento e prezzi manuali', importPl: 'Importa listino', changePl: 'Cambia',
-       rev: r => `Revisione R${r}`, open: 'aperta, modificabile', closedRo: 'chiusa, sola lettura', closedNext: r => `chiusa — si salva su R${r}`, history: 'Storico', costs: 'Costi e margini', pricing: 'solo prezzi, senza costi e margini'}
+       rev: r => `Revisione R${r}`, open: 'aperta, modificabile', closedRo: 'chiusa, sola lettura', closedNext: r => `chiusa — si salva su R${r}`, history: 'Storico', costs: 'Costi e margini'}
 };
 function stT(){ return ST_TXT[LANG] || ST_TXT.en; }
 function stSet(id, o){
@@ -12199,12 +12204,11 @@ function renderStatusBar(){
     try{ name = (msalAccount && (msalAccount.name || msalAccount.username)) || ''; }catch(e){}
     if(/,/.test(name)){ const [last, first] = name.split(',').map(x => x.trim()); name = `${first} ${last}`.trim(); }
     document.getElementById('ucName').textContent = name;
+    document.getElementById('ucRole').textContent = COST_PERMISSIONS ? T.costs : '';
     const ok = typeof costsAllowed === 'function' ? costsAllowed() : true;
-    document.getElementById('ucRole').textContent = !COST_PERMISSIONS ? '' : ok ? T.costs : 'Pricing';
     chip.classList.toggle('costs', COST_PERMISSIONS && ok);
-    chip.classList.toggle('pricing', COST_PERMISSIONS && !ok);
     chip.classList.toggle('noperm', !COST_PERMISSIONS);
-    chip.title = name + (!COST_PERMISSIONS ? '' : ok ? ' — Cost.Read: ' + T.costs : ' — Pricing: ' + T.pricing);
+    chip.title = name + (COST_PERMISSIONS && ok ? ' — ' + T.costs : '');
     // the person line icon in every case (like the ribbon icons); the permission is the tint of its circle and the role text
   }
 }
@@ -18301,7 +18305,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.52';
+const CURRENT_VERSION = 'beta_6.51';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Battery sizing (sottoprogramma)', date: '2026-10-26', notes:[
@@ -18353,11 +18357,6 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 // RIBBON is initialized before this state restoration; refresh once to match the saved Admin state.
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
-  {version:'beta_6.52', date:'2026-11-03', notes:[
-    'Ruoli Azure dell\'app: Cost.Read vede costi e margini (Unit Cost, Total Cost, Margin %, costi e margini di Kit Builder e delle finestre di inserimento, offerte PDF / Excel «with margin»); Pricing vede solo i prezzi — niente costi e margini',
-    'Senza ruolo nel token, o non connesso (ospite) = Pricing. Il vecchio ruolo Costs.Read vale come Cost.Read; con entrambi i ruoli vale Cost.Read. Tolta l\'opzione Admin «Richiedi sempre il ruolo»: il ruolo è sempre richiesto',
-    'Riquadro utente: sotto il nome «Costs & margins» (cerchio azzurro) con Cost.Read, «Pricing» (cerchio verde chiaro) senza; in Admin lo stato con i ruoli letti dal token',
-  ]},
   {version:'beta_6.51', date:'2026-11-02', notes:[
     'Add Battery: il catalogo batterie comprende i rack Samsung SDI U6A4 e U8A1 (128S = 16 moduli, 136S = 17 moduli) accanto ad Ampace PU 100 / PU 200 — Family "Samsung U6A4" / "Samsung U8A1". Le Samsung sono solo per backup standard (non per carichi AI)',
     'Codice Riello e prezzi delle Samsung non sono ancora nel catalogo: in Add Battery il codice si scrive nella colonna Code, il prezzo e il costo nella riga d\'offerta; la riga resta modificabile (⋯ Edit). Top Hat e Acc. Box restano solo per Ampace',

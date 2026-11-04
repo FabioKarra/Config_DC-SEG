@@ -806,10 +806,11 @@ body.dark-theme .settings-note.note-warn{color:#F2C777;}
         </div>
       </div>
       <div id="aiInputs" class="ai-only li-only">
-        <div class="section-label">AI load — ramp (the same for ramp-up and ramp-down)</div>
+        <div class="section-label">AI load — ramp (the same for ramp-up and ramp-down) and ageing</div>
         <div class="grid">
           <div class="field"><label for="ramp">Ramp power — up and down</label><div class="inp-unit"><input id="ramp" type="number" min="0" step="any" placeholder="100"><select id="rampUnit" aria-label="Ramp power unit"><option value="PCT">% of the load</option><option value="KW">kW (fixed)</option></select></div><div class="settings-note" id="rampNote"></div></div>
           <div class="field"><label for="rampT">Ramp time (s)</label><input id="rampT" type="number" min="0" step="any" placeholder="10"><div class="settings-note" id="rampTNote"></div></div>
+          <div class="field"><label for="aiAge">Additional ageing (%)</label><input id="aiAge" type="number" min="0" max="100" step="any" placeholder="15"><div class="settings-note" id="aiAgeNote"></div></div>
         </div>
         <div class="section-label">UPS power modules — recharge of the ramp-down</div>
         <div class="grid g4">
@@ -824,7 +825,7 @@ body.dark-theme .settings-note.note-warn{color:#F2C777;}
         <div class="grid">
           <div class="field"><label for="aiRacks">Max AI racks installable</label><input id="aiRacks" type="text" readonly tabindex="-1"><div class="settings-note" id="aiRacksNote"></div></div>
           <div class="field"><label for="aiBatt">Battery for AI duty (library)</label><input id="aiBatt" type="text" readonly tabindex="-1"><div class="settings-note" id="aiBattNote"></div></div>
-          <div class="field"><label for="aiSoc">SOC set-point — extra reserve</label><input id="aiSoc" type="text" readonly tabindex="-1"><div class="settings-note" id="aiSocNote"></div></div>
+          <div class="field"><label for="aiSoc">SOC set-point — check</label><input id="aiSoc" type="text" readonly tabindex="-1"><div class="settings-note" id="aiSocNote"></div></div>
         </div>
         <p class="v-only-note"><span id="aiRackNote"></span> The racks are only an indication: the AI sizing uses the ramp power and times above.</p>
       </div>
@@ -1071,7 +1072,7 @@ const WORKSANS_BOLD_B64 = 'AAEAAAAQAQAABAAAR0RFRgmmCYcAAJccAAAAXkdQT1PUJ1QsAACXf
 </script>
 <script>
 'use strict';
-const APP_VERSION = 'v5.4';
+const APP_VERSION = 'v5.6';
 // Technical documents (PDF) — on SharePoint, in the same folder as the DC Configurator manuals
 const DOCS_BASE = 'https://rielloups.sharepoint.com/sites/DCSales2/Shared%20Documents/03_Tools/PreSales_Execution/DEF/';
 const DOCS = {
@@ -1086,9 +1087,9 @@ const docLink = (k, text) => `<a class="doc-link" href="${docUrl(k)}" target="_b
 // ---------------------------------------------------------------- battery library (built-in defaults + batteries added by the user)
 const DEFAULT_LIBRARY = [
   {id:'ampace-pu100', manufacturer:'Ampace', model:'PU-100', variant:'6C', chemistry:'LFP',
-   source:'PU-100 datasheet and Ampace end-of-life backup tables. Usable EOL energy 3.79 kWh/module = P × t / 60 / modules from the EOL tables at the maximum discharge power (about 26 kW per module; 3.97 kWh at 0.4C). Ramp C-rates 6C discharge / 1C charge (104 A on 104 Ah).',
+   source:'PU-100 datasheet and Ampace end-of-life backup tables. Usable EOL energy 3.79 kWh/module = P × t / 60 / modules from the EOL tables at the maximum discharge power (about 26 kW per module; 3.97 kWh at 0.4C). Ramp C-rates 6C discharge / 2C charge (208 A on 104 Ah, confirmed for the AI-load ramps; the datasheet continuous charge is 104 A = 1C). Today the only battery for AI-load sizing.',
    cellsPerModule:16, cellVmin:2.80, cellVmax:3.45, moduleEnergyEOL:3.79, moduleEnergyRated:5.324, modulePower:26.88, rackCurrentLimit:600, rackOptions:[8,9,10,11,12],
-   maxParallel:8, sohEOL:80, altitudeMax:3000, cDisRamp:6, cChRamp:1, cDisCont:5.05, cChCont:1, life:{0:80, 5:73, 10:70, 50:66},
+   maxParallel:8, sohEOL:80, altitudeMax:3000, cDisRamp:6, cChRamp:2, cDisCont:5.05, cChCont:1, life:{0:80, 5:73, 10:70, 50:66},
    info:{capacityAh:'106.6 Ah / 104 Ah', energyModule:'5.458 kWh / 5.324 kWh', nominalVoltage:'51.2 V × n (16 cells × 3.2 V)', voltageRange:'40 V × n ~ 57.6 V × n',
      maxChargeCurrent:'26 A (0–15 °C) · 104 A (15–45 °C) · 26 A (45–60 °C)', peakChargeCurrent:'122 A @ 5 s (25 °C)', maxDischargePower:'26.88 kW × n (0–65 °C)', peakDischargePower:'31.72 kW × n @ 5 s (25 °C)',
      cabinet:'12 modules: 63.8 kWh nominal, 329 kW max output, 537.6–662.4 V', dimensions:'600 × 1000 × 2000 mm', calendarLife:'15 years (25 °C ± 2 °C)', cycleLife:'1000 cycles, ≥ 80 % SOH @ 1C/6CP, 25 °C',
@@ -1098,7 +1099,7 @@ const DEFAULT_LIBRARY = [
   {id:'ampace-pu200', manufacturer:'Ampace', model:'PU-200', variant:'10C', chemistry:'LFP',
    source:'Ampace configurator (Excel). Rated module energy, life table and parallel limit are not in the available documents — complete them from the datasheet (duplicate this battery to edit). Max charging current 1C from the Ampace AI-load slide.',
    cellsPerModule:16, cellVmin:2.70, cellVmax:3.45, moduleEnergyEOL:3.227, moduleEnergyRated:null, modulePower:38.5, rackCurrentLimit:890, rackOptions:[7,8,9,10,11,12],
-   maxParallel:null, sohEOL:80, altitudeMax:null, cDisRamp:10, cChRamp:1, cDisCont:null, cChCont:null, life:{},
+   maxParallel:null, sohEOL:80, altitudeMax:null, cDisRamp:10, cChRamp:1, cDisCont:null, cChCont:null, life:{}, aiDuty:false,
    info:{maxChargeCurrent:'1C (Ampace AI-load slide)'}},
   {id:'samsung-u6a4', manufacturer:'Samsung SDI', model:'U6A4', variant:'1P128S / 1P136S rack · 67 Ah', chemistry:'Li-ion (3.8 V cell)',
    source:'Samsung SDI rack data: 1P128S PHR3262-001A and 1P136S PHR3462-001A, with the U6A4 product specification. Racks of 16 / 17 modules of 8S1P 67 Ah. Rack nominal voltage 128S read as 486.4 V (the sheet says 468.4 V; 128 × 3.8 V = 486.4 V and 32.6 kWh / 67 Ah = 486.6 V). Rack current limit at the 3.2 V/cell end of discharge: 422 A for the 128S (16 modules) and 450 A for the 136S (17 modules), as stated. Sizing at the 3.2 V/cell end of discharge; the battery operates down to 3.0 V/cell (384 / 408 V). Back-up times from the manufacturer tables: C-rate efficiency, cut-off loss at the end current, capacity retention by duty cycle and years. Not applicable to AI loads: standard backup sizing only. After a full discharge at maximum power allow 12 h of cooling.',
@@ -1123,7 +1124,7 @@ const DEFAULT_LIBRARY = [
   {id:'exide-solition-dc', manufacturer:'Exide', model:'Solition Data Center', variant:'LI-Ion DC 1.0 · 2 strings per cabinet', chemistry:'LFP',
    source:'Exide Solition Data Center technical data sheet (Oct 2024). In this tool a rack is one string of 6, 7 or 8 modules (20 cells, 64 V); a full cabinet holds 2 strings ([6+6], [7+7], [8+8]). Module power = 300 kW for 10 min ([7+7] cabinet, 16–30 °C) / 14 modules. Rack current = 6C × 81 Ah (derived). Usable energy at EOL = back-up basis 76.5 Ah × 64 V × 80 % (derived; Exide gives the design life to 70 % capacity). Minimum cell voltage read from the discharge curve (≈ 2.5 V) — confirm the UPS cut-off with Exide.',
    cellsPerModule:20, cellVmin:2.5, cellVmax:3.4, moduleEnergyEOL:3.917, moduleEnergyRated:5.184, modulePower:21.43, rackCurrentLimit:486, rackOptions:[6,7,8],
-   maxParallel:null, sohEOL:80, altitudeMax:4000, cDisRamp:6, cChRamp:1, cDisCont:1, cChCont:0.5, life:{},
+   maxParallel:null, sohEOL:80, altitudeMax:4000, cDisRamp:6, cChRamp:1, cDisCont:1, cChCont:0.5, life:{}, aiDuty:false,
    info:{capacityAh:'81 Ah per module (76.5 Ah for back-up time)', energyModule:'5.18 kWh nominal · 4.90 kWh back-up basis', nominalVoltage:'64 V × n (20 cells × 3.2 V)', voltageRange:'3.4 V per cell charging',
      maxChargeCurrent:'1C max (0.5C default)', maxDischargePower:'1C continuous: 50 kW for 60 min · 6C peak: 300 kW for 10 min per [7+7] cabinet',
      cabinet:'Full cabinet, 2 strings: [6+6] 62.2 kWh 384 V · [7+7] 72.6 kWh 448 V · [8+8] 82.9 kWh 512 V', dimensions:'Cabinet 600 × 850 × 2000 mm · module 210 × 765 × 160 mm', weight:'Module 50 kg · cabinet 900 / 1000 / 1100 kg',
@@ -1132,7 +1133,7 @@ const DEFAULT_LIBRARY = [
   {id:'lg-chem-ups-12m', manufacturer:'LG Energy Solution', model:'LG Chem UPS string', variant:'12 modules · Eaton 93PM cabinet', chemistry:'Li-ion',
    source:'Eaton "LG Chem battery cabinet" site plan P-110000683: 12 modules per string, 466.2 V nominal, 14 kWh per string (28 kWh in the 2-string cabinet), 346 / 490 kg. LG has published no UPS rack datasheet with cell voltages, module power and rack current: duplicate this battery and complete it from the LG / Eaton datasheet before sizing.',
    cellsPerModule:null, cellVmin:null, cellVmax:null, moduleEnergyEOL:null, moduleEnergyRated:1.167, modulePower:null, rackCurrentLimit:null, rackOptions:[12],
-   maxParallel:null, sohEOL:80, altitudeMax:null, cDisRamp:null, cChRamp:null, cDisCont:null, cChCont:null, life:{},
+   maxParallel:null, sohEOL:80, altitudeMax:null, cDisRamp:null, cChRamp:null, cDisCont:null, cChCont:null, life:{}, aiDuty:false,
    info:{nominalVoltage:'466.2 V per string (12 modules)', energyModule:'≈ 1.17 kWh (14 kWh / 12 modules)', cabinet:'1 string 14 kWh · 2 strings 28 kWh (Eaton 93PM)', weight:'346 kg (1 string) · 490 kg (2 strings)', parallel:'More than 6 cabinets: DC tie breaker supplied by the customer'}}
 ];
 // editor and detail-view schema — every field the library stores
@@ -1252,7 +1253,7 @@ const limTxt = d => { const e = d.rackOptions.filter(m => d.iByMpr && d.iByMpr[m
 const DEFAULTS = {mode:'AI', model:'', threeWire:'NO', rackRule:'EI', aiRack:'GB300', rampUnit:'PCT', mtCase:'1', mtLife:'15',
   vModel:'enersys-12hx600t-fr', vBlocks:'40', vEodv:'1.67', vMargin:'1', vLife:'10'};
 const V_NUM_DEFAULTS = {vTemp:25};   // VRLA fields start filled (the technology itself is kept)
-const NUM_FIELDS = ['upsKva','pf','eff','pLoad','upsSys','reqTime','upsVmin','upsVmax','altitude','emod','ramp','rampT','upsMod','upsModIch','effCh','aiCab','vTemp','vStrings'];
+const NUM_FIELDS = ['upsKva','pf','eff','pLoad','upsSys','reqTime','upsVmin','upsVmax','altitude','emod','ramp','rampT','aiAge','upsMod','upsModIch','effCh','aiCab','vTemp','vStrings'];
 const SEL_FIELDS = ['tech','mode','model','threeWire','rackRule','aiRack','rampUnit','vModel','vBlocks','vEodv','vMargin','vLife','mtCase','mtLife'];
 const TEXT_FIELDS = ['rpCustomer','rpProject','rpCountry','rpRef','rpPrepared','rpApproved','rpRev','rpRevDesc','butSel'];
 const BATT_FIELDS = {};   // battery data come from the library as they are (the module EOL energy is computed: emodAuto)
@@ -1290,6 +1291,7 @@ function clearInputs(){
   Object.entries(V_NUM_DEFAULTS).forEach(([k, v]) => $(k).value = v);
   Object.entries(AI_REF.ramp).forEach(([k, v]) => $(k).value = v);
   Object.entries(AI_REF.ups).forEach(([k, v]) => { if($(k)) $(k).value = v; });
+  $('aiAge').value = AI_REF.ageing;
   syncRampUnits();
   $('vAge').checked = true;
   vBlocksOptions(vBattById($('vModel').value), $('vBlocks').value);
@@ -1410,6 +1412,13 @@ const altitudeCheck = (I, d) => {
 function aiSizing(I, d, s1){
   const A = {}, S = I.upsKva*I.pf, but = s1.rec;
   A.but = but; A.mpr = but.mpr;
+  // Step 2 — additional ageing in AI duty (v5.6, as the Mirait document): the modules of the standard BUT + a % (the ramps and the power smoothing cycle the battery).
+  // Only in the AI sizing: the standard BUT (Step 1, and the Back-up mode) never includes it.
+  A.ageF = Math.max(0, I.aiAge || 0)/100; A.nCabStd = but.racks;
+  A.nModAge = Math.ceil(but.total*(1 + A.ageF) - 1e-9);
+  A.nCabBut = Math.max(but.racks, Math.ceil(A.nModAge/A.mpr - 1e-9));
+  A.nCabAge = A.nCabBut - A.nCabStd;                                  // cabinets added by the ageing
+  A.butAge = rackEval(A.mpr, A.nCabBut, I, d, s1.pdc);                // the BUT cabinets with the ageing
   // Step 0 — maximum AI racks installable: an indication from the load power, the rack type and the UPS per system
   A.nGpuMax = I.gpuFeeder > 0 ? I.gpuFeeder/I.upsFeeder : 0;
   A.upsLoad = I.pLoadEff/S;
@@ -1432,14 +1441,14 @@ function aiSizing(I, d, s1){
   A.gov = A.capUp >= A.capDn ? 'up' : 'down';
   A.cap = Math.max(A.capUp, A.capDn);
   A.nAiMin = Math.ceil(A.cap/I.eRated - 1e-9);
-  // Step 5 — the larger of the standard BUT and the ramps (cabinets with the modules per rack of the BUT racks: one DC bus), then the SOC set-point as extra reserve
+  // Step 5 (v5.6, Mirait method) — the sum of the BUT with the ageing, the ramps and the power smoothing (not sized: 0);
+  // cabinets with the modules per rack of the BUT racks: one DC bus. The SOC set-point is a check of Step 6, no longer a divisor.
   A.socF = AI_REF.soc/100;
-  A.nCabBut = but.racks; A.nCabRamp = Math.ceil(A.nAiMin/A.mpr - 1e-9);
-  A.nCabGov = Math.max(A.nCabBut, A.nCabRamp); A.govBy = A.nCabRamp > A.nCabBut ? 'ramp' : 'but';
-  A.nCabMin = Math.ceil(A.nCabGov/A.socF - 1e-9);
+  A.nCabRamp = Math.ceil(A.nAiMin/A.mpr - 1e-9); A.nCabSm = 0;
+  A.nCabMin = A.nCabBut + A.nCabRamp + A.nCabSm;
   A.nCab = Number.isInteger(I.aiCab) && I.aiCab >= A.nCabMin ? I.aiCab : A.nCabMin;
   A.aiChosen = A.nCab !== A.nCabMin;
-  A.nCabAi = A.nCab - A.nCabBut;          // cabinets above the standard BUT (ramps and SOC reserve)
+  A.nCabAi = A.nCab - A.nCabBut;          // cabinets above the BUT with the ageing (ramps, and those chosen above the minimum)
   A.nFeeder = A.nCab*I.upsFeeder; A.nModTot = A.nCab*A.mpr;
   A.final = rackEval(A.mpr, A.nCab, I, d, s1.pdc);
   A.eCab = A.mpr*I.eRated; A.eInst = A.nModTot*I.eRated; A.eEol = d.method === 'mt' ? A.final.eol*s1.pdc/60 : A.nModTot*I.emod;
@@ -1573,7 +1582,8 @@ const AI_RACKS = {
     src:'Vera Rubin NVL72: about 190–230 kW per rack; NVIDIA has published no rack figure yet — 230 kW used, idle estimated at 25 % of the EDP, to confirm.'}
 };
 // AI load values set by the program (RPS AI reference design, Unova / Vantage GB300, Rev.01 Oct 2026): only the load power and the BUT are entered
-const AI_REF = {cycles:50, soc:80, lifeYears:5, ramp:{ramp:100, rampT:10}, ups:{upsMod:67, upsModIch:30, effCh:0.98, loadMax:66}};   // UPS power modules: Excel model (charge current per module with the UPS load below 66 %)   // SOC set-point = extra reserve; life in AI duty to confirm with the manufacturer
+const AI_REF = {cycles:50, soc:80, ageing:15, lifeYears:5, ramp:{ramp:100, rampT:10}, ups:{upsMod:67, upsModIch:30, effCh:0.98, loadMax:66}};   // UPS power modules: Excel model (charge current per module with the UPS load below 66 %)   // ageing: additional % on the energy of the standard BUT (Mirait: +15 % for 80 % at year 10); SOC set-point = check of Step 6; life in AI duty to confirm with the manufacturer
+const agePct = I => fmt(I.aiAge, I.aiAge % 1 ? 1 : 0);
 const upsPerSystem = I => I._empty.has('upsSys') ? 1 : (I.upsSys >= 1 && Number.isInteger(I.upsSys) ? I.upsSys : null);
 const loadPower = I => !I._empty.has('pLoad') ? I.pLoad : (!I._empty.has('upsKva') && !I._empty.has('pf') ? I.upsKva*I.pf : NaN);   // kW per UPS
 function aiAuto(I, d){
@@ -1585,6 +1595,7 @@ function aiAuto(I, d){
   const RD = AI_REF.ramp;
   if(I._empty.has('ramp')){ I.ramp = RD.ramp; I.rampUnit = 'PCT'; }
   if(I._empty.has('rampT')) I.rampT = RD.rampT;
+  if(I._empty.has('aiAge')) I.aiAge = AI_REF.ageing;
   ['upsMod', 'upsModIch', 'effCh'].forEach(k => { if(I._empty.has(k)) I[k] = AI_REF.ups[k]; });
   Object.assign(I, {rampUp:I.ramp, rampDn:I.ramp, rampUpUnit:I.rampUnit, rampDnUnit:I.rampUnit, rampUpT:I.rampT, rampDnT:I.rampT});   // one ramp: ramp-up = ramp-down
   const rp = (v, u) => u === 'KW' ? v : v/100*load;
@@ -1615,7 +1626,8 @@ function renderAiAuto(I, x = {}){
   $('aiBatt').value = I.eRated > 0 && I.cDis > 0 && I.cCh > 0 ? `${fmt(I.cDis,1)}C / ${fmt(I.cCh,1)}C · ${fmt(I.eRated,3)} kWh` : 'missing in the library';
   $('aiBattNote').textContent = `Ramp C-rate discharge / charge · rated energy per module${I.maxParallel ? ` · max ${I.maxParallel} cabinets in parallel` : ''}.`;
   $('aiSoc').value = `${AI_REF.soc} %`;
-  $('aiSocNote').textContent = `The battery works at ${AI_REF.soc} % SOC: the larger of standard BUT and ramps is divided by ${fmt(AI_REF.soc/100,2)}.`;
+  $('aiSocNote').textContent = `The battery works at ${AI_REF.soc} % SOC: Step 6 checks the autonomy from ${AI_REF.soc} % SOC and the free energy for the ramp-down.`;
+  $('aiAgeNote').textContent = M ? `Standard BUT ${M.but.total} → ${M.nModAge} modules with +${agePct(I)} %: ${M.nCabStd} → ${M.nCabBut} cabinets. AI sizing only.` : 'Added to the modules of the standard BUT for the AI cycling (Mirait: +15 %). AI sizing only; 0 = none.';
   const ok = has && I.eff > 0 && isFinite(I.pRampUp) && I.effCh > 0, pu = I.pRampUp/I.eff, pd = I.pRampDn*I.effCh;
   const at = (kw, u) => u === 'KW' ? '' : `${fmt(kw,0)} kW at the load · `;
   const slope = (kw, t) => t > 0 ? `Slope ${fmt(kw/t,1)} kW/s (${fmt(kw/I.pLoadEff/t*100,1)} %/s of the load)` : 'Step (no ramp time)';
@@ -1896,7 +1908,7 @@ function calculate(){
   chk('reqTime', I.reqTime > 0, 'required autonomy > 0'); chk('emod', I.emod > 0, 'module EOL energy > 0'); chk('altitude', I.altitude >= 0, 'altitude ≥ 0');
   if(!I._empty.has('upsVmin') && !I._empty.has('upsVmax') && !(I.upsVmax > I.upsVmin)) invalid.push('UPS DC window (max > min)');
   if(ai){ const rk = (id, l) => I[id + 'Unit'] === 'KW' ? chk(id, I[id] >= 0 && !(I.pLoadEff > 0 && I[id] > I.pLoadEff + 1e-9), `${l} power 0–${fmt(I.pLoadEff,0)} kW (the load)`) : chk(id, I[id] >= 0 && I[id] <= 100, `${l} power 0–100 %`);
-    rk('ramp', 'ramp'); chk('rampT', I.rampT >= 0, 'ramp time ≥ 0 s'); chk('upsMod', I.upsMod > 0, 'UPS power module > 0 kW'); chk('upsModIch', I.upsModIch > 0, 'charge current per module > 0 A'); chk('effCh', I.effCh > 0 && I.effCh <= 1, 'recharge efficiency (0–1]'); }
+    rk('ramp', 'ramp'); chk('rampT', I.rampT >= 0, 'ramp time ≥ 0 s'); chk('aiAge', I.aiAge >= 0 && I.aiAge <= 100, 'additional ageing 0–100 %'); chk('upsMod', I.upsMod > 0, 'UPS power module > 0 kW'); chk('upsModIch', I.upsModIch > 0, 'charge current per module > 0 A'); chk('effCh', I.effCh > 0 && I.effCh <= 1, 'recharge efficiency (0–1]'); }
   if(missing.length || invalid.length){ LAST = null; renderPending(I, d, missing, invalid); clearTimeout(spTimer); spIdleStatus(); hostSendState(); renderEmbedBar(); return; }
   if(I._empty.has('altitude')) I.altitude = 0;
   const s1 = step1(I, d);
@@ -1993,9 +2005,9 @@ function renderAI(R){
   $('aUp').innerHTML = `${fmt(A.eUp,2)} / ${fmt(A.eDn,2)}<small>kWh</small>`; $('aUpS').textContent = `${I.upS} in ${fmt(I.rampT,0)} s · ${fmt(A.pUp,0)} / ${fmt(A.pDn,0)} kW`;
   $('aDn').textContent = A.nMod; $('aDnS').textContent = `× ${fmt(I.upsMod,0)} kW per UPS · ${A.modGov} governs`;
   $('aMin').textContent = A.nAiMin; $('aMinS').textContent = `${up ? 'ramp-up' : 'ramp-down'} governs · ${A.nCabRamp} cabinets of ${A.mpr}`;
-  $('aTot').textContent = `${A.nCab} ×`; $('aTotS').textContent = `${bb(A.mpr)} · max(${A.nCabBut} BUT ; ${A.nCabRamp} ramps) / ${fmt(A.socF,2)}`;
+  $('aTot').textContent = `${A.nCab} ×`; $('aTotS').textContent = `${bb(A.mpr)} · ${A.nCabBut} BUT + ${A.nCabRamp} ramps`;
   $('aFeed').textContent = `${A.nFeeder} ×`; $('aFeedS').textContent = `${bb(A.mpr)} · ${nU} UPS per system`;
-  $('aiMinNote').innerHTML = `Minimum modules — standard BUT: <b>${but.total}</b> (${but.racks} × ${but.mpr}, EOL${s1.chosen ? ', chosen' : ''}) · ramps: <b>${A.nAiMin}</b> → <b>${A.nCabRamp} cabinets</b> of ${A.mpr} (same modules per rack as the BUT racks: one DC bus). The larger governs — ${A.govBy === 'ramp' ? 'the ramps' : 'the standard BUT'}: max(${A.nCabBut} ; ${A.nCabRamp}) = ${A.nCabGov} cabinets; with the ${AI_REF.soc} % SOC reserve ⌈${A.nCabGov} / ${fmt(A.socF,2)}⌉ = <b>${A.nCabMin} cabinets = ${A.nCabMin*A.mpr} modules</b> minimum per UPS. Choose from the minimum up:`;
+  $('aiMinNote').innerHTML = `Minimum modules — standard BUT: <b>${but.total}</b> (${but.racks} × ${but.mpr}, EOL${s1.chosen ? ', chosen' : ''}) · with +${agePct(I)} % ageing: <b>${A.nModAge}</b> → <b>${A.nCabBut} cabinets</b> · ramps: <b>${A.nAiMin}</b> → <b>${A.nCabRamp} cabinets</b> of ${A.mpr} (same modules per rack as the BUT racks: one DC bus). Sum of BUT, ramps and power smoothing (not sized): ${A.nCabBut} + ${A.nCabRamp} + ${A.nCabSm} = <b>${A.nCabMin} cabinets = ${A.nCabMin*A.mpr} modules</b> minimum per UPS. Choose from the minimum up:`;
   $('lAiCab').textContent = `Cabinets per UPS (${A.mpr} modules)`;
   const lim = I.maxParallel || null;
   $('aiCabSeg').innerHTML = Array.from({length:6}, (_, i) => A.nCabMin + i).map(k => `<button type="button" data-aicab="${k}" aria-pressed="${k === A.nCab}" title="${k} cabinets per UPS · ${k*I.upsFeeder} per IT feeder${lim && k > lim ? ` — above the ${lim} in parallel` : ''}">${k}</button>`).join('');
@@ -2005,14 +2017,15 @@ function renderAI(R){
   const rows = [
     ['Step 0', 'Max AI racks installable (indication)', `${fmt(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0)} × ${I.rk.name} per UPS: ⌊${nU} × ${fmt(I.pLoadEff,0)} kW / ${fmt(I.pProv,0)} kW⌋ = ${I.gpuFeeder || 0} per IT feeder`, '—', '—'],
     ['Step 1', `Standard BUT ${fmt(I.reqTime,1)} min (EOL)`, `${but.racks} × ${but.mpr} modules (${but.total}) · ${fmt(but.eol,2)} min · ${fmt(but.current,0)} A · ${s1.chosen ? 'chosen' : 'minimum'}`, `${but.racks} × ${bb(but.mpr)}`, `${but.racks*nU} × ${bb(but.mpr)}`],
+    ['Step 2', `Additional ageing +${agePct(I)} % (AI duty)`, `⌈${but.total} modules · ${fmt(1 + A.ageF,2)}⌉ = ${A.nModAge} modules → ${A.nCabBut} × ${A.mpr} · ${fmt(A.butAge.eol,2)} min EOL${A.nCabAge ? ` (${A.nCabStd} + ${A.nCabAge} for the ageing)` : ' (no cabinet added)'}`, `${A.nCabBut} × ${bb(A.mpr)}`, `${A.nCabBut*nU} × ${bb(A.mpr)}`],
     ['Step 3', `Ramp-up ${I.upS} in ${fmt(I.rampUpT,0)} s`, `${fmt(A.pUp,0)} kW at the battery · ${fmt(A.eUp,2)} kWh discharged · capacity ${fmt(A.cUp,1)} kWh at ${fmt(I.cDis,1)}C → ${fmt(A.capUp,1)} kWh`, '—', '—'],
     ['Step 3', `Ramp-down ${I.dnS} in ${fmt(I.rampDnT,0)} s`, `${fmt(A.pDn,0)} kW into the battery · ${fmt(A.eDn,2)} kWh charged · capacity ${fmt(A.cDn,1)} kWh at ${fmt(I.cCh,1)}C → ${fmt(A.capDn,1)} kWh`, '—', '—'],
     ['Step 3', `AI ramps — the ${up ? 'ramp-up' : 'ramp-down'} governs`, `${fmt(A.cap,1)} kWh / ${fmt(I.eRated,3)} kWh per module = ${A.nAiMin} modules → ${A.nCabRamp} × ${A.mpr}`, `${A.nCabRamp} × ${bb(A.mpr)}`, `${A.nCabRamp*nU} × ${bb(A.mpr)}`],
     ['Step 3', 'UPS power modules — recharge of the ramp-down', `max(⌈${fmt(I.pLoadEff,0)} / ${fmt(I.upsMod,0)}⌉ = ${A.modLoad} ; ⌈${fmt(A.pDn,0)} kW / (${fmt(I.upsModIch,0)} A × ${fmt(A.vCh,0)} V)⌉ = ${A.modCh} ; load < ${AI_REF.ups.loadMax} %: ${A.mod66}) = ${A.nMod} modules — ${A.modGov} governs`, `${A.nMod} × ${fmt(I.upsMod,0)} kW`, `${A.nMod*nU} × ${fmt(I.upsMod,0)} kW`],
-    ['Step 5', `Larger of BUT and ramps · SOC ${AI_REF.soc} % reserve`, `max(${A.nCabBut} ; ${A.nCabRamp}) = ${A.nCabGov} → ⌈${A.nCabGov} / ${fmt(A.socF,2)}⌉ = ${A.nCabMin} cabinets${A.aiChosen ? ` · ${A.nCab} chosen` : ''}`, `${A.nCab} × ${bb(A.mpr)}`, `${A.nFeeder} × ${bb(A.mpr)}`]
+    ['Step 5', 'Sum: BUT with ageing + ramps + power smoothing', `${A.nCabBut} + ${A.nCabRamp} + ${A.nCabSm} (power smoothing not sized) = ${A.nCabMin} cabinets${A.aiChosen ? ` · ${A.nCab} chosen` : ''}`, `${A.nCab} × ${bb(A.mpr)}`, `${A.nFeeder} × ${bb(A.mpr)}`]
   ];
   body.innerHTML = rows.map(r => `<tr><td><span class="step-no">${r[0].toUpperCase()}</span></td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td class="num">${esc(r[3])}</td><td class="num">${esc(r[4])}</td></tr>`).join('') +
-    `<tr class="total"><td><span class="step-no">STEP 5</span></td><td>Total</td><td>${A.nCab} cabinets (${A.nCabBut} standard BUT + ${A.nCabAi} for ramps and SOC reserve) · ${A.nModTot} modules · ${fmt(A.eInst,0)} kWh rated · ${fmt(A.final.eol,1)} min EOL at full load · ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC</td><td class="num">${A.nCab} × ${esc(bb(A.mpr))}</td><td class="num">${A.nFeeder} × ${esc(bb(A.mpr))}</td></tr>`;
+    `<tr class="total"><td><span class="step-no">STEP 5</span></td><td>Total</td><td>${A.nCab} cabinets (${A.nCabBut} BUT with ageing + ${A.nCabRamp} for the ramps${A.aiChosen ? ` + ${A.nCab - A.nCabMin} above the minimum` : ''}) · ${A.nModTot} modules · ${fmt(A.eInst,0)} kWh rated · ${fmt(A.final.eol,1)} min EOL at full load · ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC</td><td class="num">${A.nCab} × ${esc(bb(A.mpr))}</td><td class="num">${A.nFeeder} × ${esc(bb(A.mpr))}</td></tr>`;
   $('rampCross').innerHTML = `<b>Ramp check.</b> The ${A.nCab} cabinets share the DC bus: the ramp-up takes ${fmt(A.pUp/A.eInst,2)}C of the ${fmt(I.cDis,1)}C allowed and the ramp-down ${fmt(A.pDn/A.eInst,2)}C of ${fmt(I.cCh,1)}C. Energy: ${fmt(A.eUp,2)} kWh discharged in the ramp-up, ${fmt(A.eDn,2)} kWh charged in the ramp-down; ${fmt(A.head,0)} kWh free above the ${AI_REF.soc} % SOC set-point. UPS: ${A.nMod} power modules of ${fmt(I.upsMod,0)} kW recharge up to ${fmt(A.pChMod,0)} kW (${fmt(I.upsModIch,0)} A each at ${fmt(A.vCh,0)} V), with the UPS load at ${fmt(A.loadDnPct*100,0)} % after the ramp-down${A.nMod > A.modRate ? ` — more than the ${A.modRate} modules of the UPS rating: add modules or reduce the ramp` : ''}.`;
 }
 
@@ -2037,7 +2050,7 @@ function renderChecks(R){
   const note = $('engineeringNote');
   note.className = 'catalog-status ' + (nBad ? 'error' : 'loaded');
   if(I.mode === 'AI' && A && !A.error){
-    note.innerHTML = `Configuration per UPS: <b>${A.nCab} × ${esc(d.full)} with ${A.mpr} modules</b> (max of ${A.nCabBut} standard BUT and ${A.nCabRamp} for the ramps, with the ${AI_REF.soc} % SOC reserve) — <b>${A.nFeeder} per IT feeder</b>. ${A.nModTot} modules, ${fmt(A.eInst,0)} kWh rated, ${fmt(A.final.vmin,1)}–${fmt(A.final.vmax,1)} V, ${fmt(A.final.eol,1)} min EOL at full load, ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC.`;
+    note.innerHTML = `Configuration per UPS: <b>${A.nCab} × ${esc(d.full)} with ${A.mpr} modules</b> (${A.nCabBut} BUT with +${agePct(I)} % ageing + ${A.nCabRamp} for the ramps${A.aiChosen ? ` + ${A.nCab - A.nCabMin} above the minimum` : ''}) — <b>${A.nFeeder} per IT feeder</b>. ${A.nModTot} modules, ${fmt(A.eInst,0)} kWh rated, ${fmt(A.final.vmin,1)}–${fmt(A.final.vmax,1)} V, ${fmt(A.final.eol,1)} min EOL at full load, ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC.`;
   } else if(s1.rec){
     const r = s1.rec;
     note.innerHTML = `${s1.chosen ? 'Selected' : 'Minimum'} configuration: <b>${rkLong(d, r)} = ${r.total} modules</b> (${esc(d.full)}). EOL autonomy ${fmt(r.eol,2)} min, BOL autonomy ${fmt(r.bol,2)} min, maximum discharge current ${fmt(r.current,1)} A.`;
@@ -2072,7 +2085,7 @@ function renderSummaries(R){
   const {I, d, s1, A} = R;
   $('sumInputs').innerHTML = `<b>${fmt(I.upsKva,0)} kVA</b> <span class="ps-k">· ${fmt(I.pLoadEff,0)} kW load · η ${fmt(I.eff,3)} · ${fmt(I.reqTime,1)} min EOL · ${esc(d.full)}${I.mode === 'AI' ? ` · ramp ${I.upS} in ${fmt(I.rampT,0)} s` : ''}</span>`;
   $('sumStep1').innerHTML = s1.rec ? `<span class="ps-k">${s1.chosen ? 'Selected' : 'Minimum'}</span> <b>${rkCfg(d, s1.rec)} = ${s1.rec.total} modules</b> <span class="ps-k">· ${fmt(s1.rec.eol,2)} min EOL</span>` : '<b>No valid configuration</b>';
-  $('sumAI').innerHTML = A && !A.error ? `<b>${A.nCab} × ${esc(d.name)} ${rkTag(d, A.mpr)} per UPS</b> <span class="ps-k">· max(${A.nCabBut} BUT ; ${A.nCabRamp} ramps) / ${fmt(A.socF,2)} · ${A.nFeeder} per IT feeder</span>` : '—';
+  $('sumAI').innerHTML = A && !A.error ? `<b>${A.nCab} × ${esc(d.name)} ${rkTag(d, A.mpr)} per UPS</b> <span class="ps-k">· ${A.nCabBut} BUT + ${A.nCabRamp} ramps · ${A.nFeeder} per IT feeder</span>` : '—';
   $('sumVerify').innerHTML = '';
 }
 
@@ -2080,7 +2093,7 @@ function renderNotes(R){
   const {I, d, s1, A} = R;
   const ok = A && !A.error, cfg = ok ? A.final : s1.rec, ai = I.mode === 'AI';
   const items = [];   // [chip, topic, text, aiOnly]
-  if(ai && ok) items.push(['warn', 'AI sizing method', `AI sizing = the larger of the standard BUT (${A.nCabBut} cabinets, EOL) and the ramps (${A.nCabRamp} cabinets: the larger of ramp-up and ramp-down, ${I.upL} in ${fmt(I.rampT,0)} s), divided by the ${AI_REF.soc} % SOC set-point as an extra reserve: ${A.nCabMin} cabinets minimum. Ramp power and times from the grid code / customer — confirm them. The ${I.rk.name} racks (${fmt(I.pProv,0)} kW provisioning) are an indication of the maximum installable.${I.rk.est ? ' ' + I.rk.src : ''}`, 1]);
+  if(ai && ok) items.push(['warn', 'AI sizing method', `AI sizing = the sum of the standard BUT with +${agePct(I)} % additional ageing (${A.nCabBut} cabinets, EOL), the ramps (${A.nCabRamp} cabinets: the larger of ramp-up and ramp-down, ${I.upL} in ${fmt(I.rampT,0)} s) and the power smoothing (not sized): ${A.nCabMin} cabinets minimum. The battery works at the ${AI_REF.soc} % SOC set-point, checked in Step 6. Ramp power and times from the grid code / customer — confirm them. The ${I.rk.name} racks (${fmt(I.pProv,0)} kW provisioning) are an indication of the maximum installable.${I.rk.est ? ' ' + I.rk.src : ''}`, 1]);
   if(ai) items.push(['warn', 'Ageing in AI duty', `Expected life of the battery in AI duty ≈ ${AI_REF.lifeYears} years (ramps and power smoothing cycle the battery) — to be verified and confirmed by the manufacturer.${ok && A.lifeOK ? ` Life table at ${cycLabel(I.cycles)}: SOH ${fmt(A.sohPred*100,0)} % at year 10, ${fmt(A.tSocAged,1)} min from ${AI_REF.soc} % SOC.` : ''}`, 1]);
   if(ai && d.dsCDis && d.dsCCh && (Math.abs(d.dsCDis - I.cDis) > 1e-6 || Math.abs(d.dsCCh - I.cCh) > 1e-6))
     items.push(['warn', 'Charge / discharge C-rate', `The ramp sizing uses ${fmt(I.cDis,2)}C discharge / ${fmt(I.cCh,2)}C charge; the ${d.full} datasheet continuous values are ≈ ${fmt(d.dsCDis,2)}C / ${fmt(d.dsCCh,2)}C. Confirm with the manufacturer.`, 1]);
@@ -2195,7 +2208,7 @@ function onBatteryChange(){
 const slug = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 function openEditor(id, mode){
   const src = id ? battById(id) : null;
-  const b = src ? JSON.parse(JSON.stringify(src)) : {life:{}, info:{}, rackOptions:[], sohEOL:80, method:'std', rackCurrentByMpr:{}, aiDuty:true};
+  const b = src ? JSON.parse(JSON.stringify(src)) : {life:{}, info:{}, rackOptions:[], sohEOL:80, method:'std', rackCurrentByMpr:{}, aiDuty:false};   // AI loads: today only the PU-100
   if(mode === 'dup'){ b.model = `${b.model} (copy)`; b.builtin = false; }
   EDIT = {mode, id: mode === 'edit' && src ? src.id : null};
   $('editorTitle').textContent = mode === 'edit' ? `Edit battery — ${battLabel(src)}` : mode === 'dup' ? `Duplicate battery — ${battLabel(src)}` : 'Add battery to the library';
@@ -2597,7 +2610,7 @@ function buildReportPdf(opts = {}){
   });
   y += bh + 16;
   callout('Summary', useAI
-    ? `Per UPS (${n(I.upsKva,0)} kVA, ${n(I.pLoadEff,0)} kW load): ${A.nCab} × ${d.full} cabinets with ${A.mpr} modules — the larger of the standard BUT of ${n(I.reqTime,1)} min (EOL, ${A.nCabBut} cabinets) and the ramps (${A.nCabRamp} cabinets; ramp-up = ramp-down ${I.upL} in ${n(I.rampT,0)} s: ${n(A.eUp,2)} kWh discharged, ${n(A.eDn,2)} kWh charged), with the ${AI_REF.soc} % SOC reserve${A.aiChosen ? ` (minimum ${A.nCabMin}, ${A.nCab} chosen)` : ''}. ${A.nFeeder} cabinets per IT feeder. Installed ${A.nModTot} modules, ${n(A.eInst,0)} kWh rated (${n(A.eEol,0)} kWh usable at EOL), ${n(A.final.vmin,1)}–${n(A.final.vmax,1)} V. UPS: ${A.nMod} power modules of ${n(I.upsMod,0)} kW (${A.nMod*I.upsFeeder} per IT feeder) for the recharge of the ramp-down. Expected life in AI duty ≈ ${AI_REF.lifeYears} years, to be confirmed by the manufacturer.`
+    ? `Per UPS (${n(I.upsKva,0)} kVA, ${n(I.pLoadEff,0)} kW load): ${A.nCab} × ${d.full} cabinets with ${A.mpr} modules — the sum of the standard BUT of ${n(I.reqTime,1)} min (EOL) with +${agePct(I)} % additional ageing (${A.nCabBut} cabinets) and the ramps (${A.nCabRamp} cabinets; ramp-up = ramp-down ${I.upL} in ${n(I.rampT,0)} s: ${n(A.eUp,2)} kWh discharged, ${n(A.eDn,2)} kWh charged); power smoothing not sized${A.aiChosen ? ` (minimum ${A.nCabMin}, ${A.nCab} chosen)` : ''}. ${A.nFeeder} cabinets per IT feeder. Installed ${A.nModTot} modules, ${n(A.eInst,0)} kWh rated (${n(A.eEol,0)} kWh usable at EOL), ${n(A.final.vmin,1)}–${n(A.final.vmax,1)} V. UPS: ${A.nMod} power modules of ${n(I.upsMod,0)} kW (${A.nMod*I.upsFeeder} per IT feeder) for the recharge of the ramp-down. Expected life in AI duty ≈ ${AI_REF.lifeYears} years, to be confirmed by the manufacturer.`
     : `${rkLong(d, cfg)} = ${cfg.total} ${d.full} modules for a ${n(I.upsKva,0)} kVA UPS: ${n(cfg.eol,2)} min EOL (${n(cfg.bol,2)} min BOL) at ${n(s1.pdc,1)} kW DC, ${n(cfg.current,0)} A per rack, ${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V.`);
   table({head:[['Date', 'Rev.', 'Description', 'Prepared', 'Approved']], body:[[info.date, info.rev, info.revDesc, info.prepared || '—', info.approved || '—']],
     headStyles:{fillColor:PDF_C.fieldBg, textColor:PDF_C.dim}, columnStyles:{0:{cellWidth:72}, 1:{cellWidth:40, halign:'center'}, 3:{cellWidth:92}, 4:{cellWidth:92}}, gap:22});
@@ -2613,7 +2626,7 @@ function buildReportPdf(opts = {}){
     const aiPairs = [['Ramp (up = down)', `${I.upL} in ${n(I.rampT,0)} s`], ['UPS power modules', `${A.nMod} × ${n(I.upsMod,0)} kW (${n(I.upsModIch,0)} A each, load < ${AI_REF.ups.loadMax} %)`],
       ['AI rack type (indication)', I.rk.name], ['Max AI racks per UPS', `${n(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0)} (${I.gpuFeeder || 0} per IT feeder of ${I.upsFeeder} UPS)`],
       ['Recharge efficiency', n(I.effCh,2)], ['Ramp C-rate discharge / charge', `${n(I.cDis,2)}C / ${n(I.cCh,2)}C`], ['Rated energy per module', `${n(I.eRated,3)} kWh`],
-      ['SOC set-point (reserve)', `${AI_REF.soc} %`], ['Life check', A.lifeOK ? `${cycLabel(I.cycles)} (SOH ${n(A.sohPred*100,0)} %)` : 'no life table'], ['Expected life in AI duty', `≈ ${AI_REF.lifeYears} years (to confirm)`]];
+      ['Additional ageing (BUT)', `+${agePct(I)} %`], ['SOC set-point (check)', `${AI_REF.soc} %`], ['Life check', A.lifeOK ? `${cycLabel(I.cycles)} (SOH ${n(A.sohPred*100,0)} %)` : 'no life table'], ['Expected life in AI duty', `≈ ${AI_REF.lifeYears} years (to confirm)`]];
     const rows = [];
     for(let i = 0; i < Math.max(upsPairs.length, aiPairs.length); i++){
       const a = upsPairs[i] || ['', ''], b = aiPairs[i] || ['', ''];
@@ -2714,6 +2727,8 @@ function buildReportPdf(opts = {}){
       e.push({h:'Step 0 — max AI racks installable (indication)'});
       e.push({f:`@N_{GPU,max} = [[⌊ @n_UPS · @P_load / @P_prov ⌋ // @n_UPS]] = [[⌊ ${I.upsFeeder} · ${f1(I.pLoadEff,0)} / ${f1(I.pProv,0)} ⌋ // ${I.upsFeeder}]] = ${f1(A.nGpuMax,2)}`});
       const pr = I.rampUnit === 'KW' ? `@P_ramp = ${f1(I.ramp,0)} kW (fixed)` : `@P_ramp = @r · @P_load = ${f1(I.ramp/100,2)} · ${f1(I.pLoadEff,0)} = ${f1(I.pRampUp,1)} kW`;
+      e.push({h:`Step 2 — additional ageing in AI duty: +${agePct(I)} % on the modules of the standard BUT`});
+      e.push({f:`@N_{mod,age} = ⌈ @N_BUT · ⦅1 + @a_age⦆ ⌉ = ⌈ ${but.total} · ${f1(1 + A.ageF,2)} ⌉ = ${A.nModAge} modules          @N_{cab,BUT} = ⌈ [[@N_{mod,age} // mpr]] ⌉ = ⌈ [[${A.nModAge} // ${A.mpr}]] ⌉ = ${A.nCabBut}          (@t_EOL = ${f1(A.butAge.eol,2)} min)`});
       e.push({h:`Step 3 — ramp (ramp-up = ramp-down): ${I.upL} in ${f1(I.rampT,0)} s`});
       e.push({f:`${pr}          @T = ${f1(I.rampT,0)} s`});
       e.push({f:`@P_up = [[@P_ramp // @η]] = [[${f1(I.pRampUp,1)} // ${f1(I.eff,3)}]] = ${f1(A.pUp,1)} kW          @E_up = [[@P_up · @T // 2 · 3600]] = [[${f1(A.pUp,1)} · ${f1(I.rampT,0)} // 2 · 3600]] = ${f1(A.eUp,2)} kWh discharged`});
@@ -2722,13 +2737,13 @@ function buildReportPdf(opts = {}){
       e.push({f:`@Q_dn = max⦅[[@P_dn // @C_ch]] ; @E_dn⦆ = max⦅[[${f1(A.pDn,1)} // ${f1(I.cCh,2)}]] ; ${f1(A.eDn,2)}⦆ = ${f1(A.capDn,1)} kWh`});
       e.push({h:`Step 3 — AI modules: the ${A.gov === 'up' ? 'ramp-up' : 'ramp-down'} governs`});
       e.push({f:`@N_AI = ⌈ [[max⦅@Q_up ; @Q_dn⦆ // @E_rated]] ⌉ = ⌈ [[${f1(A.cap,1)} // ${f1(I.eRated,3)}]] ⌉ = ${A.nAiMin} modules`});
-      e.push({f:`@N_{cab,ramp} = ⌈ [[@N_AI // mpr]] ⌉ = ⌈ [[${A.nAiMin} // ${A.mpr}]] ⌉ = ${A.nCabRamp}          @N_{cab,BUT} = ${A.nCabBut}  (Step 1, ${but.racks} × ${but.mpr} modules)`});
+      e.push({f:`@N_{cab,ramp} = ⌈ [[@N_AI // mpr]] ⌉ = ⌈ [[${A.nAiMin} // ${A.mpr}]] ⌉ = ${A.nCabRamp}          @N_{cab,BUT} = ${A.nCabBut}  (Step 2: ${but.racks} × ${but.mpr} standard, with +${agePct(I)} % ageing)`});
       e.push({h:`Step 3 — UPS power modules: recharge of the ramp-down (${f1(I.upsModIch,0)} A per module, UPS load < ${AI_REF.ups.loadMax} %)`});
       e.push({f:`@V_ch = mpr · @n_cell · @V_{cell,nom} = ${A.mpr} · ${d.cells} · ${f1(A.vNom,2)} = ${f1(A.vCh,1)} V          @N_{PM,ch} = ⌈ [[1000 · @P_dn // @I_PM · @V_ch]] ⌉ = ⌈ [[1000 · ${f1(A.pDn,1)} // ${f1(I.upsModIch,0)} · ${f1(A.vCh,1)}]] ⌉ = ${A.modCh}`});
       e.push({f:`@N_{PM,load} = ⌈ [[@P_load // @P_PM]] ⌉ = ⌈ [[${f1(I.pLoadEff,0)} // ${f1(I.upsMod,0)}]] ⌉ = ${A.modLoad}          @N_{PM,66} = ⌊ [[@P_load − @P_ramp // 0.66 · @P_PM]] ⌋ + 1 = ⌊ [[${f1(I.pLoadEff,0)} − ${f1(I.pRampDn,0)} // 0.66 · ${f1(I.upsMod,0)}]] ⌋ + 1 = ${A.mod66}`});
       e.push({f:`@N_PM = max⦅@N_{PM,load} ; @N_{PM,ch} ; @N_{PM,66}⦆ = max⦅${A.modLoad} ; ${A.modCh} ; ${A.mod66}⦆ = ${A.nMod} per UPS          @N_{PM,feeder} = ${A.nMod} · ${I.upsFeeder} = ${A.nMod*I.upsFeeder}`});
-      e.push({h:`Step 5 — the larger of standard BUT and ramps, with the ${AI_REF.soc} % SOC reserve`});
-      e.push({f:`@N_cab = ⌈ [[max⦅@N_{cab,BUT} ; @N_{cab,ramp}⦆ // @SOC]] ⌉ = ⌈ [[max⦅${A.nCabBut} ; ${A.nCabRamp}⦆ // ${f1(A.socF,2)}]] ⌉ = ${A.nCabMin} per UPS${A.aiChosen ? `  →  ${A.nCab} chosen` : ''}          @N_{cab,feeder} = @N_cab · @n_UPS = ${A.nCab} · ${I.upsFeeder} = ${A.nFeeder}`});
+      e.push({h:'Step 5 — the sum of BUT with ageing, ramps and power smoothing (not sized)'});
+      e.push({f:`@N_cab = @N_{cab,BUT} + @N_{cab,ramp} + @N_{cab,smooth} = ${A.nCabBut} + ${A.nCabRamp} + ${A.nCabSm} = ${A.nCabMin} per UPS${A.aiChosen ? `  →  ${A.nCab} chosen` : ''}          @N_{cab,feeder} = @N_cab · @n_UPS = ${A.nCab} · ${I.upsFeeder} = ${A.nFeeder}`});
       e.push({h:`Step 6 — autonomy at the ${AI_REF.soc} % SOC set-point`});
       e.push(d.method === 'mt' && A.final.mt
         ? {f:`@t_SOC = @SOC · @t_EOL = ${f1(A.socF,2)} · ${f1(A.final.eol,2)} = ${f1(A.tSoc,2)} min ${A.tSoc >= I.reqTime - 1e-9 ? '≥' : '<'} @t_req = ${f1(I.reqTime,1)} min          (@t_EOL of ${A.nCab} × ${A.mpr}: tables, ${mtLifeTxt(I)})`}
@@ -2754,7 +2769,7 @@ function buildReportPdf(opts = {}){
   const cabDesc = `${d.full}${d.chem ? ' ' + d.chem : ''} battery cabinet, ${cfg.mpr} modules (${rkTag(d, cfg.mpr)})${I.eRated > 0 ? `, ${n(cfg.mpr*I.eRated,1)} kWh rated` : ''}, ${n(cfg.vmin,1)}–${n(cfg.vmax,1)} V${d.info.dimensions ? `, ${d.info.dimensions}` : ''}`;
   if(useAI){
     table({head:[['Item', 'Description', 'Qty per UPS', 'Qty per IT feeder']],
-      body:[['Battery cabinet', cabDesc, A.nCab, A.nFeeder], ['of which', `Standard BUT / added for the ramps and the ${AI_REF.soc} % SOC reserve`, `${A.nCabBut} / ${A.nCabAi}`, `${A.nCabBut*I.upsFeeder} / ${A.nCabAi*I.upsFeeder}`]],
+      body:[['Battery cabinet', cabDesc, A.nCab, A.nFeeder], ['of which', `BUT with +${agePct(I)} % ageing / added for the ramps`, `${A.nCabBut} / ${A.nCabAi}`, `${A.nCabBut*I.upsFeeder} / ${A.nCabAi*I.upsFeeder}`]],
       columnStyles:{0:{cellWidth:86, fontStyle:'bold'}, 2:{cellWidth:72, halign:'center'}, 3:{cellWidth:86, halign:'center'}}});
   } else {
     table({head:[['Item', 'Description', 'Qty per UPS']], body:[['Battery cabinet', cabDesc, cfg.racks]], columnStyles:{0:{cellWidth:86, fontStyle:'bold'}, 2:{cellWidth:72, halign:'center'}}});
@@ -3535,7 +3550,7 @@ async function buildSummaryPng(){
     ['Ramp (up = down)', `${I.upS} in ${fmt(I.rampT,0)} s · ${fmt(A.eUp,2)} / ${fmt(A.eDn,2)} kWh`],
     ['Max AI racks per UPS', `${fmt(A.nGpuMax, A.nGpuMax % 1 ? 1 : 0)} × ${I.rk.short} (indication)`],
     ['UPS power modules', `${A.nMod} × ${fmt(I.upsMod,0)} kW per UPS (recharge)`],
-    ['SOC set-point (reserve)', `${AI_REF.soc} % · life ≈ ${AI_REF.lifeYears} years (to confirm)`]
+    ['Ageing · SOC set-point', `+${agePct(I)} % BUT · ${AI_REF.soc} % SOC · life ≈ ${AI_REF.lifeYears} y`]
   ] : [
     ['UPS rated power', `${fmt(I.upsKva,0)} kVA · PF ${fmt(I.pf,2)}`],
     ['UPS efficiency, battery mode', `η ${fmt(I.eff,3)} → ${fmt(s1.pdc,1)} kW DC`],
@@ -3564,7 +3579,7 @@ async function buildSummaryPng(){
   txt(useAI ? 'PER IT FEEDER' : 'TOTAL MODULES', cx + cw - 24, cy + 36, F('b', 12), col.dim, 'right', 1.2);
   txt(useAI ? `${A.nFeeder}` : `${cfg.total}`, cx + cw - 24, cy + 92, F('b', 46), col.navy, 'right');
   txt(useAI ? `${I.upsFeeder} UPS × ${A.nCab} cabinets` : d.rackS ? `${rkCfg(d, cfg)} · ${cfg.mpr} modules each` : `${cfg.racks} × ${cfg.mpr} modules`, cx + cw - 24, cy + 120, F('l', 15), col.dim, 'right');
-  const parts = useAI ? [[A.nCabBut, col.navy, 'Standard BUT'], [A.nCabAi, col.accent, `Ramps / SOC ${AI_REF.soc} % reserve`]] : [[cfg.racks, col.navy, 'Autonomy']];
+  const parts = (useAI ? [[A.nCabStd, col.navy, 'Standard BUT'], [A.nCabAge, col.accentDark, `Ageing +${agePct(I)} %`], [A.nCabAi, col.accent, 'Ramps']] : [[cfg.racks, col.navy, 'Autonomy']]).filter(p => p[0] > 0);
   const slots = Math.max(nCab, useAI && I.maxParallel ? Math.min(I.maxParallel, 16) : nCab);
   const gap = 10, iw = Math.min(48, (cw - 48 - (slots - 1)*gap)/slots), ih = 78, iy = cy + 144;
   let x = cx + 24;

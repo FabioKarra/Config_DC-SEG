@@ -734,6 +734,130 @@ body.dark-theme .settings-note.note-warn{color:#F2C777;}
 .field .inp-unit select{flex:0 0 auto; width:auto; min-width:128px;}
 #aiBody td.num{white-space:nowrap;}
 .ai-life{display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text);}
+
+/* =====================================================================================
+   v5.7 — layout of the prototype: inputs on the left, result with pictograms, details in windows and side panels
+   ===================================================================================== */
+:root{--but:#2E55C2; --ramp:#2496B8; --ramp-ink:#1B7C99; --str:#1F4E9C; --amber:#C9761E; --bad-bar:#B4232F; --ink2:#4B5260;
+  --okbg:#E7F4EC; --ok:#1E6B3D; --notebg:#FFF1DB; --note:#7A4A00; --badbg:#FBE7E9; --bad:#9E1F2A; --infobg:#EAF0FB; --info:#24448F;}
+body.dark-theme{--but:#5B8DEF; --ramp:#35A9CC; --ramp-ink:#5CC3E0; --str:#7FA6F0; --ink2:#C3C9D4; --okbg:#203A30; --ok:#8FE0B3; --notebg:#42351F; --note:#F2C777; --badbg:#43272D; --bad:#FF8FA0; --infobg:#263B59; --info:#B9D1FF;}
+.v57-layout{display:grid; grid-template-columns:400px minmax(0,1fr); gap:20px; align-items:start;}
+.v57-hold{display:none !important;}
+.v57-aside, .v57-main{min-width:0;}
+@media (max-width:560px){ .v57-mode .mode-seg .lbl{display:none;} .v57-mode .mode-seg .seg{width:100%; display:flex;} .v57-mode .mode-seg .seg button{flex:1;} .iso-name{width:100%; flex-basis:100%;} .hero-side{text-align:left;} }
+.v57-aside .panel, .v57-main > .panel{margin-bottom:20px;}
+.grid.v57-g{grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 14px;}
+.v57-g .full{grid-column:1 / -1;}
+.v57-sub{font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:18px 0 10px;}
+.v57-mode{margin:-2px 0 10px;} .v57-mode .mode-seg{display:flex; justify-content:space-between; width:100%;}
+.v57-mode .mode-seg .seg button{height:32px; padding:0 12px; font-size:12.5px;}
+.v57-aside .field label .ibtn, .ibtn{display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; margin-left:4px; padding:0; border-radius:50%; border:1px solid #C9D0DB; background:var(--panel); color:var(--accent-dark); font:600 10px 'Work Sans',sans-serif; text-transform:none; letter-spacing:0; vertical-align:1px; cursor:pointer;}
+.ibtn:hover, .ibtn[aria-expanded="true"]{border-color:var(--accent); background:var(--accent-soft);}
+.v57-aside .flabel, .v57-adv .flabel{display:block; font-size:11px; font-weight:300; color:var(--dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px;}
+.rack-pick{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; border:1px solid var(--field-border); background:var(--field-bg); border-radius:7px; padding:8px 10px; text-align:left; font:300 13.5px 'Work Sans',sans-serif; color:var(--text); cursor:pointer;}
+.rack-pick:hover{border-color:var(--accent);}
+.rack-pick b{font-weight:500;} .rack-pick small{display:block; font-size:11.5px; color:var(--dim);}
+.v57-adv{margin-top:16px; border-top:1px solid var(--panel-border); padding-top:12px; display:flex; flex-direction:column; gap:6px;}
+.v57-adv-h{display:flex; justify-content:space-between; align-items:center;} .v57-adv-h .flabel{margin:0;}
+.v57-adv .link-btn{font-size:12px;}
+.adv-row{display:flex; justify-content:space-between; gap:10px; font-size:12.5px;} .adv-row span{color:var(--dim);} .adv-row b{font-weight:500; text-align:right;}
+/* result */
+.hero-h{display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;}
+.hero-h h1{margin:0; font-size:50px; line-height:1; font-weight:600; letter-spacing:-.03em; color:var(--navy);}
+.hero-h h1 span{font-weight:300;}
+.hero-side{text-align:right;} .hero-side b{display:block; font-size:28px; font-weight:600; color:var(--text);} .hero-side b small{font-size:14px; font-weight:300; color:var(--ink2);} .hero-side span{font-size:12.5px; color:var(--dim);}
+.v57-legend{display:flex; gap:18px; font-size:12.5px; color:var(--ink2); flex-wrap:wrap; margin:16px 0 6px;}
+.v57-legend i{display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:7px; vertical-align:-1px;} .v57-legend .dim{color:var(--dim);}
+.iso-list{border-top:1px solid var(--panel-border);}
+.iso-row{display:flex; align-items:center; gap:20px; padding:14px 0; border-bottom:1px solid var(--panel-border);}
+.iso-name{width:150px; flex:0 0 150px;} .iso-name b{display:block; font-size:17px; font-weight:600;} .iso-name span{font-size:12px; color:var(--dim);}
+.pics{display:flex; gap:8px; align-items:center; flex-wrap:wrap; flex:1 1 auto; min-width:0;}
+.pic{border:0; padding:0; background:transparent; border-radius:9px; line-height:0; cursor:pointer;}
+.pic:hover svg .body{filter:brightness(1.1);}
+.pic[aria-expanded="true"]{box-shadow:0 0 0 3px var(--panel), 0 0 0 5px var(--text);}
+.sep{width:1px; height:50px; background:var(--field-border); margin:0 4px;}
+.iso-num{margin-left:auto; display:flex; gap:22px; text-align:right; flex:none;} .iso-num b{display:block; font-size:21px; font-weight:600;} .iso-num span span, .iso-num > span > span{font-size:11.5px; color:var(--ink2);}
+.iso-total{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; padding:14px 0 4px;} .iso-total b{font-size:28px; font-weight:600; letter-spacing:-.02em; color:var(--navy);} .iso-total span{font-size:15px; color:var(--ink2);}
+.choose{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:14px;} .choose .seg button{min-width:48px;} .choose small{color:var(--dim); font-size:12px;}
+.choose .flabel{font-size:11px; font-weight:300; color:var(--dim); text-transform:uppercase; letter-spacing:.06em;}
+.seg button.over{color:#A3001F;} .seg button.over[aria-pressed="true"]{background:#A3001F; color:#fff;}
+.seg button.short{color:#9A5B00;} .seg button.short[aria-pressed="true"]{background:#B4232F; color:#fff;}
+.v57-empty{display:flex; flex-direction:column; gap:6px; padding:26px 4px; color:var(--dim); font-size:13px;} .v57-empty b{font-size:20px; font-weight:600; color:var(--navy);}
+.v57-err{padding:12px 14px; border-radius:8px; background:var(--badbg); color:var(--bad); border:1px solid #F3C9CF; margin-bottom:12px; font-size:13px;}
+.v57-status{display:inline-flex; align-items:center; gap:7px; border-radius:999px; padding:5px 12px; font:600 12.5px 'Work Sans',sans-serif; border:1px solid transparent; white-space:nowrap; cursor:pointer; text-transform:none; letter-spacing:0;}
+.v57-status.ok{background:var(--okbg); color:var(--ok); border-color:#CBE7D5;} .v57-status.warn{background:var(--notebg); color:var(--note); border-color:#F1D9B0;} .v57-status.bad{background:var(--badbg); color:var(--bad); border-color:#F2C6CC;}
+.v57-kpis{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:20px;}
+.v57-kpis:empty{display:none;}
+.v57-kpi{display:flex; flex-direction:column; gap:7px; min-width:0; padding:14px 16px; text-align:left; border:1px solid var(--panel-border); background:var(--panel); border-radius:var(--radius); font:inherit; color:inherit;}
+button.v57-kpi{cursor:pointer;} button.v57-kpi:hover{border-color:#B9C3D3;} button.v57-kpi[aria-expanded="true"]{border-color:var(--accent);}
+.v57-kpi .k{display:flex; justify-content:space-between; gap:8px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--dim);}
+.v57-kpi .k em{font-style:normal; text-transform:none; letter-spacing:0; color:var(--accent); font-size:11.5px;}
+.v57-kpi .v{font-size:24px; font-weight:600; color:var(--navy); white-space:nowrap;} .v57-kpi .v small{font-size:13px; font-weight:300; color:var(--ink2);}
+.v57-kpi.warn .v{color:var(--note);}
+.v57-kpi .s{font-size:11.5px; color:var(--dim);}
+.v57-bar{display:block; position:relative; height:8px; background:var(--field-bg); border-radius:999px; overflow:visible;}
+.v57-bar > span{position:absolute; top:0; bottom:0; left:0; border-radius:999px;}
+.v57-bar > i{position:absolute; top:-4px; width:2px; height:16px; background:var(--text);}
+.v57-two{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px;}
+.v57-two:empty{display:none;}
+.v57-big{font-size:26px; font-weight:600; letter-spacing:-.02em; color:var(--navy);} .v57-big small{font-size:13.5px; font-weight:300; color:var(--ink2); letter-spacing:0;}
+.v57-mini{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:12px;}
+.v57-mini > div, .v57-mini > button{border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:2px; background:var(--field-bg); border:1px solid var(--panel-border); text-align:left; font:inherit; color:inherit; min-width:0;}
+.v57-mini > .alt{background:#FDF6EC; border-color:#F5E6CF;}
+.v57-mini > .wide{grid-column:1 / -1; cursor:pointer;} .v57-mini > .wide:hover{border-color:var(--accent);}
+.v57-mini > .warn{background:var(--notebg); border-color:#F1D9B0;}
+.v57-mini span{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--dim);} .v57-mini b{font-size:16px; font-weight:600;} .v57-mini small{font-size:11.5px; color:var(--dim);}
+body.dark-theme .v57-mini > .alt{background:#3A3222; border-color:#5A4A2C;}
+.v57-pills{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px;}
+.v57-pill{display:inline-flex; align-items:center; border-radius:8px; padding:6px 11px; font-size:12.5px; font-weight:600;}
+.v57-pill.ok{background:var(--okbg); color:var(--ok);} .v57-pill.warn{background:var(--notebg); color:var(--note);} .v57-pill.bad{background:var(--badbg); color:var(--bad);} .v57-pill.info{background:var(--infobg); color:var(--info);}
+.v57-tag{display:inline-block; min-width:54px; text-align:center; font-size:10.5px; font-weight:600; letter-spacing:.04em; padding:3px 7px; border-radius:6px; flex:none;}
+.v57-tag.ok{background:var(--okbg); color:var(--ok);} .v57-tag.warn{background:var(--notebg); color:var(--note);} .v57-tag.bad{background:var(--badbg); color:var(--bad);} .v57-tag.info{background:var(--infobg); color:var(--info);}
+.v57-crow{display:flex; align-items:center; gap:14px; padding:9px 0; border-bottom:1px solid var(--panel-border); font-size:13px;}
+.v57-crow:last-child{border-bottom:0;}
+.v57-crow .n{flex:0 0 240px;} .v57-crow .b{flex:1 1 auto;} .v57-crow .val{flex:0 0 220px; text-align:right; color:var(--ink2); font-size:12.5px;} .v57-crow .pc{flex:0 0 46px; text-align:right; font-weight:600; font-size:12.5px; color:var(--ink2);} .v57-crow .pc.tight{color:#8A5200;}
+/* popover, windows, side panels */
+.v57-pop{position:fixed; z-index:990; width:320px; background:var(--panel); color:var(--text); border:1px solid var(--panel-border); border-radius:12px; box-shadow:0 16px 40px rgba(20,22,26,.2); padding:14px 16px; display:flex; flex-direction:column; gap:8px; font-size:12.5px; line-height:1.5; font-weight:300;}
+.v57-pop[hidden]{display:none;}
+.v57-pop h4{margin:0; font-size:14px; font-weight:600;}
+.v57-pop .kv{display:flex; justify-content:space-between; gap:10px; padding:6px 10px; background:var(--field-bg); border-radius:7px;} .v57-pop .kv span{color:var(--dim);} .v57-pop .kv b{font-weight:500; text-align:right;}
+.v57-pop .lg{display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--dim);} .v57-pop .lg i{width:10px; height:10px; border-radius:3px; display:inline-block;}
+.v57-scrim{position:fixed; inset:0; z-index:940; background:rgba(20,22,26,.38);}
+.v57-scrim[hidden], .v57-modal[hidden], .v57-drawer[hidden]{display:none !important;}
+.v57-modal{position:fixed; z-index:950; left:50%; top:56px; transform:translateX(-50%); width:min(780px, calc(100vw - 32px)); max-height:calc(100vh - 90px); display:flex; flex-direction:column; background:var(--panel); color:var(--text); border-radius:14px; box-shadow:0 24px 60px rgba(20,22,26,.28);}
+.v57-modal.wide{width:min(1120px, calc(100vw - 32px));} .v57-modal.xwide{width:min(1320px, calc(100vw - 32px));}
+.v57-drawer{position:fixed; z-index:950; top:0; right:0; bottom:0; width:min(520px, 100vw); display:flex; flex-direction:column; background:var(--panel); color:var(--text); box-shadow:-16px 0 40px rgba(20,22,26,.2);}
+.v57-h{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 22px; border-bottom:1px solid var(--panel-border); flex:none;}
+.v57-h .panel-title{margin:0;}
+.v57-x{width:34px; height:34px; flex:0 0 34px; border-radius:50%; border:1.5px solid var(--navy); background:var(--panel); color:var(--navy); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+.v57-x:hover{background:var(--accent-soft);}
+.v57-b{padding:16px 22px 22px; overflow:auto; flex:1 1 auto; display:flex; flex-direction:column; gap:12px;}
+.v57-f{display:flex; justify-content:flex-end; gap:10px; padding:12px 22px 16px; border-top:1px solid var(--panel-border); flex:none;}
+.v57-b > .panel{border:0; box-shadow:none; padding:0; margin:0; background:transparent;}
+.v57-b > .panel > .panel-title{display:none;}
+.v57-b .section-label{margin:6px 0 2px;}
+.v57-list{display:flex; flex-direction:column; gap:10px;}
+.v57-note{border:1px solid var(--panel-border); border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:7px;}
+.v57-note .hd{display:flex; align-items:center; gap:10px;} .v57-note .hd b{flex:1 1 auto; font-weight:500;} .v57-note .hd .val{font-size:12.5px; color:var(--ink2); text-align:right;}
+.v57-note p{margin:0; font-size:12.5px; line-height:1.5; color:var(--ink2);}
+.v57-step{border:1px solid var(--panel-border); border-radius:10px; overflow:hidden;}
+.v57-step > button{width:100%; border:0; background:var(--panel); display:flex; align-items:center; gap:12px; padding:11px 14px; text-align:left; font:inherit; color:inherit; cursor:pointer;}
+.v57-step > button:hover{background:var(--field-bg);}
+.v57-step .t{flex:1 1 auto; font-weight:500;} .v57-step .r{font-weight:600; color:var(--navy); text-align:right;}
+.v57-step .body{display:none; padding:0 14px 14px; color:var(--ink2); line-height:1.55; font-size:12.5px;}
+.v57-step.open .body{display:block;}
+#drwNotes .note-list{margin:0;}
+@media (max-width:1180px){ .v57-layout{grid-template-columns:minmax(0,1fr);} .v57-crow .n{flex-basis:180px;} .v57-crow .val{flex-basis:160px;} }
+@media (max-width:1320px){ .pic svg{width:34px; height:51px;} .iso-name{width:118px; flex-basis:118px;} .iso-row{gap:14px;} .iso-num{gap:14px;} .iso-num b{font-size:18px;} .hero-h h1{font-size:42px;} }
+@media (max-width:900px){ .v57-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} .v57-two{grid-template-columns:1fr;} .iso-row{flex-wrap:wrap;} .iso-num{margin-left:0;} .v57-crow{flex-wrap:wrap;} .v57-crow .b{flex-basis:100%; order:5;} }
+@media (max-width:560px){ .v57-kpis{grid-template-columns:1fr;} .hero-h h1{font-size:32px;} .grid.v57-g{grid-template-columns:1fr;} .v57-mini{grid-template-columns:1fr;} }
+@media print{ .v57-modal, .v57-drawer, .v57-scrim, .v57-pop{display:none !important;} .v57-layout{grid-template-columns:1fr;} }
+.grid.v57-g .field:not(.full) > label{min-height:30px; display:block;}
+.nocase{text-transform:none; letter-spacing:0;}
+#advSum, #projSum{display:flex; flex-direction:column; gap:5px;}
+#v57Main .panel > .panel-title{flex-wrap:wrap; row-gap:10px;} #v57Main .panel > .panel-title .pnl-tools{flex-wrap:wrap; justify-content:flex-end; margin-left:auto;}
+.v57-step .step-no{white-space:nowrap; flex:none;} .v57-step > button{font-size:13.5px;} .v57-step .r{max-width:46%; font-size:13px;}
+.hero-h h1 small{font-size:.5em; font-weight:300; letter-spacing:0;}
 </style>
 </head>
 <body>
@@ -768,151 +892,145 @@ body.dark-theme .settings-note.note-warn{color:#F2C777;}
       <div class="st-cell"><span class="st-dot" id="stDot3"></span><span class="st-txt"><b class="st-title" id="stTitle3">—</b><span class="st-detail" id="stDetail3">—</span></span></div>
     </div>
 
-    <!-- INPUTS -->
-    <section class="panel pnl-c" id="pnlInputs" data-sum="sumInputs">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="inputsTitle">Project &amp; UPS data</span></span>
-        <span class="pnl-tools"><span class="mode-seg pnl-head-r"><span class="lbl">Sizing mode</span><span class="seg" role="group" aria-label="Sizing mode" id="modeSeg"><button type="button" data-mode="BACKUP" aria-pressed="false">Standard backup (BUT)</button><button type="button" data-mode="AI" aria-pressed="true">AI load</button></span></span><span class="pnl-sum" id="sumInputs"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
-      <div class="grid">
-        <div class="field hidden"><label for="tech">Battery technology</label><select id="tech"><option value="LI">Li-ion — Ampace cabinets (library)</option><option value="VRLA">VRLA — lead-acid blocks</option></select></div>
-        <div class="field hidden"><label for="mode">Sizing mode</label><select id="mode"><option value="AI">AI load — autonomy + AI-load steps</option><option value="BACKUP">Standard backup (BUT) — autonomy only</option></select></div>
-        <div class="field li-only"><label for="model">Battery (library)</label><select id="model"></select><div class="settings-note"><button type="button" class="link-btn" id="lnkLibrary">Open the battery library</button> · <button type="button" class="link-btn" id="lnkAddBatt">+ Add battery</button></div></div>
-        <div class="field"><label for="upsKva">UPS rated power (kVA)</label><input id="upsKva" type="number" min="0" step="1" placeholder="e.g. 1250"><div class="settings-note">Apparent power used by the sizing.</div></div>
-        <div class="field"><label for="pf">Power factor</label><input id="pf" type="number" min="0" max="1" step=".01" placeholder="e.g. 1.00"></div>
-        <div class="field"><label for="eff">UPS efficiency in battery mode (η)</label><input id="eff" type="number" min=".01" max="1" step=".001" placeholder="e.g. 0.95"><div class="settings-note">DC power to the batteries = load power / η.</div></div>
-        <div class="field"><label for="pLoad">Load power (kW)</label><input id="pLoad" type="number" min="0" step="1" placeholder="= UPS rating × PF"><div class="settings-note" id="pLoadNote">Load on the UPS in battery mode. Empty = UPS rating × PF.</div></div>
-        <div class="field ai-only li-only"><label for="upsSys">UPS per system (= UPS per IT feeder)</label><input id="upsSys" type="number" min="1" step="1" placeholder="1"><div class="settings-note" id="upsSysNote">From the UPS configuration (UPS / Sys). Empty = 1.</div></div>
-        <div class="field"><label for="reqTime"><span class="li-only">Required EOL autonomy (min)</span><span class="vrla-only">Required BUT (min)</span></label><input id="reqTime" type="number" min="0" step=".1" placeholder="e.g. 5"><div class="settings-note" id="reqTimeNote"></div></div>
-        <div class="field"><label for="upsVmin">UPS minimum DC voltage (V)</label><input id="upsVmin" type="number" min="0" step="1" placeholder="e.g. 380"></div>
-        <div class="field"><label for="upsVmax">UPS maximum DC voltage (V)</label><input id="upsVmax" type="number" min="0" step="1" placeholder="e.g. 700"><div class="settings-note" id="vmaxNote"></div></div>
-        <div class="field li-only"><label for="threeWire">3-wire / topology constraint</label><select id="threeWire"><option value="NO">No</option><option value="YES">Yes</option></select></div>
-        <div class="field"><label for="altitude">Altitude (m)</label><input id="altitude" type="number" min="0" step="1" placeholder="0"><div class="settings-note">Above 2000 m the manufacturer must confirm.</div></div>
-        <div class="field li-only"><label for="rackRule">Rack count rule (Step 1)</label><select id="rackRule"><option value="EI">Energy + rack current limit (recommended)</option><option value="E">Energy only (original rule)</option></select></div>
-        <div class="field li-only"><label for="emod">Module usable energy at EOL (kWh)</label><input id="emod" type="number" readonly tabindex="-1" placeholder="automatic"><div class="settings-note" id="emodNote"></div></div>
-        <div class="field li-only mt-only"><label for="mtCase">Duty cycle (ageing tables)</label><select id="mtCase"><option value="1">Case 1 — 2 full cycles/year + 24 at 5 % DOD</option><option value="2">Case 2 — 5 full cycles/year + 24 at 5 % DOD</option><option value="3">Case 3 — 10 full cycles/year + 24 at 5 % DOD</option></select><div class="settings-note" id="mtCaseNote"></div></div>
-        <div class="field li-only mt-only"><label for="mtLife">Design life — autonomy checked at</label><select id="mtLife"><option value="0">Begin of life (new battery)</option><option value="5">5 years</option><option value="7.5">7.5 years</option><option value="10">10 years</option><option value="12">12 years</option><option value="15">15 years</option></select><div class="settings-note" id="mtLifeNote"></div></div>
+    <!-- v5.7 (layout of the prototype): inputs on the left, result on the right; tables and details in windows and side panels -->
+    <div class="v57-layout">
+      <aside class="v57-aside">
+        <section class="panel pnl-c" id="pnlInputs" data-sum="sumInputs">
+          <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="inputsTitle">Project &amp; UPS data</span></span>
+            <span class="pnl-tools"><span class="pnl-sum" id="sumInputs"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+          <div class="v57-mode"><span class="mode-seg"><span class="lbl">Sizing mode</span><span class="seg" role="group" aria-label="Sizing mode" id="modeSeg"><button type="button" data-mode="BACKUP" aria-pressed="false">Standard backup (BUT)</button><button type="button" data-mode="AI" aria-pressed="true">AI load</button></span></span></div>
+          <div class="grid v57-g">
+            <div class="field hidden"><label for="tech">Battery technology</label><select id="tech"><option value="LI">Li-ion — Ampace cabinets (library)</option><option value="VRLA">VRLA — lead-acid blocks</option></select></div>
+            <div class="field hidden"><label for="mode">Sizing mode</label><select id="mode"><option value="AI">AI load — autonomy + AI-load steps</option><option value="BACKUP">Standard backup (BUT) — autonomy only</option></select></div>
+            <div class="field full li-only"><label for="model">Battery (library) <button type="button" class="ibtn" data-v57info="model" aria-label="About: Battery (library)">i</button></label><select id="model"></select><div class="settings-note"><button type="button" class="link-btn" id="lnkLibrary">Open the battery library</button> · <button type="button" class="link-btn" id="lnkAddBatt">+ Add battery</button></div></div>
+            <div class="field full li-only mt-only"><label for="mtCase">Duty cycle (ageing tables)</label><select id="mtCase"><option value="1">Case 1 — 2 full cycles/year + 24 at 5 % DOD</option><option value="2">Case 2 — 5 full cycles/year + 24 at 5 % DOD</option><option value="3">Case 3 — 10 full cycles/year + 24 at 5 % DOD</option></select><div class="settings-note" id="mtCaseNote"></div></div>
+            <div class="field full li-only mt-only"><label for="mtLife">Design life — autonomy checked at</label><select id="mtLife"><option value="0">Begin of life (new battery)</option><option value="5">5 years</option><option value="7.5">7.5 years</option><option value="10">10 years</option><option value="12">12 years</option><option value="15">15 years</option></select><div class="settings-note" id="mtLifeNote"></div></div>
+          </div>
+          <div id="vrlaInputs" class="vrla-only">
+            <p class="v57-sub">VRLA battery &amp; strings</p>
+            <div class="grid v57-g">
+              <div class="field full"><label for="vModel">Battery (VRLA library)</label><select id="vModel"></select><div class="settings-note" id="vModelNote"></div></div>
+              <div class="field full"><span class="flabel" id="lBlocks">12 V blocks per string</span><select id="vBlocks" class="hidden" aria-hidden="true" tabindex="-1"></select><div class="seg full" role="group" aria-labelledby="lBlocks" id="vBlocksSeg"></div><div class="settings-note" id="vBlocksNote"></div></div>
+              <div class="field"><label for="vEodv">End voltage (V/cell)</label><select id="vEodv"><option value="1.60">1.60 V/cell</option><option value="1.65">1.65 V/cell</option><option value="1.67">1.67 V/cell</option><option value="1.70">1.70 V/cell</option><option value="1.75">1.75 V/cell</option></select><div class="settings-note" id="vEodvNote"></div></div>
+              <div class="field"><label for="vMargin">Design margin</label><select id="vMargin"><option value="1">None (UPS at full rating)</option><option value="1.1">+10 %</option><option value="1.15">+15 %</option></select></div>
+              <div class="field full"><label for="vTemp">Battery room temperature · <span id="vTempVal">25</span> °C</label><input id="vTemp" type="range" min="10" max="40" step="1" value="25"><div class="settings-note" id="vTempNote"></div></div>
+              <div class="field full"><label for="vLife">Design life at 20 °C (Eurobat)</label><select id="vLife"><option value="5">3–5 years · standard commercial</option><option value="8">6–9 years · general purpose</option><option value="10">10–12 years · long life</option><option value="12">&gt; 12 years · very long life</option></select></div>
+              <div class="field full field-chk"><label class="chk-field" for="vAge"><input id="vAge" type="checkbox" checked>Size for end of life (80 % capacity)</label></div>
+              <div class="field hidden"><label for="vStrings">Strings in parallel</label><input id="vStrings" type="number" min="1" step="1"></div>
+            </div>
+          </div>
+          <p class="v57-sub">UPS and load</p>
+          <div class="grid v57-g">
+            <div class="field"><label for="upsKva">UPS rated power (kVA) <button type="button" class="ibtn" data-v57info="upsKva" aria-label="About: UPS rated power (kVA)">i</button></label><input id="upsKva" type="number" min="0" step="1" placeholder="e.g. 1250"></div>
+            <div class="field"><label for="pLoad">Load power (kW)</label><input id="pLoad" type="number" min="0" step="1" placeholder="= UPS rating × PF"><div class="settings-note" id="pLoadNote">Load on the UPS in battery mode. Empty = UPS rating × PF.</div></div>
+            <div class="field"><label for="eff">UPS efficiency in battery mode (<span class="nocase">η</span>) <button type="button" class="ibtn" data-v57info="eff" aria-label="About: UPS efficiency in battery mode (η)">i</button></label><input id="eff" type="number" min=".01" max="1" step=".001" placeholder="e.g. 0.95"></div>
+            <div class="field ai-only li-only"><label for="upsSys">UPS per system (= UPS per IT feeder)</label><input id="upsSys" type="number" min="1" step="1" placeholder="1"><div class="settings-note" id="upsSysNote">From the UPS configuration (UPS / Sys). Empty = 1.</div></div>
+            <div class="field full"><label for="reqTime"><span class="li-only">Required EOL autonomy (min)</span><span class="vrla-only">Required BUT (min)</span> <button type="button" class="ibtn" data-v57info="reqTime" aria-label="About: Required EOL autonomy (min)Required BUT (min)">i</button></label><input id="reqTime" type="number" min="0" step=".1" placeholder="e.g. 5"><div class="settings-note" id="reqTimeNote"></div></div>
+          </div>
+          <div id="aiInputs" class="ai-only li-only">
+            <p class="v57-sub">AI load — ramps and ageing</p>
+            <div class="grid v57-g">
+              <div class="field full"><label for="ramp">Ramp-up power <button type="button" class="ibtn" data-v57info="ramp" aria-label="About: Ramp-up power">i</button></label><div class="inp-unit"><input id="ramp" type="number" min="0" step="any" placeholder="100"><select id="rampUnit" aria-label="Ramp-up power unit"><option value="PCT">% of the load</option><option value="KW">kW (fixed)</option></select></div><div class="settings-note" id="rampNote"></div></div>
+              <div class="field full"><label for="rampDn">Ramp-down power <button type="button" class="ibtn" data-v57info="rampDn" aria-label="About: Ramp-down power">i</button></label><div class="inp-unit"><input id="rampDn" type="number" min="0" step="any" placeholder="= ramp-up"><select id="rampDnUnit" aria-label="Ramp-down power unit"><option value="PCT">% of the load</option><option value="KW">kW (fixed)</option></select></div><div class="settings-note" id="rampDnNote"></div></div>
+              <div class="field"><label for="rampT">Ramp-up time (s) <button type="button" class="ibtn" data-v57info="rampT" aria-label="About: Ramp-up time (s)">i</button></label><input id="rampT" type="number" min="0" step="any" placeholder="10"><div class="settings-note" id="rampTNote"></div></div>
+              <div class="field"><label for="rampDnT">Ramp-down time (s) <button type="button" class="ibtn" data-v57info="rampDnT" aria-label="About: Ramp-down time (s)">i</button></label><input id="rampDnT" type="number" min="0" step="any" placeholder="= ramp-up"><div class="settings-note" id="rampDnTNote"></div></div>
+              <div class="field"><label for="aiAge">Additional ageing (%) <button type="button" class="ibtn" data-v57info="aiAge" aria-label="About: Additional ageing (%)">i</button></label><input id="aiAge" type="number" min="0" max="100" step="any" placeholder="15"><div class="settings-note" id="aiAgeNote"></div></div>
+              <div class="field"><label for="upsModInst">Power modules installed per UPS <button type="button" class="ibtn" data-v57info="upsModInst" aria-label="About: Power modules installed per UPS">i</button></label><input id="upsModInst" type="number" min="1" step="1"><div class="settings-note" id="upsModInstNote"></div></div>
+              <div class="field full"><span class="flabel">AI racks — maximum installable (indication)</span>
+                <button type="button" class="rack-pick" data-v57="mdlRacks"><span><b id="rackPickName">—</b><small id="rackPickSub">—</small></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>
+            </div>
+          </div>
+          <div class="v57-adv">
+            <div class="v57-adv-h"><span class="flabel">Advanced settings</span><button type="button" class="link-btn" data-v57="mdlAdvanced">Edit</button></div>
+            <div id="advSum"></div>
+          </div>
+          <div class="v57-adv">
+            <div class="v57-adv-h"><span class="flabel">Project &amp; report data</span><button type="button" class="link-btn" data-v57="mdlProject">Edit</button></div>
+            <div id="projSum"></div>
+          </div>
+        </section>
+      </aside>
+      <div class="v57-main" id="v57Main">
+        <section class="panel pnl-c" id="pnlResult">
+          <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no" id="resStep">STEP 1</span><span id="resTitle">Result</span></span>
+            <span class="pnl-tools"><button type="button" class="st-act" data-v57="drwSteps">Calculation steps</button><button type="button" class="st-act" data-v57="drwNotes">Assumptions to confirm</button><span id="resStatus"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+          <div id="resBody"></div>
+        </section>
+        <div class="v57-kpis" id="resKpis"></div>
+        <div class="v57-two" id="resTwo"></div>
+        <section class="panel pnl-c" id="pnlVerify">
+          <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no" id="verifyStepNo">STEP 6</span><span>Engineering verification</span></span>
+            <span class="pnl-tools"><span id="overallChip"></span><span class="pnl-sum" id="sumVerify"></span><button type="button" class="st-act" data-v57="drwChecks" id="btnAllChecks">All checks</button><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+          <div id="verSum"></div>
+        </section>
       </div>
-
-      <div id="vrlaInputs" class="vrla-only">
-        <div class="section-label">VRLA battery &amp; strings</div>
-        <div class="grid">
-          <div class="field"><label for="vModel">Battery (VRLA library)</label><select id="vModel"></select><div class="settings-note" id="vModelNote"></div></div>
-          <div class="field"><span class="flabel" id="lBlocks">12 V blocks per string</span><select id="vBlocks" class="hidden" aria-hidden="true" tabindex="-1"></select><div class="seg full" role="group" aria-labelledby="lBlocks" id="vBlocksSeg"></div><div class="settings-note" id="vBlocksNote"></div></div>
-          <div class="field"><label for="vEodv">End voltage (V/cell)</label><select id="vEodv"><option value="1.60">1.60 V/cell</option><option value="1.65">1.65 V/cell</option><option value="1.67">1.67 V/cell</option><option value="1.70">1.70 V/cell</option><option value="1.75">1.75 V/cell</option></select><div class="settings-note" id="vEodvNote"></div></div>
-          <div class="field"><label for="vMargin">Design margin</label><select id="vMargin"><option value="1">None (UPS at full rating)</option><option value="1.1">+10 %</option><option value="1.15">+15 %</option></select></div>
-          <div class="field"><label for="vTemp">Battery room temperature · <span id="vTempVal">25</span> °C</label><input id="vTemp" type="range" min="10" max="40" step="1" value="25"><div class="settings-note" id="vTempNote"></div></div>
-          <div class="field"><label for="vLife">Design life at 20 °C (Eurobat)</label><select id="vLife"><option value="5">3–5 years · standard commercial</option><option value="8">6–9 years · general purpose</option><option value="10">10–12 years · long life</option><option value="12">&gt; 12 years · very long life</option></select></div>
-          <div class="field field-chk"><label class="chk-field" for="vAge"><input id="vAge" type="checkbox" checked>Size for end of life (80 % capacity)</label></div>
-          <div class="field hidden"><label for="vStrings">Strings in parallel</label><input id="vStrings" type="number" min="1" step="1"></div>
-        </div>
-      </div>
-      <div id="aiInputs" class="ai-only li-only">
-        <div class="section-label">AI load — ramps and ageing</div>
-        <div class="grid g4">
-          <div class="field"><label for="ramp">Ramp-up power</label><div class="inp-unit"><input id="ramp" type="number" min="0" step="any" placeholder="100"><select id="rampUnit" aria-label="Ramp-up power unit"><option value="PCT">% of the load</option><option value="KW">kW (fixed)</option></select></div><div class="settings-note" id="rampNote"></div></div>
-          <div class="field"><label for="rampT">Ramp-up time (s)</label><input id="rampT" type="number" min="0" step="any" placeholder="10"><div class="settings-note" id="rampTNote"></div></div>
-          <div class="field"><label for="rampDn">Ramp-down power</label><div class="inp-unit"><input id="rampDn" type="number" min="0" step="any" placeholder="= ramp-up"><select id="rampDnUnit" aria-label="Ramp-down power unit"><option value="PCT">% of the load</option><option value="KW">kW (fixed)</option></select></div><div class="settings-note" id="rampDnNote"></div></div>
-          <div class="field"><label for="rampDnT">Ramp-down time (s)</label><input id="rampDnT" type="number" min="0" step="any" placeholder="= ramp-up"><div class="settings-note" id="rampDnTNote"></div></div>
-        </div>
-        <div class="grid">
-          <div class="field"><label for="aiAge">Additional ageing (%)</label><input id="aiAge" type="number" min="0" max="100" step="any" placeholder="15"><div class="settings-note" id="aiAgeNote"></div></div>
-        </div>
-        <div class="section-label">UPS power modules — recharge of the ramp-down</div>
-        <div class="grid">
-          <div class="field"><label for="upsMod">Power module (kW)</label><input id="upsMod" type="number" min="0" step="any" placeholder="67"><div class="settings-note">Rating of one UPS power module.</div></div>
-          <div class="field"><label for="upsModIch">Charge current per module (A)</label><input id="upsModIch" type="number" min="0" step="any" placeholder="30"><div class="settings-note">Available with the UPS load below 66 %.</div></div>
-          <div class="field"><label for="upsModInst">Power modules installed per UPS</label><input id="upsModInst" type="number" min="1" step="1"><div class="settings-note" id="upsModInstNote"></div></div>
-          <div class="field"><label for="aiMods">Power modules needed for the ramp-down</label><input id="aiMods" type="text" readonly tabindex="-1"><div class="settings-note" id="aiModsNote"></div></div>
-          <div class="field"><label for="aiRampMax">Ramp-down reachable with the installed modules</label><input id="aiRampMax" type="text" readonly tabindex="-1"><div class="settings-note" id="aiRampMaxNote"></div></div>
-        </div>
-        <div class="section-label">AI racks — maximum installable (indication)</div>
-        <select id="aiRack" class="hidden" aria-hidden="true" tabindex="-1"><option value="GB200">NVIDIA GB200 NVL72</option><option value="GB300">NVIDIA GB300 NVL72</option><option value="VR">NVIDIA Vera Rubin NVL72</option></select>
-        <div class="rack-cards" role="group" aria-label="AI rack type" id="aiRackCards"></div>
-        <div class="grid">
-          <div class="field"><label for="aiRacks">Max AI racks installable</label><input id="aiRacks" type="text" readonly tabindex="-1"><div class="settings-note" id="aiRacksNote"></div></div>
-          <div class="field"><label for="aiBatt">Battery for AI duty (library)</label><input id="aiBatt" type="text" readonly tabindex="-1"><div class="settings-note" id="aiBattNote"></div></div>
-          <div class="field"><label for="aiSoc">SOC set-point — check</label><input id="aiSoc" type="text" readonly tabindex="-1"><div class="settings-note" id="aiSocNote"></div></div>
-        </div>
-        <p class="v-only-note"><span id="aiRackNote"></span> The racks are only an indication: the AI sizing uses the ramp power and times above.</p>
-      </div>
-      <div class="section-label">Project &amp; report data</div>
-      <div class="sp-link" id="spLinkBox">
-        <div class="sp-link-main"><span class="st-dot" id="spLinkDot"></span><span class="st-txt"><b class="st-title" id="spLinkTitle">Not signed in to Microsoft 365</b><span class="st-detail" id="spLinkDetail"></span></span></div>
-        <div class="sp-link-acts"><button type="button" class="st-act" id="btnPickProject">Sign in</button><button type="button" class="st-act" id="btnUnlinkProject" style="display:none">Unlink</button><button type="button" class="st-act st-act-strong" id="btnSpSaveNow" style="display:none">Save project configuration</button></div>
-      </div>
-      <div class="grid">
-        <div class="field"><label for="rpCustomer">Customer</label><input id="rpCustomer" type="text" placeholder="—"></div>
-        <div class="field"><label for="rpProject">Project name</label><input id="rpProject" type="text" placeholder="—"></div>
-        <div class="field"><label for="rpCountry">Country</label><input id="rpCountry" type="text" placeholder="—"></div>
-        <div class="field"><label for="rpRef">Offer ref.</label><input id="rpRef" type="text" placeholder="—"></div>
-        <div class="field"><label for="rpPrepared">Prepared by</label><input id="rpPrepared" type="text" placeholder="—"></div>
-        <div class="field"><label for="rpApproved">Approved by</label><input id="rpApproved" type="text" placeholder="—"></div>
-        <div class="field"><label for="rpRev">Revision</label><input id="rpRev" type="text" placeholder="01"></div>
-        <div class="field"><label for="rpRevDesc">Revision description</label><input id="rpRevDesc" type="text" placeholder="First emission"></div>
-      </div>
+    </div>
+    <div class="v57-hold" hidden aria-hidden="true">
       <div class="actions"><button type="button" class="act btn-ghost" id="btnReset">Reset</button><button type="button" class="act btn-ghost" id="btnPng">Copy summary PNG</button><button type="button" class="act btn-ghost" id="btnPdf">PDF report</button><button type="button" class="act btn-primary" id="btnCalc">Calculate sizing</button></div>
-    </section>
-
-    <!-- VRLA — STEP 1 -->
-    <section class="panel pnl-c vrla-only" id="pnlVStep1">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEP 1</span><span>Strings in parallel — back-up time</span></span>
-        <span class="pnl-tools"><span class="pnl-head-r" id="vS1Head"></span><span class="pnl-sum" id="sumVStep1"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+      <div class="check-grid" id="checkGrid"></div>
+<section class="panel li-only" id="pnlAI">
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEPS 0 · 3 · 5</span><span>AI load — standard BUT + ramps</span></span>
+        <span class="pnl-tools"><span class="pnl-sum" id="sumAI"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
       <div class="kpis">
-        <div class="kpi"><div class="k">DC power</div><div class="v" id="vkPdc">—</div><div class="s">to the batteries</div></div>
-        <div class="kpi"><div class="k">Load per cell</div><div class="v" id="vkWreq">—</div><div class="s" id="vkWreqS"></div></div>
-        <div class="kpi"><div class="k">One string gives</div><div class="v" id="vkWt">—</div><div class="s" id="vkWtS"></div></div>
-        <div class="kpi hl"><div class="k">Strings</div><div class="v" id="vkStr">—</div><div class="s" id="vkStrS"></div></div>
-        <div class="kpi"><div class="k">BUT, new battery</div><div class="v" id="vkTB">—</div><div class="s">beginning of life</div></div>
-        <div class="kpi"><div class="k">BUT, end of life</div><div class="v" id="vkTE">—</div><div class="s" id="vkTES"></div></div>
+        <div class="kpi"><div class="k">Max AI racks / UPS</div><div class="v" id="aGpu">—</div><div class="s" id="aGpuS"></div></div>
+        <div class="kpi"><div class="k">Ramp energy · out / in</div><div class="v" id="aUp">—</div><div class="s" id="aUpS"></div></div>
+        <div class="kpi"><div class="k">UPS power modules</div><div class="v" id="aDn">—</div><div class="s" id="aDnS"></div></div>
+        <div class="kpi"><div class="k">Min. modules ramps</div><div class="v" id="aMin">—</div><div class="s" id="aMinS"></div></div>
+        <div class="kpi hl"><div class="k">Total per UPS</div><div class="v" id="aTot">—</div><div class="s" id="aTotS"></div></div>
+        <div class="kpi hl"><div class="k">Total per IT feeder</div><div class="v" id="aFeed">—</div><div class="s" id="aFeedS"></div></div>
       </div>
-      <div class="v-split">
-        <figure class="v-chart" id="vChart"></figure>
-        <div class="v-cfg">
-          <div class="vc-head"><span class="vc-title">Configurations</span><button type="button" class="st-act" id="vCfgAuto" hidden>Back to recommended</button></div>
-          <div class="table-wrap"><table class="bom" style="min-width:640px"><thead><tr><th>Strings</th><th class="num">Blocks</th><th class="num">Weight</th><th class="num">New (min)</th><th class="num">End of life (min)</th><th class="num">I string</th><th>Result</th></tr></thead><tbody id="vCfgBody"></tbody></table></div>
-          <p class="vc-cap" style="margin:10px 0 0">Times in minutes. * = outside the datasheet range, extrapolated. I string = current of one string at the end voltage.</p>
-        </div>
-      </div>
-      <div class="card-hint" id="vStep1Note"></div>
-      <p class="doc-ref" data-doc="model"></p>
-    </section>
-
-    <!-- VRLA — END VOLTAGE OF THE CHOSEN CONFIGURATION -->
-    <section class="panel pnl-c vrla-only" id="pnlVEnd">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>End voltage — chosen configuration</span></span>
-        <span class="pnl-tools"><span class="pnl-head-r" id="vEndHead"></span><span class="pnl-sum" id="sumVEnd"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
-      <div class="table-wrap"><table class="bom" style="min-width:760px"><thead><tr><th>End voltage</th><th class="num">String</th><th class="num">Strings needed</th><th>BUT of the chosen strings (new · end of life)</th><th class="num">End of life</th><th>Result</th></tr></thead><tbody id="vEndBody"></tbody></table></div>
-      <div class="card-hint">Same battery, blocks, temperature and ageing as above. Bars: back-up time of the <span id="vEndN">chosen</span> strings (light = new, dark = end of life), red line = required BUT. “Strings needed” is what each end voltage would require. Click a row to apply that end voltage — it is set in the UPS.</div>
-    </section>
-
-    <!-- VRLA — RECHARGE, VENTILATION, LIFE -->
-    <section class="panel pnl-c vrla-only" id="pnlVSite">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>Recharge · ventilation · service life<span id="vSiteN"></span></span></span>
-        <span class="pnl-tools"><span class="pnl-sum" id="sumVSite"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
-      <div class="v-cards" id="vSite"></div>
-    </section>
-
-    <!-- BATTERY LIBRARY -->
-    <section class="panel pnl-c pnl-collapsed li-only" id="pnlLibrary">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>Battery library</span></span>
-        <span class="pnl-tools"><span class="pnl-sum" id="sumLibrary"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
-      <div class="lib-tools">
-        <input type="search" id="libSearch" placeholder="Search manufacturer, model, chemistry…" aria-label="Search the library">
-        <button type="button" class="act btn-primary lib-btn" id="btnLibAdd">+ Add battery</button>
-        <button type="button" class="act btn-ghost lib-btn" id="btnLibImport">Import library</button>
-        <button type="button" class="act btn-ghost lib-btn" id="btnLibExport">Export library</button>
-      </div>
+      <div class="card-hint" id="aiMinNote" style="margin:0 0 12px"></div>
+      <div class="ai-pick"><span class="flabel" id="lAiCab">AI cabinets — from the minimum up</span><div class="seg" role="group" aria-labelledby="lAiCab" id="aiCabSeg"></div><input id="aiCab" type="number" class="hidden" aria-hidden="true" tabindex="-1"></div>
+      
       <div class="table-wrap">
-        <table class="bom" style="min-width:1180px"><thead><tr>
-          <th>Manufacturer</th><th>Model</th><th>Variant</th><th>Chem.</th><th class="num">Cells</th><th class="num">V cell</th><th class="num">P mod. kW</th>
-          <th class="num">E rated / EOL kWh</th><th class="num">I rack A</th><th class="num">Mod./rack</th><th class="num">Max par.</th><th class="num">Ramp C</th><th>Type</th><th>Actions</th>
-        </tr></thead><tbody id="libBody"></tbody></table>
+        <table class="bom" style="min-width:900px"><thead><tr>
+          <th>Step</th><th>Condition</th><th>Result</th><th class="num">Per UPS</th><th class="num">Per IT feeder</th>
+        </tr></thead><tbody id="aiBody"></tbody></table>
       </div>
-      <div class="card-hint">Default batteries are built into the tool and stay read-only — <b>Duplicate</b> one to change its values. Custom batteries are stored in this browser: use <b>Export library</b> to keep a copy or share it, <b>Import library</b> to load it on another PC. A saved project configuration also carries its battery.</div>
-      <p class="doc-ref" data-doc="library"></p>
+      
     </section>
+    </div>
 
-    <!-- STEP 1 -->
-    <section class="panel pnl-c li-only" id="pnlStep1">
+    <footer>Riello UPS · Pre-Sales Data Center Power · Battery sizing — engineering draft, verify against the manufacturer calculation before customer issue</footer>
+  </div>
+</main>
+</div>
+<div class="v57-scrim" id="v57Scrim" hidden></div>
+<div class="v57-pop" id="v57Pop" role="dialog" hidden></div>
+<div class="v57-modal " id="mdlAdvanced" role="dialog" aria-modal="true" aria-labelledby="mdlAdvancedT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="mdlAdvancedT">Advanced settings</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+    <div class="grid">
+      <div class="field"><label for="pf">Power factor</label><input id="pf" type="number" min="0" max="1" step=".01" placeholder="e.g. 1.00"></div>
+      <div class="field"><label for="upsVmin">UPS minimum DC voltage (V)</label><input id="upsVmin" type="number" min="0" step="1" placeholder="e.g. 380"></div>
+      <div class="field"><label for="upsVmax">UPS maximum DC voltage (V)</label><input id="upsVmax" type="number" min="0" step="1" placeholder="e.g. 700"><div class="settings-note" id="vmaxNote"></div></div>
+      <div class="field"><label for="altitude">Altitude (m)</label><input id="altitude" type="number" min="0" step="1" placeholder="0"><div class="settings-note">Above 2000 m the manufacturer must confirm.</div></div>
+      <div class="field li-only"><label for="threeWire">3-wire / topology constraint</label><select id="threeWire"><option value="NO">No</option><option value="YES">Yes</option></select></div>
+      <div class="field li-only"><label for="rackRule">Rack count rule (Step 1)</label><select id="rackRule"><option value="EI">Energy + rack current limit (recommended)</option><option value="E">Energy only (original rule)</option></select></div>
+      <div class="field li-only"><label for="emod">Module usable energy at EOL (kWh)</label><input id="emod" type="number" readonly tabindex="-1" placeholder="automatic"><div class="settings-note" id="emodNote"></div></div>
+    </div>
+    <div class="ai-only li-only">
+      <div class="section-label">UPS power modules — recharge of the ramp-down</div>
+      <div class="grid">
+        <div class="field"><label for="upsMod">Power module (kW)</label><input id="upsMod" type="number" min="0" step="any" placeholder="67"><div class="settings-note">Rating of one UPS power module.</div></div>
+        <div class="field"><label for="upsModIch">Charge current per module (A)</label><input id="upsModIch" type="number" min="0" step="any" placeholder="30"><div class="settings-note">Available with the UPS load below 66 %.</div></div>
+        <div class="field"><label for="aiMods">Power modules needed for the ramp-down</label><input id="aiMods" type="text" readonly tabindex="-1"><div class="settings-note" id="aiModsNote"></div></div>
+        <div class="field"><label for="aiRampMax">Ramp-down reachable with the installed modules</label><input id="aiRampMax" type="text" readonly tabindex="-1"><div class="settings-note" id="aiRampMaxNote"></div></div>
+      </div>
+      <div class="section-label">Battery in AI duty</div>
+      <div class="grid">
+        <div class="field"><label for="aiBatt">Battery for AI duty (library)</label><input id="aiBatt" type="text" readonly tabindex="-1"><div class="settings-note" id="aiBattNote"></div></div>
+        <div class="field"><label for="aiSoc">SOC set-point — check</label><input id="aiSoc" type="text" readonly tabindex="-1"><div class="settings-note" id="aiSocNote"></div></div>
+      </div>
+    </div>
+    <p class="settings-note" style="margin:12px 0 0">The values apply at once. Module EOL energy and the SOC set-point are automatic.</p>
+  </div>
+  <div class="v57-f"><button type="button" class="act btn-primary" data-v57close>Done</button></div>
+</div>
+<div class="v57-modal xwide" id="mdlConfig" role="dialog" aria-modal="true" aria-labelledby="mdlConfigT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="step-no">STEP 1</span><span id="mdlConfigT">Choose the BUT configuration — from the minimum up</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+<section class="panel li-only" id="pnlStep1">
       <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEP 1</span><span>Standard BUT — autonomy</span></span>
         <span class="pnl-tools"><span class="pnl-sum" id="sumStep1"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
       <div class="kpis">
@@ -938,50 +1056,152 @@ body.dark-theme .settings-note.note-warn{color:#F2C777;}
       <div class="card-hint" id="step1Note"></div>
       <p class="doc-ref" data-doc="model"></p>
     </section>
-
-    <!-- STEPS 0, 2–5 -->
-    <section class="panel pnl-c li-only" id="pnlAI">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEPS 0 · 3 · 5</span><span>AI load — standard BUT + ramps</span></span>
-        <span class="pnl-tools"><span class="pnl-sum" id="sumAI"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
-      <div class="kpis">
-        <div class="kpi"><div class="k">Max AI racks / UPS</div><div class="v" id="aGpu">—</div><div class="s" id="aGpuS"></div></div>
-        <div class="kpi"><div class="k">Ramp energy · out / in</div><div class="v" id="aUp">—</div><div class="s" id="aUpS"></div></div>
-        <div class="kpi"><div class="k">UPS power modules</div><div class="v" id="aDn">—</div><div class="s" id="aDnS"></div></div>
-        <div class="kpi"><div class="k">Min. modules ramps</div><div class="v" id="aMin">—</div><div class="s" id="aMinS"></div></div>
-        <div class="kpi hl"><div class="k">Total per UPS</div><div class="v" id="aTot">—</div><div class="s" id="aTotS"></div></div>
-        <div class="kpi hl"><div class="k">Total per IT feeder</div><div class="v" id="aFeed">—</div><div class="s" id="aFeedS"></div></div>
+  </div>
+  <div class="v57-f"><button type="button" class="act btn-primary" data-v57close>Done</button></div>
+</div>
+<div class="v57-modal wide" id="mdlProfile" role="dialog" aria-modal="true" aria-labelledby="mdlProfileT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="step-no">STEP 3</span><span id="mdlProfileT">Use of the UPS with an AI load</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+    <figure class="ai-chart" id="aiChart" style="margin:0 0 16px"></figure>
+    <div class="card-hint" id="rampCross" style="margin-top:12px"></div>
+  </div>
+  <div class="v57-f"><button type="button" class="act btn-primary" data-v57close>Done</button></div>
+</div>
+<div class="v57-modal " id="mdlRacks" role="dialog" aria-modal="true" aria-labelledby="mdlRacksT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="step-no">STEP 0</span><span id="mdlRacksT">AI racks — maximum installable (indication)</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+    <select id="aiRack" class="hidden" aria-hidden="true" tabindex="-1"><option value="GB200">NVIDIA GB200 NVL72</option><option value="GB300">NVIDIA GB300 NVL72</option><option value="VR">NVIDIA Vera Rubin NVL72</option></select>
+    <div class="rack-cards" role="group" aria-label="AI rack type" id="aiRackCards"></div>
+    <div class="grid g2">
+      <div class="field"><label for="aiRacks">Max AI racks installable</label><input id="aiRacks" type="text" readonly tabindex="-1"><div class="settings-note" id="aiRacksNote"></div></div>
+    </div>
+    <p class="v-only-note"><span id="aiRackNote"></span> The racks are only an indication: the AI sizing uses the ramp power and times above.</p>
+  </div>
+  <div class="v57-f"><button type="button" class="act btn-primary" data-v57close>Done</button></div>
+</div>
+<div class="v57-modal " id="mdlProject" role="dialog" aria-modal="true" aria-labelledby="mdlProjectT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="mdlProjectT">Project &amp; report data</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+    <div class="sp-link" id="spLinkBox">
+        <div class="sp-link-main"><span class="st-dot" id="spLinkDot"></span><span class="st-txt"><b class="st-title" id="spLinkTitle">Not signed in to Microsoft 365</b><span class="st-detail" id="spLinkDetail"></span></span></div>
+        <div class="sp-link-acts"><button type="button" class="st-act" id="btnPickProject">Sign in</button><button type="button" class="st-act" id="btnUnlinkProject" style="display:none">Unlink</button><button type="button" class="st-act st-act-strong" id="btnSpSaveNow" style="display:none">Save project configuration</button></div>
       </div>
-      <div class="card-hint" id="aiMinNote" style="margin:0 0 12px"></div>
-      <div class="ai-pick"><span class="flabel" id="lAiCab">AI cabinets — from the minimum up</span><div class="seg" role="group" aria-labelledby="lAiCab" id="aiCabSeg"></div><input id="aiCab" type="number" class="hidden" aria-hidden="true" tabindex="-1"></div>
-      <figure class="ai-chart" id="aiChart" style="margin:0 0 16px"></figure>
+    <div class="grid">
+      <div class="field"><label for="rpCustomer">Customer</label><input id="rpCustomer" type="text" placeholder="—"></div>
+        <div class="field"><label for="rpProject">Project name</label><input id="rpProject" type="text" placeholder="—"></div>
+        <div class="field"><label for="rpCountry">Country</label><input id="rpCountry" type="text" placeholder="—"></div>
+        <div class="field"><label for="rpRef">Offer ref.</label><input id="rpRef" type="text" placeholder="—"></div>
+        <div class="field"><label for="rpPrepared">Prepared by</label><input id="rpPrepared" type="text" placeholder="—"></div>
+        <div class="field"><label for="rpApproved">Approved by</label><input id="rpApproved" type="text" placeholder="—"></div>
+        <div class="field"><label for="rpRev">Revision</label><input id="rpRev" type="text" placeholder="01"></div>
+        <div class="field"><label for="rpRevDesc">Revision description</label><input id="rpRevDesc" type="text" placeholder="First emission"></div>
+    </div>
+  </div>
+  <div class="v57-f"><button type="button" class="act btn-primary" data-v57close>Done</button></div>
+</div>
+<div class="v57-modal xwide" id="mdlLibrary" role="dialog" aria-modal="true" aria-labelledby="mdlLibraryT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="mdlLibraryT">Battery library</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+<section class="panel li-only" id="pnlLibrary">
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>Battery library</span></span>
+        <span class="pnl-tools"><span class="pnl-sum" id="sumLibrary"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+      <div class="lib-tools">
+        <input type="search" id="libSearch" placeholder="Search manufacturer, model, chemistry…" aria-label="Search the library">
+        <button type="button" class="act btn-primary lib-btn" id="btnLibAdd">+ Add battery</button>
+        <button type="button" class="act btn-ghost lib-btn" id="btnLibImport">Import library</button>
+        <button type="button" class="act btn-ghost lib-btn" id="btnLibExport">Export library</button>
+      </div>
       <div class="table-wrap">
-        <table class="bom" style="min-width:900px"><thead><tr>
-          <th>Step</th><th>Condition</th><th>Result</th><th class="num">Per UPS</th><th class="num">Per IT feeder</th>
-        </tr></thead><tbody id="aiBody"></tbody></table>
+        <table class="bom" style="min-width:1180px"><thead><tr>
+          <th>Manufacturer</th><th>Model</th><th>Variant</th><th>Chem.</th><th class="num">Cells</th><th class="num">V cell</th><th class="num">P mod. kW</th>
+          <th class="num">E rated / EOL kWh</th><th class="num">I rack A</th><th class="num">Mod./rack</th><th class="num">Max par.</th><th class="num">Ramp C</th><th>Type</th><th>Actions</th>
+        </tr></thead><tbody id="libBody"></tbody></table>
       </div>
-      <div class="card-hint" id="rampCross" style="margin-top:12px"></div>
+      <div class="card-hint">Default batteries are built into the tool and stay read-only — <b>Duplicate</b> one to change its values. Custom batteries are stored in this browser: use <b>Export library</b> to keep a copy or share it, <b>Import library</b> to load it on another PC. A saved project configuration also carries its battery.</div>
+      <p class="doc-ref" data-doc="library"></p>
     </section>
-    <!-- STEP 6 -->
-    <section class="panel pnl-c" id="pnlVerify">
-      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no" id="verifyStepNo">STEP 6</span><span>Engineering verification</span></span>
-        <span class="pnl-tools"><span id="overallChip"></span><span class="pnl-sum" id="sumVerify"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
-      <div class="check-grid" id="checkGrid"></div>
-      <div class="catalog-status" id="engineeringNote" style="margin:14px 0 0"></div>
+  </div>
+  <div class="v57-f"><button type="button" class="act btn-primary" data-v57close>Done</button></div>
+</div>
+<div class="v57-modal wide" id="mdlVCfg" role="dialog" aria-modal="true" aria-labelledby="mdlVCfgT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="step-no">STEP 1</span><span id="mdlVCfgT">Strings in parallel — back-up time</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+<section class="panel vrla-only" id="pnlVStep1">
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span class="step-no">STEP 1</span><span>Strings in parallel — back-up time</span></span>
+        <span class="pnl-tools"><span class="pnl-head-r" id="vS1Head"></span><span class="pnl-sum" id="sumVStep1"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="k">DC power</div><div class="v" id="vkPdc">—</div><div class="s">to the batteries</div></div>
+        <div class="kpi"><div class="k">Load per cell</div><div class="v" id="vkWreq">—</div><div class="s" id="vkWreqS"></div></div>
+        <div class="kpi"><div class="k">One string gives</div><div class="v" id="vkWt">—</div><div class="s" id="vkWtS"></div></div>
+        <div class="kpi hl"><div class="k">Strings</div><div class="v" id="vkStr">—</div><div class="s" id="vkStrS"></div></div>
+        <div class="kpi"><div class="k">BUT, new battery</div><div class="v" id="vkTB">—</div><div class="s">beginning of life</div></div>
+        <div class="kpi"><div class="k">BUT, end of life</div><div class="v" id="vkTE">—</div><div class="s" id="vkTES"></div></div>
+      </div>
+      <div class="v-split">
+        <figure class="v-chart" id="vChart"></figure>
+        <div class="v-cfg">
+          <div class="vc-head"><span class="vc-title">Configurations</span><button type="button" class="st-act" id="vCfgAuto" hidden>Back to recommended</button></div>
+          <div class="table-wrap"><table class="bom" style="min-width:640px"><thead><tr><th>Strings</th><th class="num">Blocks</th><th class="num">Weight</th><th class="num">New (min)</th><th class="num">End of life (min)</th><th class="num">I string</th><th>Result</th></tr></thead><tbody id="vCfgBody"></tbody></table></div>
+          <p class="vc-cap" style="margin:10px 0 0">Times in minutes. * = outside the datasheet range, extrapolated. I string = current of one string at the end voltage.</p>
+        </div>
+      </div>
+      <div class="card-hint" id="vStep1Note"></div>
+      <p class="doc-ref" data-doc="model"></p>
     </section>
-
-    <!-- the formulas are in the technical document Battery_Sizing_Mathematical_Model.pdf (link under Step 1 and Battery Sizing menu) and, with the numbers, in the PDF report -->
-
-    <!-- NOTES -->
-    <section class="panel pnl-c pnl-collapsed" id="pnlNotes">
+  </div>
+  <div class="v57-f"><button type="button" class="act btn-primary" data-v57close>Done</button></div>
+</div>
+<div class="v57-modal wide" id="mdlVEnd" role="dialog" aria-modal="true" aria-labelledby="mdlVEndT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="mdlVEndT">End voltage — chosen configuration</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+<section class="panel vrla-only" id="pnlVEnd">
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>End voltage — chosen configuration</span></span>
+        <span class="pnl-tools"><span class="pnl-head-r" id="vEndHead"></span><span class="pnl-sum" id="sumVEnd"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+      <div class="table-wrap"><table class="bom" style="min-width:760px"><thead><tr><th>End voltage</th><th class="num">String</th><th class="num">Strings needed</th><th>BUT of the chosen strings (new · end of life)</th><th class="num">End of life</th><th>Result</th></tr></thead><tbody id="vEndBody"></tbody></table></div>
+      <div class="card-hint">Same battery, blocks, temperature and ageing as above. Bars: back-up time of the <span id="vEndN">chosen</span> strings (light = new, dark = end of life), red line = required BUT. “Strings needed” is what each end voltage would require. Click a row to apply that end voltage — it is set in the UPS.</div>
+    </section>
+  </div>
+  <div class="v57-f"><button type="button" class="act btn-primary" data-v57close>Done</button></div>
+</div>
+<div class="v57-modal wide" id="mdlVSite" role="dialog" aria-modal="true" aria-labelledby="mdlVSiteT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="mdlVSiteT">Recharge · ventilation · service life</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+<section class="panel vrla-only" id="pnlVSite">
+      <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>Recharge · ventilation · service life<span id="vSiteN"></span></span></span>
+        <span class="pnl-tools"><span class="pnl-sum" id="sumVSite"></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
+      <div class="v-cards" id="vSite"></div>
+    </section>
+  </div>
+  <div class="v57-f"><button type="button" class="act btn-primary" data-v57close>Done</button></div>
+</div>
+<div class="v57-drawer " id="drwChecks" role="dialog" aria-modal="true" aria-labelledby="drwChecksT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="step-no" id="drwChecksStep">STEP 6</span><span id="drwChecksT">Engineering verification</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+    <div class="catalog-status" id="engineeringNote" style="margin:0 0 4px"></div>
+    <div class="seg" role="group" aria-label="Filter the checks" id="chkSeg"><button type="button" data-v57filter="all" aria-pressed="true">All</button><button type="button" data-v57filter="tight" aria-pressed="false">Tight</button><button type="button" data-v57filter="notes" aria-pressed="false">Notes and info</button><button type="button" data-v57filter="ok" aria-pressed="false">OK</button></div>
+    <div id="chkList" class="v57-list"></div>
+  </div>
+  
+</div>
+<div class="v57-drawer " id="drwSteps" role="dialog" aria-modal="true" aria-labelledby="drwStepsT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="drwStepsT">Calculation steps</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+    <div id="stepList" class="v57-list"></div>
+    <p class="doc-ref" data-doc="model"></p>
+  </div>
+  
+</div>
+<div class="v57-drawer " id="drwNotes" role="dialog" aria-modal="true" aria-labelledby="drwNotesT" hidden>
+  <div class="v57-h"><div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span id="drwNotesT">Assumptions to confirm</span></span></div><button type="button" class="v57-x" data-v57close aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="v57-b">
+<section class="panel" id="pnlNotes">
       <div class="panel-title"><span class="panel-title-left"><span class="dot"></span><span>Assumptions to confirm</span></span>
         <span class="pnl-tools"><span class="pnl-sum"><span class="ps-k">Open points of the current sizing</span></span><button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></span></div>
       <ul class="note-list" id="notesList"></ul>
       <p class="doc-ref" data-doc="assume"></p>
     </section>
-
-    <footer>Riello UPS · Pre-Sales Data Center Power · Battery sizing — engineering draft, verify against the manufacturer calculation before customer issue</footer>
   </div>
-</main>
+  
 </div>
 <input id="loadFile" type="file" accept="application/json" style="display:none">
 <input id="libFile" type="file" accept="application/json" style="display:none">
@@ -1077,7 +1297,7 @@ const WORKSANS_BOLD_B64 = 'AAEAAAAQAQAABAAAR0RFRgmmCYcAAJccAAAAXkdQT1PUJ1QsAACXf
 </script>
 <script>
 'use strict';
-const APP_VERSION = 'v5.6.1';
+const APP_VERSION = 'v5.7';
 // Technical documents (PDF) — on SharePoint, in the same folder as the DC Configurator manuals
 const DOCS_BASE = 'https://rielloups.sharepoint.com/sites/DCSales2/Shared%20Documents/03_Tools/PreSales_Execution/DEF/';
 const DOCS = {
@@ -1099,7 +1319,7 @@ const DEFAULT_LIBRARY = [
      maxChargeCurrent:'26 A (0–15 °C) · 104 A (15–45 °C) · 26 A (45–60 °C)', peakChargeCurrent:'122 A @ 5 s (25 °C)', maxDischargePower:'26.88 kW × n (0–65 °C)', peakDischargePower:'31.72 kW × n @ 5 s (25 °C)',
      cabinet:'12 modules: 63.8 kWh nominal, 329 kW max output, 537.6–662.4 V', dimensions:'600 × 1000 × 2000 mm', calendarLife:'15 years (25 °C ± 2 °C)', cycleLife:'1000 cycles, ≥ 80 % SOH @ 1C/6CP, 25 °C',
      life12:'Standard backup 77.6 % · 5 cycles/day 71 % · 10 cycles/day 69 %', opTemp:'0–40 °C', optTemp:'15–30 °C', humidity:'5–95 % RH, no condensation', altitude:'< 3000 m',
-     ip:'IP20', cooling:'Natural or optional air cooling', commUps:'Ethernet / RS485 / CAN2.0 / dry contact', commInternal:'CAN2.0', parallel:'Max 8 racks (Ampace declares up to 10)',
+     ip:'IP20', cooling:'Natural or optional air cooling', commUps:'Ethernet / RS485 / CAN2.0 / dry contact', commInternal:'CAN2.0', parallel:'Up to 12 racks in parallel per UPS (Riello design rule)',
      derivation:'4.193 kWh per module (derivation sheet)', certifications:'IEC62619, IEC62477, IEC62620, UL1973, UL9540A, ICC-ES AC156, EN61000-6-2 & EN61000-6-4, UN38.3, P1965, RoHS, REACH'}},
   {id:'ampace-pu200', manufacturer:'Ampace', model:'PU-200', variant:'10C', chemistry:'LFP',
    source:'Ampace configurator (Excel). Rated module energy, life table and parallel limit are not in the available documents — complete them from the datasheet (duplicate this battery to edit). Max charging current 1C from the Ampace AI-load slide.',
@@ -1774,7 +1994,7 @@ function calculateVrla(I){
   const nBad = V.checks.filter(c => c.st === 'bad').length, nWarn = V.checks.filter(c => c.st === 'warn').length;
   R.verdict = nBad ? 'bad' : nWarn ? 'warn' : 'ok';
   LAST = R;
-  renderVrla(R);
+  renderVrla(R); V57.render(R);
   scheduleAutosave(); hostSendState(); renderEmbedBar();
 }
 
@@ -1793,9 +2013,10 @@ function renderPendingVrla(I, missing, invalid){
   $('checkGrid').innerHTML = '<div class="empty-row">The verification runs when the sizing is complete.</div>';
   $('overallChip').innerHTML = ''; $('verifyStepNo').textContent = 'STEP 1';
   $('engineeringNote').className = 'catalog-status'; $('engineeringNote').textContent = 'Enter the project data to run the VRLA sizing.';
-  ['sumInputs','sumVStep1','sumVEnd','sumVSite','sumVAI','sumVerify'].forEach(id => $(id).innerHTML = '');
+  ['sumInputs','sumVStep1','sumVEnd','sumVSite','sumVAI','sumVerify'].forEach(id => { const e = $(id); if(e) e.innerHTML = ''; });
   $('notesList').innerHTML = '<li><span class="settings-note">The open points are listed when the sizing is complete.</span></li>';
   renderPipe(null, false);
+  V57.render(null);
 }
 
 function renderVrla(R){
@@ -1942,7 +2163,7 @@ function calculate(){
   if(ai && s1.rec) R.A = aiSizing(I, d, s1);
   if(ai) renderAiAuto(I, R.A && !R.A.error ? {A:R.A} : {});
   LAST = R;
-  renderStep1(R); renderAI(R); renderChecks(R); renderStatusBar(R); renderPipe(R); renderSummaries(R); renderNotes(R);
+  renderStep1(R); renderAI(R); renderChecks(R); renderStatusBar(R); renderPipe(R); renderSummaries(R); renderNotes(R); V57.render(R);
   scheduleAutosave(); hostSendState(); renderEmbedBar();
 }
 
@@ -1970,6 +2191,7 @@ function renderPending(I, d, missing, invalid){
   ['sumInputs','sumStep1','sumAI','sumVerify'].forEach(id => $(id).innerHTML = '');
   $('notesList').innerHTML = '<li><span class="settings-note">The open points are listed when the sizing is complete.</span></li>';
   renderPipe(null, I.mode === 'AI');
+  V57.render(null);
 }
 
 function renderStep1(R){
@@ -2046,6 +2268,7 @@ function renderAI(R){
     ['Step 3', 'UPS power modules — recharge of the ramp-down', `max(⌈${fmt(I.pLoadEff,0)} / ${fmt(I.upsMod,0)}⌉ = ${A.modLoad} ; ⌈${fmt(A.pDn,0)} kW / (${fmt(I.upsModIch,0)} A × ${fmt(A.vCh,0)} V)⌉ = ${A.modCh} ; load < ${AI_REF.ups.loadMax} %: ${A.mod66}) = ${A.nMod} needed — ${A.modGov} governs · ${A.nInst} installed${A.instDef ? ' (UPS rating)' : ''}: ramp-down up to ${fmt(A.rDnMax,0)} kW${A.instOK ? '' : ` — add ${A.modAdd}`}`, `${A.nMod} × ${fmt(I.upsMod,0)} kW`, `${A.nMod*nU} × ${fmt(I.upsMod,0)} kW`],
     ['Step 5', 'Sum: BUT with ageing + ramps + power smoothing', `${A.nCabBut} + ${A.nCabRamp} + ${A.nCabSm} (power smoothing not sized) = ${A.nCabMin} cabinets${A.aiChosen ? ` · ${A.nCab} chosen` : ''}`, `${A.nCab} × ${bb(A.mpr)}`, `${A.nFeeder} × ${bb(A.mpr)}`]
   ];
+  R.aiRows = rows;
   body.innerHTML = rows.map(r => `<tr><td><span class="step-no">${r[0].toUpperCase()}</span></td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td class="num">${esc(r[3])}</td><td class="num">${esc(r[4])}</td></tr>`).join('') +
     `<tr class="total"><td><span class="step-no">STEP 5</span></td><td>Total</td><td>${A.nCab} cabinets (${A.nCabBut} BUT with ageing + ${A.nCabRamp} for the ramps${A.aiChosen ? ` + ${A.nCab - A.nCabMin} above the minimum` : ''}) · ${A.nModTot} modules · ${fmt(A.eInst,0)} kWh rated · ${fmt(A.final.eol,1)} min EOL at full load · ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC</td><td class="num">${A.nCab} × ${esc(bb(A.mpr))}</td><td class="num">${A.nFeeder} × ${esc(bb(A.mpr))}</td></tr>`;
   $('rampCross').innerHTML = `<b>Ramp check.</b> The ${A.nCab} cabinets share the DC bus: the ramp-up takes ${fmt(A.pUp/A.eInst,2)}C of the ${fmt(I.cDis,1)}C allowed and the ramp-down ${fmt(A.pDn/A.eInst,2)}C of ${fmt(I.cCh,1)}C. Energy: ${fmt(A.eUp,2)} kWh discharged in the ramp-up, ${fmt(A.eDn,2)} kWh charged in the ramp-down; ${fmt(A.head,0)} kWh free above the ${AI_REF.soc} % SOC set-point. Ramp-down reachable: ${fmt(A.rDnMax,0)} kW with the ${A.nInst} UPS power modules installed (${fmt(I.upsModIch,0)} A each at ${fmt(A.vCh,0)} V), ${fmt(A.rDnBatt,0)} kW with the battery (${fmt(I.cCh,1)}C) — required ${fmt(I.pRampDn,0)} kW${A.instOK ? `, with the UPS load at ${fmt(A.loadDnPct*100,0)} % after the ramp-down` : `: ${A.nMod} power modules needed, add ${A.modAdd} or reduce the ramp-down`}.`;
@@ -4242,14 +4465,343 @@ if(EMBED){
   $('btnApplyHost').addEventListener('click', hostApply);
 }
 
+// ---------------------------------------------------------------- v5.7 (layout of the prototype): result view, windows, side panels, popovers
+const V57_INFO = {"model": ["Battery (library)", "Battery from the library. Today only the Ampace PU-100 is applicable to AI loads: the others size the standard backup (BUT) only."], "upsKva": ["UPS rated power (kVA)", "Apparent power used by the sizing."], "eff": ["UPS efficiency in battery mode (η)", "DC power to the batteries = load power / η."], "reqTime": ["Required autonomy", "Back-up time required at end of life (80 % state of health) and full load. For VRLA: the BUT asked of the strings."], "ramp": ["Ramp-up power", "Step up of the load, in % of the load power or as a fixed kW value. The battery delivers it while the grid follows."], "rampDn": ["Ramp-down power", "Step down of the load: it can differ from the ramp-up. The battery absorbs it through the UPS power modules. Empty = the ramp-up."], "rampT": ["Ramp-up time (s)", "Time the grid takes to follow the ramp-up; the battery covers the difference."], "rampDnT": ["Ramp-down time (s)", "Time the grid takes to follow the ramp-down. Empty = the ramp-up time."], "aiAge": ["Additional ageing (%)", "Added to the modules of the standard BUT for the AI cycling (Mirait: +15 %). AI sizing only; 0 = none. The standard BUT never includes it."], "upsModInst": ["UPS power modules installed", "Power modules installed in the UPS. Empty = the modules of the UPS rating. The tool gives the modules needed for the ramp-down entered and the ramp-down the installed modules can recharge."]};
+const V57 = (function(){
+  const collapsed = new Set();
+  let cur = null, popAnchor = null, openEl = null, lastFocus = null, chkFilter = 'all', stepOpen = 0;
+  const TOG = '<button type="button" class="pnl-tog" aria-label="Collapse / expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>';
+  const CHEV = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+  const TAG = {ok:'OK', warn:'NOTE', bad:'FAILED', info:'INFO'};
+  const ROLE = {but:'Standard BUT · ageing included', bk:'Standard BUT', ramp:'AI ramps', str:'VRLA string'};
+  const FILL = {but:'var(--but)', bk:'var(--but)', ramp:'var(--ramp)', str:'var(--str)'};
+  const cabSvg = role => `<svg width="40" height="60" viewBox="0 0 46 68" aria-hidden="true"><rect class="body" x="2" y="2" width="42" height="64" rx="7" style="fill:${FILL[role]}"/>${[12, 22, 32, 42].map(y => `<rect x="9" y="${y}" width="28" height="4" rx="2" fill="#fff" fill-opacity=".45"/>`).join('')}<circle cx="23" cy="56" r="3" fill="#9BE3B5"/></svg>`;
+  const strSvg = () => `<svg width="30" height="60" viewBox="0 0 30 68" aria-hidden="true">${[0, 1, 2, 3, 4, 5].map(i => `<rect class="body" x="3" y="${3 + i*11}" width="24" height="9" rx="2" style="fill:var(--str)"/><rect x="7" y="${5.5 + i*11}" width="5" height="2" rx="1" fill="#fff" fill-opacity=".6"/>`).join('')}</svg>`;
+  const sn = t => `<span class="step-no">${t}</span>`;
+  const kv = (k, v) => `<div class="kv"><span>${k}</span><b>${v}</b></div>`;
+  const ratio = (u, l) => l > 0 && isFinite(u) && isFinite(l) ? u/l : null;
+  const dyn = (key, left, right, body) => `<section class="panel pnl-c v57-dyn${collapsed.has(key) ? ' pnl-collapsed' : ''}" data-col="${key}"><div class="panel-title"><span class="panel-title-left">${left}</span><span class="pnl-tools">${right}${TOG}</span></div>${body}</section>`;
+  const barM = (fill, mark) => `<span class="v57-bar"><span style="width:${Math.max(1, Math.min(100, fill*100))}%; background:var(--but)"></span>${mark != null ? `<i style="left:${Math.max(0, Math.min(100, mark*100))}%"></i>` : ''}</span>`;
+  const barU = (u, bad) => u == null ? '' : `<span class="v57-bar"><span style="width:${Math.max(1.5, Math.min(100, u*100))}%; background:${bad || u > 1 + 1e-9 ? 'var(--bad-bar)' : u >= .85 ? 'var(--amber)' : 'var(--but)'}"></span></span>`;
+  const kpi = (key, k, v, bar, sub, cls = '') => key
+    ? `<button type="button" class="v57-kpi ${cls}" data-v57pop="${key}" aria-expanded="false"><span class="k">${k}<em>details</em></span><span class="v">${v}</span>${bar}<span class="s">${sub}</span></button>`
+    : `<div class="v57-kpi ${cls}"><span class="k">${k}</span><span class="v">${v}</span>${bar}<span class="s">${sub}</span></div>`;
+  const kpiDc = (key, vmin, vmax, I, sub) => {
+    const has = isFinite(I.upsVmin) && isFinite(I.upsVmax) && I.upsVmax > I.upsVmin;
+    const lo = Math.min(has ? I.upsVmin : vmin, vmin) - 40, hi = Math.max(has ? I.upsVmax : vmax, vmax) + 40, w = hi - lo, x = v => (v - lo)/w*100;
+    const bar = `<span class="v57-bar">${has ? `<span style="left:${x(I.upsVmin)}%; width:${x(I.upsVmax) - x(I.upsVmin)}%; background:var(--accent-soft)"></span>` : ''}<span style="left:${x(vmin)}%; width:${Math.max(1, x(vmax) - x(vmin))}%; background:var(--but)"></span></span>`;
+    return kpi(key, 'DC window', `${fmt(vmin,0)}–${fmt(vmax,0)} <small>V</small>`, bar, sub || (has ? `inside the UPS window ${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V` : 'UPS window not entered'));
+  };
+  const hero = (h1, b, sub) => `<div class="hero-h"><h1>${h1}</h1><div class="hero-side"><b>${b}</b><span>${sub}</span></div></div>`;
+  const legend = (items, note) => `<div class="v57-legend">${items.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join('')}${note ? `<span class="dim">${note}</span>` : ''}</div>`;
+  function isoRow(name, sub, groups, nums){
+    let k = 0;
+    const pics = groups.filter(g => g.n > 0).map((g, gi) => (gi ? '<span class="sep" aria-hidden="true"></span>' : '') + Array.from({length:g.n}, () => {
+      const i = k++, what = g.role === 'str' ? 'string' : 'cabinet';
+      return `<button type="button" class="pic" data-v57pop="pic" data-i="${i}" data-role="${g.role}" data-row="${esc(name)}" aria-expanded="false" aria-label="${esc(name)}, ${what} ${i + 1}: ${ROLE[g.role]}">${g.role === 'str' ? strSvg() : cabSvg(g.role)}</button>`;
+    }).join('')).join('');
+    return `<div class="iso-row" role="group" aria-label="${esc(name)}"><div class="iso-name"><b>${esc(name)}</b><span>${esc(sub)}</span></div><div class="pics">${pics}</div><div class="iso-num">${nums.map(([v, l, c]) => `<span><b${c ? ` style="color:${c}"` : ''}>${v}</b><span>${l}</span></span>`).join('')}</div></div>`;
+  }
+
+  // ---------- numbers behind the checks (bars of the verification)
+  function useOf(R, c){
+    if(!R) return null;
+    if(R.tech === 'VRLA'){ const V = R.V; return c.name === 'Back-up time, end of life' ? [V.tReq, V.R.tE] : null; }
+    const {I, d, s1, A} = R, alt = () => d.altitudeMax ? [I.altitude || 0, d.altitudeMax] : null;
+    if(I.mode === 'AI' && A && !A.error){
+      switch(c.name){
+        case 'Cabinets in parallel': return I.maxParallel ? [A.nCab, I.maxParallel] : null;
+        case 'Discharge power': return [Math.max(s1.pdc, A.pUp), A.nModTot*d.modulePower];
+        case 'Rack current at full load': return [A.final.current, A.final.lim];
+        case 'Ramp-up C-rate': return [A.pUp/A.eInst, I.cDis];
+        case 'Ramp-down charge acceptance': return [A.pDn, I.cCh*A.eInst];
+        case 'UPS power modules': return [I.pRampDn, A.rDnMax];
+        case `Autonomy at ${AI_REF.soc} % SOC`: return [I.reqTime, A.tSoc];
+        case 'Ramp-down headroom': return [A.eDn, A.head];
+        case 'Autonomy after AI cycling': return [I.reqTime, A.tSocAged];
+        case 'Altitude': return alt();
+      }
+      return null;
+    }
+    const r = s1 && s1.rec; if(!r) return null;
+    if(c.name === 'Backup time') return [I.reqTime, r.eol];
+    if(c.name === 'Discharge current') return [r.current, r.lim];
+    if(c.name === 'Altitude') return alt();
+    return null;
+  }
+  const uOf = (R, c) => { const x = useOf(R, c); return x ? ratio(x[0], x[1]) : null; };
+  function crow(R, c){
+    const u = uOf(R, c);
+    return `<div class="v57-crow"><span class="v57-tag ${c.st}">${TAG[c.st]}</span><span class="n">${esc(c.name)}</span><span class="b">${barU(u, c.st === 'bad')}</span><span class="val">${esc(c.title)}</span><span class="pc${u != null && u >= .85 ? ' tight' : ''}">${u == null ? '' : Math.round(u*100) + ' %'}</span></div>`;
+  }
+
+  // ---------- the page
+  function render(R){
+    closePop();
+    cur = R;
+    renderSide(R);
+    const vr = R ? R.tech === 'VRLA' : document.body.classList.contains('tech-vrla');
+    if(!R){
+      const ai = !vr && $('mode').value === 'AI';
+      $('resStep').textContent = ai ? 'STEPS 0 · 2 · 3 · 5' : 'STEP 1';
+      $('resTitle').textContent = vr ? 'Strings in parallel — back-up time' : ai ? 'Result — AI load per UPS' : 'Standard BUT — autonomy';
+      $('resStatus').innerHTML = '';
+      const bad = $('stDot2').classList.contains('err');
+      $('resBody').innerHTML = `<div class="v57-empty"><b>${esc($('stTitle2').textContent)}</b><span${bad ? ' style="color:var(--bad)"' : ''}>${esc($('stDetail2').textContent)}</span><span>The battery cabinets, the checks and the reports appear when all the data are entered.</span></div>`;
+      $('resKpis').innerHTML = ''; $('resTwo').innerHTML = '';
+      $('verSum').innerHTML = '<div class="empty-row">The verification runs when the sizing is complete.</div>';
+      $('btnAllChecks').hidden = true;
+      refreshOpen(); return;
+    }
+    const checks = R.checksShown || [], n = st => checks.filter(c => c.st === st).length, nBad = n('bad'), nWarn = n('warn');
+    const cls = nBad ? 'bad' : nWarn ? 'warn' : 'ok', txt = nBad ? `Not valid · ${nBad} failed` : nWarn ? `Valid · ${nWarn} note${nWarn > 1 ? 's' : ''}` : 'Valid';
+    $('resStatus').innerHTML = `<button type="button" class="v57-status ${cls}" data-v57="drwChecks">${txt} ${CHEV}</button>`;
+    if(vr) renderVrla57(R); else if(R.I.mode === 'AI' && R.A && !R.A.error) renderAi57(R); else renderLi57(R);
+    // verification: what needs attention and the tightest margins; all the checks in the side panel
+    const flagged = checks.filter(c => c.st === 'warn' || c.st === 'bad');
+    const tight = checks.map(c => ({c, u:uOf(R, c)})).filter(x => x.u != null && !flagged.includes(x.c)).sort((a, b) => b.u - a.u).slice(0, 2).map(x => x.c);
+    $('verSum').innerHTML = `<div class="v57-pills"><span class="v57-pill ok">${n('ok')} OK</span><span class="v57-pill warn">${nWarn} note${nWarn === 1 ? '' : 's'}</span><span class="v57-pill bad">${nBad} failed</span>${n('info') ? `<span class="v57-pill info">${n('info')} info</span>` : ''}</div>
+      <div>${flagged.concat(tight).map(c => crow(R, c)).join('')}</div>`;
+    $('btnAllChecks').hidden = false; $('btnAllChecks').textContent = `All ${checks.length} checks`;
+    refreshOpen();
+  }
+
+  function renderAi57(R){
+    const {I, d, s1, A} = R, nU = I.upsFeeder, lim = I.maxParallel || null, nRamp = A.nCab - A.nCabBut, but = A.but;
+    $('resStep').textContent = 'STEPS 0 · 2 · 3 · 5'; $('resTitle').textContent = 'Result — AI load per UPS';
+    const rows = Array.from({length: Math.min(nU, 4)}, (_, i) => isoRow(`UPS ${i + 1}`, `${A.nInst} × ${fmt(I.upsMod,0)} kW power modules`,
+      [{n:A.nCabBut, role:'but'}, {n:nRamp, role:'ramp'}], [[A.nCabBut, 'BUT', 'var(--but)'], ...(nRamp ? [[nRamp, 'ramps', 'var(--ramp-ink)']] : []), [fmt(A.eInst,0), 'kWh']])).join('')
+      + (nU > 4 ? `<div class="iso-row"><div class="iso-name"><b>+ ${nU - 4} UPS</b><span>the same</span></div></div>` : '');
+    const ch = [0, 1, 2, 3].map(k => A.nCabMin + k).map(k => `<button type="button" data-aicab="${k}" aria-pressed="${k === A.nCab}" class="${lim && k > lim ? 'over' : ''}" title="${k} cabinets per UPS · ${k*nU} per IT feeder${lim && k > lim ? ` — above the ${lim} in parallel` : ''}">${k}</button>`).join('');
+    $('resBody').innerHTML = hero(`${A.nCab} × ${esc(d.name)} <span>${esc(rkTag(d, A.mpr))}</span>`, `${A.nFeeder} <small>per IT feeder</small>`, `${nU} UPS · ${A.nModTot*nU} modules · ${fmt(A.eInst*nU,0)} kWh rated`)
+      + legend([['var(--but)', 'Standard BUT · ageing included'], ...(nRamp ? [['var(--ramp)', 'AI ramps']] : [])], `one pictogram = one cabinet of ${rkMod(d, A.mpr)} · ${fmt(A.eCab,1)} kWh`)
+      + `<div class="iso-list">${rows}<div class="iso-total"><b>${A.nFeeder} cabinets</b><span>= ${A.nModTot*nU} modules = ${fmt(A.eInst*nU,0)} kWh rated per IT feeder</span></div></div>`
+      + `<div class="choose"><span class="flabel" id="lCab57">Cabinets per UPS — from the minimum up</span><div class="seg" role="group" aria-labelledby="lCab57">${ch}</div><small>${A.aiChosen ? `minimum ${A.nCabMin}, ${A.nCab} chosen` : `minimum ${A.nCabMin}`}${lim ? ` · max ${lim} in parallel` : ''}</small></div>`;
+    const sc = Math.max(A.tFull, I.reqTime)*1.2;
+    $('resKpis').innerHTML = kpi('kpi-eol', 'EOL autonomy', `${fmt(A.tFull,1)} <small>min</small>`, barM(A.tFull/sc, I.reqTime/sc), `required ${fmt(I.reqTime,1)} min · ${fmt(A.tSoc,1)} min from ${AI_REF.soc} % SOC`)
+      + kpi('kpi-energy', 'Installed energy', `${fmt(A.eInst,0)} <small>kWh</small>`, barM(A.eEol/A.eInst), `${fmt(A.eEol,0)} kWh usable at end of life`)
+      + kpiDc('kpi-dc', A.final.vmin, A.final.vmax, I)
+      + kpi('kpi-pm', 'UPS power modules', `${A.nMod} <small>needed · ${A.nInst} installed</small>`, barU(ratio(I.pRampDn, A.rDnMax), !A.instOK), `ramp-down ${fmt(I.pRampDn,0)} of ${fmt(A.rDnMax,0)} kW reachable${A.instOK ? '' : ` · add ${A.modAdd}`}`, A.instOK ? '' : 'warn');
+    $('resTwo').innerHTML = dyn('but', `${sn('STEP 1 · 2')}<span>Standard BUT</span>`, '<button type="button" class="st-act" data-v57="mdlConfig">Change</button>',
+        `<span class="v57-big">${rkCfg(d, but)} <small>${d.rackS ? 'racks' : 'modules'} · ${s1.chosen ? 'chosen' : 'minimum'}</small></span>
+        <div class="v57-mini"><div><span>Autonomy at EOL</span><b>${fmt(but.eol,2)} min</b><small>${but.total} modules · ${fmt(but.current,0)} A per rack</small></div>
+        <div class="alt"><span>With +${agePct(I)} % ageing</span><b>${A.nCabBut} cabinets</b><small>${but.total} → ${A.nModAge} modules</small></div></div>`)
+      + dyn('ramp', `${sn('STEP 3')}<span>AI ramps</span>`, '<button type="button" class="st-act" data-v57="mdlProfile">Load profile</button><button type="button" class="st-act" data-v57pop="rampcheck" aria-expanded="false">Ramp check</button>',
+        `<span class="v57-big">${fmt(I.pRampUp,0)} / ${fmt(I.pRampDn,0)} kW <small>up / down · ${A.gov === 'up' ? 'ramp-up' : 'ramp-down'} governs · ${A.nCabRamp} cabinets</small></span>
+        <div class="v57-mini"><div><span>Ramp-up · discharge</span><b>${fmt(A.eUp,2)} kWh</b><small>${fmt(A.pUp,0)} kW in ${fmt(I.rampUpT,0)} s · ${fmt(A.pUp/A.eInst,2)}C of ${fmt(I.cDis,1)}C</small></div>
+        <div class="alt"><span>Ramp-down · charge</span><b>${fmt(A.eDn,2)} kWh</b><small>${fmt(A.pDn,0)} kW in ${fmt(I.rampDnT,0)} s · ${fmt(A.pDn/A.eInst,2)}C of ${fmt(I.cCh,1)}C</small></div>
+        <button type="button" class="wide${A.instOK ? '' : ' warn'}" data-v57pop="kpi-pm" aria-expanded="false"><span>UPS power modules — ramp-down</span><b>${A.nMod} needed · ${A.nInst} installed${A.instOK ? '' : ` · add ${A.modAdd}`}</b><small>with ${A.nInst} the ramp-down reaches ${fmt(A.rDnMax,0)} kW (${fmt(A.rDnMax/I.pLoadEff*100,0)} % of the load) · required ${fmt(I.pRampDn,0)} kW</small></button></div>`);
+  }
+
+  function renderLi57(R){
+    const {I, d, s1, A} = R, r = s1.rec;
+    $('resStep').textContent = 'STEP 1'; $('resTitle').textContent = 'Standard BUT — autonomy';
+    const err = I.mode === 'AI' && A && A.error ? `<div class="v57-err">AI sizing not available: ${esc(A.error)}</div>` : '';
+    $('resTwo').innerHTML = '';
+    if(!r){
+      $('resBody').innerHTML = `${err}<div class="v57-err">No valid configuration: review the UPS DC window, the current limit or the battery.</div><div class="choose"><button type="button" class="st-act" data-v57="mdlConfig">Configuration matrix</button><button type="button" class="st-act" data-v57="mdlAdvanced">Advanced settings</button></div>`;
+      $('resKpis').innerHTML = ''; return;
+    }
+    const kWh = d.ratedEnergy > 0 ? r.total*d.ratedEnergy : null;
+    $('resBody').innerHTML = err + hero(`${r.racks} × ${esc(d.name)} <span>${esc(rkTag(d, r.mpr))}</span>`, `${r.total} <small>modules per UPS</small>`, `${s1.chosen ? 'chosen' : 'minimum'} configuration${kWh ? ` · ${fmt(kWh,0)} kWh rated` : ''}`)
+      + legend([['var(--but)', 'Standard BUT']], `one pictogram = one rack of ${rkMod(d, r.mpr)}`)
+      + `<div class="iso-list">${isoRow('Per UPS', d.method === 'mt' ? `EOL = ${mtLifeTxt(I)}` : `${fmt(s1.pdc,1)} kW DC · ${fmt(I.reqTime,1)} min EOL`, [{n:r.racks, role:'bk'}], [[r.racks, 'racks', 'var(--but)'], kWh ? [fmt(kWh,0), 'kWh'] : [r.total, 'modules']])}</div>`
+      + `<div class="choose"><button type="button" class="st-act" data-v57="mdlConfig">Change configuration</button>${s1.chosen ? '<button type="button" class="link-btn" data-v57butauto>Back to the minimum</button>' : ''}<small>${s1.valid.length} valid configurations · minimum ${s1.min ? rkCfg(d, s1.min) : '—'} · ${s1.nmin} modules for the energy</small></div>`;
+    const sc = Math.max(r.eol, I.reqTime)*1.2;
+    $('resKpis').innerHTML = kpi('kpi-bk', 'EOL autonomy', `${fmt(r.eol,2)} <small>min</small>`, barM(r.eol/sc, I.reqTime/sc), `required ${fmt(I.reqTime,1)} min${d.method === 'mt' ? ` · ${mtLifeTxt(I)}` : ''}`)
+      + kpi(null, 'BOL autonomy', `${fmt(r.bol,2)} <small>min</small>`, '', 'new battery')
+      + kpi('kpi-cur', 'Rack current', `${fmt(r.current,0)} <small>A</small>`, barU(ratio(r.current, r.lim)), `limit ${r.lim} A per rack`)
+      + kpiDc('kpi-dc', r.vmin, r.vmax, I);
+  }
+
+  function renderVrla57(R){
+    const {I, V} = R, S = V.R, vb = V.vb, st = V.site;
+    $('resStep').textContent = 'STEP 1'; $('resTitle').textContent = 'Strings in parallel — back-up time';
+    const lo = Math.max(1, Math.min(V.nReq - 1, V.N)), hi = Math.max(V.nReq + 3, V.N), ch = [];
+    for(let k = lo; k <= hi; k++){ const r = V.rows.find(x => x.N === k); ch.push(`<button type="button" data-vstr="${k}" aria-pressed="${k === V.N}" class="${r && !r.okE ? 'short' : ''}" title="${k} strings${r ? `: ${vMin(r.tE, r.xE)} min at end of life` : ''}">${k}</button>`); }
+    $('resBody').innerHTML = hero(`${V.N} <span>strings ×</span> ${V.blocks} <span>blocks</span>`, `${fmt(S.blocks,0)} <small>blocks per UPS</small>`, `${esc(vBattName(vb))} · ${vb.vBlock} V · ${vKg(S.kg)}`)
+      + legend([['var(--str)', `String of ${V.blocks} × ${vb.vBlock} V blocks`]], 'one pictogram = one string in parallel')
+      + `<div class="iso-list">${isoRow('Per UPS', `${fmt(V.vEnd,0)} V end of discharge · ${V.vf.toFixed(2)} V/cell`, [{n:V.N, role:'str'}], [[V.N, 'strings', 'var(--str)'], [vMin(S.tE, S.xE), 'min EOL'], [vMin(S.tB, S.xB), 'min new']])}</div>`
+      + `<div class="choose"><span class="flabel" id="lStr57">Strings in parallel</span><div class="seg" role="group" aria-labelledby="lStr57">${ch.join('')}</div><small>recommended ${V.nReq}${V.manual ? `, ${V.N} chosen` : ''}</small>${V.manual ? '<button type="button" class="link-btn" data-v57vauto>Back to recommended</button>' : ''}</div>`;
+    const sc = Math.max(S.tE, V.tReq)*1.2;
+    const has = !I._empty.has('upsVmin') && !I._empty.has('upsVmax');
+    $('resKpis').innerHTML = kpi('kpi-veol', 'BUT, end of life', `${vMin(S.tE, S.xE)} <small>min</small>`, barM(S.tE/sc, V.tReq/sc), `required ${fmt(V.tReq,1)} min · ${S.okE ? 'covered' : 'short'}`, S.okE ? '' : 'warn')
+      + kpi(null, 'BUT, new battery', `${vMin(S.tB, S.xB)} <small>min</small>`, '', 'beginning of life')
+      + kpi(null, 'Current per string', `${fmt(S.I,0)} <small>A</small>`, '', `at ${V.vf.toFixed(2)} V/cell · for cables and protections`)
+      + kpiDc('kpi-vdc', V.vEnd, V.vBoost, has ? I : {upsVmin:NaN, upsVmax:NaN}, `end ${fmt(V.vEnd,0)} · float ${fmt(V.vFloat,0)} · boost ${fmt(V.vBoost,0)} V`);
+    $('resTwo').innerHTML = dyn('vstr', `${sn('STEP 1')}<span>Strings</span>`, '<button type="button" class="st-act" data-v57="mdlVCfg">Change</button>',
+        `<span class="v57-big">${V.N} × ${V.blocks} <small>blocks · ${V.manual ? 'chosen' : 'recommended'}</small></span>
+        <div class="v57-mini"><div><span>Load per cell</span><b>${fmt(V.wreq,0)} W</b><small>${[V.kT > 1 ? 'temperature' : '', V.kAge > 1 ? 'ageing' : '', V.km > 1 ? 'margin' : ''].filter(Boolean).join(', ') || 'no factors'} included</small></div>
+        <div class="alt"><span>One string gives</span><b>${fmt(V.wt,0)} W/cell</b><small>${fmt(V.tReq,1)} min to ${V.eod} V${V.outRange ? ' (extrapolated)' : ''}</small></div></div>`)
+      + dyn('vsite', `<span class="dot"></span><span>End voltage · site</span>`, '<button type="button" class="st-act" data-v57="mdlVEnd">End voltage</button><button type="button" class="st-act" data-v57="mdlVSite">Recharge &amp; site</button>',
+        `<span class="v57-big">${V.vf.toFixed(2)} V/cell <small>${fmt(V.vEnd,1)} V at the end of discharge</small></span>
+        <div class="v57-mini"><div><span>Recharge</span><b>${isFinite(st.tRec) ? `≈ ${fmt(st.tRec,1)} h` : 'n/a'}</b><small>${isFinite(st.ich) ? `${fmt(st.ich,0)} A at 0.1 C10` : 'no C10 in the datasheet'}</small></div>
+        <div class="alt"><span>Ventilation, boost</span><b>${isFinite(st.qb) ? `${fmt(st.qb,1)} m³/h` : 'n/a'}</b><small>IEC 62485-2 · ${fmt(st.cells,0)} cells</small></div>
+        <button type="button" class="wide" data-v57="mdlVSite"><span>Service life</span><b>${fmt(st.lifeNow,1)} years at ${fmt(st.temp,0)} °C</b><small>${fmt(st.life,0)} years of design life at 20 °C</small></button></div>`);
+  }
+
+  // ---------- left panel: rack, advanced settings, project data
+  function renderSide(R){
+    const val = id => { const e = $(id); if(!e) return ''; const v = String(e.value).trim(); return v || String(e.placeholder || '').replace(/^e\.g\.\s*/i, '').replace(/^=.*$/, '').trim(); };
+    const rk = AI_RACKS[$('aiRack').value] || AI_RACKS.GB300;
+    $('rackPickName').textContent = rk.name; $('rackPickSub').textContent = $('aiRacks').value || '—';
+    const vr = document.body.classList.contains('tech-vrla'), ai = !vr && !document.body.classList.contains('mode-backup');
+    const rows = [['UPS DC window', `${val('upsVmin') || '—'}–${val('upsVmax') || '—'} V`], ['PF · altitude', `${val('pf') || '—'} · ${val('altitude') || '0'} m`]];
+    if(!vr) rows.push(['3-wire · rack rule', `${$('threeWire').value === 'YES' ? 'Yes' : 'No'} · ${$('rackRule').value === 'EI' ? 'energy + current' : 'energy only'}`], ['Module EOL energy', $('emod').value ? `${$('emod').value} kWh` : 'automatic']);
+    if(ai) rows.push(['UPS power module', `${val('upsMod') || '67'} kW · ${val('upsModIch') || '30'} A of charge`]);
+    $('advSum').innerHTML = rows.map(([k, v]) => `<div class="adv-row"><span>${k}</span><b>${esc(v)}</b></div>`).join('');
+    const p = k => $(k).value.trim();
+    $('projSum').innerHTML = [['Customer · project', [p('rpCustomer'), p('rpProject')].filter(Boolean).join(' · ') || '—'], ['Offer ref. · revision', `${p('rpRef') || '—'} · R${(p('rpRev') || '01').replace(/[^a-z0-9]+/gi, '')}`], ['SharePoint', $('spLinkTitle').textContent || '—']]
+      .map(([k, v]) => `<div class="adv-row"><span>${k}</span><b>${esc(v)}</b></div>`).join('');
+    const A = R && !R.tech && R.A && !R.A.error ? R.A : null, note = $('upsModInstNote');
+    if(A && note){ note.textContent = `${A.nMod} needed · ramp-down up to ${fmt(A.rDnMax,0)} kW${A.instOK ? '' : ` · add ${A.modAdd}`}`; note.style.color = A.instOK ? '' : 'var(--note)'; }
+    else if(note) note.style.color = '';
+  }
+
+  // ---------- popovers
+  function popHtml(key, el){
+    if(key === 'info'){ const t = V57_INFO[el.dataset.v57info]; return t ? `<h4>${esc(t[0])}</h4><span>${esc(t[1])}</span>` : ''; }
+    const R = cur; if(!R) return '';
+    if(key === 'pic') return picPop(R, el);
+    if(R.tech === 'VRLA'){
+      const V = R.V, S = V.R;
+      if(key === 'kpi-veol') return `<h4>Back-up time</h4>${kv('End of life (80 % capacity)', `${vMin(S.tE, S.xE)} min`)}${kv('New battery', `${vMin(S.tB, S.xB)} min`)}${kv('Required BUT', `${fmt(V.tReq,1)} min`)}${kv('Load per cell', `${fmt(V.wreq,0)} W`)}${kv('One string gives', `${fmt(V.wt,0)} W/cell`)}${V.outRange ? '<span>Outside the datasheet range: extrapolated.</span>' : ''}`;
+      if(key === 'kpi-vdc') return `<h4>DC window</h4>${kv('End of discharge', `${fmt(V.vEnd,1)} V · ${V.vf.toFixed(2)} V/cell`)}${kv('Float', `${fmt(V.vFloat,0)} V`)}${kv('Boost', `${fmt(V.vBoost,0)} V`)}${kv('UPS window', R.I._empty.has('upsVmin') || R.I._empty.has('upsVmax') ? 'not entered' : `${fmt(R.I.upsVmin,0)}–${fmt(R.I.upsVmax,0)} V`)}`;
+      return '';
+    }
+    const {I, d, s1, A} = R, r = s1.rec;
+    if(key === 'rampcheck') return `<h4>Ramp check</h4><span>${$('rampCross').innerHTML.replace(/^<b>Ramp check\.<\/b>\s*/, '')}</span>`;
+    if(key === 'kpi-eol') return `<h4>Autonomy</h4>${kv('Full load, all cabinets (EOL)', `${fmt(A.tFull,1)} min`)}${kv(`From the ${AI_REF.soc} % SOC set-point`, `${fmt(A.tSoc,1)} min`)}${A.lifeOK ? kv('After AI cycling', `${fmt(A.tSocAged,1)} min`) : ''}${kv('Required at end of life', `${fmt(I.reqTime,1)} min`)}`;
+    if(key === 'kpi-energy') return `<h4>Energy</h4>${kv('Modules', `${A.nModTot} × ${fmt(I.eRated,3)} kWh`)}${kv('Rated', `${fmt(A.eInst,0)} kWh`)}${kv('Usable at end of life', `${fmt(A.eEol,0)} kWh`)}${kv(`Free above ${AI_REF.soc} % SOC`, `${fmt(A.head,0)} kWh`)}${kv('Backup need', `${fmt(s1.pdc*I.reqTime/60,1)} kWh`)}`;
+    if(key === 'kpi-dc'){ const c = A && !A.error && I.mode === 'AI' ? A.final : r; const has = isFinite(I.upsVmin) && isFinite(I.upsVmax);
+      return `<h4>DC window</h4>${kv('String', `${fmt(c.vmin,1)}–${fmt(c.vmax,1)} V`)}${kv('UPS window', has ? `${fmt(I.upsVmin,0)}–${fmt(I.upsVmax,0)} V` : 'not entered')}${has ? kv('Margin to the minimum', `${c.vmin - I.upsVmin >= 0 ? '+' : ''}${fmt(c.vmin - I.upsVmin,1)} V`) + kv('Margin to the maximum', `${I.upsVmax - c.vmax >= 0 ? '+' : ''}${fmt(I.upsVmax - c.vmax,1)} V`) : ''}${A && !A.error && I.mode === 'AI' ? kv('Nominal (recharge)', `${fmt(A.vCh,1)} V`) : ''}`; }
+    if(key === 'kpi-pm') return `<h4>UPS power modules</h4><span>Needed for the ramp-down of ${fmt(I.pRampDn,0)} kW (${fmt(A.pDn,0)} kW at the battery): the ${A.modGov} governs.</span>${kv('Full load', A.modLoad)}${kv('Ramp-down recharge', A.modCh)}${kv(`Load below ${AI_REF.ups.loadMax} %`, A.mod66)}${kv('<b>Needed</b>', `<b>${A.nMod}</b>`)}${kv(`Installed${A.instDef ? ' (UPS rating)' : ''}`, `${A.nInst}${A.instOK ? '' : ` · add ${A.modAdd}`}`)}${kv('Charge with the installed', `${fmt(A.pChInst,0)} kW at ${fmt(A.vCh,0)} V`)}${kv('Ramp-down reachable', `${fmt(A.rDnMax,0)} kW at the load`)}${kv('UPS load after the ramp-down', `${fmt(A.loadDnPct*100,0)} %`)}`;
+    if(key === 'kpi-bk') return `<h4>Autonomy</h4>${kv('End of life', `${fmt(r.eol,2)} min`)}${kv('New battery', `${fmt(r.bol,2)} min`)}${kv('Required', `${fmt(I.reqTime,1)} min`)}${kv('DC power', `${fmt(s1.pdc,1)} kW`)}${r.mt && r.mt.life ? MT.years.map((y, i) => r.mt.life[i] ? kv(`After ${fmt(y, y % 1 ? 1 : 0)} years`, `${fmt(r.mt.life[i],2)} min`) : '').join('') : ''}`;
+    if(key === 'kpi-cur') return `<h4>Rack current</h4>${kv('At the minimum cell voltage', `${fmt(r.current,1)} A`)}${kv('Limit per rack', `${r.lim} A`)}${kv('Racks sharing', `${fmt(s1.pdc,1)} kW`)}${kv('Rack count rule', I.rackRule === 'EI' ? 'energy + current' : 'energy only')}`;
+    return '';
+  }
+  function picPop(R, el){
+    const role = el.dataset.role, i = +el.dataset.i, row = el.dataset.row, lg = `<span class="lg"><i style="background:${FILL[role]}"></i>${ROLE[role]}</span>`;
+    if(R.tech === 'VRLA'){ const V = R.V, vb = V.vb, S = V.R;
+      return `${lg}<h4>${esc(row)} · string ${i + 1} of ${V.N}</h4>${kv('Blocks', `${V.blocks} × ${esc(vb.model)} · ${vb.vBlock} V`)}${kv('Voltage', `${fmt(V.vEnd,0)} end · ${fmt(V.vFloat,0)} float · ${fmt(V.vBoost,0)} boost V`)}${kv('Current, end of discharge', `${fmt(S.I,0)} A`)}${isFinite(vb.kg) && vb.kg ? kv('Weight', `${fmt(V.blocks*vb.kg,0)} kg`) : ''}${kv('Share of the load', `${fmt(V.pdc/V.N,1)} kW DC`)}`; }
+    const {I, d, s1, A} = R, ai = I.mode === 'AI' && A && !A.error, c = ai ? A.final : s1.rec, n = ai ? A.nCab : c.racks;
+    const txt = role === 'ramp' ? 'Covers the ramp-up and the ramp-down on the same DC bus.' : `Backup for ${fmt(I.reqTime,1)} min at end of life${ai ? `, the +${agePct(I)} % additional ageing included` : ''}.`;
+    return `${lg}<h4>${esc(row)} · ${d.rackS ? 'rack' : 'cabinet'} ${i + 1} of ${n}</h4><span>${txt}</span>${kv('Modules', d.rackS ? rkMod(d, c.mpr) : `${c.mpr} × ${esc(d.name)}`)}${d.ratedEnergy > 0 ? kv('Rated energy', `${fmt(c.mpr*d.ratedEnergy,1)} kWh`) : ''}${kv('String', `${fmt(c.vmin,1)}–${fmt(c.vmax,1)} V`)}${kv('Current at full load', `${fmt(c.current,0)} A of ${c.lim} A`)}${kv('Share at full load', `${fmt(s1.pdc/n,0)} kW`)}`;
+  }
+  function openPop(anchor, html, w = 320){
+    closePop(); if(!html) return;
+    const p = $('v57Pop'); p.innerHTML = html; p.hidden = false; p.style.width = w + 'px';
+    const r = anchor.getBoundingClientRect();
+    let left = Math.min(window.innerWidth - w - 12, Math.max(12, r.left + r.width/2 - w/2)), top = r.bottom + 8;
+    if(top + p.offsetHeight > window.innerHeight - 12) top = Math.max(12, r.top - p.offsetHeight - 8);
+    p.style.left = left + 'px'; p.style.top = top + 'px';
+    popAnchor = anchor; anchor.setAttribute('aria-expanded', 'true');
+  }
+  function closePop(){ if(popAnchor) popAnchor.setAttribute('aria-expanded', 'false'); popAnchor = null; const p = $('v57Pop'); if(p) p.hidden = true; }
+
+  // ---------- side panels: checks, steps
+  function renderChecksList(){
+    const R = cur, el = $('chkList');
+    document.querySelectorAll('#chkSeg [data-v57filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v57filter === chkFilter)));
+    $('drwChecksStep').textContent = $('verifyStepNo').textContent;
+    if(!R){ $('drwChecksT').textContent = 'Engineering verification'; el.innerHTML = '<div class="empty-row">The verification runs when the sizing is complete.</div>'; return; }
+    const checks = R.checksShown || [];
+    $('drwChecksT').textContent = `Engineering verification · ${checks.length} checks`;
+    const list = checks.filter(c => { const u = uOf(R, c); return chkFilter === 'all' || (chkFilter === 'tight' && u != null && u >= .85) || (chkFilter === 'notes' && c.st !== 'ok') || (chkFilter === 'ok' && c.st === 'ok'); });
+    el.innerHTML = list.map(c => { const u = uOf(R, c); return `<div class="v57-note"><div class="hd"><span class="v57-tag ${c.st}">${TAG[c.st]}</span><b>${esc(c.name)}</b><span class="val">${esc(c.title)}</span></div>${barU(u, c.st === 'bad')}<p>${esc(c.k)} · ${esc(c.detail)}</p></div>`; }).join('') || '<div class="empty-row">No check in this filter.</div>';
+  }
+  function stepsOf(R){
+    if(!R) return [];
+    const ok = (R.checksShown || []).filter(c => c.st === 'ok').length, nC = (R.checksShown || []).length;
+    if(R.tech === 'VRLA'){
+      const V = R.V, vb = V.vb, st = V.site;
+      return [
+        ['STEP 1', 'DC power and load per cell', `${fmt(V.wreq,0)} W/cell`, `${fmt(V.pdc,1)} kW DC to the batteries · ${V.n} cells per string · temperature ×${fmt(V.kT,3)}, ageing ×${fmt(V.kAge,2)}, margin ×${fmt(V.km,2)}.`],
+        ['STEP 1', 'One string gives', `${fmt(V.wt,0)} W/cell`, `${esc(vBattName(vb))}, constant power table: ${fmt(V.tReq,1)} min to ${V.eod} V/cell${V.outRange ? ' (outside the datasheet range: extrapolated)' : ''}.`],
+        ['STEP 1', 'Strings in parallel', `${V.N} × ${V.blocks}`, $('vStep1Note').innerHTML],
+        ['', 'End voltage', `${V.vf.toFixed(2)} V/cell`, `${fmt(V.vEnd,1)} V at the end of discharge · float ${fmt(V.vFloat,0)} V · boost ${fmt(V.vBoost,0)} V. Other end voltages: window “End voltage”.`],
+        ['', 'Recharge · ventilation · life', isFinite(st.tRec) ? `≈ ${fmt(st.tRec,1)} h` : 'n/a', `Recharge ${isFinite(st.tRec) ? `≈ ${fmt(st.tRec,1)} h at 0.1 C10` : 'not computed (no C10)'} · ventilation ${isFinite(st.qb) ? `${fmt(st.qb,1)} m³/h in boost` : 'not computed'} · service life ${fmt(st.lifeNow,1)} years at ${fmt(st.temp,0)} °C.`],
+        ['STEP 1', 'Verification', `${ok} / ${nC} OK`, 'Back-up time at end of life, UPS DC window, current per string, room temperature, ventilation and altitude.']];
+    }
+    const {I, d, s1, A} = R;
+    if(I.mode === 'AI' && A && !A.error && R.aiRows) return R.aiRows.map(r => [r[0].toUpperCase(), r[1], r[3] !== '—' ? r[3] : '', `${esc(r[2])}${r[4] && r[4] !== '—' ? `<br><b>Per IT feeder:</b> ${esc(r[4])}` : ''}`])
+      .concat([['STEP 6', 'Verification', `${ok} / ${nC} OK`, 'Voltage, power, current, C-rates, UPS power modules, autonomy at 80 % SOC, ramp-down headroom and life.']]);
+    const r = s1.rec;
+    return [
+      ['STEP 1', 'Energy', `${s1.nmin} modules`, `${fmt(I.reqTime,1)} min at ${fmt(s1.pdc,1)} kW DC (${fmt(I.pLoadEff,0)} kW / η ${fmt(I.eff,3)}), at end of life.`],
+      ['STEP 1', 'Configuration', r ? rkCfg(d, r) : '—', `${$('butMinNote').innerHTML}<br>${$('step1Note').innerHTML}`],
+      ['STEP 1', 'Verification', `${ok} / ${nC} OK`, 'Voltage window, backup time, discharge current, 3-wire and altitude.']];
+  }
+  function renderSteps(){
+    const R = cur, st = stepsOf(R);
+    const vr = R && R.tech === 'VRLA', ai = R && !vr && R.I.mode === 'AI' && R.A && !R.A.error;
+    $('drwStepsT').textContent = vr ? 'VRLA strings — calculation steps' : ai ? 'AI load sizing — calculation steps' : 'Standard backup — calculation steps';
+    $('stepList').innerHTML = st.length ? st.map(([n, t, r, b], i) => `<div class="v57-step${stepOpen === i ? ' open' : ''}"><button type="button" data-v57step="${i}" aria-expanded="${stepOpen === i}">${n ? sn(n) : '<span class="dot"></span>'}<span class="t">${esc(t)}</span><span class="r">${esc(r)}</span></button><div class="body">${b}</div></div>`).join('')
+      : '<div class="empty-row">The steps appear when the sizing is complete.</div>';
+  }
+  function refreshOpen(){ if(!openEl) return; if(openEl.id === 'drwChecks') renderChecksList(); if(openEl.id === 'drwSteps') renderSteps(); }
+
+  // ---------- windows
+  function open(id){
+    const el = $(id); if(!el) return;
+    closePop();
+    if(openEl && openEl !== el) openEl.hidden = true;
+    if(!openEl) lastFocus = document.activeElement;
+    openEl = el; el.hidden = false; $('v57Scrim').hidden = false;
+    if(id === 'drwChecks') renderChecksList();
+    if(id === 'drwSteps') renderSteps();
+    if(id === 'mdlLibrary') renderLibrary();
+    const f = el.querySelector('.v57-b input:not([readonly]):not([type=hidden]):not([type=search]), .v57-b select') || el.querySelector('.v57-x');
+    if(f && f.offsetParent !== null) f.focus({preventScroll:true}); else el.querySelector('.v57-x').focus({preventScroll:true});
+  }
+  function close(){
+    if(!openEl) return;
+    openEl.hidden = true; openEl = null; $('v57Scrim').hidden = true; closePop();
+    if(lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus({preventScroll:true});
+    lastFocus = null;
+  }
+  const overlayOpen = () => [...document.querySelectorAll('.settings-overlay')].some(o => o.style.display !== 'none' && getComputedStyle(o).display !== 'none');
+  function collapseAll(c){ document.querySelectorAll('#v57Main .v57-dyn').forEach(p => { p.classList.toggle('pnl-collapsed', c); c ? collapsed.add(p.dataset.col) : collapsed.delete(p.dataset.col); }); }
+
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-v57], [data-v57close], [data-v57pop], [data-v57info], [data-v57filter], [data-v57step], [data-v57butauto], [data-v57vauto], #v57Main [data-aicab], #v57Main [data-vstr]');
+    if(!t){
+      if(!e.target.closest('#v57Pop')) closePop();
+      const title = e.target.closest('#v57Main .v57-dyn > .panel-title');
+      if(title && (!e.target.closest('button') || e.target.closest('.pnl-tog'))){ const p = title.parentElement, c = !p.classList.contains('pnl-collapsed'); p.classList.toggle('pnl-collapsed', c); c ? collapsed.add(p.dataset.col) : collapsed.delete(p.dataset.col); }
+      return;
+    }
+    if(t.dataset.v57){ e.preventDefault(); open(t.dataset.v57); return; }
+    if(t.hasAttribute('data-v57close')){ close(); return; }
+    if(t.dataset.v57pop){ if(popAnchor === t){ closePop(); return; } openPop(t, popHtml(t.dataset.v57pop, t), t.dataset.v57pop === 'pic' ? 300 : 330); return; }
+    if(t.dataset.v57info){ e.preventDefault(); e.stopPropagation(); if(popAnchor === t){ closePop(); return; } openPop(t, popHtml('info', t), 290); return; }
+    if(t.dataset.v57filter){ chkFilter = t.dataset.v57filter; renderChecksList(); return; }
+    if(t.dataset.v57step !== undefined){ const i = +t.dataset.v57step; stepOpen = stepOpen === i ? null : i; renderSteps(); return; }
+    if(t.hasAttribute('data-v57butauto')){ $('butAuto').click(); return; }
+    if(t.hasAttribute('data-v57vauto')){ $('vStrings').value = ''; calculate(); RIBBON.render(); return; }
+    if(t.dataset.aicab){ $('aiCab').value = t.dataset.aicab; calculate(); RIBBON.render(); return; }
+    if(t.dataset.vstr){ $('vStrings').value = t.dataset.vstr; calculate(); RIBBON.render(); return; }
+  });
+  $('v57Scrim').addEventListener('click', close);
+  document.addEventListener('keydown', e => {   // capture: a dialog of the tool above the window closes first
+    if(e.key !== 'Escape' || overlayOpen()) return;
+    if(popAnchor){ closePop(); return; }
+    if(openEl) close();
+  }, true);
+  window.addEventListener('resize', closePop);
+  window.addEventListener('scroll', closePop, {passive:true});
+  return {render, open, close, collapseAll};
+})();
+
 // ---------------------------------------------------------------- collapsible panels
 function setPanel(p, collapsed){ p.classList.toggle('pnl-collapsed', collapsed); }
 document.querySelectorAll('.panel.pnl-c > .panel-title').forEach(t => t.addEventListener('click', e => {
-  if(e.target.closest('select, input, a, .seg, .pnl-head-r button')) return;
+  if(e.target.closest('select, input, a, .seg, .pnl-head-r button, .st-act, [data-v57], [data-v57pop], .ibtn, .v57-status')) return;
   const p = t.parentElement; setPanel(p, !p.classList.contains('pnl-collapsed'));
 }));
-function goTo(id){ const p = $(id); if(!p) return; setPanel(p, false); p.scrollIntoView({behavior:'smooth', block:'start'}); }
-function allPanels(collapsed){ document.querySelectorAll('.panel.pnl-c').forEach(p => setPanel(p, collapsed)); }
+const GO_WIN = {pnlLibrary:'mdlLibrary', pnlStep1:'mdlConfig', pnlAI:'drwSteps', pnlVerify:'drwChecks', pnlNotes:'drwNotes', pnlVStep1:'mdlVCfg', pnlVEnd:'mdlVEnd', pnlVSite:'mdlVSite'};   // v5.7: these are windows and side panels
+function goTo(id){ if(GO_WIN[id]){ V57.open(GO_WIN[id]); return; } const p = $(id); if(!p) return; setPanel(p, false); p.scrollIntoView({behavior:'smooth', block:'start'}); }
+function allPanels(collapsed){ document.querySelectorAll('.panel.pnl-c').forEach(p => setPanel(p, collapsed)); V57.collapseAll(collapsed); }
 
 // ---------------------------------------------------------------- ribbon (DC Configurator pattern)
 const RIBBON = (function(){
@@ -4290,7 +4842,8 @@ const RIBBON = (function(){
     g_sizing:'Sizing', calc:'Calculate sizing', reset:'Reset page', g_mode:'Sizing mode', modeAI:'AI load', modeBk:'Standard backup',
     g_cfg:'Configuration', saveProj:'Save project configuration', load:'Load configuration', g_report:'Report', pdfReport:'PDF report', pdfDownload:'Download PDF', wordReport:'Word report (editable)', wordDownload:'Download Word', printPage:'Print page', g_page:'Page', g_image:'Document image', pngSummary:'Summary PNG', pngCopy:'Copy summary', pngDownload:'Download PNG',
     g_sections:'Sections', sInputs:'Project & UPS data', sStep1:'Step 1 — Standard BUT', sAI:'AI load — ramps', sVerify:'Step 6 — Verification', sModel:'Mathematical model', sNotes:'Assumptions to confirm', sLib:'Battery library', sVEnd:'End voltage', sVSite:'Recharge & site',
-    g_panels:'Panels', expand:'Expand all', shrink:'Collapse all'};
+    g_panels:'Panels', expand:'Expand all', shrink:'Collapse all',
+    g_windows:'Windows', g_side:'Side panels', wAdv:'Advanced settings', wCfg:'Standard BUT configuration', wVCfg:'Strings configuration', wProfile:'Load profile', wRacks:'AI rack type', wProject:'Project & report data', wLib:'Battery library', wVEnd:'End voltage', wVSite:'Recharge & site', sSteps:'Calculation steps', sChecks:'All checks'};
   const big = (icon, key, run, o = {}) => Object.assign({type:'big', icon, key, run}, o);
   const sm = (icon, key, run, o = {}) => Object.assign({type:'sm', icon, key, run}, o);
   const col = (...items) => ({type:'col', items});
@@ -4315,12 +4868,13 @@ const RIBBON = (function(){
       ['g_sp', [big('folder', 'spProject', () => openProjectPicker())]]
     ],
     library: [
-      ['g_lib', [big('battery', 'libOpen', () => { if(isV()) setTech('LI'); goTo('pnlLibrary'); }, {pri:1}), big('plus', 'libAdd', () => openEditor(null, 'new'))]],
+      ['g_lib', [big('battery', 'libOpen', () => { if(isV()) setTech('LI'); V57.open('mdlLibrary'); }, {pri:1}), big('plus', 'libAdd', () => openEditor(null, 'new'))]],
       ['g_libio', [big('upload', 'libImport', () => $('libFile').click()), big('download', 'libExport', () => exportLibrary())]]
     ],
     view: [
-      ['g_sections', [col(sm('doc', 'sInputs', () => goTo('pnlInputs')), sm('battery', 'sStep1', () => goTo(isV() ? 'pnlVStep1' : 'pnlStep1')), sm('chart', 'sAI', () => goTo('pnlAI'), {hide: () => mode() !== 'AI' || isV()}), sm('battery', 'sLib', () => goTo('pnlLibrary'), {hide: isV})),
-                      col(sm('blocks', 'sVEnd', () => goTo('pnlVEnd'), {hide: () => !isV()}), sm('doc', 'sVSite', () => goTo('pnlVSite'), {hide: () => !isV()}), sm('shield', 'sVerify', () => goTo('pnlVerify')), sm('eye', 'sNotes', () => goTo('pnlNotes')))]],
+      ['g_windows', [col(sm('ruler', 'wAdv', () => V57.open('mdlAdvanced')), sm('blocks', 'wCfg', () => V57.open('mdlConfig'), {hide: isV}), sm('blocks', 'wVCfg', () => V57.open('mdlVCfg'), {hide: () => !isV()}), sm('chart', 'wProfile', () => V57.open('mdlProfile'), {hide: () => mode() !== 'AI' || isV() || backupOnly()}), sm('doc', 'wVEnd', () => V57.open('mdlVEnd'), {hide: () => !isV()})),
+                     col(sm('battery', 'wRacks', () => V57.open('mdlRacks'), {hide: () => mode() !== 'AI' || isV() || backupOnly()}), sm('doc', 'wVSite', () => V57.open('mdlVSite'), {hide: () => !isV()}), sm('doc', 'wProject', () => V57.open('mdlProject')), sm('battery', 'wLib', () => V57.open('mdlLibrary'), {hide: isV}))]],
+      ['g_side', [big('doc', 'sSteps', () => V57.open('drwSteps'), {pri:1}), big('shield', 'sChecks', () => V57.open('drwChecks')), big('eye', 'sNotes', () => V57.open('drwNotes'))]],
       ['g_panels', [big('expand', 'expand', () => allPanels(false)), big('shrink', 'shrink', () => allPanels(true))]]
     ]
   };
@@ -4473,7 +5027,7 @@ const WORD_BAR = (function(){
       <div class="df-row"><span>AutoSave</span><b>${AUTOSAVE ? 'On — a few seconds after every change' : 'Off'}</b></div>
       <div class="df-row"><span>Status</span><b class="${st.c === 'warn' ? 'warn' : ''}">${esc(st.full || st.t || '—')}</b></div>
       <div class="df-row"><span>Revision</span><b>R${esc((I.rpRev || '01').replace(/[^a-z0-9]+/gi, ''))}${I.rpRevDesc ? ' — ' + esc(I.rpRevDesc) : ''}</b></div>
-      <div class="df-acts"><button type="button" class="pri" data-a="save">Save</button>${!EMBED && msalAccount ? '<button type="button" data-a="project">Reference project</button>' : ''}${!EMBED ? '<button type="button" data-a="m365">Microsoft 365</button>' : ''}</div>`;
+      <div class="df-acts"><button type="button" class="pri" data-a="save">Save</button><button type="button" data-a="data">Project &amp; report data</button>${!EMBED && msalAccount ? '<button type="button" data-a="project">Reference project</button>' : ''}${!EMBED ? '<button type="button" data-a="m365">Microsoft 365</button>' : ''}</div>`;
     document.body.appendChild(fly);
     const r = dtBtn.getBoundingClientRect();
     fly.style.top = `${r.bottom + 6}px`; fly.style.left = `${Math.max(8, Math.min(window.innerWidth - fly.offsetWidth - 8, r.left + r.width / 2 - fly.offsetWidth / 2))}px`;
@@ -4481,7 +5035,7 @@ const WORD_BAR = (function(){
     fly.addEventListener('click', e => {
       const a = e.target.closest('[data-a]'); if(!a) return;
       closeFly();
-      if(a.dataset.a === 'save') doSave(); else if(a.dataset.a === 'project') openProjectPicker(); else if(a.dataset.a === 'm365') openSpPanel();
+      if(a.dataset.a === 'save') doSave(); else if(a.dataset.a === 'data') V57.open('mdlProject'); else if(a.dataset.a === 'project') openProjectPicker(); else if(a.dataset.a === 'm365') openSpPanel();
     });
   }
   dtBtn.addEventListener('click', e => { e.stopPropagation(); fly ? closeFly() : openFly(); });
@@ -4526,7 +5080,7 @@ $('btnPreviewCopy').addEventListener('click', copyPreviewImage);
 $('btnPng').addEventListener('click', () => copySummary());
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && $('previewOverlay').style.display !== 'none') closePdfPreview(); });
 $('model').addEventListener('change', onBatteryChange);
-$('lnkLibrary').addEventListener('click', () => goTo('pnlLibrary'));
+$('lnkLibrary').addEventListener('click', () => V57.open('mdlLibrary'));
 $('lnkAddBatt').addEventListener('click', () => openEditor(null, 'new'));
 $('btnLibAdd').addEventListener('click', () => openEditor(null, 'new'));
 $('btnLibImport').addEventListener('click', () => $('libFile').click());

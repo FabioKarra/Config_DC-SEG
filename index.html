@@ -30258,6 +30258,8 @@ const CHANGELOG = [
     'Client ID e Tenant ID: nella copia locale restano nei due campi nascosti; la copia pubblicata su Azure non li contiene e il login Microsoft li legge dall\'accesso Azure della pagina (/.auth/me: app = aud, tenant = tid)',
     'My workspace a post-it: le offerte sono post-it colorati per stato in cinque colonne (New, In progress, Offer review, Won e Lost degli ultimi 90 giorni). Trascinare un post-it in un\'altra colonna cambia lo Status su SharePoint (se la colonna ha più stati, es. Won = Awarder / Project Execution / Project Closed, si sceglie quale); il menu ⋯ o le iniziali cambiano stato e assegnazione (Assigned to, ricerca tra le persone del sito). Ogni modifica si scrive subito sulla Progress tracker list, si annulla con Undo e, se SharePoint la rifiuta, torna com\'era',
     'Valore delle offerte: se il file offerta (.json) manca o non ha un valore, la dashboard usa il valore di vendita della colonna OfferValue € (OfferValue_x20ac_) della Progress tracker list; nella finestra dell\'offerta si legge «Offer value (SharePoint)», la barra di stato conta questi valori e l\'export CSV ha la colonna Value from',
+    'Value by family and status: i progetti senza file offerta (valore preso da Offer Value € della lista) vanno nella riga Various; anche il filtro Family ha la voce Various',
+    'View › Data check: per ogni progetto della lista cosa è stato letto nella cartella 02 OFFER (file offerta letto, nessun .json, .json non valido o di un altro progetto, cartella non raggiungibile, nessuna cartella di progetto), da dove viene il valore (file offerta / Offer Value € / nessuno) e quanti .json ci sono; i riquadri in alto contano i casi e filtrano la tabella',
     'Manuale a parte UPS_Dashboard_Guide.pdf (stessa cartella degli altri manuali): si apre dal menu della scheda blu (Dashboard Guide, solo Admin) e dal ribbon della dashboard (Help › Dashboard Guide)',
   ]},
   {version:'beta_6.55', date:'2026-11-05', notes:[
@@ -31474,6 +31476,11 @@ table.mx tr.sel td:first-child{color:var(--accent); font-weight:700}
 @media (max-width:1100px){ .cv > *{grid-column:span 12 !important} .ws,.ws-row{grid-template-columns:1fr} .strip{grid-template-columns:1fr 1fr} .strip > div:nth-child(2){border-right:none} }
 @media (max-width:700px){ main{padding-left:14px; padding-right:14px} .kv{grid-template-columns:1fr 1fr} .board{grid-template-columns:repeat(5,170px)} }
 @media print{ .statusbar,.chips{display:none} main{padding:0} }
+
+.ckt{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px}
+.ck{background:var(--panel); border:1px solid var(--panel-border); border-left:4px solid var(--c); border-radius:10px; padding:10px 12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:2px}
+.ck b{font-size:22px; font-weight:600} .ck span{font-size:12px; color:var(--dim)}
+.ck:hover{box-shadow:0 4px 12px rgba(20,22,26,.08)} .ck.on{box-shadow:inset 0 0 0 1.5px var(--c); background:var(--chip)}
 </style><main id="main"></main><div class="statusbar" id="sbar"></div><div class="ov" id="ov"><div class="pop" id="pop"></div></div><div class="cmenu" id="cmenu" role="menu"></div><div class="toast" id="toast" role="status" aria-live="polite"></div><div id="tip"></div>`;
   const $ = id => root.getElementById(id);
   const cssv = n => getComputedStyle(host).getPropertyValue(n).trim();
@@ -31599,13 +31606,14 @@ function gantt(el, list){
 
 
   /* ---------- data ---------- */
-  let OFFERS = [], FAMS = [], OWN = [], COUNTRIES = [], SRC = 'none';
+  let OFFERS = [], FAMS = [], FAMS_M = [], OWN = [], COUNTRIES = [], SRC = 'none';
   const SCAN = {running: false, done: 0, total: 0, err: '', at: null};
   function setData(list, src){
     CHOICES = null;
     OFFERS = list.slice().sort((a, b) => b.created - a.created); SRC = src;
     const fu = {}; OFFERS.forEach(o => o.positions.forEach(p => fu[p.fam] = (fu[p.fam] || 0) + p.units));
     FAMS = Object.keys(fu).sort((a, b) => { const x = KNOWN_FAMS.indexOf(a), y = KNOWN_FAMS.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || a.localeCompare(b); });
+    FAMS_M = FAMS.concat(OFFERS.some(o => o.famM === 'Various') ? ['Various'] : []);   // "Various" = no offer file, value from the list
     OWN = [...new Set(OFFERS.map(o => o.owner).filter(o => o && o !== '—'))].sort((a, b) => a.localeCompare(b));
     COUNTRIES = [...new Map(OFFERS.filter(o => o.country && o.country !== '—').map(o => [o.country, o.countryName])).entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
   }
@@ -31660,7 +31668,7 @@ function gantt(el, list){
       owner: shortName(textOf(rec['Created By.title'])) || '—', ownerId: String(raw[(typeof OWNER_PERSON_FIELD !== 'undefined' ? OWNER_PERSON_FIELD : 'AssignedTo0') + 'LookupId'] ?? ''), status, rawStatus: textOf(rec.Status), market: (st && st.market) || (/^M2[FU]$/.test(fam) ? 'UL' : 'IEC'), fam, positions,
       value: t.value, cost: t.cost, sla: t.sla, fok: t.fok, revisions: st ? Number(st.revision) || 0 : 0,
       created: dateOf(raw.Created) || dateOf(st && st.savedAt) || new Date(TODAY), due: dateOf(rec['Due date']) ? dayOf(dateOf(rec['Due date'])) : null,
-      closed: ['Won', 'Lost', 'Offer review'].includes(status) ? modified : null, hasOffer: !!st, valueSrc, file: file ? file.name : '', saved: file ? dateOf(file.lastModifiedDateTime) : null};
+      closed: ['Won', 'Lost', 'Offer review'].includes(status) ? modified : null, hasOffer: !!st, famM: st ? fam : 'Various', valueSrc, file: file ? file.name : '', saved: file ? dateOf(file.lastModifiedDateTime) : null};
   }
   let scanSeq = 0;
   async function loadSharePoint(reloadList){
@@ -31676,23 +31684,25 @@ function gantt(el, list){
       const out = new Array(recs.length); let i = 0, painted = Date.now();
       const worker = async () => {
         while(i < recs.length && seq === scanSeq){
-          const k = i++, rec = recs[k]; let st = null, file = null;
+          const k = i++, rec = recs[k]; let st = null, file = null, scan = 'no-link', nfiles = 0;
           const fl = rec._raw && rec._raw.FolderLink0, path = fl ? resolveProjectSubfolderPath(fl, '02 OFFER') : '';
           if(path){
+            scan = 'no-folder';
             try{
               const files = await listOfferJsonFiles({site, token, targetPath: path});
+              nfiles = files.length; scan = files.length ? 'invalid' : 'no-json';
               for(const f of files.slice(0, 3)){
                 try{
                   const s = JSON.parse(await downloadDriveFileText(site.id, f));
                   if(!s || !Array.isArray(s.positions)) continue;
                   const fr = s.project && String(s.project.ref || '').trim();
                   if(fr && fr !== String(rec.PRJ_ID).trim()) continue;   // a file of another project
-                  st = s; file = f; break;
+                  st = s; file = f; scan = 'ok'; break;
                 }catch(e){}
               }
             }catch(e){ /* no "02 OFFER" folder or not readable */ }
           }
-          try{ out[k] = toOffer(rec, st, file); }catch(e){ console.warn('Dashboard: project not read', rec.PRJ_ID, e); }
+          try{ out[k] = toOffer(rec, st, file); out[k].scan = scan; out[k].nfiles = nfiles; }catch(e){ console.warn('Dashboard: project not read', rec.PRJ_ID, e); }
           SCAN.done++;
           if(seq === scanSeq && Date.now() - painted > 1200){ painted = Date.now(); setData(out.filter(Boolean), 'sp'); if(active()) render(); }
         }
@@ -31726,7 +31736,7 @@ function gantt(el, list){
       list.push({ref: String(260000 + 96 - i), customer: pick(CUST), project: pick(['Campus', 'Hub', 'West', 'North', 'Edge', 'Core', 'Data hall', 'South']) + ' ' + (1 + Math.floor(rnd() * 9)) + ' MW',
         country: c[0], countryName: c[1], owner: pick(OWNERS), status, rawStatus: status, market, fam, positions, value, cost: Math.round(value * (1 - mp)), sla, fok: rnd() < 0.12,
         revisions: status === 'New' ? 0 : Math.floor(rnd() * rnd() * 4), created, due: dayOf(new Date(created.getTime() + (14 + Math.floor(rnd() * 30)) * 864e5)),
-        closed: ['Won', 'Lost', 'Offer review'].includes(status) ? new Date(created.getTime() + (8 + Math.floor(rnd() * 40)) * 864e5) : null, hasOffer: true, valueSrc: 'offer', file: 'example', saved: null});
+        closed: ['Won', 'Lost', 'Offer review'].includes(status) ? new Date(created.getTime() + (8 + Math.floor(rnd() * 40)) * 864e5) : null, hasOffer: true, famM: fam, valueSrc: 'offer', file: 'example', saved: null});
     }
     return list;
   }
@@ -31745,7 +31755,7 @@ function gantt(el, list){
     cfg: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M13 8h4M13 12h4"/>',
     me: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
     team: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/>',
-    up: '<path d="m18 15-6-6-6 6"/>', pin: '<path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
+    up: '<path d="m18 15-6-6-6 6"/>', check: '<path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>', pin: '<path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
     bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', guide: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', demo: '<path d="M9 3h6M10 3v6L4 19a2 2 0 0 0 1.7 3h12.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/>',
     sp: '<path d="M4 7a8 3 0 1 0 16 0a8 3 0 1 0-16 0"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
   };
@@ -31767,7 +31777,7 @@ function gantt(el, list){
   }
   function rows(shift, skip){
     const [from, to] = win(shift);
-    return OFFERS.filter(o => o.created >= from && o.created < to && ['market', 'owner', 'country', 'status', 'fam', 'customer'].every(k => k === skip || !FX[k] || o[k] === FX[k]));
+    return OFFERS.filter(o => o.created >= from && o.created < to && ['market', 'owner', 'country', 'status', 'fam', 'customer'].every(k => k === skip || !FX[k] || (k === 'fam' ? o.famM : o[k]) === FX[k]));
   }
   const monthsInPeriod = () => { const n = Math.min(24, pMonths()); const out = []; for(let k = n - 1; k >= 0; k--) out.push(monthKey(new Date(TODAY.getFullYear(), TODAY.getMonth() - k, 1))); return out; };
 
@@ -31798,11 +31808,11 @@ function gantt(el, list){
     const me = meName();
     let h;
     if(S.rb === 'home') h = grp('Pages', PAGES.map(([id, l, i]) => big('page:' + id, l, i, S.page === id)).join(''))
-      + grp('Filters', `<div class="rb-col">${sel('period', PERIODS)}${sel('market', [['IEC', 'IEC'], ['UL', 'UL']])}</div><div class="rb-col">${sel('owner', OWN.map(o => [o, o]))}${sel('country', COUNTRIES)}</div><div class="rb-col">${sel('status', STATUS.map(s => [s, s]))}${sel('fam', FAMS.map(f => [f, f]))}</div>${big('clear', 'Clear filters', I.clear, false, anyF ? 'rb-red' : '')}`)
+      + grp('Filters', `<div class="rb-col">${sel('period', PERIODS)}${sel('market', [['IEC', 'IEC'], ['UL', 'UL']])}</div><div class="rb-col">${sel('owner', OWN.map(o => [o, o]))}${sel('country', COUNTRIES)}</div><div class="rb-col">${sel('status', STATUS.map(s => [s, s]))}${sel('fam', FAMS_M.map(f => [f, f]))}</div>${big('clear', 'Clear filters', I.clear, false, anyF ? 'rb-red' : '')}`)
       + grp('Data', big('refresh', 'Refresh', I.refresh) + `<div class="rb-col">${small('csv', 'Export to Excel (CSV)', I.csv, !OFFERS.length)}${small('print', 'Print page', I.print)}${small('cfg', 'Back to the configurator', I.cfg)}</div>`)
       + grp('Help', big('guide', 'Dashboard Guide', I.guide));
     else h = grp('Offers shown', big('who:me', 'My offers', I.me, !!FX.owner && nameKey(FX.owner) === nameKey(me)) + big('who:team', 'All team', I.team, !FX.owner))
-      + grp('Data source', big('src:sp', 'SharePoint', I.sp, SRC === 'sp') + big('src:demo', 'Example data', I.demo, SRC === 'demo'))
+      + grp('Data source', big('src:sp', 'SharePoint', I.sp, SRC === 'sp') + big('src:demo', 'Example data', I.demo, SRC === 'demo') + big('page:check', 'Data check', I.check, S.page === 'check'))
       + grp('Ribbon', big('collapse', S.collapsed ? 'Pin the ribbon' : 'Collapse the ribbon', S.collapsed ? I.pin : I.up));
     panelEl.innerHTML = h + `<button type="button" class="rb-pin" data-ud="collapse" title="Collapse the ribbon">${ic(I.up, 16)}</button>`;
     tabsEl.innerHTML = [['home', 'Home'], ['view', 'View']].map(([k, l]) => `<button type="button" class="rb-tab${S.rb === k ? ' on' : ''}" data-udtab="${k}">${l}</button>`).join('');
@@ -31812,7 +31822,7 @@ function gantt(el, list){
     if(panelEl.offsetParent !== null && panelEl.scrollWidth > panelEl.clientWidth + 1) panelEl.classList.add('ud-tight');
     const late = OFFERS.filter(o => overdue(o) && isMe(o)).length;
     pagesEl.innerHTML = PAGES.map(([id, l, i]) => `<button type="button" class="offer-tab${S.page === id ? ' on' : ''}" data-ud="page:${id}">${ic(i, 15)}<span class="ot-lab">${l}</span>${id === 'work' && late ? `<span class="ud-cnt" title="my offers late">${late}</span>` : ''}</button>`).join('');
-    titleEl.innerHTML = `<b>${esc(PAGES.find(p => p[0] === S.page)[1])}</b> · UPS Dashboard`;
+    titleEl.innerHTML = `<b>${esc(S.page === 'check' ? 'Data check' : PAGES.find(p => p[0] === S.page)[1])}</b> · UPS Dashboard`;
   }
 
   /* ---------- filter chips ---------- */
@@ -31842,8 +31852,8 @@ function gantt(el, list){
       ${panel('c12', 'Offer value by customer', '<div id="ov5"></div>', 'click to filter')}</div>`;
     lines($('ov1'), {cats: ms.map(mLabel), series: [{name: 'Offered', color: 'var(--s1)', values: bym(A, o => o.value)}, {name: 'Won', color: 'var(--s2)', values: bym(A.filter(won), o => o.value)}], area: true, h: 240});
     const As = rows(0, 'status'); donut($('ov2'), {parts: STATUS.map(s => ({name: s, value: As.filter(o => o.status === s).length, color: sc[s]})), center: As.length, sub: 'offers', key: 'status'});
-    const Af = rows(0, 'fam'), mx = Math.max(1, ...FAMS.flatMap(f => STATUS.map(s => val(Af.filter(o => o.fam === f && o.status === s)))));
-    $('ov3').innerHTML = FAMS.length ? `<table class="t mx"><thead><tr><th>Family</th>${STATUS.map(s => `<th>${s}</th>`).join('')}<th>Total</th></tr></thead><tbody>${FAMS.map(f => `<tr class="fr ${FX.fam === f ? 'sel' : ''}" data-x="fam:${f}"><td><b style="color:${fc[f]}">■</b> ${esc(f)}</td>${STATUS.map(s => { const v = val(Af.filter(o => o.fam === f && o.status === s)); return `<td style="background:rgba(68,114,196,${(v / mx * 0.5).toFixed(2)})" data-tip="<b>${esc(f)} · ${s}</b><br>${eur(v)}">${v ? eurK(v) : ''}</td>`; }).join('')}<td><b>${eurK(val(Af.filter(o => o.fam === f)))}</b></td></tr>`).join('')}<tr class="tot"><td>Total</td>${STATUS.map(s => `<td>${eurK(val(Af.filter(o => o.status === s)))}</td>`).join('')}<td>${eurK(val(Af))}</td></tr></tbody></table>` : nothing();
+    const Af = rows(0, 'fam'), mx = Math.max(1, ...FAMS_M.flatMap(f => STATUS.map(s => val(Af.filter(o => o.famM === f && o.status === s)))));
+    $('ov3').innerHTML = FAMS_M.length ? `<table class="t mx"><thead><tr><th>Family</th>${STATUS.map(s => `<th>${s}</th>`).join('')}<th>Total</th></tr></thead><tbody>${FAMS_M.map(f => `<tr class="fr ${FX.fam === f ? 'sel' : ''}" data-x="fam:${f}"><td${f === 'Various' ? ' title="Projects without an offer file: value from the Offer Value € of the Progress tracker list"' : ''}><b style="color:${f === 'Various' ? 'var(--other)' : fc[f]}">■</b> ${esc(f)}${f === 'Various' ? ' <span style="color:var(--dim);font-size:11px">(no offer file)</span>' : ''}</td>${STATUS.map(s => { const v = val(Af.filter(o => o.famM === f && o.status === s)); return `<td style="background:rgba(68,114,196,${(v / mx * 0.5).toFixed(2)})" data-tip="<b>${esc(f)} · ${s}</b><br>${eur(v)}">${v ? eurK(v) : ''}</td>`; }).join('')}<td><b>${eurK(val(Af.filter(o => o.famM === f)))}</b></td></tr>`).join('')}<tr class="tot"><td>Total</td>${STATUS.map(s => `<td>${eurK(val(Af.filter(o => o.status === s)))}</td>`).join('')}<td>${eurK(val(Af))}</td></tr></tbody></table>` : nothing();
     const bm = {}; A.forEach(o => o.positions.forEach(p => { bm[p.model] = bm[p.model] || {v: 0, f: p.fam}; bm[p.model].v += p.units; }));
     const bmi = Object.entries(bm).sort((a, b) => b[1].v - a[1].v).slice(0, 8);
     if(bmi.length) hbars($('ov4'), {items: bmi.map(([m, x]) => ({label: m, value: x.v, color: fc[x.f]})), fmt: num}); else $('ov4').innerHTML = nothing();
@@ -32044,6 +32054,23 @@ function gantt(el, list){
     loadChoices();     // ready for the first drop
   }
 
+  /* ---------- Data check: what was read for every project (all projects, filters not applied) ---------- */
+  const CHK = {f: ''};
+  const SCAN_TXT = {ok: ['Offer file read', 'var(--st-won)'], 'no-json': ['No .json in 02 OFFER', 'var(--st-rev)'], invalid: ['.json not valid / of another project', 'var(--st-lost)'],
+    'no-folder': ['02 OFFER folder not reachable', 'var(--st-lost)'], 'no-link': ['No project folder (FolderLink)', 'var(--st-new)']};
+  function pCheck(M){
+    const all = OFFERS, sc = SC();
+    const res = o => SRC === 'demo' ? 'ok' : (o.scan || (o.hasOffer ? 'ok' : 'no-json'));
+    const tiles = [['', 'Projects in the list', all.length, 'var(--accent)'], ...Object.entries(SCAN_TXT).map(([k, [t, c]]) => [k, t, all.filter(o => res(o) === k).length, c]),
+      ['v-offer', 'Value from the offer file', all.filter(o => o.valueSrc === 'offer').length, 'var(--s1)'], ['v-list', 'Value from Offer Value € (list)', all.filter(o => o.valueSrc === 'list').length, 'var(--s3)'], ['v-none', 'No value', all.filter(o => !(o.value > 0)).length, 'var(--other)']];
+    const pass = o => !CHK.f || (CHK.f.startsWith('v-') ? (CHK.f === 'v-none' ? !(o.value > 0) : o.valueSrc === CHK.f.slice(2)) : res(o) === CHK.f);
+    const list = all.filter(pass).sort((a, b) => String(b.ref).localeCompare(String(a.ref)));
+    M.innerHTML = `<div class="chips"><span class="lab">Data check</span><span class="chip none">every project of the Progress tracker list and what was read in its 02 OFFER folder – period and filters are not applied here</span></div>
+      <div class="ckt">${tiles.map(([k, t, n, c]) => `<button type="button" class="ck${CHK.f === k ? ' on' : ''}" data-chk="${k}" style="--c:${c}"><b>${n}</b><span>${esc(t)}</span></button>`).join('')}</div>
+      <section class="panel" style="margin-top:16px"><div class="ptitle">Projects<span class="r">${list.length} shown${CHK.f ? ' · <a href="#" data-chk="">show all</a>' : ''}</span></div><div style="overflow-x:auto"><table class="t"><thead><tr><th>Project</th><th>Customer</th><th>SharePoint status</th><th>Owner</th><th>Offer file</th><th class="n">.json in 02 OFFER</th><th class="n">Value</th><th>Value from</th><th>Family</th></tr></thead><tbody>
+      ${list.map(o => { const r = res(o), [t, c] = SCAN_TXT[r] || ['—', 'var(--dim)']; return `<tr class="click" data-ref="${esc(o.ref)}"><td><b>${esc(o.ref)}</b></td><td>${esc(o.customer)}</td><td>${esc(o.rawStatus || '—')}</td><td>${esc(o.owner)}</td><td><span style="color:${c};font-weight:600">●</span> ${o.file && o.file !== 'example' ? esc(o.file) : esc(t)}</td><td class="n">${o.nfiles ?? '–'}</td><td class="n">${o.value > 0 ? eur(o.value) : '–'}</td><td>${o.valueSrc === 'list' ? 'Offer Value € (list)' : o.valueSrc === 'offer' ? 'offer file' : '–'}</td><td>${esc(o.famM || o.fam)}</td></tr>`; }).join('')}
+      </tbody></table></div></section>`;
+  }
   function pEmpty(M){
     const signed = (() => { try{ return signedIn(); }catch(e){ return false; } })();
     M.innerHTML = chips() + `<div class="panel empty"><b>${SCAN.running ? 'Reading the offers from SharePoint…' : SCAN.err ? 'The offers could not be read' : signed ? 'No projects in the Progress tracker list' : 'Not connected to Microsoft 365'}</b>
@@ -32075,7 +32102,7 @@ function gantt(el, list){
     ribbon();
     const M = $('main');
     if(!OFFERS.length) pEmpty(M);
-    else ({overview: pOverview, pipeline: pPipeline, products: pProducts, work: pWork})[S.page](M);
+    else ({overview: pOverview, pipeline: pPipeline, products: pProducts, work: pWork, check: pCheck})[S.page](M);
     if($('ov').classList.contains('open') && POPREF) openOffer(POPREF);
     const A = rows();
     $('sbar').innerHTML = SRC === 'demo' ? `<span class="warn">● Example data</span><span>${OFFERS.length} offers</span><span>${A.length} shown · ${eurK(val(A))}</span>`
@@ -32120,6 +32147,7 @@ function gantt(el, list){
     const mb = e.target.closest('[data-menu]');
     if(mb){ e.stopPropagation(); if(MENU && MENU.ref === mb.dataset.menu && !MENU.only){ closeMenu(); return; } openMenu(mb.dataset.menu, mb, mb.dataset.focus || 'status'); return; }
     if(e.target.closest('#cmenu')) return;
+    const ck = e.target.closest('[data-chk]'); if(ck){ e.preventDefault(); CHK.f = CHK.f === ck.dataset.chk ? '' : ck.dataset.chk; render(); return; }
     const t = e.target.closest('[data-act],[data-x],[data-ref],[data-cfg]'); if(!t) return;
     if(t.tagName === 'A') e.preventDefault();
     if(t.dataset.act) return act(t.dataset.act);

@@ -30257,6 +30257,7 @@ const CHANGELOG = [
     'La dashboard segue il tema chiaro/scuro; export CSV dei progetti filtrati; se l\'utente non è più Admin la dashboard si chiude',
     'Client ID e Tenant ID: nella copia locale restano nei due campi nascosti; la copia pubblicata su Azure non li contiene e il login Microsoft li legge dall\'accesso Azure della pagina (/.auth/me: app = aud, tenant = tid)',
     'My workspace a post-it: le offerte sono post-it colorati per stato in cinque colonne (New, In progress, Offer review, Won e Lost degli ultimi 90 giorni). Trascinare un post-it in un\'altra colonna cambia lo Status su SharePoint (se la colonna ha più stati, es. Won = Awarder / Project Execution / Project Closed, si sceglie quale); il menu ⋯ o le iniziali cambiano stato e assegnazione (Assigned to, ricerca tra le persone del sito). Ogni modifica si scrive subito sulla Progress tracker list, si annulla con Undo e, se SharePoint la rifiuta, torna com\'era',
+    'Valore delle offerte: se il file offerta (.json) manca o non ha un valore, la dashboard usa il valore di vendita della colonna OfferValue € (OfferValue_x20ac_) della Progress tracker list; nella finestra dell\'offerta si legge «Offer value (SharePoint)», la barra di stato conta questi valori e l\'export CSV ha la colonna Value from',
     'Manuale a parte UPS_Dashboard_Guide.pdf (stessa cartella degli altri manuali): si apre dal menu della scheda blu (Dashboard Guide, solo Admin) e dal ribbon della dashboard (Help › Dashboard Guide)',
   ]},
   {version:'beta_6.55', date:'2026-11-05', notes:[
@@ -31631,6 +31632,18 @@ function gantt(el, list){
     else { npm = Number(typeof computeNPM === 'function' ? computeNPM(p.pload, p.red, moduleKwForModel(model)) : 0) || 0; if(Number(p.pmBsz) > npm) npm = Math.floor(Number(p.pmBsz)); }
     return {model, fam: famOf(model), qty, ups, units: qty * ups, npm, modules: qty * ups * npm, kw: npm * kwm, pload: Number(p.pload) || 0, lithium: /lith|li-?ion|lfp/i.test(String(p.batt || ''))};
   }
+  // a money value of the list: a number, or text such as "€ 1.234.567,89" / "1,234,567.89"
+  function moneyOf(v){
+    if(v == null || v === '') return 0;
+    if(typeof v === 'number') return isFinite(v) ? v : 0;
+    let t = String(textOf(v)).replace(/[^\d.,-]/g, '');
+    if(!t) return 0;
+    const lc = t.lastIndexOf(','), ld = t.lastIndexOf('.');
+    if(lc > ld) t = t.replace(/\./g, '').replace(',', '.');          // 1.234,56
+    else t = t.replace(/,/g, '');                                       // 1,234.56
+    const n = Number(t); return isFinite(n) ? n : 0;
+  }
+  const SP_VALUE_FIELDS = ['OfferValue_x20ac_', 'OfferValue', 'Offer Value €', 'Offer Value'];
   function toOffer(rec, st, file){
     const raw = rec._raw || {}, ref = String(rec.PRJ_ID).trim();
     const c = countryDisplay(textOf(st && st.project && st.project.country) || textOf(rec['Country.lookupValue']));
@@ -31639,12 +31652,15 @@ function gantt(el, list){
     const fu = {}; positions.forEach(p => fu[p.fam] = (fu[p.fam] || 0) + p.units);
     const fam = Object.keys(fu).sort((a, b) => fu[b] - fu[a])[0] || famOf(textOf(rec.Product)) || '—';
     const t = st ? offerTotals(st) : {value: 0, cost: 0, sla: {}, fok: false};
+    // beta_6.56: no value in the offer file (no file, or no priced lines) → the general selling value of the list (OfferValue €)
+    let valueSrc = st && t.value > 0 ? 'offer' : '';
+    if(!valueSrc){ const k = SP_VALUE_FIELDS.find(f => raw[f] != null && raw[f] !== ''); const v = k ? moneyOf(raw[k]) : 0; if(v > 0){ t.value = v; valueSrc = 'list'; } }
     const modified = dateOf(raw.Modified);
     return {ref, customer: textOf(rec.Customer) || '—', project: textOf(rec['Project Name']), country: c.code || c.name || '—', countryName: c.name || '—',
       owner: shortName(textOf(rec['Created By.title'])) || '—', ownerId: String(raw[(typeof OWNER_PERSON_FIELD !== 'undefined' ? OWNER_PERSON_FIELD : 'AssignedTo0') + 'LookupId'] ?? ''), status, rawStatus: textOf(rec.Status), market: (st && st.market) || (/^M2[FU]$/.test(fam) ? 'UL' : 'IEC'), fam, positions,
       value: t.value, cost: t.cost, sla: t.sla, fok: t.fok, revisions: st ? Number(st.revision) || 0 : 0,
       created: dateOf(raw.Created) || dateOf(st && st.savedAt) || new Date(TODAY), due: dateOf(rec['Due date']) ? dayOf(dateOf(rec['Due date'])) : null,
-      closed: ['Won', 'Lost', 'Offer review'].includes(status) ? modified : null, hasOffer: !!st, file: file ? file.name : '', saved: file ? dateOf(file.lastModifiedDateTime) : null};
+      closed: ['Won', 'Lost', 'Offer review'].includes(status) ? modified : null, hasOffer: !!st, valueSrc, file: file ? file.name : '', saved: file ? dateOf(file.lastModifiedDateTime) : null};
   }
   let scanSeq = 0;
   async function loadSharePoint(reloadList){
@@ -31710,7 +31726,7 @@ function gantt(el, list){
       list.push({ref: String(260000 + 96 - i), customer: pick(CUST), project: pick(['Campus', 'Hub', 'West', 'North', 'Edge', 'Core', 'Data hall', 'South']) + ' ' + (1 + Math.floor(rnd() * 9)) + ' MW',
         country: c[0], countryName: c[1], owner: pick(OWNERS), status, rawStatus: status, market, fam, positions, value, cost: Math.round(value * (1 - mp)), sla, fok: rnd() < 0.12,
         revisions: status === 'New' ? 0 : Math.floor(rnd() * rnd() * 4), created, due: dayOf(new Date(created.getTime() + (14 + Math.floor(rnd() * 30)) * 864e5)),
-        closed: ['Won', 'Lost', 'Offer review'].includes(status) ? new Date(created.getTime() + (8 + Math.floor(rnd() * 40)) * 864e5) : null, hasOffer: true, file: 'example', saved: null});
+        closed: ['Won', 'Lost', 'Offer review'].includes(status) ? new Date(created.getTime() + (8 + Math.floor(rnd() * 40)) * 864e5) : null, hasOffer: true, valueSrc: 'offer', file: 'example', saved: null});
     }
     return list;
   }
@@ -32001,7 +32017,7 @@ function gantt(el, list){
   function pWork(M){
     const A = rows(), sc = SC(), mine = !!FX.owner && nameKey(FX.owner) === nameKey(meName());
     const late = A.filter(overdue).sort((a, b) => dueT(a) - dueT(b)), soon = A.filter(o => open(o) && o.due && o.due >= TODAY && daysTo(o.due) <= 14).sort((a, b) => dueT(a) - dueT(b));
-    const task = (o, cls) => `<div class="task ${cls}"><b>${esc(o.ref)} · ${esc(o.customer)}</b>${esc(o.project)}${o.hasOffer ? ' · ' + eurK(o.value) : ''}${mine ? '' : ' · ' + esc(o.owner)}<br><span class="w" style="color:${cls === 'late' ? 'var(--st-lost)' : 'var(--st-rev)'}">${cls === 'late' ? 'late by ' + -daysTo(o.due) + ' days' : 'due ' + fmtD(o.due) + ' · in ' + daysTo(o.due) + ' days'}</span> · ${esc(o.rawStatus || o.status)}<div class="a"><button type="button" class="btn" data-ref="${esc(o.ref)}">Details</button><button type="button" class="btn" data-menu="${esc(o.ref)}">Status / owner</button><button type="button" class="btn pri" data-cfg="${esc(o.ref)}" title="Open in configurator">${ic(I.cfg, 13)}Configurator</button></div></div>`;
+    const task = (o, cls) => `<div class="task ${cls}"><b>${esc(o.ref)} · ${esc(o.customer)}</b>${esc(o.project)}${o.value > 0 ? ' · ' + eurK(o.value) : ''}${mine ? '' : ' · ' + esc(o.owner)}<br><span class="w" style="color:${cls === 'late' ? 'var(--st-lost)' : 'var(--st-rev)'}">${cls === 'late' ? 'late by ' + -daysTo(o.due) + ' days' : 'due ' + fmtD(o.due) + ' · in ' + daysTo(o.due) + ' days'}</span> · ${esc(o.rawStatus || o.status)}<div class="a"><button type="button" class="btn" data-ref="${esc(o.ref)}">Details</button><button type="button" class="btn" data-menu="${esc(o.ref)}">Status / owner</button><button type="button" class="btn pri" data-cfg="${esc(o.ref)}" title="Open in configurator">${ic(I.cfg, 13)}Configurator</button></div></div>`;
     const lanes = LANES.map(([s]) => { let l = A.filter(o => o.status === s); if(s === 'Won' || s === 'Lost') l = l.filter(o => !o.closed || (TODAY - o.closed) / 864e5 < 90); return [s, l.sort((a, b) => dueT(a) - dueT(b))]; });
     const [cy, cm] = S.cal, first = new Date(cy, cm, 1), off = (first.getDay() + 6) % 7; let cal = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => `<div class="h">${d}</div>`).join('');
     const same = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -32012,7 +32028,7 @@ function gantt(el, list){
     const card = (o, i) => `<div class="kc st-${o.status.replace(/\s+/g, '-').toLowerCase()}" draggable="true" data-drag="${esc(o.ref)}" data-ref="${esc(o.ref)}" style="--r:${PI_ROT[i % PI_ROT.length]}">
         <div class="kc-t"><span class="kc-st" title="Status on SharePoint">${esc(o.rawStatus || o.status)}</span><button type="button" class="kc-m" data-menu="${esc(o.ref)}" title="Status and assignment" aria-label="Status and assignment of ${esc(o.ref)}">⋯</button></div>
         <b>${esc(o.customer)}</b><span class="kc-p">${esc(o.ref)}${o.project ? ' · ' + esc(o.project) : ''}</span>
-        <div class="m"><span>${o.hasOffer ? eurK(o.value) + ' · ' : ''}${esc(o.fam)}${units(o) ? ' · ' + units(o) + ' UPS' : ''}</span></div>
+        <div class="m"><span>${o.value > 0 ? eurK(o.value) + ' · ' : ''}${esc(o.fam)}${units(o) ? ' · ' + units(o) + ' UPS' : ''}</span></div>
         <div class="m"><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtD(o.due)}</span><button type="button" class="av" data-menu="${esc(o.ref)}" data-focus="owner" title="${esc(o.owner)} – click to assign to someone else">${esc(ini(o.owner))}</button></div></div>`;
     M.innerHTML = chips() + `<div class="wsb">
       <section class="panel"><div class="ptitle">Offers board<span class="hint">drag a post-it to another column to change its status · ⋯ or the initials to change status and assignment</span><span class="r"><span class="seg"><button type="button" data-act="who:me" class="${mine ? 'on' : ''}">Mine</button><button type="button" data-act="who:team" class="${!FX.owner ? 'on' : ''}">Team</button></span></span></div>
@@ -32023,7 +32039,7 @@ function gantt(el, list){
           <div class="ptitle" style="margin-top:14px">Due soon<span class="r">${soon.length}</span></div>${soon.slice(0, 4).map(o => task(o, 'soon')).join('') || nothing('Nothing due in the next 14 days.')}${soon.length > 4 ? `<p class="sub">+ ${soon.length - 4} more – see the calendar</p>` : ''}</section>
         <section class="panel"><div class="cal-h"><button type="button" class="ib" data-act="cal:-1" title="Previous month">${ic('<path d="m15 18-6-6 6-6"/>', 16)}</button><b>${first.toLocaleString('en-GB', {month: 'long', year: 'numeric'})}</b><button type="button" class="ib" data-act="cal:1" title="Next month">${ic('<path d="m9 18 6-6-6-6"/>', 16)}</button></div><div class="cal">${cal}</div>
           <div class="legend" style="margin-top:8px">${['New', 'In progress', 'Offer review'].map(s => `<span><i style="background:${sc[s]};border-radius:50%"></i>${s}</span>`).join('')}</div></section>
-        <section class="panel"><div class="ptitle">Upcoming</div>${up.map(o => `<div class="up" data-ref="${esc(o.ref)}"><div class="dt"><b>${o.due.getDate()}</b>${o.due.toLocaleString('en-GB', {month: 'short'})}</div><div><b>${esc(o.customer)}</b><br>${esc(o.ref)} · ${esc(o.rawStatus || o.status)}${o.hasOffer ? ' · ' + eurK(o.value) : ''} · ${esc(o.owner)}</div></div>`).join('') || nothing('No deadlines ahead.')}</section>
+        <section class="panel"><div class="ptitle">Upcoming</div>${up.map(o => `<div class="up" data-ref="${esc(o.ref)}"><div class="dt"><b>${o.due.getDate()}</b>${o.due.toLocaleString('en-GB', {month: 'short'})}</div><div><b>${esc(o.customer)}</b><br>${esc(o.ref)} · ${esc(o.rawStatus || o.status)}${o.value > 0 ? ' · ' + eurK(o.value) : ''} · ${esc(o.owner)}</div></div>`).join('') || nothing('No deadlines ahead.')}</section>
       </div></div>`;
     loadChoices();     // ready for the first drop
   }
@@ -32043,10 +32059,10 @@ function gantt(el, list){
     const sc = SC();
     $('pop').innerHTML = `<div class="pop-h"><span class="ic">${ic(I.bolt, 20)}</span><div><h3>${esc(o.ref)} · ${esc(o.customer)}</h3><small>${esc(o.project)}${o.countryName && o.countryName !== '—' ? ' · ' + esc(o.countryName) : ''}</small></div><button type="button" class="x" data-act="close" title="Close">✕</button></div>
       <div class="pop-strip"><span style="color:${sc[o.status]};font-weight:600" title="SharePoint: ${esc(o.rawStatus || '—')}">● ${o.status}</span>${o.hasOffer ? `<span>${esc(o.market)} price list</span>` : ''}<span>${esc(o.owner)}</span><span>created ${fmtDY(o.created)}</span><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtDY(o.due)}</span>${o.closed ? `<span>${o.status === 'Offer review' ? 'sent' : 'closed'} ${fmtDY(o.closed)}</span>` : ''}${o.hasOffer ? `<span>R${o.revisions}</span>` : ''}</div>
-      <div class="pop-b">${o.hasOffer ? `<div class="kv"><div>Offer value (net)<b>${eur(o.value)}</b></div><div>UPS units<b>${units(o)}</b></div><div>Power modules<b>${modules(o)}</b></div><div>Installed power<b>${(kwOf(o) / 1000).toFixed(2)} MW</b></div></div>
+      <div class="pop-b">${o.hasOffer ? `<div class="kv"><div>${o.valueSrc === 'list' ? 'Offer value (SharePoint)' : 'Offer value (net)'}<b>${o.value > 0 ? eur(o.value) : '—'}</b></div><div>UPS units<b>${units(o)}</b></div><div>Power modules<b>${modules(o)}</b></div><div>Installed power<b>${(kwOf(o) / 1000).toFixed(2)} MW</b></div></div>
         <div class="ptitle">UPS configurations</div>${o.positions.length ? `<table class="t"><thead><tr><th>Model</th><th class="n">Load kW</th><th class="n">Systems × UPS</th><th class="n">Modules / UPS</th><th>Battery</th></tr></thead><tbody>${o.positions.map(p => `<tr><td><b>${esc(p.model)}</b></td><td class="n">${num(p.pload)}</td><td class="n">${p.qty} × ${p.ups}</td><td class="n">${p.npm}</td><td>${p.lithium ? 'Lithium' : 'VRLA / other'}</td></tr>`).join('')}</tbody></table>` : nothing('No UPS configuration in the offer.')}
         <div class="ptitle" style="margin-top:14px">Services</div><div class="sla">${SLA_IDS.map(l => `<span class="${o.sla[l] ? 'on' : ''}" title="${esc(SLA_N[l] || '')}">${l} ${o.sla[l] ? '× ' + o.sla[l] : ''}</span>`).join('')}${o.fok ? '<span class="on">FOK</span>' : ''}</div>
-        ${o.file && o.file !== 'example' ? `<div class="sub" style="margin-top:12px">From ${esc(o.file)}${o.saved ? ' · saved ' + fmtDY(o.saved) : ''}</div>` : ''}` : `<div class="empty"><b>No saved offer</b>There is no offer file in the "02 OFFER" folder of this project yet.</div>`}</div>
+        ${o.file && o.file !== 'example' ? `<div class="sub" style="margin-top:12px">From ${esc(o.file)}${o.saved ? ' · saved ' + fmtDY(o.saved) : ''}</div>` : ''}` : `${o.value > 0 ? `<div class="kv"><div>Offer value (SharePoint)<b>${eur(o.value)}</b></div></div>` : ''}<div class="empty"><b>No saved offer</b>There is no offer file in the "02 OFFER" folder of this project yet${o.value > 0 ? ': the value is the Offer Value € of the Progress tracker list' : ''}.</div>`}</div>
       <div class="pop-f"><button type="button" class="btn" data-menu="${esc(o.ref)}" style="margin-right:auto">Status / owner</button><button type="button" class="btn" data-act="close">Close</button>${SRC === 'sp' ? `<button type="button" class="btn pri" data-cfg="${esc(o.ref)}">${ic(I.cfg, 14)}Open in configurator</button>` : ''}</div>`;
     $('ov').classList.add('open'); tip.style.display = 'none';
   }
@@ -32063,7 +32079,7 @@ function gantt(el, list){
     if($('ov').classList.contains('open') && POPREF) openOffer(POPREF);
     const A = rows();
     $('sbar').innerHTML = SRC === 'demo' ? `<span class="warn">● Example data</span><span>${OFFERS.length} offers</span><span>${A.length} shown · ${eurK(val(A))}</span>`
-      : `<span class="${SCAN.err ? 'warn' : 'ok'}">● SharePoint · Progress tracker</span><span>${OFFERS.length} projects · ${OFFERS.filter(o => o.hasOffer).length} with a saved offer</span><span>${A.length} shown · ${eurK(val(A))}</span><span>${OFFERS.filter(open).length} open · ${OFFERS.filter(overdue).length} late</span>${SCAN.running ? `<span>reading ${SCAN.done} / ${SCAN.total}</span>` : ''}<span style="margin-left:auto">${SCAN.at ? 'updated ' + SCAN.at.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : ''}</span>`;
+      : `<span class="${SCAN.err ? 'warn' : 'ok'}">● SharePoint · Progress tracker</span><span>${OFFERS.length} projects · ${OFFERS.filter(o => o.hasOffer).length} with a saved offer${OFFERS.some(o => o.valueSrc === 'list') ? ` · ${OFFERS.filter(o => o.valueSrc === 'list').length} values from the list` : ''}</span><span>${A.length} shown · ${eurK(val(A))}</span><span>${OFFERS.filter(open).length} open · ${OFFERS.filter(overdue).length} late</span>${SCAN.running ? `<span>reading ${SCAN.done} / ${SCAN.total}</span>` : ''}<span style="margin-left:auto">${SCAN.at ? 'updated ' + SCAN.at.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : ''}</span>`;
   }
   function act(a){
     const i = a.indexOf(':'), k = i < 0 ? a : a.slice(0, i), v = i < 0 ? '' : a.slice(i + 1);
@@ -32083,9 +32099,9 @@ function gantt(el, list){
     render();
   }
   function exportCsv(){
-    const A = rows(), h = ['Project','Customer','Project name','Country','Owner','Status','SharePoint status','Price list','Family','UPS','Power modules','Installed kW','Net value','Cost','Created','Due','Offer file'];
+    const A = rows(), h = ['Project','Customer','Project name','Country','Owner','Status','SharePoint status','Price list','Family','UPS','Power modules','Installed kW','Net value','Value from','Cost','Created','Due','Offer file'];
     const d = x => x ? `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}` : '';
-    const csv = [h, ...A.map(o => [o.ref, o.customer, o.project, o.countryName, o.owner, o.status, o.rawStatus, o.hasOffer ? o.market : '', o.fam, units(o), modules(o), Math.round(kwOf(o)), Math.round(o.value), Math.round(o.cost), d(o.created), d(o.due), o.file])]
+    const csv = [h, ...A.map(o => [o.ref, o.customer, o.project, o.countryName, o.owner, o.status, o.rawStatus, o.hasOffer ? o.market : '', o.fam, units(o), modules(o), Math.round(kwOf(o)), Math.round(o.value), o.valueSrc === 'list' ? 'SharePoint OfferValue' : o.valueSrc ? 'offer file' : '', Math.round(o.cost), d(o.created), d(o.due), o.file])]
       .map(r => r.map(c => /[;"\n]/.test(String(c)) ? '"' + String(c).replace(/"/g, '""') + '"' : c).join(';')).join('\r\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], {type: 'text/csv'})); a.download = `UPS_Dashboard_${d(TODAY)}.csv`; document.body.appendChild(a); a.click(); a.remove();
   }

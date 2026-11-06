@@ -13679,6 +13679,33 @@
         }
     </style>
 
+    <style id="udDashCss">
+        /* ---- beta_6.56: UPS Dashboard (Admin) — the blue tab switches Configurator ⇄ Dashboard ---- */
+        body:not(.ud-mode) .ud-only { display: none !important; }
+        body.ud-mode #appTopbar > .rb-tabs:not(.ud-only), body.ud-mode #ribbonPanel, body.ud-mode #offerTabs,
+        body.ud-mode #appOpenProject, body.ud-mode #autosaveRibbonControl, body.ud-mode #undoQat, body.ud-mode #qatSave,
+        body.ud-mode #autosaveStatus, body.ud-mode #appDocTitle, body.ud-mode #btnShowSidebar, body.ud-mode .new-offer-sticky-bar,
+        body.ud-mode .main-content > .wrap, body.ud-mode .sidebar { display: none !important; }
+        body.ud-mode.ud-collapsed #udRibbon { display: none !important; }
+        body.ud-mode.ud-collapsed .rb-tabs.ud-only .rb-tab.on::after { display: none; }
+        #udDocTitle { order: 5; flex: 1 1 180px; min-width: 0; text-align: center; font: 400 12.5px 'Segoe UI','Work Sans',Arial,sans-serif; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 10px; }
+            #udDocTitle b { font-weight: 600; }
+        #upsDashHost { display: block; }
+        .ud-sel { display: flex; align-items: center; gap: 6px; height: 26px; font-size: 12px; color: var(--dim); white-space: nowrap; }
+            .ud-sel span { min-width: 58px; text-align: right; }
+            .ud-sel select { height: 24px; min-width: 150px; max-width: 190px; border: 1px solid var(--field-border); border-radius: 5px; background: var(--field-bg); padding: 0 6px; font-size: 12.5px; color: var(--text); }
+            .ud-sel select.set { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); font-weight: 600; }
+        .rb-panel.ud-only .rb-col:has(.ud-sel) { gap: 4px; }
+        .rb-panel.ud-tight .ud-sel select { min-width: 112px; max-width: 130px; }
+            .rb-panel.ud-tight .ud-sel span { min-width: 0; }
+        #udPages .offer-tab { min-width: 0; padding: 0 14px; gap: 7px; }
+            #udPages .offer-tab svg { color: var(--accent-dark); flex: none; }
+            #udPages .offer-tab .ud-cnt { font-size: 11px; font-weight: 600; background: #C8102E; color: #fff; border-radius: 9px; padding: 0 6px; line-height: 16px; }
+        .app-menu .am-sep { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-weight: 600; padding: 8px 10px 2px; }
+        .app-menu .am-item.am-cur { background: var(--accent-soft); }
+            .app-menu .am-item .am-check { margin-left: auto; color: var(--accent); font-weight: 700; }
+        .app-menu .am-line { height: 1px; background: var(--panel-border); margin: 6px 4px; }
+    </style>
     <style id="connectOverlayCss">
         /* beta_6.55: connection screen, from the first paint until the tenant connection is ready */
         .connect-overlay {
@@ -13930,7 +13957,7 @@
 
                 <div class="page-header u10">
                     <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-                    <h1>UPS Configurator <span class="version-badge">beta_6.55</span></h1>
+                    <h1>UPS Configurator <span class="version-badge">beta_6.56</span></h1>
                     <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
                 </div>
 
@@ -15164,9 +15191,54 @@ function updateSpStatus(msg, state){
   el.className = 'catalog-status' + (state==='loaded' ? ' loaded' : state==='error' ? ' error' : '');
 }
 
+// beta_6.56: Client ID and Tenant ID. In the local copy they are in the two hidden fields spClientId / spTenantId;
+// the copy published on Azure has no such fields and reads them from the Azure sign-in of the page (App Service
+// authentication, /.auth/me): the app the user signed in to (aud) and the user's tenant (tid).
+let AZ_IDS = null;           // {clientId, tenant}
+let azIdsLoading = null;
+function decodeJwtPayload(t){
+  try{ const p = String(t || '').split('.')[1]; if(!p) return null;
+    const s = atob(p.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(p.length / 4) * 4, '='));
+    return JSON.parse(decodeURIComponent(s.split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))); }catch(e){ return null; }
+}
+function azureIdsFromMe(data){
+  const rec = Array.isArray(data) ? data[0] : null;
+  if(!rec) return null;
+  const claims = rec.user_claims || [];
+  const claim = (...types) => { for(const t of types){ const c = claims.find(x => x.typ === t); if(c && c.val) return c.val; } return ''; };
+  const tok = decodeJwtPayload(rec.id_token) || {};
+  const guid = v => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || '')) ? String(v) : '';
+  const fromIss = v => (/\/([0-9a-f-]{36})\//i.exec(String(v || '')) || [])[1] || '';
+  const clientId = guid(claim('aud')) || guid(tok.aud);
+  const tenant = guid(claim('http://schemas.microsoft.com/identity/claims/tenantid', 'tid')) || guid(tok.tid) || guid(fromIss(claim('iss') || tok.iss));
+  return clientId ? {clientId, tenant: tenant || 'organizations'} : null;
+}
+function fieldIds(){
+  const c = (document.getElementById('spClientId')?.value || '').trim(), t = (document.getElementById('spTenantId')?.value || '').trim();
+  return c ? {clientId: c, tenant: t || 'organizations'} : null;
+}
+async function loadAzureIds(){
+  if(AZ_IDS) return AZ_IDS;
+  const f = fieldIds(); if(f){ AZ_IDS = f; return AZ_IDS; }
+  if(!azIdsLoading) azIdsLoading = (async () => {
+    if(!/^https?:$/.test(location.protocol)) return null;
+    try{
+      const r = await fetch('/.auth/me', {credentials: 'same-origin', headers: {Accept: 'application/json'}});
+      if(!r.ok || !/json/i.test(r.headers.get('content-type') || '')) return null;
+      AZ_IDS = azureIdsFromMe(await r.json());
+    }catch(e){ console.warn('Azure sign-in data (/.auth/me) not available:', e); }
+    return AZ_IDS;
+  })();
+  const ids = await azIdsLoading;
+  if(!ids) azIdsLoading = null;     // try again next time
+  return ids;
+}
+function msalIds(){
+  if(!AZ_IDS || !AZ_IDS.clientId) throw new Error('The app (Client ID) and the tenant are not in this file and could not be read from the Azure sign-in of this page (/.auth/me).');
+  return AZ_IDS;
+}
 function buildMsalInstance(){
-  const clientId = document.getElementById('spClientId').value.trim();
-  const tenant = document.getElementById('spTenantId').value.trim() || 'organizations';
+  const {clientId, tenant} = msalIds();
   return new msal.PublicClientApplication({
     auth: {
       clientId,
@@ -15184,7 +15256,9 @@ function buildMsalInstance(){
 // new instance then refused to start ("interaction_in_progress") until the page was reloaded.
 let msalReady = null; // {key, promise}
 async function getMsalReady(){
-  const key = document.getElementById('spClientId').value.trim() + '|' + (document.getElementById('spTenantId').value.trim() || 'organizations');
+  await loadAzureIds();
+  const {clientId, tenant} = msalIds();
+  const key = clientId + '|' + tenant;
   if(!msalReady || msalReady.key !== key){
     const instance = buildMsalInstance();
     msalReady = {key, promise: instance.initialize().then(()=>instance)};
@@ -25517,6 +25591,7 @@ const APP_MENU = (function(){
       <a class="am-item" role="menuitem" data-am="quick" href="${MANUAL_URLS.quick}" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>${escapeHtml(t[10])}<small>${escapeHtml(t[11])}</small></span></a>
       <a class="am-item" role="menuitem" data-am="feedback" href="${escapeHtml(feedbackHref())}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>${escapeHtml(t[2])}<small>${escapeHtml(t[3])}</small></span></a>`;
     document.body.appendChild(m);
+    try{ if(typeof UPS_DASH !== 'undefined' && UPS_DASH) UPS_DASH.decorateMenu(m, close); }catch(e){ console.warn(e); }   // beta_6.56: Configurator / Dashboard (Admin)
     btn.setAttribute('aria-expanded', 'true');
     m.querySelector('[data-am="news"]').addEventListener('click', () => { close(); openWhatsNew(); });
     m.querySelectorAll('a.am-item').forEach(a => a.addEventListener('click', () => setTimeout(close, 0)));
@@ -30122,7 +30197,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.55';
+const CURRENT_VERSION = 'beta_6.56';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Battery sizing (sottoprogramma)', date: '2026-10-26', notes:[
@@ -30175,6 +30250,15 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 // RIBBON is initialized before this state restoration; refresh once to match the saved Admin state.
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.56', date:'2026-11-06', notes:[
+    'Dashboard per gli Admin: la scheda blu «UPS Configurator ▾» ha le voci UPS Configurator e UPS Dashboard (solo per il gruppo Admin). La dashboard ha il suo ribbon (Home, View), le pagine Overview, Pipeline, Products & services e My workspace come schede sotto il ribbon, e la barra di stato',
+    'Dati della dashboard: tutti i progetti della Progress tracker list e, per ognuno, l\'ultimo file offerta (.json) della cartella 02 OFFER: valore netto (dopo lo sconto progetto), costo, UPS, moduli di potenza, batterie e livelli SLA. Stati SharePoint contati come Won: Won, Awarded / Awarder, Project Execution, Project Closed (e Execution, Order); Lost: Lost, Cancelled, Declined. Refresh rilegge lista e offerte; View › Example data mostra dati di esempio',
+    'Filtri nel ribbon (periodo, listino, owner, paese, stato, famiglia) e cliccando i grafici (stato, famiglia, cliente, owner); finestra di dettaglio dell\'offerta con «Open in configurator», che torna al configuratore e apre il progetto nella sua scheda. Anche un progetto aperto dalla campanella o dalla finestra Projects riporta al configuratore',
+    'La dashboard segue il tema chiaro/scuro; export CSV dei progetti filtrati; se l\'utente non è più Admin la dashboard si chiude',
+    'Client ID e Tenant ID: nella copia locale restano nei due campi nascosti; la copia pubblicata su Azure non li contiene e il login Microsoft li legge dall\'accesso Azure della pagina (/.auth/me: app = aud, tenant = tid)',
+    'My workspace a post-it: le offerte sono post-it colorati per stato in cinque colonne (New, In progress, Offer review, Won e Lost degli ultimi 90 giorni). Trascinare un post-it in un\'altra colonna cambia lo Status su SharePoint (se la colonna ha più stati, es. Won = Awarder / Project Execution / Project Closed, si sceglie quale); il menu ⋯ o le iniziali cambiano stato e assegnazione (Assigned to, ricerca tra le persone del sito). Ogni modifica si scrive subito sulla Progress tracker list, si annulla con Undo e, se SharePoint la rifiuta, torna com\'era',
+    'Manuale a parte UPS_Dashboard_Guide.pdf (stessa cartella degli altri manuali): si apre dal menu della scheda blu (Dashboard Guide, solo Admin) e dal ribbon della dashboard (Help › Dashboard Guide)',
+  ]},
   {version:'beta_6.55', date:'2026-11-05', notes:[
     'Connessione automatica al tenant: tolti il pulsante Sign in, il pulsante della finestra Microsoft 365 e la schermata di benvenuto. All\'avvio una schermata di attesa resta visibile finché accesso, lista progetti e gruppi Entra ID sono pronti',
     'Se la connessione non riesce, o richiede più di 45 secondi, la schermata mostra il motivo con «Riprova» e «Continua senza connessione». Senza connessione compare «Riconnetti» nella barra informazioni in alto; anche la pagina New project e i messaggi rimandano lì',
@@ -31174,5 +31258,931 @@ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState 
             manage.addEventListener('click', showBanner);
         })();
     </script>
+<script>
+// ---- beta_6.56: UPS Dashboard — Admin only ----
+// The blue tab "UPS Configurator ▾" gets two entries for the Admin group: UPS Configurator and UPS Dashboard.
+// The dashboard reads every project of the Progress tracker list and the newest offer file (.json) in its
+// "02 OFFER" folder: value (net, after the project discount), cost, UPS, power modules, batteries, SLA levels.
+// It has its own ribbon (Home / View) and page tabs in the same top bar, and is drawn in a shadow root so its
+// styles and the configurator's never mix. Opening an offer from the dashboard goes back to the configurator.
+const UPS_DASH = (function(){
+  const topbar = document.getElementById('appTopbar'), mainContent = document.querySelector('.main-content');
+  if(!topbar || !mainContent) return null;
+
+  /* ---------- dates ---------- */
+  let TODAY, MONTHS;
+  const monthKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  function setToday(){
+    TODAY = new Date(); TODAY.setHours(0, 0, 0, 0); MONTHS = [];
+    for(let k = 11; k >= 0; k--) MONTHS.push(monthKey(new Date(TODAY.getFullYear(), TODAY.getMonth() - k, 1)));
+  }
+  setToday();
+  const mLabel = k => { const [y, m] = k.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleString('en-GB', {month: 'short'}) + (m === 1 ? " '" + String(y).slice(2) : ''); };
+  const D = (y, m, d) => new Date(y, m, d);
+  const fmtD = d => d ? d.toLocaleDateString('en-GB', {day: '2-digit', month: 'short'}) : '—';
+  const fmtDY = d => d ? d.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'}) : '—';
+  const daysTo = d => d ? Math.round((d - TODAY) / 864e5) : Infinity;
+  const dueT = o => o.due ? o.due.getTime() : Infinity;
+  const dateOf = v => { if(!v) return null; const d = v instanceof Date ? new Date(v) : new Date(String(v)); return isNaN(d) ? null : d; };
+  const dayOf = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+
+  /* ---------- formatting ---------- */
+  const eur = n => '€' + Math.round(n).toLocaleString('en-GB');
+  const eurK = n => n < 0 ? '−' + eurK(-n) : n >= 1e6 ? '€' + (n / 1e6).toFixed(n >= 1e7 ? 1 : 2) + 'M' : n >= 1e3 ? '€' + Math.round(n / 1e3) + 'k' : '€' + Math.round(n);
+  const num = n => Math.round(n).toLocaleString('en-GB');
+  const pct = n => (n * 100).toFixed(1) + '%';
+  const sum = (a, f) => a.reduce((s, x) => s + (f ? f(x) : x), 0);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+  const units = o => sum(o.positions, p => p.units), modules = o => sum(o.positions, p => p.modules), kwOf = o => sum(o.positions, p => p.kw * p.units);
+  const val = a => sum(a, o => o.value);
+  const MWof = a => sum(a, kwOf) / 1000;
+  const marginOf = a => { const v = val(a.filter(o => o.cost > 0)); return v ? (v - sum(a.filter(o => o.cost > 0), o => o.cost)) / v : 0; };
+  const liUnits = a => sum(a, o => sum(o.positions.filter(p => p.lithium), p => p.units));
+  const nameKey = n => String(n || '').toLowerCase().replace(/[^a-zÀ-ɏ ]+/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
+  const shortName = n => { const s = String(n || ''); if(!s.includes(',')) return s; const [a, b] = s.split(','); return (b.trim() + ' ' + a.trim()).trim(); };
+  const ini = n => shortName(n).split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+  const firstName = n => shortName(n).split(/\s+/)[0] || '';
+  const meName = () => { try{ return shortName(currentUserName()); }catch(e){ return ''; } };
+  const isMe = o => !!o.owner && nameKey(o.owner) === nameKey(meName());
+
+  /* ---------- status ---------- */
+  const STATUS = ['New', 'In progress', 'Offer review', 'Won', 'Lost'];
+  // The SharePoint Status in the five stages of the dashboard. Won = Won, Awarded / Awarder, Project Execution
+  // and Project Closed (also Execution, Order); Lost = Lost, Cancelled, Declined.
+  function stageName(s){
+    s = String(s || '').trim();
+    if(!s || /^new$|draft|not started|to do/i.test(s)) return 'New';
+    if(/^offer review$/i.test(s)) return 'Offer review';
+    if(/lost|cancel|declin|\bpers/i.test(s)) return 'Lost';
+    if(/won|award|order|vint|execut|esecuz|closed|chius/i.test(s)) return 'Won';
+    return 'In progress';
+  }
+  const won = o => o.status === 'Won', lost = o => o.status === 'Lost', open = o => ['New', 'In progress', 'Offer review'].includes(o.status), working = o => ['New', 'In progress'].includes(o.status);
+  const overdue = o => working(o) && o.due && o.due < TODAY;
+  const winRate = a => { const w = a.filter(won).length, l = a.filter(lost).length; return w + l ? w / (w + l) : 0; };
+  const SLA_N = {}; try{ SVC_LEVELS.forEach(l => SLA_N[l.id] = l.name); }catch(e){}
+  const SLA_IDS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'];
+
+  /* ---------- shadow root ---------- */
+  const host = document.createElement('div'); host.id = 'upsDashHost'; host.className = 'ud-only';
+  mainContent.appendChild(host);
+  const root = host.attachShadow({mode: 'open'});
+  root.innerHTML = `<style>:host{display:block; --s1:#2F5597; --s2:#0E9488; --s3:#D9782B; --s4:#7B61C9; --s5:#C2408A; --other:#A3ABB8;
+  --st-new:#8A94A6; --st-prog:#4472C4; --st-rev:#D9A11F; --st-won:#2E8B57; --st-lost:#C8102E;
+  --grid:#EEF1F5; --axis:#C9D0DB; --tick:#6B7383; --lbl:#2B2F36; --row:#F0F2F5; --hover:#F6F9FE; --chip:#EAF0FB; --chip-b:#C9D8F2; --chip-t:#2F5597;
+  color:var(--text); font-family:'Work Sans',system-ui,sans-serif; font-size:13px}
+:host(.dark){--s1:#6E9BEF; --s2:#3CC2AE; --s3:#F0954A; --s4:#A48CF0; --s5:#E06AAA; --other:#6B7383;
+  --st-new:#98A2B5; --st-prog:#6E9BEF; --st-rev:#E5B53A; --st-won:#46B07A; --st-lost:#F0566E;
+  --grid:#2E333D; --axis:#4A5160; --tick:#A7AFBE; --lbl:#E8EAF0; --row:#2C313B; --hover:#2A3240; --chip:#26364D; --chip-b:#3A5275; --chip-t:#A9C7FF}
+*{box-sizing:border-box}
+button,select,input{font:inherit; color:inherit}
+svg text{font-family:inherit}
+.tick{font-size:10.5px; fill:var(--tick)} .lbl{font-size:10.5px; fill:var(--lbl)}
+.mark{transition:opacity .12s} .hov:hover .mark:not(:hover){opacity:.55}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--dim); margin:2px 0 6px}
+.legend span{display:inline-flex; align-items:center; gap:6px} .legend i{width:10px; height:10px; border-radius:3px; display:inline-block}
+#tip{position:fixed; pointer-events:none; z-index:2000; background:#14161A; color:#fff; font-size:12px; padding:7px 10px; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; max-width:320px; line-height:1.45}
+.pill{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; padding:2px 8px; border-radius:999px; white-space:nowrap}
+.pill::before{content:''; width:7px; height:7px; border-radius:50%; background:currentColor}
+main{padding:18px 30px 50px}
+.chips{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:0 0 14px; min-height:28px}
+.chips .lab{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); font-weight:600; margin-right:2px}
+.chip{display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 4px 0 10px; border-radius:999px; background:var(--chip); color:var(--chip-t); font-size:12px; border:1px solid var(--chip-b)}
+.chip b{font-weight:600}
+.chip button{width:20px; height:20px; border:none; border-radius:50%; background:transparent; color:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0}
+.chip button:hover{background:var(--chip-b)}
+.chip.none{background:transparent; border-color:transparent; color:var(--dim); padding-left:0}
+.src{margin-left:auto; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--dim)}
+.src .dot{width:8px; height:8px; border-radius:50%; background:var(--st-won)} .src .dot.demo{background:var(--st-rev)}
+.prog{height:4px; background:var(--grid); border-radius:2px; overflow:hidden; width:160px} .prog i{display:block; height:100%; background:var(--accent)}
+.cv{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; align-items:start}
+.panel{background:var(--panel); border:1px solid var(--panel-border); border-radius:10px; padding:16px 20px 18px; min-width:0}
+.ptitle{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-bottom:12px}
+.ptitle::before{content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none}
+.ptitle .r{margin-left:auto; text-transform:none; letter-spacing:0; font-weight:400; color:var(--dim)}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+.strip{grid-column:span 12; display:grid; grid-template-columns:repeat(4,1fr); background:var(--panel); border:1px solid var(--panel-border); border-radius:10px}
+.strip > div{padding:16px 22px; border-right:1px solid var(--panel-border); display:flex; gap:12px; align-items:flex-start; min-width:0}
+.strip > div:last-child{border-right:none}
+.strip .dot{width:9px; height:9px; border-radius:50%; margin-top:8px; flex:none}
+.strip b{display:block; font-size:24px; font-weight:600; letter-spacing:-.01em; line-height:1.15}
+.strip span{color:var(--dim); font-size:12.5px}
+.strip em{font-style:normal; font-size:12px; font-weight:600; margin-left:4px}
+.strip em.up{color:var(--st-won)} .strip em.dn{color:var(--st-lost)}
+.strip svg.spark{display:block; height:28px; margin-top:6px}
+table.t{width:100%; border-collapse:collapse; font-size:12.5px}
+table.t th{text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); font-weight:600; padding:7px 8px; border-bottom:1px solid var(--panel-border); white-space:nowrap}
+table.t td{padding:8px; border-bottom:1px solid var(--row); white-space:nowrap}
+table.t .n{text-align:right; font-variant-numeric:tabular-nums}
+table.t tr.click{cursor:pointer} table.t tr.click:hover td{background:var(--hover)}
+table.mx td{text-align:right} table.mx td:first-child,table.mx th:first-child{text-align:left}
+table.mx th{text-align:right; background:var(--accent-dark); color:#fff; letter-spacing:.04em}
+table.mx th:first-child{border-radius:6px 0 0 0} table.mx th:last-child{border-radius:0 6px 0 0}
+table.mx tr.tot td{font-weight:700; border-top:1.5px solid var(--text)}
+table.mx tr.fr{cursor:pointer} table.mx tr.fr:hover td:first-child{color:var(--accent); text-decoration:underline}
+table.mx tr.sel td:first-child{color:var(--accent); font-weight:700}
+.sub{font-size:11.5px; color:var(--dim); margin-top:6px}
+.empty{padding:36px 20px; text-align:center; color:var(--dim)} .empty b{display:block; font-size:16px; color:var(--text); margin-bottom:6px}
+.fam{grid-column:span 12; display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px}
+.famc{background:var(--panel); border:1px solid var(--panel-border); border-radius:10px; padding:14px 16px; border-top:4px solid var(--c); cursor:pointer}
+.famc:hover{box-shadow:0 4px 14px rgba(20,22,26,.08)} .famc.sel{box-shadow:inset 0 0 0 1.5px var(--c)}
+.famc h3{margin:0; font-size:18px; color:var(--c)} .famc .m{font-size:11.5px; color:var(--dim); margin-bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.famc .g{display:grid; grid-template-columns:1fr 1fr; gap:6px} .famc .g div{background:var(--field-bg); border-radius:7px; padding:5px 8px; font-size:11.5px; color:var(--dim)} .famc .g b{display:block; font-size:15px; color:var(--text)}
+.ws{display:grid; grid-template-columns:290px minmax(0,1fr) 290px; gap:16px; align-items:start}
+.wsb{display:grid; gap:16px}
+.ws-row{display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start}
+.ptitle .hint{font-weight:400; letter-spacing:0; text-transform:none; color:var(--dim); margin-left:10px; font-size:11.5px}
+.seg{display:inline-flex; background:var(--field-bg); border:1px solid var(--field-border); border-radius:8px; padding:2px}
+.seg button{border:none; background:transparent; padding:4px 14px; border-radius:6px; cursor:pointer; font-size:12.5px}
+.seg button.on{background:var(--accent-dark); color:#fff; font-weight:600}
+.hello{font-size:19px; font-weight:600; color:var(--navy)} .hello + p{margin:2px 0 14px; color:var(--dim)}
+.task{border:1px solid var(--panel-border); border-radius:8px; padding:10px 12px; margin-bottom:8px; font-size:12.5px; border-left:4px solid var(--st-rev)}
+.task.late{border-left-color:var(--st-lost)}
+.task b{display:block; font-weight:600} .task .w{font-weight:600}
+.task .a{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap}
+.btn{height:26px; padding:0 10px; border:1px solid var(--field-border); background:var(--panel); border-radius:6px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px}
+.btn:hover{border-color:var(--accent); color:var(--accent)}
+.btn.pri{background:var(--accent); border-color:var(--accent); color:#fff} .btn.pri:hover{background:var(--accent-dark); color:#fff}
+.board{display:grid; grid-template-columns:repeat(5,minmax(176px,1fr)); gap:12px; overflow-x:auto; padding:4px 2px 6px}
+.lane-b{max-height:560px; overflow-y:auto; padding:4px 4px 6px; margin:0 -4px}
+.lane-e{border:1.5px dashed var(--field-border); border-radius:8px; text-align:center; color:var(--dim); font-size:12px; padding:22px 8px}
+.lane.over{background:var(--chip); box-shadow:inset 0 0 0 2px var(--accent)}
+.lane.over .lane-e{border-color:var(--accent); color:var(--accent)}
+.lane{background:var(--field-bg); border:1px solid var(--panel-border); border-radius:8px; padding:8px; min-height:200px}
+.lane h4{margin:2px 4px 8px; font-size:12px; font-weight:600; display:flex; justify-content:space-between; align-items:center}
+.lane h4 i{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px}
+.kc{--pi:#FFF4B8; background:var(--pi); color:#2B2F36; border-radius:3px 3px 12px 3px; padding:8px 10px 8px; margin:0 2px 10px; font-size:12px; cursor:grab; position:relative;
+  transform:rotate(var(--r,0deg)); box-shadow:0 1px 1px rgba(0,0,0,.08), 0 8px 14px -8px rgba(20,22,26,.35); transition:transform .12s, box-shadow .12s}
+.kc:hover{transform:rotate(0deg) translateY(-2px); box-shadow:0 2px 3px rgba(0,0,0,.1), 0 12px 20px -10px rgba(20,22,26,.4)}
+.kc.dragging{opacity:.35}
+.kc.st-new{--pi:#FFF4B8} .kc.st-in-progress{--pi:#DCEAFF} .kc.st-offer-review{--pi:#FFE3BC} .kc.st-won{--pi:#D6F1DF} .kc.st-lost{--pi:#F9DCE0}
+:host(.dark) .kc{color:#E8EAF0} :host(.dark) .kc.st-new{--pi:#4A4424} :host(.dark) .kc.st-in-progress{--pi:#24375A} :host(.dark) .kc.st-offer-review{--pi:#4D3A1F} :host(.dark) .kc.st-won{--pi:#1E4230} :host(.dark) .kc.st-lost{--pi:#4D2730}
+.kc-t{display:flex; align-items:center; justify-content:space-between; margin-bottom:3px}
+.kc-st{font-size:10.5px; font-weight:600; letter-spacing:.02em; background:rgba(255,255,255,.55); border-radius:999px; padding:1px 8px; max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+:host(.dark) .kc-st{background:rgba(0,0,0,.25)}
+.kc-m{border:none; background:transparent; color:inherit; font-size:16px; line-height:1; width:24px; height:22px; border-radius:6px; cursor:pointer; opacity:.7}
+.kc-m:hover{opacity:1; background:rgba(0,0,0,.08)}
+.kc .kc-p{display:block; opacity:.8}
+.kc .m{opacity:.85}
+.kc .av{border:none; cursor:pointer; background:rgba(255,255,255,.7)} .kc .av:hover{box-shadow:0 0 0 2px var(--accent)}
+:host(.dark) .kc .av{background:rgba(0,0,0,.3); color:#E8EAF0}
+.cmenu{position:fixed; z-index:1700; width:290px; max-height:min(460px, calc(100vh - 20px)); overflow:auto; background:var(--panel); border:1px solid var(--panel-border); border-radius:12px; box-shadow:0 16px 40px rgba(20,22,26,.25); padding:6px; display:none}
+.cmenu.open{display:block}
+.cm-h{display:flex; align-items:center; gap:6px; padding:6px 8px 8px; border-bottom:1px solid var(--panel-border); font-size:12.5px}
+.cm-x{margin-left:auto; border:none; background:transparent; cursor:pointer; color:var(--dim); width:24px; height:24px; border-radius:6px} .cm-x:hover{background:var(--field-bg)}
+.cm-s{font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); font-weight:600; padding:8px 8px 4px}
+.cm-it{display:flex; align-items:center; gap:8px; width:100%; border:none; background:transparent; text-align:left; padding:6px 8px; border-radius:7px; cursor:pointer; font-size:12.5px}
+.cm-it:hover{background:var(--hover)} .cm-it.on{background:var(--chip)}
+.cm-it > i{width:9px; height:9px; border-radius:50%; flex:none}
+.cm-it small{color:var(--dim); font-size:11px} .cm-it b{margin-left:auto; color:var(--accent)}
+.cm-q{width:calc(100% - 12px); margin:2px 6px 4px; height:28px; border:1px solid var(--field-border); border-radius:7px; background:var(--field-bg); padding:0 8px; font-size:12.5px; color:var(--text)}
+.cm-none,.cm-load{padding:8px; color:var(--dim); font-size:12px}
+.toast{position:fixed; left:50%; bottom:40px; transform:translate(-50%, 20px); z-index:1800; background:#14161A; color:#fff; border-radius:10px; padding:9px 10px 9px 14px; font-size:12.5px; display:flex; align-items:center; gap:10px; box-shadow:0 10px 30px rgba(0,0,0,.3); opacity:0; pointer-events:none; transition:opacity .15s, transform .15s; max-width:min(680px, calc(100vw - 24px))}
+.toast.show{opacity:1; transform:translate(-50%, 0); pointer-events:auto} .toast.bad{background:#8E1023}
+.toast .tb{border:1px solid rgba(255,255,255,.35); background:transparent; color:#fff; border-radius:6px; padding:3px 10px; cursor:pointer; font-size:12px} .toast .tb:hover{background:rgba(255,255,255,.12)} .toast .tb.x{border:none; padding:3px 6px}
+.kc b{display:block; font-size:12.5px; font-weight:600} .kc .m{display:flex; justify-content:space-between; color:var(--dim); margin-top:3px; gap:6px}
+.av{width:20px; height:20px; border-radius:50%; background:var(--accent-soft); color:var(--accent-dark); font-size:9.5px; display:inline-flex; align-items:center; justify-content:center; font-weight:700; flex:none}
+.cal{display:grid; grid-template-columns:repeat(7,1fr); gap:3px; text-align:center; font-size:12px}
+.cal .h{color:var(--dim); font-size:10.5px; padding-bottom:4px; font-weight:600}
+.cal .d{aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center; position:relative}
+.cal .d.o{opacity:.4} .cal .d.t{background:var(--accent-dark); color:#fff; font-weight:700} .cal .d.has{cursor:pointer; font-weight:600} .cal .d.has:hover{background:var(--chip)}
+.cal .d em{display:flex; gap:2px; position:absolute; bottom:3px} .cal .d em i{width:5px; height:5px; border-radius:50%; display:block}
+.cal-h{display:flex; align-items:center; gap:6px; margin-bottom:8px} .cal-h b{flex:1; font-size:14px}
+.ib{display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border:1px solid transparent; border-radius:6px; background:transparent; cursor:pointer; color:var(--text)}
+.ib:hover{background:var(--field-bg); border-color:var(--panel-border); color:var(--accent)}
+.up{display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--row); font-size:12.5px; cursor:pointer} .up:hover b{color:var(--accent)}
+.up .dt{width:42px; text-align:center; flex:none; border-radius:7px; background:var(--field-bg); padding:3px 0; font-size:11px; color:var(--dim)} .up .dt b{display:block; font-size:15px; color:var(--text)}
+.statusbar{position:fixed; left:0; right:0; bottom:0; height:26px; background:var(--field-bg); border-top:1px solid var(--panel-border); display:flex; align-items:center; gap:18px; padding:0 30px; font-size:11.5px; color:var(--dim); z-index:80; white-space:nowrap; overflow:hidden}
+.statusbar .ok{color:var(--st-won); font-weight:600} .statusbar .warn{color:var(--st-rev); font-weight:600}
+.ov{position:fixed; inset:0; background:rgba(14,22,40,.42); z-index:1500; display:none; align-items:flex-start; justify-content:center; padding:60px 16px}
+.ov.open{display:flex}
+.pop{width:min(680px,100%); background:var(--panel); border-radius:12px; overflow:hidden; box-shadow:0 24px 60px rgba(10,20,50,.35); max-height:calc(100vh - 120px); display:flex; flex-direction:column}
+.pop-h{background:#00257A; color:#fff; padding:14px 18px; display:flex; gap:12px; align-items:center}
+.pop-h .ic{width:36px; height:36px; border-radius:9px; background:rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; flex:none}
+.pop-h h3{margin:0; font-size:15px; font-weight:600} .pop-h small{opacity:.8}
+.pop-h .x{margin-left:auto; width:30px; height:30px; border:none; background:transparent; color:#fff; border-radius:7px; cursor:pointer; font-size:18px; flex:none} .pop-h .x:hover{background:rgba(255,255,255,.15)}
+.pop-strip{display:flex; gap:6px; flex-wrap:wrap; padding:10px 18px; background:var(--field-bg); border-bottom:1px solid var(--panel-border)}
+.pop-strip span{font-size:11.5px; background:var(--panel); border:1px solid var(--panel-border); border-radius:999px; padding:2px 10px}
+.pop-b{padding:14px 18px; overflow:auto}
+.kv{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px}
+.kv div{background:var(--field-bg); border-radius:8px; padding:8px 10px; font-size:11.5px; color:var(--dim)} .kv b{display:block; font-size:16px; color:var(--text)}
+.sla{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px}
+.sla span{padding:3px 10px; border-radius:999px; font-size:12px; background:var(--field-bg); color:var(--dim)}
+.sla span.on{background:var(--accent-soft); color:var(--navy); font-weight:600}
+.pop-f{display:flex; gap:8px; justify-content:flex-end; padding:12px 18px; border-top:1px solid var(--panel-border); background:var(--field-bg)}
+@media (max-width:1100px){ .cv > *{grid-column:span 12 !important} .ws,.ws-row{grid-template-columns:1fr} .strip{grid-template-columns:1fr 1fr} .strip > div:nth-child(2){border-right:none} }
+@media (max-width:700px){ main{padding-left:14px; padding-right:14px} .kv{grid-template-columns:1fr 1fr} .board{grid-template-columns:repeat(5,170px)} }
+@media print{ .statusbar,.chips{display:none} main{padding:0} }
+</style><main id="main"></main><div class="statusbar" id="sbar"></div><div class="ov" id="ov"><div class="pop" id="pop"></div></div><div class="cmenu" id="cmenu" role="menu"></div><div class="toast" id="toast" role="status" aria-live="polite"></div><div id="tip"></div>`;
+  const $ = id => root.getElementById(id);
+  const cssv = n => getComputedStyle(host).getPropertyValue(n).trim();
+  const SC = () => ({New: cssv('--st-new'), 'In progress': cssv('--st-prog'), 'Offer review': cssv('--st-rev'), Won: cssv('--st-won'), Lost: cssv('--st-lost')});
+  const KNOWN_FAMS = ['MP2', 'M2S', 'M2X', 'M2F', 'M2U'];
+  const FAMC = () => { const o = {}; const s = ['--s1', '--s2', '--s3', '--s4', '--s5'].map(cssv); FAMS.forEach(f => { const k = KNOWN_FAMS.indexOf(f); o[f] = k >= 0 ? s[k] : cssv('--other'); }); return o; };
+  const pill = s => `<span class="pill" style="color:${SC()[s]};background:${SC()[s]}1F">${s}</span>`;
+  const syncTheme = () => host.classList.toggle('dark', document.body.classList.contains('dark-theme'));
+  new MutationObserver(() => { const d = host.classList.contains('dark'); syncTheme(); if(d !== host.classList.contains('dark') && active()) render(); }).observe(document.body, {attributes: true, attributeFilter: ['class']});
+  syncTheme();
+  const tip = $('tip');
+  root.addEventListener('mousemove', e => {
+    const t = e.target.closest && e.target.closest('[data-tip]');
+    if(!t){ tip.style.display = 'none'; return; }
+    tip.innerHTML = t.getAttribute('data-tip'); tip.style.display = 'block';
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.min(innerWidth - w - 8, e.clientX + 14) + 'px'; tip.style.top = Math.max(8, e.clientY - h - 12) + 'px';
+  });
+  host.addEventListener('mouseleave', () => tip.style.display = 'none');
+
+function W(el){ return Math.max(260, el.clientWidth); }
+function niceStep(v){ const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+function scale(v, int){ let st = niceStep(Math.max(v, 1e-9) / 4); if(int) st = Math.max(1, Math.ceil(st)); const n = Math.max(1, Math.ceil(v / st - 1e-9)); return {max: st * n, step: st, n}; }
+function niceMax(v){ if(v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+function legend(items){ return `<div class="legend">${items.map(([n, c]) => `<span><i style="background:${c}"></i>${esc(n)}</span>`).join('')}</div>`; }
+// vertical bars, grouped or stacked (2px surface gap between stacked fills, 4px rounded tops)
+function bars(el, {cats, series, stacked = false, fmt = eurK, h = 230, labels = false}){
+  const w = W(el), m = {l: 52, r: 8, t: 10, b: 26}, iw = w - m.l - m.r, ih = h - m.t - m.b;
+  const tot = cats.map((_, i) => stacked ? sum(series, s => s.values[i]) : Math.max(...series.map(s => s.values[i])));
+  const sc = scale(Math.max(...tot, 1), fmt === num); const max = sc.max; const y = v => m.t + ih - v / max * ih;
+  const bw = iw / cats.length; let g = '';
+  for(let k = 0; k <= sc.n; k++){ const v = sc.step * k; g += `<line x1="${m.l}" x2="${w - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${k ? 'var(--grid)' : 'var(--axis)'}"/><text class="tick" x="${m.l - 6}" y="${y(v) + 3.5}" text-anchor="end">${fmt(v)}</text>`; }
+  cats.forEach((c, i) => {
+    const x0 = m.l + i * bw;
+    if(stacked){ let acc = 0; const bwi = Math.min(36, bw * 0.62), x = x0 + (bw - bwi) / 2;
+      series.forEach((s, si) => { const v = s.values[i]; if(!v) return; const y1 = y(acc + v), y0 = y(acc); const top = si === series.length - 1 || !series.slice(si + 1).some(t => t.values[i]);
+        g += `<path class="mark" d="${roundTop(x, y1, bwi, Math.max(0, y0 - y1 - (acc ? 2 : 0)), top ? 4 : 0)}" fill="${s.color}" data-tip="<b>${esc(c)}</b><br>${esc(s.name)}: ${fmt(v)}"/>`; acc += v; });
+      if(labels && tot[i]) g += `<text class="lbl" x="${x + bwi / 2}" y="${y(tot[i]) - 5}" text-anchor="middle">${fmt(tot[i])}</text>`;
+    } else { const n = series.length, gw = Math.min(46, bw * 0.7), bwi = (gw - (n - 1) * 2) / n, xs = x0 + (bw - gw) / 2;
+      series.forEach((s, si) => { const v = s.values[i]; const x = xs + si * (bwi + 2);
+        g += `<path class="mark" d="${roundTop(x, y(v), bwi, ih + m.t - y(v), 4)}" fill="${s.color}" data-tip="<b>${esc(c)}</b><br>${esc(s.name)}: ${fmt(v)}"/>`;
+        if(labels && v) g += `<text class="lbl" x="${x + bwi / 2}" y="${y(v) - 5}" text-anchor="middle">${fmt(v)}</text>`; }); }
+    if(cats.length <= 14 || i % 2 === 0) g += `<text class="tick" x="${x0 + bw / 2}" y="${h - 8}" text-anchor="middle">${esc(c)}</text>`;
+  });
+  el.innerHTML = (series.length > 1 ? legend(series.map(s => [s.name, s.color])) : '') + `<svg class="hov" width="100%" viewBox="0 0 ${w} ${h}">${g}</svg>`;
+}
+function roundTop(x, y, w, h, r){ if(h <= 0) return ''; r = Math.min(r, w / 2, h); return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; }
+// horizontal bars with direct labels
+function hbars(el, {items, fmt = eurK, color = 'var(--s1)', max: mx, extra}){
+  const w = W(el), lw = Math.min(170, w * 0.36), rh = 26, h = items.length * rh + 6, max = mx || Math.max(...items.map(i => i.value), 1), iw = w - lw - (extra ? 150 : 70);
+  let g = '';
+  items.forEach((it, i) => { const y = 4 + i * rh, bw = Math.max(2, it.value / max * iw);
+    g += `<text class="lbl" x="${lw - 8}" y="${y + 15}" text-anchor="end">${esc(it.label.length > 26 ? it.label.slice(0, 25) + '…' : it.label)}</text>`
+      + `<rect class="mark" x="${lw}" y="${y + 5}" width="${bw}" height="14" rx="4" fill="${it.color || color}" data-tip="<b>${esc(it.label)}</b><br>${fmt(it.value)}${it.tip ? '<br>' + it.tip : ''}"/>`
+      + `<text class="lbl" x="${lw + bw + 6}" y="${y + 15.5}" style="font-weight:600">${fmt(it.value)}${extra ? ' <tspan style="font-weight:400;fill:#6B7383">' + extra(it) + '</tspan>' : ''}</text>`; });
+  el.innerHTML = `<svg class="hov" width="100%" viewBox="0 0 ${w} ${h}">${g}</svg>`;
+}
+// lines (one axis), with crosshair tooltip per month
+function lines(el, {cats, series, fmt = eurK, h = 230, area = false}){
+  const w = W(el), m = {l: 52, r: 14, t: 10, b: 26}, iw = w - m.l - m.r, ih = h - m.t - m.b;
+  const sc = scale(Math.max(...series.flatMap(s => s.values.filter(v => v != null)), 1e-9)); const max = sc.max; const y = v => m.t + ih - v / max * ih, x = i => m.l + (cats.length === 1 ? iw / 2 : i * iw / (cats.length - 1));
+  let g = '';
+  for(let k = 0; k <= sc.n; k++){ const v = sc.step * k; g += `<line x1="${m.l}" x2="${w - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${k ? 'var(--grid)' : 'var(--axis)'}"/><text class="tick" x="${m.l - 6}" y="${y(v) + 3.5}" text-anchor="end">${fmt(v)}</text>`; }
+  cats.forEach((c, i) => { if(cats.length <= 14 || i % 2 === 0) g += `<text class="tick" x="${x(i)}" y="${h - 8}" text-anchor="middle">${esc(c)}</text>`; });
+  series.forEach(s => { let pen = false; const d = s.values.map((v, i) => { if(v == null){ pen = false; return ''; } const c = `${pen ? 'L' : 'M'}${x(i)},${y(v)}`; pen = true; return c; }).join('');
+    if(area) g += `<path d="${d}L${x(cats.length - 1)},${y(0)}L${x(0)},${y(0)}Z" fill="${s.color}" opacity=".10"/>`;
+    g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" ${s.dash ? 'stroke-dasharray="5 4"' : ''}/>`;
+    s.values.forEach((v, i) => { if(v != null) g += `<circle cx="${x(i)}" cy="${y(v)}" r="3.2" fill="${s.color}" stroke="#fff" stroke-width="1.5"/>`; });
+    let li = s.values.length - 1; while(li > 0 && s.values[li] == null) li--; if(s.values[li] != null) g += `<text class="lbl" x="${x(li) - 4}" y="${y(s.values[li]) - 8}" text-anchor="end" style="font-weight:600;fill:${s.color}">${fmt(s.values[li])}</text>`; });
+  const step = iw / Math.max(1, cats.length - 1);
+  cats.forEach((c, i) => { g += `<rect x="${x(i) - step / 2}" y="${m.t}" width="${step}" height="${ih}" fill="transparent" data-tip="<b>${esc(c)}</b>${series.map(s => `<br><span style='color:${s.color}'>●</span> ${esc(s.name)}: ${s.values[i] == null ? '–' : fmt(s.values[i])}`).join('')}"/>`; });
+  el.innerHTML = (series.length > 1 ? legend(series.map(s => [s.name, s.color])) : '') + `<svg width="100%" viewBox="0 0 ${w} ${h}">${g}</svg>`;
+}
+// 100% stacked rows (share)
+function share(el, {rows, fmt = eurK}){
+  const w = W(el), lw = Math.min(130, w * 0.3), rh = 30, h = rows.length * rh + 4, iw = w - lw - 10; let g = '';
+  rows.forEach((r, i) => { const y = 3 + i * rh, t = sum(r.parts, p => p.value) || 1; let x = lw;
+    g += `<text class="lbl" x="${lw - 8}" y="${y + 16}" text-anchor="end">${esc(r.label)}</text>`;
+    r.parts.forEach((p, k) => { const bw = p.value / t * iw; if(bw <= 0) return; const ww = Math.max(0, bw - (k < r.parts.length - 1 ? 2 : 0));
+      g += `<rect class="mark" x="${x}" y="${y + 4}" width="${ww}" height="18" rx="${k === 0 || k === r.parts.length - 1 ? 4 : 0}" fill="${p.color}" data-tip="<b>${esc(r.label)}</b><br>${esc(p.name)}: ${fmt(p.value)} (${pct(p.value / t)})"/>`;
+      if(bw > 44) g += `<text x="${x + 6}" y="${y + 17}" style="font-size:10.5px;fill:#fff;font-weight:600">${Math.round(p.value / t * 100)}%</text>`; x += bw; }); });
+  el.innerHTML = legend(rows[0].parts.map(p => [p.name, p.color])) + `<svg class="hov" width="100%" viewBox="0 0 ${w} ${h}">${g}</svg>`;
+}
+// funnel
+function funnel(el, stages){
+  const w = W(el), rh = 40, h = stages.length * rh + 4, max = Math.max(...stages.map(s => s.value), 1); let g = '';
+  stages.forEach((s, i) => { const bw = Math.max(60, s.value / max * (w - 190)), x = (w - 190 - bw) / 2, y = 2 + i * rh;
+    g += `<rect class="mark" x="${x}" y="${y}" width="${bw}" height="${rh - 6}" rx="6" fill="${s.color}" data-tip="<b>${esc(s.label)}</b><br>${s.n} offers · ${eur(s.value)}"/>`
+      + `<text x="${x + bw / 2}" y="${y + 21}" text-anchor="middle" style="font-size:11.5px;font-weight:600;fill:#fff">${s.n}</text>`
+      + `<text class="lbl" x="${w - 180}" y="${y + 15}" style="font-weight:600">${esc(s.label)}</text><text class="tick" x="${w - 180}" y="${y + 29}">${eurK(s.value)}${s.conv != null ? ' · ' + pct(s.conv) + ' conv.' : ''}</text>`; });
+  el.innerHTML = `<svg class="hov" width="100%" viewBox="0 0 ${w} ${h}">${g}</svg>`;
+}
+function spark(values, color = 'var(--s1)', w = 160, h = 34){
+  const max = Math.max(...values, 1), x = i => i * (w - 4) / Math.max(1, values.length - 1) + 2, y = v => h - 3 - v / max * (h - 8);
+  const d = values.map((v, i) => `${i ? 'L' : 'M'}${x(i)},${y(v)}`).join('');
+  return `<svg class="spark" width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${d}L${x(values.length - 1)},${h}L2,${h}Z" fill="${color}" opacity=".12"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function treemap(el, {items, h = 420, fmt = eurK}){
+  const w = W(el), total = sum(items, i => i.value) || 1, rects = [];
+  const area = items.filter(i => i.value > 0).sort((a, b) => b.value - a.value).map(i => ({...i, a: i.value / total * w * h}));
+  (function sq(list, x, y, wd, ht){
+    if(!list.length) return; const short = Math.min(wd, ht); let row = [], i = 0;
+    const worst = r => { const s = sum(r, q => q.a), mx = Math.max(...r.map(q => q.a)), mn = Math.min(...r.map(q => q.a)); return Math.max(short * short * mx / (s * s), s * s / (short * short * mn)); };
+    while(i < list.length && (!row.length || worst(row.concat(list[i])) <= worst(row))){ row.push(list[i]); i++; }
+    const s = sum(row, q => q.a), thick = s / short; let off = 0;
+    row.forEach(q => { const len = q.a / thick; if(wd >= ht) rects.push({...q, x, y: y + off, w: thick, h: len}); else rects.push({...q, x: x + off, y, w: len, h: thick}); off += len; });
+    if(wd >= ht) sq(list.slice(i), x + thick, y, wd - thick, ht); else sq(list.slice(i), x, y + thick, wd, ht - thick);
+  })(area, 0, 0, w, h);
+  el.innerHTML = `<svg class="hov" width="100%" viewBox="0 0 ${w} ${h}">${rects.map(r => `<g><rect class="mark" x="${r.x + 1}" y="${r.y + 1}" width="${Math.max(0, r.w - 2)}" height="${Math.max(0, r.h - 2)}" rx="5" fill="${r.color}" data-tip="<b>${esc(r.label)}</b><br>${esc(r.group || '')} ${fmt(r.value)} · ${pct(r.value / total)}"/>${r.w > 70 && r.h > 34 ? `<text x="${r.x + 9}" y="${r.y + 19}" style="font-size:12px;font-weight:600;fill:#fff;pointer-events:none">${esc(r.label.length > r.w / 7.5 ? r.label.slice(0, Math.floor(r.w / 7.5)) + '…' : r.label)}</text><text x="${r.x + 9}" y="${r.y + 34}" style="font-size:11px;fill:#fff;opacity:.9;pointer-events:none">${fmt(r.value)}</text>` : ''}</g>`).join('')}</svg>`;
+}
+function gantt(el, list){
+  const w = W(el), lw = Math.min(230, w * 0.32), rh = 24, h = list.length * rh + 30, start = new Date(Math.min(TODAY.getTime() - 60 * 864e5, ...list.map(o => o.created.getTime())) - 7 * 864e5), end = new Date(Math.max(TODAY.getTime() + 30 * 864e5, ...list.map(o => o.due.getTime())) + 10 * 864e5);
+  const X = d => lw + (Math.max(start, Math.min(end, d)) - start) / (end - start) * (w - lw - 10), sc = SC(); let g = '';
+  for(let t = new Date(start.getFullYear(), start.getMonth() + 1, 1); t < end; t = new Date(t.getFullYear(), t.getMonth() + 1, 1))
+    g += `<line x1="${X(t)}" x2="${X(t)}" y1="18" y2="${h}" stroke="var(--grid)"/><text class="tick" x="${X(t) + 4}" y="12">${t.toLocaleString('en-GB', {month: 'short'})}</text>`;
+  g += `<line x1="${X(TODAY)}" x2="${X(TODAY)}" y1="14" y2="${h}" stroke="#C8102E" stroke-width="2"/><text x="${X(TODAY) + 4}" y="${h - 4}" style="font-size:10px;fill:#C8102E;font-weight:600">today</text>`;
+  list.forEach((o, i) => { const y = 22 + i * rh, endD = o.closed || (open(o) ? TODAY : o.due), x0 = X(o.created), x1 = Math.max(x0 + 4, X(endD));
+    g += `<text class="lbl" x="${lw - 8}" y="${y + 13}" text-anchor="end"><tspan style="font-weight:600">${esc(o.ref)}</tspan> ${esc(o.customer.length > 18 ? o.customer.slice(0, 17) + '…' : o.customer)}</text>`
+      + `<rect class="mark" x="${x0}" y="${y + 3}" width="${x1 - x0}" height="14" rx="4" fill="${sc[o.status]}" data-tip="<b>${o.ref} · ${esc(o.customer)}</b><br>${o.status} · ${eurK(o.value)}<br>created ${o.created.toLocaleDateString('en-GB')} · due ${o.due.toLocaleDateString('en-GB')}${o.closed ? '<br>' + (o.status === 'Offer review' ? 'sent ' : 'closed ') + o.closed.toLocaleDateString('en-GB') : ''}"/>`
+      + `<path d="M${X(o.due)},${y + 1}l4,5l-4,5l-4,-5z" fill="var(--text)" data-tip="due ${o.due.toLocaleDateString('en-GB')}"/>`; });
+  el.innerHTML = `<svg class="hov" width="100%" viewBox="0 0 ${w} ${h}">${g}</svg><div class="legend" style="margin-top:6px">${STATUS.map(s => `<span><i style="background:${sc[s]}"></i>${s}</span>`).join('')}<span>◆ due date</span></div>`;
+}
+
+
+  /* ---------- data ---------- */
+  let OFFERS = [], FAMS = [], OWN = [], COUNTRIES = [], SRC = 'none';
+  const SCAN = {running: false, done: 0, total: 0, err: '', at: null};
+  function setData(list, src){
+    CHOICES = null;
+    OFFERS = list.slice().sort((a, b) => b.created - a.created); SRC = src;
+    const fu = {}; OFFERS.forEach(o => o.positions.forEach(p => fu[p.fam] = (fu[p.fam] || 0) + p.units));
+    FAMS = Object.keys(fu).sort((a, b) => { const x = KNOWN_FAMS.indexOf(a), y = KNOWN_FAMS.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || a.localeCompare(b); });
+    OWN = [...new Set(OFFERS.map(o => o.owner).filter(o => o && o !== '—'))].sort((a, b) => a.localeCompare(b));
+    COUNTRIES = [...new Map(OFFERS.filter(o => o.country && o.country !== '—').map(o => [o.country, o.countryName])).entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+  }
+  const textOf = v => { try{ const x = typeof v === 'object' && v !== null ? extractDisplayValue(v) : v; return String(x ?? '').trim(); }catch(e){ return ''; } };
+  const famOf = m => String(m || '').trim().split(/\s+/)[0].toUpperCase();
+  function offerTotals(st){
+    let total = 0, tcost = 0, cur = null; const groups = [], sla = {}; let fok = false;
+    (st.bom || []).forEach(it => {
+      if(it.kind === 'header'){ const p = it.cfgPos ? (st.positions || [])[Number(it.cfgPos) - 1] : null; cur = {mult: p ? (Number(p.qty) || 1) : 1, price: 0, cost: 0}; groups.push(cur); return; }
+      if(it.kind === 'total' || !cur) return;
+      if(it.kitId && !it.kitParent) return;          // a kit is one line: its components are inside its price
+      const q = Number(it.qty) || 0, g = Number(it.gross) || 0, d = Number(it.disc) || 0, c = Number(it.cost) || 0;
+      cur.price += g * (1 - d / 100) * q; cur.cost += c * q;
+      if(it.svcLevel){ sla[it.svcLevel] = (sla[it.svcLevel] || 0) + q; if(it.svcFok) fok = true; }
+    });
+    groups.forEach(g => { total += g.price * g.mult; tcost += g.cost * g.mult; });
+    return {value: total * (1 - (Number(st.projectDiscount) || 0) / 100), cost: tcost, sla, fok};
+  }
+  function toPosition(p){
+    const model = String(p.model || '').trim(), kwm = (typeof moduleKwForModel === 'function' && moduleKwForModel(model)) || (typeof MODULE_KW_ACTIVE !== 'undefined' ? MODULE_KW_ACTIVE : 0) || 0;
+    const qty = Number(p.qty) || 0, ups = Number(p.upssys) || 1;
+    let npm;
+    if(String(p.npm ?? '').trim() !== '') npm = Math.max(0, Math.round(Number(p.npm)) || 0);
+    else { npm = Number(typeof computeNPM === 'function' ? computeNPM(p.pload, p.red, moduleKwForModel(model)) : 0) || 0; if(Number(p.pmBsz) > npm) npm = Math.floor(Number(p.pmBsz)); }
+    return {model, fam: famOf(model), qty, ups, units: qty * ups, npm, modules: qty * ups * npm, kw: npm * kwm, pload: Number(p.pload) || 0, lithium: /lith|li-?ion|lfp/i.test(String(p.batt || ''))};
+  }
+  function toOffer(rec, st, file){
+    const raw = rec._raw || {}, ref = String(rec.PRJ_ID).trim();
+    const c = countryDisplay(textOf(st && st.project && st.project.country) || textOf(rec['Country.lookupValue']));
+    const status = stageName(textOf(rec.Status));
+    const positions = st && Array.isArray(st.positions) ? st.positions.map(toPosition).filter(p => p.units > 0 && p.model) : [];
+    const fu = {}; positions.forEach(p => fu[p.fam] = (fu[p.fam] || 0) + p.units);
+    const fam = Object.keys(fu).sort((a, b) => fu[b] - fu[a])[0] || famOf(textOf(rec.Product)) || '—';
+    const t = st ? offerTotals(st) : {value: 0, cost: 0, sla: {}, fok: false};
+    const modified = dateOf(raw.Modified);
+    return {ref, customer: textOf(rec.Customer) || '—', project: textOf(rec['Project Name']), country: c.code || c.name || '—', countryName: c.name || '—',
+      owner: shortName(textOf(rec['Created By.title'])) || '—', ownerId: String(raw[(typeof OWNER_PERSON_FIELD !== 'undefined' ? OWNER_PERSON_FIELD : 'AssignedTo0') + 'LookupId'] ?? ''), status, rawStatus: textOf(rec.Status), market: (st && st.market) || (/^M2[FU]$/.test(fam) ? 'UL' : 'IEC'), fam, positions,
+      value: t.value, cost: t.cost, sla: t.sla, fok: t.fok, revisions: st ? Number(st.revision) || 0 : 0,
+      created: dateOf(raw.Created) || dateOf(st && st.savedAt) || new Date(TODAY), due: dateOf(rec['Due date']) ? dayOf(dateOf(rec['Due date'])) : null,
+      closed: ['Won', 'Lost', 'Offer review'].includes(status) ? modified : null, hasOffer: !!st, file: file ? file.name : '', saved: file ? dateOf(file.lastModifiedDateTime) : null};
+  }
+  let scanSeq = 0;
+  async function loadSharePoint(reloadList){
+    const seq = ++scanSeq;
+    Object.assign(SCAN, {running: true, done: 0, total: 0, err: ''});
+    render();
+    try{
+      if(reloadList || !PROGRESS.length) await fetchSharePointList();
+      const token = await getGraphToken();
+      const {site} = await resolveSharePointList(token);
+      const recs = (PROGRESS || []).filter(r => r && String(r.PRJ_ID || '').trim());
+      SCAN.total = recs.length;
+      const out = new Array(recs.length); let i = 0, painted = Date.now();
+      const worker = async () => {
+        while(i < recs.length && seq === scanSeq){
+          const k = i++, rec = recs[k]; let st = null, file = null;
+          const fl = rec._raw && rec._raw.FolderLink0, path = fl ? resolveProjectSubfolderPath(fl, '02 OFFER') : '';
+          if(path){
+            try{
+              const files = await listOfferJsonFiles({site, token, targetPath: path});
+              for(const f of files.slice(0, 3)){
+                try{
+                  const s = JSON.parse(await downloadDriveFileText(site.id, f));
+                  if(!s || !Array.isArray(s.positions)) continue;
+                  const fr = s.project && String(s.project.ref || '').trim();
+                  if(fr && fr !== String(rec.PRJ_ID).trim()) continue;   // a file of another project
+                  st = s; file = f; break;
+                }catch(e){}
+              }
+            }catch(e){ /* no "02 OFFER" folder or not readable */ }
+          }
+          try{ out[k] = toOffer(rec, st, file); }catch(e){ console.warn('Dashboard: project not read', rec.PRJ_ID, e); }
+          SCAN.done++;
+          if(seq === scanSeq && Date.now() - painted > 1200){ painted = Date.now(); setData(out.filter(Boolean), 'sp'); if(active()) render(); }
+        }
+      };
+      await Promise.all(Array.from({length: 8}, worker));
+      if(seq !== scanSeq) return;
+      setData(out.filter(Boolean), 'sp'); SCAN.at = new Date();
+    }catch(err){ if(seq === scanSeq){ SCAN.err = String((err && err.message) || err); console.warn('Dashboard: SharePoint not read', err); } }
+    if(seq !== scanSeq) return;
+    SCAN.running = false;
+    if(active()) render();
+  }
+  function demoOffers(){
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647, pick = a => a[Math.floor(rnd() * a.length)];
+    const CUST = ['Nordic DataPark', 'Alpine Cloud SpA', 'Iberia Colocation', 'Rhone Data', 'Baltic Edge', 'Helvetia Hosting', 'Danube DC', 'Thames Compute', 'Atlantic Hyperscale', 'Po Valley Data', 'Vistula Cloud', 'Lakeside Colo', 'Fjord Compute', 'Adriatic Edge'];
+    const CTRY = [['IT', 'Italy'], ['DE', 'Germany'], ['FR', 'France'], ['ES', 'Spain'], ['NO', 'Norway'], ['SE', 'Sweden'], ['NL', 'Netherlands'], ['PL', 'Poland'], ['GB', 'United Kingdom'], ['CH', 'Switzerland'], ['AT', 'Austria'], ['US', 'United States']];
+    const me = meName() || 'Francesco Carraro', OWNERS = [me, 'Marco Rossi', 'Laura Bianchi', 'Klaus Weber', 'Julie Martin'];
+    const FAM = {IEC: ['MP2', 'M2S', 'M2X'], UL: ['M2F', 'M2U']}, MODEL = {MP2: ['MP2 300', 'MP2 500'], M2S: ['M2S 1000', 'M2S 1250'], M2X: ['M2X 120 - 30', 'M2X 120 - 15'], M2F: ['M2F 350 - 75', 'M2F 675 - 75'], M2U: ['M2U 140 - 34', 'M2U 68 - 34']};
+    const KW = {'MP2 300': 300, 'MP2 500': 500, 'M2S 1000': 1000, 'M2S 1250': 1250, 'M2X 120 - 30': 120, 'M2X 120 - 15': 120, 'M2F 350 - 75': 350, 'M2F 675 - 75': 675, 'M2U 140 - 34': 136, 'M2U 68 - 34': 68}, PMKW = {MP2: 67, M2S: 67, M2X: 30, M2F: 75, M2U: 34};
+    const list = [];
+    for(let i = 0; i < 96; i++){
+      const created = new Date(TODAY.getTime() - Math.floor(rnd() * 365) * 864e5), age = (TODAY - created) / 864e5;
+      const market = rnd() < 0.16 ? 'UL' : 'IEC', c = market === 'UL' ? ['US', 'United States'] : pick(CTRY.slice(0, 11)), fam = pick(FAM[market]);
+      const positions = []; const np = 1 + Math.floor(rnd() * 3);
+      for(let p = 0; p < np; p++){ const model = pick(MODEL[fam]), pl = Math.round(KW[model] * (0.55 + rnd() * 0.45)), qty = 1 + Math.floor(rnd() * 3), ups = 1 + Math.floor(rnd() * 3), npm = Math.ceil(pl / PMKW[fam]) + 1;
+        positions.push({model, fam, qty, ups, npm, units: qty * ups, modules: qty * ups * npm, kw: npm * PMKW[fam], pload: pl, lithium: rnd() < 0.55}); }
+      const status = age < 25 ? (rnd() < .5 ? 'New' : 'In progress') : age < 70 ? pick(['In progress', 'In progress', 'Offer review', 'Offer review', 'Won']) : pick(['Offer review', 'Won', 'Won', 'Lost', 'Lost', 'Won', 'Offer review']);
+      const hw = positions.reduce((a, p) => a + p.units * (KW[p.model] * 95 + p.npm * 850) + (p.lithium ? p.units * 24000 : p.units * 9000), 0);
+      const value = Math.round(hw * (1.04 + rnd() * 0.09) * (0.86 + rnd() * 0.1)), mp = 0.18 + rnd() * 0.17 - (market === 'UL' ? 0.03 : 0);
+      const sla = {}; SLA_IDS.forEach((l, k) => { if(rnd() < [0.25, 0.55, 0.7, 0.6, 0.3, 0.65][k]) sla[l] = l === 'L6' ? 1 : positions.reduce((a, p) => a + p.units, 0); });
+      list.push({ref: String(260000 + 96 - i), customer: pick(CUST), project: pick(['Campus', 'Hub', 'West', 'North', 'Edge', 'Core', 'Data hall', 'South']) + ' ' + (1 + Math.floor(rnd() * 9)) + ' MW',
+        country: c[0], countryName: c[1], owner: pick(OWNERS), status, rawStatus: status, market, fam, positions, value, cost: Math.round(value * (1 - mp)), sla, fok: rnd() < 0.12,
+        revisions: status === 'New' ? 0 : Math.floor(rnd() * rnd() * 4), created, due: dayOf(new Date(created.getTime() + (14 + Math.floor(rnd() * 30)) * 864e5)),
+        closed: ['Won', 'Lost', 'Offer review'].includes(status) ? new Date(created.getTime() + (8 + Math.floor(rnd() * 40)) * 864e5) : null, hasOffer: true, file: 'example', saved: null});
+    }
+    return list;
+  }
+
+  /* ---------- icons ---------- */
+  const ic = (d, s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const I = {
+    overview: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+    pipeline: '<path d="M3 4h18l-7 8v6l-4 2v-8z"/>',
+    products: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+    work: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+    clear: '<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>',
+    csv: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15l3 3 3-3"/>',
+    print: '<path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8" rx="1"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>',
+    cfg: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M13 8h4M13 12h4"/>',
+    me: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    team: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/>',
+    up: '<path d="m18 15-6-6-6 6"/>', pin: '<path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
+    bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', guide: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', demo: '<path d="M9 3h6M10 3v6L4 19a2 2 0 0 0 1.7 3h12.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/>',
+    sp: '<path d="M4 7a8 3 0 1 0 16 0a8 3 0 1 0-16 0"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  };
+
+  /* ---------- state ---------- */
+  const GUIDE_URL = (typeof MANUALS_BASE !== 'undefined' ? MANUALS_BASE : '') + 'UPS_Dashboard_Guide.pdf';   // the Dashboard Guide (PDF), next to the other manuals
+  const PAGES = [['overview', 'Overview', I.overview], ['pipeline', 'Pipeline', I.pipeline], ['products', 'Products & services', I.products], ['work', 'My workspace', I.work]];
+  const S = {page: 'overview', rb: 'home', collapsed: false, cal: [TODAY.getFullYear(), TODAY.getMonth()]};
+  const FX = {period: '12', market: '', owner: '', country: '', status: '', fam: '', customer: ''};
+  const FXL = {period: 'Period', market: 'Price list', owner: 'Owner', country: 'Country', status: 'Status', fam: 'Family', customer: 'Customer'};
+  const PERIODS = [['3', 'Last 3 months'], ['6', 'Last 6 months'], ['12', 'Last 12 months'], ['24', 'Last 24 months'], ['ytd', 'Year to date'], ['all', 'All']];
+  const fxText = (k, v) => k === 'country' ? ((COUNTRIES.find(c => c[0] === v) || [v, v])[1]) : k === 'period' ? PERIODS.find(p => p[0] === v)[1] : v;
+  const pMonths = () => FX.period === 'ytd' ? TODAY.getMonth() + 1 : FX.period === 'all' ? 12 : Number(FX.period);
+  function win(shift){
+    if(FX.period === 'all') return shift ? [new Date(0), new Date(0)] : [new Date(0), new Date(TODAY.getTime() + 864e5)];
+    let to = new Date(TODAY.getTime() + 864e5), from = FX.period === 'ytd' ? D(TODAY.getFullYear(), 0, 1) : new Date(TODAY.getFullYear(), TODAY.getMonth() - Number(FX.period), TODAY.getDate() + 1);
+    if(shift){ const span = to - from; to = from; from = new Date(from.getTime() - span); }
+    return [from, to];
+  }
+  function rows(shift, skip){
+    const [from, to] = win(shift);
+    return OFFERS.filter(o => o.created >= from && o.created < to && ['market', 'owner', 'country', 'status', 'fam', 'customer'].every(k => k === skip || !FX[k] || o[k] === FX[k]));
+  }
+  const monthsInPeriod = () => { const n = Math.min(24, pMonths()); const out = []; for(let k = n - 1; k >= 0; k--) out.push(monthKey(new Date(TODAY.getFullYear(), TODAY.getMonth() - k, 1))); return out; };
+
+  function donut(el, {parts, fmt = num, center = '', sub = '', size = 168, key}){
+    const vis = parts.filter(p => p.value > 0), t = sum(vis, p => p.value) || 1, r = 68, c = 90; let a = -Math.PI / 2, g = '';
+    vis.forEach(p => { const da = Math.min(p.value / t * 2 * Math.PI, 2 * Math.PI - 0.002), gp = vis.length > 1 ? 0.025 : 0, a0 = a + gp / 2, a1 = a + da - gp / 2;
+      g += `<path class="mark" ${key ? `data-x="${key}:${esc(p.name)}" style="cursor:pointer"` : ''} d="M${c + r * Math.cos(a0)},${c + r * Math.sin(a0)}A${r},${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${c + r * Math.cos(a1)},${c + r * Math.sin(a1)}" fill="none" stroke="${p.color}" stroke-width="22" data-tip="<b>${esc(p.name)}</b><br>${fmt(p.value)} · ${pct(p.value / t)}${key ? '<br><i>click to filter</i>' : ''}"/>`; a += da; });
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap"><svg class="hov" width="${size}" height="${size}" viewBox="0 0 180 180" style="flex:none">${g || `<circle cx="90" cy="90" r="68" fill="none" stroke="var(--grid)" stroke-width="22"/>`}<text x="90" y="92" text-anchor="middle" style="font-size:24px;font-weight:600;fill:var(--lbl)">${center}</text><text x="90" y="110" text-anchor="middle" class="tick">${sub}</text></svg><div class="legend" style="flex-direction:column;gap:7px;flex:1;min-width:140px">${parts.map(p => `<span ${key ? `data-x="${key}:${esc(p.name)}" style="cursor:pointer"` : ''}><i style="background:${p.color}"></i>${esc(p.name)}<b style="margin-left:auto;padding-left:10px;color:var(--text)">${fmt(p.value)}</b></span>`).join('')}</div></div>`;
+  }
+
+  /* ---------- top bar: ribbon tabs, ribbon, page tabs, title ---------- */
+  const tabsEl = document.createElement('nav'); tabsEl.className = 'rb-tabs ud-only'; tabsEl.setAttribute('role', 'tablist');
+  const panelEl = document.createElement('div'); panelEl.className = 'rb-panel ud-only'; panelEl.id = 'udRibbon'; panelEl.setAttribute('role', 'toolbar');
+  const pagesEl = document.createElement('div'); pagesEl.className = 'offer-tabs ud-only'; pagesEl.id = 'udPages';
+  const titleEl = document.createElement('div'); titleEl.className = 'ud-only'; titleEl.id = 'udDocTitle';
+  const cfgTabs = topbar.querySelector('.rb-tabs');
+  if(cfgTabs) cfgTabs.after(tabsEl); else topbar.appendChild(tabsEl);
+  (document.getElementById('ribbonPanel') || tabsEl).after(panelEl);
+  (document.getElementById('offerTabs') || panelEl).after(pagesEl);
+  (document.getElementById('appDocTitle') || tabsEl).after(titleEl);
+
+  const big = (act, label, icon, on, cls = '') => `<button type="button" class="rb-big${on ? ' rb-on' : ''}${cls ? ' ' + cls : ''}" data-ud="${act}" title="${esc(label)}">${ic(icon, 24)}<span>${esc(label)}</span></button>`;
+  const small = (act, label, icon, dis) => `<button type="button" class="rb-sm" data-ud="${act}" ${dis ? 'disabled' : ''}>${ic(icon, 15)}<span>${esc(label)}</span></button>`;
+  const sel = (k, opts) => `<label class="ud-sel"><span>${FXL[k]}</span><select data-fx="${k}" class="${FX[k] && !(k === 'period' && FX[k] === '12') ? 'set' : ''}">${k === 'period' ? '' : '<option value="">All</option>'}${opts.map(([v, t]) => `<option value="${esc(v)}" ${FX[k] === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  function ribbon(){
+    const anyF = ['market', 'owner', 'country', 'status', 'fam', 'customer'].some(k => FX[k]) || FX.period !== '12';
+    const grp = (lab, items) => `<div class="rb-grp"><div class="rb-items">${items}</div><div class="rb-lab">${esc(lab)}</div></div>`;
+    const me = meName();
+    let h;
+    if(S.rb === 'home') h = grp('Pages', PAGES.map(([id, l, i]) => big('page:' + id, l, i, S.page === id)).join(''))
+      + grp('Filters', `<div class="rb-col">${sel('period', PERIODS)}${sel('market', [['IEC', 'IEC'], ['UL', 'UL']])}</div><div class="rb-col">${sel('owner', OWN.map(o => [o, o]))}${sel('country', COUNTRIES)}</div><div class="rb-col">${sel('status', STATUS.map(s => [s, s]))}${sel('fam', FAMS.map(f => [f, f]))}</div>${big('clear', 'Clear filters', I.clear, false, anyF ? 'rb-red' : '')}`)
+      + grp('Data', big('refresh', 'Refresh', I.refresh) + `<div class="rb-col">${small('csv', 'Export to Excel (CSV)', I.csv, !OFFERS.length)}${small('print', 'Print page', I.print)}${small('cfg', 'Back to the configurator', I.cfg)}</div>`)
+      + grp('Help', big('guide', 'Dashboard Guide', I.guide));
+    else h = grp('Offers shown', big('who:me', 'My offers', I.me, !!FX.owner && nameKey(FX.owner) === nameKey(me)) + big('who:team', 'All team', I.team, !FX.owner))
+      + grp('Data source', big('src:sp', 'SharePoint', I.sp, SRC === 'sp') + big('src:demo', 'Example data', I.demo, SRC === 'demo'))
+      + grp('Ribbon', big('collapse', S.collapsed ? 'Pin the ribbon' : 'Collapse the ribbon', S.collapsed ? I.pin : I.up));
+    panelEl.innerHTML = h + `<button type="button" class="rb-pin" data-ud="collapse" title="Collapse the ribbon">${ic(I.up, 16)}</button>`;
+    tabsEl.innerHTML = [['home', 'Home'], ['view', 'View']].map(([k, l]) => `<button type="button" class="rb-tab${S.rb === k ? ' on' : ''}" data-udtab="${k}">${l}</button>`).join('');
+    document.body.classList.toggle('ud-collapsed', S.collapsed);
+    panelEl.classList.remove('rb-fit', 'ud-tight');   // narrower when the commands do not fit, as the configurator ribbon
+    if(panelEl.offsetParent !== null && panelEl.scrollWidth > panelEl.clientWidth + 1) panelEl.classList.add('rb-fit');
+    if(panelEl.offsetParent !== null && panelEl.scrollWidth > panelEl.clientWidth + 1) panelEl.classList.add('ud-tight');
+    const late = OFFERS.filter(o => overdue(o) && isMe(o)).length;
+    pagesEl.innerHTML = PAGES.map(([id, l, i]) => `<button type="button" class="offer-tab${S.page === id ? ' on' : ''}" data-ud="page:${id}">${ic(i, 15)}<span class="ot-lab">${l}</span>${id === 'work' && late ? `<span class="ud-cnt" title="my offers late">${late}</span>` : ''}</button>`).join('');
+    titleEl.innerHTML = `<b>${esc(PAGES.find(p => p[0] === S.page)[1])}</b> · UPS Dashboard`;
+  }
+
+  /* ---------- filter chips ---------- */
+  function chips(){
+    const set = Object.keys(FX).filter(k => k === 'period' ? FX.period !== '12' : FX[k]);
+    const src = SRC === 'demo' ? `<span class="src"><span class="dot demo"></span>Example data – not your offers · <a href="#" data-act="src:sp">use SharePoint</a></span>`
+      : SCAN.running ? `<span class="src"><span class="prog"><i style="width:${SCAN.total ? SCAN.done / SCAN.total * 100 : 5}%"></i></span>Reading the offers ${SCAN.done} / ${SCAN.total || '…'}</span>`
+      : SRC === 'sp' ? `<span class="src"><span class="dot"></span>SharePoint · ${OFFERS.length} projects${SCAN.at ? ' · ' + SCAN.at.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : ''}</span>` : '';
+    return `<div class="chips"><span class="lab">Filters</span>${set.length ? set.map(k => `<span class="chip">${FXL[k]} is <b>${esc(fxText(k, FX[k]))}</b><button type="button" data-act="unset:${k}" title="Remove">✕</button></span>`).join('') : '<span class="chip none">none – created in the last 12 months. Click a chart (status, family, customer, owner) to filter.</span>'}${src}</div>`;
+  }
+  const panel = (cls, title, body, right = '') => `<section class="panel ${cls}"><div class="ptitle">${title}${right ? `<span class="r">${right}</span>` : ''}</div>${body}</section>`;
+  const nothing = msg => `<p class="sub">${msg || 'No offers with these filters.'}</p>`;
+
+  /* ---------- pages ---------- */
+  function pOverview(M){
+    const A = rows(), P = rows(1), fc = FAMC(), sc = SC(), ms = monthsInPeriod();
+    const dl = (c, p) => { if(!p || FX.period === 'all') return ''; const d = (c - p) / p; return `<em class="${d >= 0 ? 'up' : 'dn'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d * 100).toFixed(0)}%</em>`; };
+    const bym = (a, f) => ms.map(k => sum(a.filter(o => monthKey(o.created) === k), f));
+    const k = [['var(--s1)', eurK(val(A)), 'offer value (net)', dl(val(A), val(P)), spark(bym(A, o => o.value), 'var(--s1)')], ['var(--s2)', num(A.length), 'offers · ' + A.filter(open).length + ' open', dl(A.length, P.length), spark(bym(A, () => 1), 'var(--s2)')],
+      ['var(--s3)', num(sum(A, units)), 'UPS · ' + num(sum(A, modules)) + ' power modules', dl(sum(A, units), sum(P, units)), spark(bym(A, units), 'var(--s3)')], ['var(--st-won)', pct(winRate(A)), `win rate · ${A.filter(won).length} won, ${A.filter(lost).length} lost`, dl(winRate(A), winRate(P)), '']];
+    M.innerHTML = chips() + `<div class="cv">
+      <div class="strip">${k.map(([c, v, l, d, sp]) => `<div><span class="dot" style="background:${c}"></span><div style="flex:1;min-width:0"><b>${v}</b><span>${l}</span>${d ? `<br><span>${d} vs previous period</span>` : ''}${sp}</div></div>`).join('')}</div>
+      ${panel('c8', 'Offer value by month', '<div id="ov1"></div>', 'offered and won · by creation month')}
+      ${panel('c4', 'Offers by status', '<div id="ov2"></div>', 'click to filter')}
+      ${panel('c7', 'Value by family and status', '<div id="ov3" style="overflow-x:auto"></div>', 'click a family to filter')}
+      ${panel('c5', 'UPS units by model', '<div id="ov4"></div>')}
+      ${panel('c12', 'Offer value by customer', '<div id="ov5"></div>', 'click to filter')}</div>`;
+    lines($('ov1'), {cats: ms.map(mLabel), series: [{name: 'Offered', color: 'var(--s1)', values: bym(A, o => o.value)}, {name: 'Won', color: 'var(--s2)', values: bym(A.filter(won), o => o.value)}], area: true, h: 240});
+    const As = rows(0, 'status'); donut($('ov2'), {parts: STATUS.map(s => ({name: s, value: As.filter(o => o.status === s).length, color: sc[s]})), center: As.length, sub: 'offers', key: 'status'});
+    const Af = rows(0, 'fam'), mx = Math.max(1, ...FAMS.flatMap(f => STATUS.map(s => val(Af.filter(o => o.fam === f && o.status === s)))));
+    $('ov3').innerHTML = FAMS.length ? `<table class="t mx"><thead><tr><th>Family</th>${STATUS.map(s => `<th>${s}</th>`).join('')}<th>Total</th></tr></thead><tbody>${FAMS.map(f => `<tr class="fr ${FX.fam === f ? 'sel' : ''}" data-x="fam:${f}"><td><b style="color:${fc[f]}">■</b> ${esc(f)}</td>${STATUS.map(s => { const v = val(Af.filter(o => o.fam === f && o.status === s)); return `<td style="background:rgba(68,114,196,${(v / mx * 0.5).toFixed(2)})" data-tip="<b>${esc(f)} · ${s}</b><br>${eur(v)}">${v ? eurK(v) : ''}</td>`; }).join('')}<td><b>${eurK(val(Af.filter(o => o.fam === f)))}</b></td></tr>`).join('')}<tr class="tot"><td>Total</td>${STATUS.map(s => `<td>${eurK(val(Af.filter(o => o.status === s)))}</td>`).join('')}<td>${eurK(val(Af))}</td></tr></tbody></table>` : nothing();
+    const bm = {}; A.forEach(o => o.positions.forEach(p => { bm[p.model] = bm[p.model] || {v: 0, f: p.fam}; bm[p.model].v += p.units; }));
+    const bmi = Object.entries(bm).sort((a, b) => b[1].v - a[1].v).slice(0, 8);
+    if(bmi.length) hbars($('ov4'), {items: bmi.map(([m, x]) => ({label: m, value: x.v, color: fc[x.f]})), fmt: num}); else $('ov4').innerHTML = nothing();
+    const Ac = rows(0, 'customer'), byC = {}; Ac.forEach(o => { if(o.value > 0) byC[o.customer] = (byC[o.customer] || 0) + o.value; });
+    const ranked = Object.entries(byC).sort((a, b) => b[1] - a[1]).map(x => x[0]), RAMP = ['#1F3F80', '#2F5597', '#3A64AE', '#4472C4', '#5F87C9', '#7A9BD3', '#8DACDE'];
+    const items = Object.entries(byC).map(([label, value]) => ({label, value, color: FX.customer && FX.customer !== label ? '#C9D0DB' : RAMP[Math.min(6, Math.floor(ranked.indexOf(label) / Math.max(1, ranked.length) * 7))]}));
+    if(items.length){ treemap($('ov5'), {items, h: 220}); const order = items.slice().sort((a, b) => b.value - a.value);
+      $('ov5').querySelectorAll('rect.mark').forEach((r, i) => { if(order[i]){ r.dataset.x = 'customer:' + order[i].label; r.style.cursor = 'pointer'; } }); }
+    else $('ov5').innerHTML = nothing();
+  }
+
+  function pPipeline(M){
+    const A = rows(), sc = SC(), ms = monthsInPeriod(), openA = A.filter(open);
+    const REACH = {New: () => true, 'In progress': o => o.status !== 'New', 'Offer review': o => ['Offer review', 'Won', 'Lost'].includes(o.status), Won: won};
+    const st = Object.keys(REACH).map(s => { const a = A.filter(REACH[s]); return {label: s, n: a.length, value: val(a), color: sc[s]}; });
+    st.forEach((s, i) => { if(i) s.conv = st[i - 1].n ? s.n / st[i - 1].n : 0; });
+    const own = [...new Set(A.map(o => o.owner))].map(w => { const a = A.filter(o => o.owner === w); return {w, a, op: a.filter(open), od: a.filter(overdue)}; }).sort((x, y) => val(y.op) - val(x.op) || y.a.length - x.a.length);
+    const maxOp = Math.max(1, ...own.map(y => val(y.op)));
+    const gl = openA.slice().sort((a, b) => b.created - a.created).slice(0, 16).sort((a, b) => a.created - b.created).map(o => o.due ? o : {...o, due: new Date(TODAY)});
+    M.innerHTML = chips() + `<div class="cv">
+      ${panel('c5', 'Pipeline funnel', '<div id="pp1"></div><div class="sub">Each stage counts the offers that reached it; lost offers count until Offer review.</div>')}
+      ${panel('c7', 'Offers by month and stage', '<div id="pp2"></div>', 'offer value · by creation month')}
+      ${panel('c12', 'Team', own.length ? `<div style="overflow-x:auto"><table class="t"><thead><tr><th>Owner</th><th class="n">Offers</th><th class="n">Open</th><th class="n">Open value</th><th class="n">Late</th><th class="n">Won</th><th class="n">Win rate</th><th class="n">Margin</th><th style="width:26%">Open value</th></tr></thead><tbody>${own.map(x => `<tr class="click" data-x="owner:${esc(x.w)}"><td><span class="av">${esc(ini(x.w))}</span> ${esc(x.w)}</td><td class="n">${x.a.length}</td><td class="n">${x.op.length}</td><td class="n"><b>${eurK(val(x.op))}</b></td><td class="n" style="${x.od.length ? 'color:var(--st-lost);font-weight:600' : ''}">${x.od.length || '–'}</td><td class="n">${x.a.filter(won).length}</td><td class="n">${pct(winRate(x.a))}</td><td class="n">${x.a.some(o => o.cost > 0) ? pct(marginOf(x.a)) : '–'}</td><td><div style="height:8px;border-radius:4px;background:var(--st-prog);width:${val(x.op) / maxOp * 100}%"></div></td></tr>`).join('')}</tbody></table></div>` : nothing(), 'click an owner to filter')}
+      ${panel('c12', 'Open offers – timeline (latest 16)', '<div id="pp3"></div>', 'bar = from creation to sent (or today) · ◆ = due date · click for details')}</div>`;
+    funnel($('pp1'), st); $('pp1').querySelectorAll('rect.mark').forEach((r, i) => { if(i < 3){ r.dataset.x = 'status:' + st[i].label; r.style.cursor = 'pointer'; } });
+    bars($('pp2'), {cats: ms.map(mLabel), stacked: true, series: STATUS.map(s => ({name: s, color: sc[s], values: ms.map(k => val(A.filter(o => o.status === s && monthKey(o.created) === k)))}))});
+    if(gl.length){ gantt($('pp3'), gl); $('pp3').querySelectorAll('rect.mark').forEach((r, i) => { if(gl[i]){ r.dataset.ref = gl[i].ref; r.style.cursor = 'pointer'; } }); } else $('pp3').innerHTML = nothing('No open offers with these filters.');
+  }
+
+  function pProducts(M){
+    const A = rows(), Af = rows(0, 'fam'), fc = FAMC(), ms = monthsInPeriod(), all = A.flatMap(o => o.positions.map(p => ({...p, o})));
+    const fam = FAMS.map(f => { const ps = Af.flatMap(o => o.positions.filter(p => p.fam === f).map(p => ({...p, o}))), off = [...new Set(ps.map(p => p.o))];
+      return {f, ps, u: sum(ps, p => p.units), m: sum(ps, p => p.modules), mw: sum(ps, p => p.kw * p.units) / 1000, v: val(Af.filter(o => o.fam === f)), models: [...new Set(ps.map(p => p.model))], ul: off.filter(o => o.market === 'UL').length > off.length / 2}; }).filter(x => x.u);
+    const models = {}; all.forEach(p => { const m = models[p.model] = models[p.model] || {f: p.fam, u: 0, mo: 0, li: 0, kw: 0, o: new Set()}; m.u += p.units; m.mo += p.modules; m.kw += p.kw * p.units; m.li += p.lithium ? p.units : 0; m.o.add(p.o); });
+    const U = sum(A, units), L = liUnits(A), withOffer = A.filter(o => o.hasOffer);
+    M.innerHTML = chips() + `<div class="cv">
+      <div class="fam">${fam.map(x => `<div class="famc ${FX.fam === x.f ? 'sel' : ''}" style="--c:${fc[x.f]}" data-x="fam:${esc(x.f)}"><h3>${esc(x.f)}</h3><div class="m" title="${esc(x.models.join(' / '))}">${x.ul ? 'UL' : 'IEC'} · ${esc(x.models.join(' / '))}</div><div class="g"><div>UPS<b>${num(x.u)}</b></div><div>Modules<b>${num(x.m)}</b></div><div>Power<b>${x.mw.toFixed(1)} MW</b></div><div>Value<b>${eurK(x.v)}</b></div></div></div>`).join('') || `<div class="panel" style="grid-column:1/-1">${nothing()}</div>`}</div>
+      ${panel('c8', 'UPS units by month and family', '<div id="pr1"></div>', 'by creation month')}
+      ${panel('c4', 'Battery technology', '<div id="pr2"></div>', 'UPS units')}
+      ${panel('c5', 'Services attached', '<div id="pr3"></div>', `share of the ${withOffer.length} offers with each SLA level`)}
+      ${panel('c7', 'Models', Object.keys(models).length ? `<div style="overflow-x:auto"><table class="t"><thead><tr><th>Model</th><th class="n">kW / UPS</th><th class="n">UPS</th><th class="n">Modules</th><th class="n">Lithium</th><th class="n">Offers</th></tr></thead><tbody>${Object.entries(models).sort((a, b) => b[1].u - a[1].u).map(([m, x]) => `<tr><td><b style="color:${fc[x.f]}">■</b> ${esc(m)}</td><td class="n">${num(x.kw / Math.max(1, x.u))}</td><td class="n"><b>${num(x.u)}</b></td><td class="n">${num(x.mo)}</td><td class="n">${pct(x.li / Math.max(1, x.u))}</td><td class="n">${x.o.size}</td></tr>`).join('')}</tbody></table></div>` : nothing(), 'installed kW = modules × module kW')}</div>`;
+    bars($('pr1'), {cats: ms.map(mLabel), stacked: true, fmt: num, series: FAMS.map(f => ({name: f, color: fc[f], values: ms.map(k => sum(A.filter(o => monthKey(o.created) === k), o => sum(o.positions.filter(p => p.fam === f), p => p.units)))}))});
+    donut($('pr2'), {parts: [{name: 'Lithium', value: L, color: 'var(--s2)'}, {name: 'VRLA / other', value: U - L, color: 'var(--st-new)'}], center: U ? Math.round(L / U * 100) + '%' : '–', sub: 'lithium'});
+    hbars($('pr3'), {items: SLA_IDS.map(l => ({label: l + ' ' + (SLA_N[l] || ''), value: withOffer.filter(o => o.sla[l]).length / Math.max(1, withOffer.length), color: 'var(--s1)'})), fmt: v => Math.round(v * 100) + '%', max: 1});
+  }
+
+  /* ---------- My workspace: post-it board (status and assignment written to SharePoint) ---------- */
+  const LANES = [['New', ''], ['In progress', ''], ['Offer review', ''], ['Won', '90 days'], ['Lost', '90 days']];
+  const PI_ROT = ['-0.7deg', '0.5deg', '-0.3deg', '0.8deg', '0deg', '-0.5deg'];
+  let CHOICES = null;                // the Status choices of the Progress tracker list
+  const DEFAULT_CHOICES = ['New', 'In progress', 'Offer Review', 'Awarder', 'Project Execution', 'Project Closed', 'Won', 'Lost', 'On hold', 'Cancelled'];
+  async function loadChoices(){
+    if(CHOICES) return CHOICES;
+    let list = [];
+    if(SRC === 'sp'){
+      try{
+        const token = await getGraphToken(); const r = await resolveSharePointList(token);
+        const cols = await graphGet(`https://graph.microsoft.com/v1.0/sites/${r.site.id}/lists/${r.list.id}/columns`, token);
+        const c = (cols.value || []).find(x => x.name === 'Status') || (cols.value || []).find(x => /^status$/i.test(x.displayName || ''));
+        if(c && c.choice && Array.isArray(c.choice.choices)) list = c.choice.choices.slice();
+      }catch(e){ console.warn('Dashboard: Status choices not read, using the usual ones', e); }
+    }
+    if(!list.length) list = DEFAULT_CHOICES.slice();
+    OFFERS.forEach(o => { if(o.rawStatus && !list.some(x => x.toLowerCase() === o.rawStatus.toLowerCase())) list.push(o.rawStatus); });
+    CHOICES = list;
+    return CHOICES;
+  }
+  const choicesFor = stage => (CHOICES || DEFAULT_CHOICES).filter(c => stageName(c) === stage);
+  const recOf = ref => (typeof PROGRESS !== 'undefined' ? PROGRESS : []).find(p => String(p.PRJ_ID).trim() === String(ref));
+  async function writeFields(o, fields){
+    if(SRC !== 'sp') return;                                   // example data: changed here only
+    const token = await getGraphToken();
+    const {site, list} = await resolveSharePointList(token);
+    const item = await findSharePointItemByRef(token, site, list, o.ref);
+    if(!item) throw new Error(`Project ${o.ref} not found in the Progress tracker list`);
+    await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, fields);
+  }
+  function setStatusLocal(o, value){
+    o.rawStatus = value; o.status = stageName(value);
+    if(['Won', 'Lost', 'Offer review'].includes(o.status)) o.closed = o.closed && o.prevStage === o.status ? o.closed : new Date();
+    else o.closed = null;
+    o.prevStage = o.status;
+    const rec = recOf(o.ref);
+    if(rec){ try{ setLocalProgressStatus(o.ref, value); }catch(e){ rec.Status = value; } }
+  }
+  async function changeStatus(o, value, undo){
+    if(!o || !value || value === o.rawStatus) return;
+    const old = {raw: o.rawStatus, closed: o.closed};
+    setStatusLocal(o, value); render();
+    try{
+      await writeFields(o, {Status: value});
+      if(!undo) toast(`<b>${esc(o.ref)}</b> · status <b>${esc(value)}</b>${SRC === 'sp' ? ' – saved on SharePoint' : ' (example data)'}`, () => changeStatus(o, old.raw, true));
+      else toast(`<b>${esc(o.ref)}</b> · status back to <b>${esc(value)}</b>`);
+    }catch(err){
+      setStatusLocal(o, old.raw); o.closed = old.closed; render();
+      toast(`<b>${esc(o.ref)}</b>: the status was NOT changed – ${esc(err.message || err)}`, null, true);
+    }
+  }
+  async function siteUsers(){
+    if(SRC === 'sp' && (typeof SITE_USERS === 'undefined' || !SITE_USERS.length)){
+      try{ const token = await getGraphToken(); const r = await resolveSharePointList(token); await loadSiteUsers(token, r.site.id); }catch(e){ console.warn(e); }
+    }
+    const fromSite = (typeof SITE_USERS !== 'undefined' ? SITE_USERS : []).map(u => ({id: u.id, name: shortName(u.name), raw: u.name, email: u.email || ''}));
+    if(fromSite.length) return fromSite;
+    return OWN.map((n, i) => ({id: 'x' + i, name: n, raw: n, email: ''}));     // example data: the team
+  }
+  async function changeOwner(o, person, undo){
+    if(!o || !person || nameKey(person.name) === nameKey(o.owner)) return;
+    const old = {owner: o.owner, id: o.ownerId};
+    const rec = recOf(o.ref), fld = (typeof OWNER_PERSON_FIELD !== 'undefined' ? OWNER_PERSON_FIELD : 'AssignedTo0') + 'LookupId';
+    const apply = (name, raw, id) => { o.owner = name; o.ownerId = id; if(rec){ rec['Created By.title'] = raw; if(rec._raw) rec._raw[fld] = id; } if(!OWN.includes(name)){ OWN.push(name); OWN.sort((a, b) => a.localeCompare(b)); } };
+    apply(person.name, person.raw, person.id); render();
+    try{
+      await writeFields(o, {[fld]: person.id});
+      try{ refreshDeadlineBell(); }catch(e){}
+      if(!undo && old.owner && old.owner !== '—'){
+        const back = (await siteUsers()).find(u => (old.id && String(u.id) === String(old.id)) || nameKey(u.name) === nameKey(old.owner));
+        toast(`<b>${esc(o.ref)}</b> · assigned to <b>${esc(person.name)}</b>${SRC === 'sp' ? ' – saved on SharePoint' : ' (example data)'}`, back ? () => changeOwner(o, back, true) : null);
+      } else toast(`<b>${esc(o.ref)}</b> · assigned to <b>${esc(person.name)}</b>`);
+    }catch(err){
+      o.owner = old.owner; o.ownerId = old.id; if(rec) rec['Created By.title'] = old.owner; render();
+      toast(`<b>${esc(o.ref)}</b>: NOT reassigned – ${esc(err.message || err)}`, null, true);
+    }
+  }
+  let toastTimer = null;
+  function toast(html, undo, bad){
+    const t = $('toast'); clearTimeout(toastTimer);
+    t.className = 'toast show' + (bad ? ' bad' : '');
+    t.innerHTML = `<span>${html}</span>${undo ? '<button type="button" class="tb" data-undo>Undo</button>' : ''}<button type="button" class="tb x" data-tclose>✕</button>`;
+    t.querySelector('[data-undo]')?.addEventListener('click', () => { t.className = 'toast'; undo(); });
+    t.querySelector('[data-tclose]').addEventListener('click', () => t.className = 'toast');
+    toastTimer = setTimeout(() => t.className = 'toast', bad ? 9000 : 7000);
+  }
+  // the ⋯ menu of a post-it: status (the list's choices) and assignment (people of the site, searchable)
+  let MENU = null;
+  function closeMenu(){ const m = $('cmenu'); m.className = 'cmenu'; m.innerHTML = ''; MENU = null; }
+  async function openMenu(ref, anchor, focus, onlyStage){
+    const o = OFFERS.find(x => x.ref === ref); if(!o) return;
+    MENU = {ref, focus};
+    const m = $('cmenu');
+    m.innerHTML = '<div class="cm-load">…</div>'; m.className = 'cmenu open'; place(m, anchor);
+    await loadChoices();
+    const users = onlyStage ? [] : await siteUsers();
+    if(!MENU || MENU.ref !== ref) return;
+    const sc = SC();
+    const stList = (onlyStage ? choicesFor(onlyStage) : CHOICES).map(c => `<button type="button" class="cm-it${c === o.rawStatus ? ' on' : ''}" data-cmstatus="${esc(c)}"><i style="background:${sc[stageName(c)]}"></i>${esc(c)}${stageName(c).toLowerCase() !== c.toLowerCase() ? `<small>${stageName(c)}</small>` : ''}${c === o.rawStatus ? '<b>✓</b>' : ''}</button>`).join('');
+    const team = OWN.slice();
+    const userRow = u => `<button type="button" class="cm-it" data-cmowner="${esc(u.id)}"><span class="av">${esc(ini(u.name))}</span>${esc(u.name)}${nameKey(u.name) === nameKey(o.owner) ? '<b>✓</b>' : ''}</button>`;
+    m.innerHTML = `<div class="cm-h"><b>${esc(o.ref)}</b> · ${esc(o.customer)}<button type="button" class="cm-x" data-cmclose title="Close">✕</button></div>
+      ${(() => { const st = `<div class="cm-s">${onlyStage ? `Move to ${esc(onlyStage)} as…` : 'Status'}</div><div class="cm-list">${stList}</div>`;
+        const ow = onlyStage ? '' : `<div class="cm-s">Assigned to</div><input type="search" class="cm-q" placeholder="Search people of the site…" aria-label="Search people"><div class="cm-list cm-people">${users.filter(u => team.some(t => nameKey(t) === nameKey(u.name))).map(userRow).join('')}</div>`;
+        return focus === 'owner' ? ow + st : st + ow; })()}`;
+    MENU.users = users;
+    place(m, anchor);
+    const q = m.querySelector('.cm-q'), box = m.querySelector('.cm-people');
+    if(q){
+      q.addEventListener('input', () => {
+        const s = q.value.trim().toLowerCase();
+        const hit = s ? users.filter(u => (u.name + ' ' + u.raw + ' ' + u.email).toLowerCase().includes(s)).slice(0, 30) : users.filter(u => team.some(t => nameKey(t) === nameKey(u.name)));
+        box.innerHTML = hit.map(userRow).join('') || '<div class="cm-none">Nobody found</div>';
+      });
+      if(focus === 'owner') setTimeout(() => q.focus(), 0);
+    }
+  }
+  function place(m, a){
+    const w = 290, r = a.getBoundingClientRect ? a.getBoundingClientRect() : a;
+    let x = Math.min(innerWidth - w - 10, Math.max(10, r.left)), y = r.bottom + 6;
+    m.style.left = x + 'px'; m.style.top = Math.max(10, Math.min(y, innerHeight - Math.min(m.offsetHeight || 380, innerHeight - 20) - 10)) + 'px';
+  }
+
+  function pWork(M){
+    const A = rows(), sc = SC(), mine = !!FX.owner && nameKey(FX.owner) === nameKey(meName());
+    const late = A.filter(overdue).sort((a, b) => dueT(a) - dueT(b)), soon = A.filter(o => open(o) && o.due && o.due >= TODAY && daysTo(o.due) <= 14).sort((a, b) => dueT(a) - dueT(b));
+    const task = (o, cls) => `<div class="task ${cls}"><b>${esc(o.ref)} · ${esc(o.customer)}</b>${esc(o.project)}${o.hasOffer ? ' · ' + eurK(o.value) : ''}${mine ? '' : ' · ' + esc(o.owner)}<br><span class="w" style="color:${cls === 'late' ? 'var(--st-lost)' : 'var(--st-rev)'}">${cls === 'late' ? 'late by ' + -daysTo(o.due) + ' days' : 'due ' + fmtD(o.due) + ' · in ' + daysTo(o.due) + ' days'}</span> · ${esc(o.rawStatus || o.status)}<div class="a"><button type="button" class="btn" data-ref="${esc(o.ref)}">Details</button><button type="button" class="btn" data-menu="${esc(o.ref)}">Status / owner</button><button type="button" class="btn pri" data-cfg="${esc(o.ref)}" title="Open in configurator">${ic(I.cfg, 13)}Configurator</button></div></div>`;
+    const lanes = LANES.map(([s]) => { let l = A.filter(o => o.status === s); if(s === 'Won' || s === 'Lost') l = l.filter(o => !o.closed || (TODAY - o.closed) / 864e5 < 90); return [s, l.sort((a, b) => dueT(a) - dueT(b))]; });
+    const [cy, cm] = S.cal, first = new Date(cy, cm, 1), off = (first.getDay() + 6) % 7; let cal = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => `<div class="h">${d}</div>`).join('');
+    const same = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    for(let i = 0; i < 42; i++){ const dt = new Date(cy, cm, 1 - off + i), dd = A.filter(o => open(o) && same(o.due, dt));
+      cal += `<div class="d ${dt.getMonth() === cm ? '' : 'o'} ${same(dt, TODAY) ? 't' : ''} ${dd.length ? 'has' : ''}" ${dd.length ? `data-ref="${esc(dd[0].ref)}" data-tip="${esc(dd.map(o => `<b>${esc(o.ref)}</b> ${esc(o.customer)} · ${o.status}`).join('<br>'))}"` : ''}>${dt.getDate()}${dd.length ? `<em>${dd.slice(0, 3).map(o => `<i style="background:${sc[o.status]}"></i>`).join('')}</em>` : ''}</div>`; }
+    const up = A.filter(o => open(o) && o.due && o.due >= TODAY).sort((a, b) => dueT(a) - dueT(b)).slice(0, 7);
+    const hr = new Date().getHours(), hi = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+    const card = (o, i) => `<div class="kc st-${o.status.replace(/\s+/g, '-').toLowerCase()}" draggable="true" data-drag="${esc(o.ref)}" data-ref="${esc(o.ref)}" style="--r:${PI_ROT[i % PI_ROT.length]}">
+        <div class="kc-t"><span class="kc-st" title="Status on SharePoint">${esc(o.rawStatus || o.status)}</span><button type="button" class="kc-m" data-menu="${esc(o.ref)}" title="Status and assignment" aria-label="Status and assignment of ${esc(o.ref)}">⋯</button></div>
+        <b>${esc(o.customer)}</b><span class="kc-p">${esc(o.ref)}${o.project ? ' · ' + esc(o.project) : ''}</span>
+        <div class="m"><span>${o.hasOffer ? eurK(o.value) + ' · ' : ''}${esc(o.fam)}${units(o) ? ' · ' + units(o) + ' UPS' : ''}</span></div>
+        <div class="m"><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtD(o.due)}</span><button type="button" class="av" data-menu="${esc(o.ref)}" data-focus="owner" title="${esc(o.owner)} – click to assign to someone else">${esc(ini(o.owner))}</button></div></div>`;
+    M.innerHTML = chips() + `<div class="wsb">
+      <section class="panel"><div class="ptitle">Offers board<span class="hint">drag a post-it to another column to change its status · ⋯ or the initials to change status and assignment</span><span class="r"><span class="seg"><button type="button" data-act="who:me" class="${mine ? 'on' : ''}">Mine</button><button type="button" data-act="who:team" class="${!FX.owner ? 'on' : ''}">Team</button></span></span></div>
+        <div class="hello">${hi}${firstName(meName()) ? ', ' + esc(firstName(meName())) : ''}</div><p>${A.filter(open).length} open offers · ${eurK(val(A.filter(open)))} · ${late.length} late · ${soon.length} due in the next 14 days${SRC === 'sp' ? '' : ' · <b>example data: changes are not saved</b>'}</p>
+        <div class="board">${lanes.map(([s, l]) => `<div class="lane" data-lane="${s}"><h4><span><i style="background:${sc[s]}"></i>${s}${s === 'Won' || s === 'Lost' ? ' · 90 days' : ''}</span><span>${l.length}</span></h4><div class="lane-b">${l.map(card).join('') || '<div class="lane-e">drop here</div>'}</div></div>`).join('')}</div></section>
+      <div class="ws-row">
+        <section class="panel"><div class="ptitle">Late<span class="r">${late.length}</span></div>${late.slice(0, 4).map(o => task(o, 'late')).join('') || nothing('Nothing late.')}${late.length > 4 ? `<p class="sub">+ ${late.length - 4} more</p>` : ''}
+          <div class="ptitle" style="margin-top:14px">Due soon<span class="r">${soon.length}</span></div>${soon.slice(0, 4).map(o => task(o, 'soon')).join('') || nothing('Nothing due in the next 14 days.')}${soon.length > 4 ? `<p class="sub">+ ${soon.length - 4} more – see the calendar</p>` : ''}</section>
+        <section class="panel"><div class="cal-h"><button type="button" class="ib" data-act="cal:-1" title="Previous month">${ic('<path d="m15 18-6-6 6-6"/>', 16)}</button><b>${first.toLocaleString('en-GB', {month: 'long', year: 'numeric'})}</b><button type="button" class="ib" data-act="cal:1" title="Next month">${ic('<path d="m9 18 6-6-6-6"/>', 16)}</button></div><div class="cal">${cal}</div>
+          <div class="legend" style="margin-top:8px">${['New', 'In progress', 'Offer review'].map(s => `<span><i style="background:${sc[s]};border-radius:50%"></i>${s}</span>`).join('')}</div></section>
+        <section class="panel"><div class="ptitle">Upcoming</div>${up.map(o => `<div class="up" data-ref="${esc(o.ref)}"><div class="dt"><b>${o.due.getDate()}</b>${o.due.toLocaleString('en-GB', {month: 'short'})}</div><div><b>${esc(o.customer)}</b><br>${esc(o.ref)} · ${esc(o.rawStatus || o.status)}${o.hasOffer ? ' · ' + eurK(o.value) : ''} · ${esc(o.owner)}</div></div>`).join('') || nothing('No deadlines ahead.')}</section>
+      </div></div>`;
+    loadChoices();     // ready for the first drop
+  }
+
+  function pEmpty(M){
+    const signed = (() => { try{ return signedIn(); }catch(e){ return false; } })();
+    M.innerHTML = chips() + `<div class="panel empty"><b>${SCAN.running ? 'Reading the offers from SharePoint…' : SCAN.err ? 'The offers could not be read' : signed ? 'No projects in the Progress tracker list' : 'Not connected to Microsoft 365'}</b>
+      ${SCAN.running ? `${SCAN.done} / ${SCAN.total || '…'} projects` : SCAN.err ? esc(SCAN.err) : signed ? 'Refresh once the list has projects.' : 'The dashboard reads the Progress tracker list and the offers in each "02 OFFER" folder.'}
+      <div style="margin-top:14px;display:flex;gap:8px;justify-content:center">${SCAN.running ? '' : `<button type="button" class="btn pri" data-act="refresh">${ic(I.refresh, 14)}Try again</button>`}<button type="button" class="btn" data-act="src:demo">${ic(I.demo, 14)}Show example data</button></div></div>`;
+  }
+
+  /* ---------- offer window ---------- */
+  let POPREF = null;
+  function openOffer(ref){
+    const o = OFFERS.find(x => x.ref === ref); if(!o) return;
+    POPREF = ref;
+    const sc = SC();
+    $('pop').innerHTML = `<div class="pop-h"><span class="ic">${ic(I.bolt, 20)}</span><div><h3>${esc(o.ref)} · ${esc(o.customer)}</h3><small>${esc(o.project)}${o.countryName && o.countryName !== '—' ? ' · ' + esc(o.countryName) : ''}</small></div><button type="button" class="x" data-act="close" title="Close">✕</button></div>
+      <div class="pop-strip"><span style="color:${sc[o.status]};font-weight:600" title="SharePoint: ${esc(o.rawStatus || '—')}">● ${o.status}</span>${o.hasOffer ? `<span>${esc(o.market)} price list</span>` : ''}<span>${esc(o.owner)}</span><span>created ${fmtDY(o.created)}</span><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtDY(o.due)}</span>${o.closed ? `<span>${o.status === 'Offer review' ? 'sent' : 'closed'} ${fmtDY(o.closed)}</span>` : ''}${o.hasOffer ? `<span>R${o.revisions}</span>` : ''}</div>
+      <div class="pop-b">${o.hasOffer ? `<div class="kv"><div>Offer value (net)<b>${eur(o.value)}</b></div><div>UPS units<b>${units(o)}</b></div><div>Power modules<b>${modules(o)}</b></div><div>Installed power<b>${(kwOf(o) / 1000).toFixed(2)} MW</b></div></div>
+        <div class="ptitle">UPS configurations</div>${o.positions.length ? `<table class="t"><thead><tr><th>Model</th><th class="n">Load kW</th><th class="n">Systems × UPS</th><th class="n">Modules / UPS</th><th>Battery</th></tr></thead><tbody>${o.positions.map(p => `<tr><td><b>${esc(p.model)}</b></td><td class="n">${num(p.pload)}</td><td class="n">${p.qty} × ${p.ups}</td><td class="n">${p.npm}</td><td>${p.lithium ? 'Lithium' : 'VRLA / other'}</td></tr>`).join('')}</tbody></table>` : nothing('No UPS configuration in the offer.')}
+        <div class="ptitle" style="margin-top:14px">Services</div><div class="sla">${SLA_IDS.map(l => `<span class="${o.sla[l] ? 'on' : ''}" title="${esc(SLA_N[l] || '')}">${l} ${o.sla[l] ? '× ' + o.sla[l] : ''}</span>`).join('')}${o.fok ? '<span class="on">FOK</span>' : ''}</div>
+        ${o.file && o.file !== 'example' ? `<div class="sub" style="margin-top:12px">From ${esc(o.file)}${o.saved ? ' · saved ' + fmtDY(o.saved) : ''}</div>` : ''}` : `<div class="empty"><b>No saved offer</b>There is no offer file in the "02 OFFER" folder of this project yet.</div>`}</div>
+      <div class="pop-f"><button type="button" class="btn" data-menu="${esc(o.ref)}" style="margin-right:auto">Status / owner</button><button type="button" class="btn" data-act="close">Close</button>${SRC === 'sp' ? `<button type="button" class="btn pri" data-cfg="${esc(o.ref)}">${ic(I.cfg, 14)}Open in configurator</button>` : ''}</div>`;
+    $('ov').classList.add('open'); tip.style.display = 'none';
+  }
+
+  /* ---------- render & events ---------- */
+  let ACTIVE = false;
+  const active = () => ACTIVE;
+  function render(){
+    if(!ACTIVE) return;
+    ribbon();
+    const M = $('main');
+    if(!OFFERS.length) pEmpty(M);
+    else ({overview: pOverview, pipeline: pPipeline, products: pProducts, work: pWork})[S.page](M);
+    if($('ov').classList.contains('open') && POPREF) openOffer(POPREF);
+    const A = rows();
+    $('sbar').innerHTML = SRC === 'demo' ? `<span class="warn">● Example data</span><span>${OFFERS.length} offers</span><span>${A.length} shown · ${eurK(val(A))}</span>`
+      : `<span class="${SCAN.err ? 'warn' : 'ok'}">● SharePoint · Progress tracker</span><span>${OFFERS.length} projects · ${OFFERS.filter(o => o.hasOffer).length} with a saved offer</span><span>${A.length} shown · ${eurK(val(A))}</span><span>${OFFERS.filter(open).length} open · ${OFFERS.filter(overdue).length} late</span>${SCAN.running ? `<span>reading ${SCAN.done} / ${SCAN.total}</span>` : ''}<span style="margin-left:auto">${SCAN.at ? 'updated ' + SCAN.at.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : ''}</span>`;
+  }
+  function act(a){
+    const i = a.indexOf(':'), k = i < 0 ? a : a.slice(0, i), v = i < 0 ? '' : a.slice(i + 1);
+    if(k === 'page'){ S.page = v; window.scrollTo(0, 0); }
+    else if(k === 'clear') Object.assign(FX, {period: '12', market: '', owner: '', country: '', status: '', fam: '', customer: ''});
+    else if(k === 'unset') FX[v] = v === 'period' ? '12' : '';
+    else if(k === 'who'){ const me = meName(); FX.owner = v === 'me' ? (OWN.find(o => nameKey(o) === nameKey(me)) || me) : ''; }
+    else if(k === 'collapse') S.collapsed = !S.collapsed;
+    else if(k === 'cal'){ let [y, m] = S.cal; m += Number(v); if(m < 0){ m = 11; y--; } if(m > 11){ m = 0; y++; } S.cal = [y, m]; }
+    else if(k === 'close'){ $('ov').classList.remove('open'); return; }
+    else if(k === 'refresh'){ if(SRC === 'demo'){ setData(demoOffers(), 'demo'); } else { loadSharePoint(true); return; } }
+    else if(k === 'src'){ if(v === 'demo'){ scanSeq++; SCAN.running = false; setData(demoOffers(), 'demo'); } else { setData([], 'none'); loadSharePoint(false); return; } }
+    else if(k === 'print'){ window.print(); return; }
+    else if(k === 'csv'){ exportCsv(); return; }
+    else if(k === 'cfg'){ hide(); return; }
+    else if(k === 'guide'){ window.open(GUIDE_URL, '_blank', 'noopener'); return; }
+    render();
+  }
+  function exportCsv(){
+    const A = rows(), h = ['Project','Customer','Project name','Country','Owner','Status','SharePoint status','Price list','Family','UPS','Power modules','Installed kW','Net value','Cost','Created','Due','Offer file'];
+    const d = x => x ? `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}` : '';
+    const csv = [h, ...A.map(o => [o.ref, o.customer, o.project, o.countryName, o.owner, o.status, o.rawStatus, o.hasOffer ? o.market : '', o.fam, units(o), modules(o), Math.round(kwOf(o)), Math.round(o.value), Math.round(o.cost), d(o.created), d(o.due), o.file])]
+      .map(r => r.map(c => /[;"\n]/.test(String(c)) ? '"' + String(c).replace(/"/g, '""') + '"' : c).join(';')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], {type: 'text/csv'})); a.download = `UPS_Dashboard_${d(TODAY)}.csv`; document.body.appendChild(a); a.click(); a.remove();
+  }
+  function openInConfigurator(ref){
+    $('ov').classList.remove('open');
+    hide();
+    setTimeout(() => { try{ openOfferFromDeadlines(ref); }catch(e){ console.warn(e); } }, 0);
+  }
+  root.addEventListener('click', e => {
+    if(e.target === $('ov')){ $('ov').classList.remove('open'); return; }
+    if(MENU && !e.target.closest('#cmenu') && !e.target.closest('[data-menu]')) closeMenu();
+    const cmS = e.target.closest('[data-cmstatus]'), cmO = e.target.closest('[data-cmowner]');
+    if(e.target.closest('[data-cmclose]')){ closeMenu(); return; }
+    if(cmS){ const o = OFFERS.find(x => x.ref === MENU.ref); closeMenu(); changeStatus(o, cmS.dataset.cmstatus); return; }
+    if(cmO){ const o = OFFERS.find(x => x.ref === MENU.ref), u = (MENU.users || []).find(x => String(x.id) === cmO.dataset.cmowner); closeMenu(); changeOwner(o, u); return; }
+    const mb = e.target.closest('[data-menu]');
+    if(mb){ e.stopPropagation(); if(MENU && MENU.ref === mb.dataset.menu && !MENU.only){ closeMenu(); return; } openMenu(mb.dataset.menu, mb, mb.dataset.focus || 'status'); return; }
+    if(e.target.closest('#cmenu')) return;
+    const t = e.target.closest('[data-act],[data-x],[data-ref],[data-cfg]'); if(!t) return;
+    if(t.tagName === 'A') e.preventDefault();
+    if(t.dataset.act) return act(t.dataset.act);
+    if(t.dataset.cfg) return openInConfigurator(t.dataset.cfg);
+    if(t.dataset.ref) return openOffer(t.dataset.ref);
+    if(t.dataset.x){ const i = t.dataset.x.indexOf(':'), k = t.dataset.x.slice(0, i), v = t.dataset.x.slice(i + 1); FX[k] = FX[k] === v ? '' : v; render(); }
+  });
+  let DRAG = null;
+  root.addEventListener('dragstart', e => { const c = e.target.closest && e.target.closest('[data-drag]'); if(!c) return; DRAG = c.dataset.drag; c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain', DRAG); }catch(x){} closeMenu(); tip.style.display = 'none'; });
+  root.addEventListener('dragend', e => { DRAG = null; root.querySelectorAll('.dragging,.over').forEach(x => x.classList.remove('dragging', 'over')); });
+  root.addEventListener('dragover', e => { const l = DRAG && e.target.closest && e.target.closest('[data-lane]'); if(!l) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; root.querySelectorAll('.lane.over').forEach(x => x !== l && x.classList.remove('over')); l.classList.add('over'); });
+  root.addEventListener('dragleave', e => { const l = e.target.closest && e.target.closest('[data-lane]'); if(l && !l.contains(e.relatedTarget)) l.classList.remove('over'); });
+  root.addEventListener('drop', async e => {
+    const l = DRAG && e.target.closest && e.target.closest('[data-lane]'); if(!l) return;
+    e.preventDefault(); l.classList.remove('over');
+    const o = OFFERS.find(x => x.ref === DRAG); DRAG = null; if(!o) return;
+    const stage = l.dataset.lane; if(stage === o.status) return;
+    await loadChoices();
+    const ch = choicesFor(stage);
+    if(ch.length === 1) changeStatus(o, ch[0]);
+    else { openMenu(o.ref, {left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY}, 'status', stage); MENU.only = true; }
+  });
+  root.addEventListener('keydown', e => { if(e.key === 'Escape' && MENU){ e.stopPropagation(); closeMenu(); return; } if(e.key === 'Escape' && $('ov').classList.contains('open')){ e.stopPropagation(); $('ov').classList.remove('open'); } });
+  panelEl.addEventListener('click', e => { const b = e.target.closest('[data-ud]'); if(b) act(b.dataset.ud); });
+  pagesEl.addEventListener('click', e => { const b = e.target.closest('[data-ud]'); if(b) act(b.dataset.ud); });
+  panelEl.addEventListener('change', e => { const s = e.target.closest('select[data-fx]'); if(s){ FX[s.dataset.fx] = s.value; render(); } });
+  tabsEl.addEventListener('click', e => { const b = e.target.closest('[data-udtab]'); if(!b) return;
+    if(S.rb === b.dataset.udtab && !S.collapsed) S.collapsed = true; else { S.rb = b.dataset.udtab; S.collapsed = false; } ribbon(); });
+  document.addEventListener('keydown', e => { if(ACTIVE && e.key === 'Escape' && $('ov').classList.contains('open')) $('ov').classList.remove('open'); });
+  let rt; window.addEventListener('resize', () => { if(!ACTIVE) return; clearTimeout(rt); rt = setTimeout(render, 250); });
+
+  /* ---------- switching ---------- */
+  const isAdmin = () => { try{ return isAdminUser(); }catch(e){ return false; } };
+  function setTabLabel(){
+    const b = document.getElementById('appMenuTab'); if(!b) return;
+    const tn = [...b.childNodes].find(n => n.nodeType === 3);
+    const txt = ACTIVE ? 'UPS Dashboard' : 'UPS Configurator';
+    if(tn) tn.textContent = txt; else b.insertBefore(document.createTextNode(txt), b.firstChild);
+  }
+  function show(){
+    if(!isAdmin()) return false;
+    setToday();
+    ACTIVE = true; document.body.classList.add('ud-mode'); setTabLabel();
+    document.title = 'UPS Dashboard';
+    window.scrollTo(0, 0);
+    let signed = false; try{ signed = signedIn(); }catch(e){}
+    if(SRC === 'none' && !SCAN.running && signed) loadSharePoint(false);
+    render();
+    return true;
+  }
+  function hide(){
+    if(!ACTIVE) return;
+    ACTIVE = false; document.body.classList.remove('ud-mode', 'ud-collapsed'); setTabLabel();
+    $('ov').classList.remove('open'); tip.style.display = 'none'; try{ closeMenu(); }catch(e){}
+    try{ window.scrollTo(0, 0); }catch(e){}
+  }
+  // An offer opened while the dashboard is shown (bell, Projects window, Ctrl+K…) brings the configurator back
+  ['switchToProject', 'loadProjectByRef', 'openOfferFromDeadlines'].forEach(n => {
+    const f = window[n]; if(typeof f !== 'function') return;
+    window[n] = function(){ hide(); return f.apply(this, arguments); };
+  });
+  // the Admin group is read after the sign-in: without it (sign-out, other account) the dashboard closes
+  setInterval(() => { if(ACTIVE && !isAdmin()) hide(); }, 2000);
+
+  // entries of the blue tab menu (called by APP_MENU when the menu opens)
+  function decorateMenu(m, close){
+    if(!isAdmin()) return;
+    const head = m.querySelector('.am-head');
+    const item = (key, name, sub, icon, cur) => `<button type="button" class="am-item${cur ? ' am-cur' : ''}" role="menuitemradio" aria-checked="${cur}" data-udswitch="${key}">${ic(icon, 17)}<span>${name}<small>${sub}</small></span>${cur ? '<span class="am-check">✓</span>' : ''}</button>`;
+    head.insertAdjacentHTML('afterend', `<div class="am-sep">Application · Admin</div>${item('cfg', 'UPS Configurator', 'configure and price an offer', I.cfg, !ACTIVE)}${item('dash', 'UPS Dashboard', 'offers, pipeline and workload', I.overview, ACTIVE)}<div class="am-line"></div>`);
+    if(ACTIVE){ const n = m.querySelector('.am-name'); if(n) n.textContent = 'UPS Dashboard'; }
+    const quick = m.querySelector('[data-am="quick"]');   // the Dashboard Guide: Admin only
+    if(quick) quick.insertAdjacentHTML('afterend', `<a class="am-item" role="menuitem" data-am="dashguide" href="${esc(GUIDE_URL)}" target="_blank" rel="noopener">${ic(I.guide, 17)}<span>Dashboard Guide<small>The dashboard, for Admin (PDF)</small></span></a>`);
+    m.querySelector('[data-am="dashguide"]')?.addEventListener('click', () => setTimeout(close, 0));
+    m.querySelectorAll('[data-udswitch]').forEach(b => b.addEventListener('click', () => { close(); if(b.dataset.udswitch === 'dash') show(); else hide(); }));
+  }
+  return {show, hide, active, decorateMenu, render, reload: () => loadSharePoint(true), _data: () => OFFERS, _set: setData, _toOffer: toOffer};
+})();
+
+</script>
 </body>
 </html>

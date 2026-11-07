@@ -30322,7 +30322,7 @@ const CHANGELOG = [
     'Won nel budget della dashboard: un progetto vinto conta nel periodo dalla data in cui la vittoria è registrata (il segno won della revisione); senza segno dalla Due date di SharePoint (una Due date futura conta oggi); senza nessuna delle due dalla data di creazione. Gli altri progetti contano dalla data di creazione. Mark as won chiede anche la data won (proposta: quella già registrata, per un progetto già vinto la Due date su cui conta ora, altrimenti oggi); Data check ha la colonna Counts on',
     'Dashboard: quando un\'offerta passa a Won (post-it trascinato nella colonna Won o stato dal menu ⋯) il segno won si scrive subito nel file offerta, sulla revisione chiusa che la dashboard legge, con la data di oggi; Undo lo toglie. Senza una revisione chiusa lo stato cambia lo stesso e il messaggio lo dice',
     'Pagina principale: nel riquadro Revisione c\'è il tasto won — 🏆 Won (verde) se la revisione aperta è quella vinta, 🏆 Mark as won su una revisione chiusa, 🏆 Won revision… su una revisione aperta dopo R0 — che apre la stessa finestra del ribbon',
-    'Dashboard, nuova pagina Map: mappa per nazione delle offerte vinte e di quelle in essere (New, In progress, Offer review; le perse no), colore = densità per nazione in numero di offerte o valore, con Won + open / Won / Open, viste Fit / Europe / World, clic su una nazione per filtrare, tabella delle nazioni con barre won / open e riquadri di sintesi. Le sagome delle nazioni (Natural Earth, world-atlas) si leggono dal CDN jsdelivr / unpkg all\'apertura della pagina; se il CDN non risponde la tabella resta completa',
+    'Dashboard, nuova pagina Map: mappa per nazione delle offerte vinte e di quelle in essere (New, In progress, Offer review; le perse no), densità per nazione in numero di offerte o valore: in Won + open il colore blu della nazione sono le offerte in essere e i cerchi verdi (area proporzionale) le vinte; Won da solo in verde, Open da solo in blu, viste Fit / Europe / World, clic su una nazione per filtrare, tabella delle nazioni con barre won / open e riquadri di sintesi. Le sagome delle nazioni (Natural Earth, world-atlas) si leggono dal CDN jsdelivr / unpkg all\'apertura della pagina; se il CDN non risponde la tabella resta completa',
     'Manuale a parte UPS_Dashboard_Guide.pdf (stessa cartella degli altri manuali): si apre dal menu della scheda blu (Dashboard Guide, solo Admin) e dal ribbon della dashboard (Help › Dashboard Guide)',
   ]},
   {version:'beta_6.55', date:'2026-11-05', notes:[
@@ -31566,6 +31566,10 @@ table.mx tr.sel td:first-child{color:var(--accent); font-weight:700}
 .map-leg{margin-top:10px; align-items:center} .map-leg i{width:18px; height:10px; border-radius:2px} .map-leg .r{margin-left:auto}
 .mbar{display:flex; gap:2px; height:8px} .mbar i{display:block; height:100%; border-radius:4px; min-width:0}
 table.map-t tr.sel td{background:var(--chip)}
+.map circle.wb, .map-leg circle.wb{fill:var(--st-won); fill-opacity:.9; stroke:var(--panel); stroke-width:1.5}
+.map circle.wb:hover{stroke:var(--lbl); stroke-width:2}
+.map-leg .lt{font-weight:600; color:var(--lbl)}
+.map-leg svg{display:block; overflow:visible}
 </style><main id="main"></main><div class="statusbar" id="sbar"></div><div class="ov" id="ov"><div class="pop" id="pop"></div></div><div class="cmenu" id="cmenu" role="menu"></div><div class="toast" id="toast" role="status" aria-live="polite"></div><div id="tip"></div>`;
   const $ = id => root.getElementById(id);
   const cssv = n => getComputedStyle(host).getPropertyValue(n).trim();
@@ -32351,6 +32355,9 @@ function gantt(el, list){
     if(/^[A-Z]{2}$/.test(c) && A2_OK.has(c)) return c;
     return NAME_A2[normName(o.countryName)] || NAME_A2[normName(o.country)] || '';
   }
+  // where the won circle goes for the countries whose centre falls outside them (lon, lat)
+  const MAP_LBL = {NO: [9, 61.3], SE: [15.5, 62.5], FI: [26, 62.5], HR: [15.8, 45.6], CL: [-71, -33.5], VN: [105.8, 21], JP: [138.5, 36.3], GB: [-1.6, 52.8], IT: [12.6, 42.7], GR: [22, 39.5],
+    DK: [9.3, 56.1], ID: [113.5, -0.5], PH: [121.5, 15.5], MY: [102, 4], NZ: [175.5, -39.5], CA: [-100, 56], US: [-98, 39], RU: [90, 61], PT: [-8.2, 39.6], AR: [-64.5, -34], IL: [35, 31.3], LB: [35.9, 33.9]};
   // Natural Earth I projection, the world 1000 wide (y 0 at the pole)
   const PK = 1000 / (2 * Math.PI * 0.8707), PY0 = PK * 1.4224;
   function proj(lon, lat){
@@ -32372,7 +32379,7 @@ function gantt(el, list){
       const a2 = N2A[String(g.id == null ? '' : g.id).padStart(3, '0')] || NAME_A2[normName(name)] || '';
       if(a2 === 'AQ') return;   // Antarctica: no data centres
       const polys = g.type === 'Polygon' ? [g.arcs] : g.type === 'MultiPolygon' ? g.arcs : [];
-      let d = '', main = null, mainA = 0;
+      let d = '', main = null, mainA = 0, mainC = null;
       polys.forEach(poly => poly.forEach((r, ri) => {
         const pts = ring(r).map(([lon, lat]) => proj(lon, lat));
         if(pts.length < 3) return;
@@ -32387,10 +32394,12 @@ function gantt(el, list){
         d += 'M' + keep.map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('L') + 'Z';
         if(ri === 0){
           let ar = 0; for(let j = 0; j < keep.length; j++){ const a = keep[j], b = keep[(j + 1) % keep.length]; ar += a[0] * b[1] - b[0] * a[1]; }
-          ar = Math.abs(ar) / 2; if(ar > mainA){ mainA = ar; main = boxOf(keep); }
+          let cx = 0, cy = 0; for(let j = 0; j < keep.length; j++){ const a = keep[j], b = keep[(j + 1) % keep.length], k = a[0] * b[1] - b[0] * a[1]; cx += (a[0] + b[0]) * k; cy += (a[1] + b[1]) * k; }
+          const c = ar ? [cx / (3 * ar), cy / (3 * ar)] : null;
+          ar = Math.abs(ar) / 2; if(ar > mainA){ mainA = ar; main = boxOf(keep); mainC = c; }
         }
       }));
-      if(d && main){ feats.push({a2, name: name || a2, d, main, area: mainA}); if(name && a2 && !NAME_A2[normName(name)]) NAME_A2[normName(name)] = a2; }
+      if(d && main){ const lp = MAP_LBL[a2]; feats.push({a2, name: name || a2, d, main, area: mainA, c: lp ? proj(lp[0], lp[1]) : mainC && mainC[0] >= main[0] && mainC[0] <= main[2] ? mainC : [(main[0] + main[2]) / 2, (main[1] + main[3]) / 2]}); if(name && a2 && !NAME_A2[normName(name)]) NAME_A2[normName(name)] = a2; }
     });
     const all = boxOf(feats.flatMap(f => [[f.main[0], f.main[1]], [f.main[2], f.main[3]]]));
     return {feats, world: [Math.max(0, all[0] - 5), Math.max(0, all[1] - 5), Math.min(1000, all[2] + 5), all[3] + 5]};
@@ -32415,6 +32424,10 @@ function gantt(el, list){
   }
   const mapVal = x => MAP.m === 'v' ? (MAP.set === 'won' ? x.wv : MAP.set === 'open' ? x.ov : x.wv + x.ov) : (MAP.set === 'won' ? x.wn : MAP.set === 'open' ? x.on : x.wn + x.on);
   const mapFmt = v => MAP.m === 'v' ? eurK(v) : num(v);
+  const fillVal = x => MAP.set === 'all' ? (MAP.m === 'v' ? x.ov : x.on) : mapVal(x);   // Won + open: blue = open offers, green circles = won
+  const wonVal = x => MAP.m === 'v' ? x.wv : x.wn;
+  // won circle: area ∝ won (offers or value); the biggest grows with the zoom (z = px per map unit), so Europe stays readable
+  const wonR = (v, mx, z) => Math.max(2.5, Math.max(5, Math.min(16, z * 7)) * Math.sqrt(v / (mx || 1)));
   function mapAgg(){
     const by = {};
     rows(0, 'country').filter(o => won(o) || open(o)).forEach(o => {
@@ -32435,6 +32448,7 @@ function gantt(el, list){
     return lo.map((l, i) => ({lo: l, hi: i < n - 1 ? lo[i + 1] : Infinity, step: steps[i] + 1,
       label: MAP.m === 'n' ? (i < n - 1 ? (lo[i + 1] - 1 > l ? `${l}–${lo[i + 1] - 1}` : `${l}`) : (l === mx ? `${l}` : `${l}+`)) : (i < n - 1 ? (i ? `${eurK(l)}–${eurK(lo[i + 1])}` : `< ${eurK(lo[1])}`) : `${eurK(l)}+`)}));
   }
+  const nice2 = v => { if(v <= 0) return 0; const e = Math.pow(10, Math.floor(Math.log10(v))), f = v / e; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * e; };
   const clsOf = (cl, v) => v > 0 ? cl.find(c => v >= c.lo && v < c.hi) || cl[cl.length - 1] : null;
   function mapBox(feats, agg, W, H){
     const want = MAP.view;
@@ -32463,26 +32477,35 @@ function gantt(el, list){
     const [vx, vy, vw, vh] = mapBox(GEO.feats, agg, W, H), z = W / vw;
     const tipOf = (name, x) => `<b>${esc(name)}</b><br>Won: ${x.wn} · ${eurK(x.wv)}<br>Open: ${x.on} · ${eurK(x.ov)}<br><i>click to filter</i>`;
     let paths = '', dots = '';
+    const bub = [], all = MAP.set === 'all', wmx = Math.max(0, ...agg.map(wonVal));
     GEO.feats.forEach(f => {
-      const x = f.a2 && byA2.get(f.a2), v = x ? mapVal(x) : 0, c = clsOf(cl, v), sel = x && FX.country && x.code === FX.country;
-      paths += c ? `<path class="c${sel ? ' sel' : ''}" d="${f.d}" fill="var(--${g}${c.step})" data-x="country:${esc(x.code)}" data-tip="${esc(tipOf(x.name, x))}"/>`
-        : `<path d="${f.d}" fill="var(--map-0)"${x ? ` data-tip="${esc(tipOf(x.name, x))}"` : ''}/>`;
-      if(c && f.area * z * z < 60){ const [a, b, cc, d] = f.main;   // too small to see: a dot on it
-        dots += `<circle class="c${sel ? ' sel' : ''}" cx="${((a + cc) / 2).toFixed(1)}" cy="${((b + d) / 2).toFixed(1)}" r="${(5 / z).toFixed(2)}" fill="var(--${g}${c.step})" data-x="country:${esc(x.code)}" data-tip="${esc(tipOf(x.name, x))}"/>`; }
+      const x = f.a2 && byA2.get(f.a2), v = x ? fillVal(x) : 0, c = clsOf(cl, v), sel = x && FX.country && x.code === FX.country, hit = x && mapVal(x) > 0;
+      const at = hit ? ` data-x="country:${esc(x.code)}" data-tip="${esc(tipOf(x.name, x))}"` : x ? ` data-tip="${esc(tipOf(x.name, x))}"` : '';
+      paths += `<path${hit ? ` class="c${sel ? ' sel' : ''}"` : ''} d="${f.d}" fill="${c ? `var(--${g}${c.step})` : 'var(--map-0)'}"${at}/>`;
+      if(c && f.area * z * z < 60)   // too small to see: a dot on it
+        dots += `<circle class="c${sel ? ' sel' : ''}" cx="${f.c[0].toFixed(1)}" cy="${f.c[1].toFixed(1)}" r="${(5 / z).toFixed(2)}" fill="var(--${g}${c.step})"${at}/>`;
+      if(all && x && wonVal(x) > 0) bub.push({f, x, sel, at, r: wonR(wonVal(x), wmx, z)});
     });
+    // won: green circles, the area grows with the won offers (the biggest under the smaller ones)
+    bub.sort((a, b) => b.r - a.r).forEach(({f, sel, at, r}) => { dots += `<circle class="c wb${sel ? ' sel' : ''}" cx="${f.c[0].toFixed(1)}" cy="${f.c[1].toFixed(1)}" r="${(r / z).toFixed(2)}"${at}/>`; });
     el.innerHTML = `<svg class="map" viewBox="${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" width="100%" height="${H}" role="img" aria-label="Won and open offers by country">
       <rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="var(--map-sea)"/><g>${paths}</g><g>${dots}</g></svg>`;
     const svg = el.querySelector('svg');
     svg.querySelectorAll('.sel').forEach(p => p.parentNode.appendChild(p));
     svg.addEventListener('mouseover', e => { const p = e.target.closest && e.target.closest('path.c'); if(p && p !== p.parentNode.lastElementChild && !p.parentNode.querySelector('.sel')) p.parentNode.appendChild(p); });
+    return z;
   }
   function pMap(M){
-    const agg = mapAgg(), on = agg.filter(x => mapVal(x) > 0), cl = mapClasses(on.map(mapVal));
+    const agg = mapAgg(), on = agg.filter(x => mapVal(x) > 0), cl = mapClasses(agg.map(fillVal).filter(v => v > 0));
     const T = k => sum(agg, x => x[k]), top = on.slice().sort((a, b) => mapVal(b) - mapVal(a))[0];
     const off = agg.filter(x => !x.a2 && mapVal(x) > 0);
     const seg = (k, opts) => `<span class="seg">${opts.map(([v, l]) => `<button type="button" class="${MAP[k] === v ? 'on' : ''}" data-act="map:${k}:${v}">${l}</button>`).join('')}</span>`;
     const g = MAP.set === 'won' ? 'qg' : 'q';
-    const legend = cl.length ? `<div class="legend map-leg"><span><i style="background:var(--map-0)"></i>none</span>${cl.map(c => `<span><i style="background:var(--${g}${c.step})"></i>${esc(c.label)}</span>`).join('')}<span class="r">${MAP.m === 'v' ? 'offer value (net) per country' : 'offers per country'} · ${MAP.set === 'won' ? 'won' : MAP.set === 'open' ? 'open' : 'won + open'} · lost not shown</span></div>` : '';
+    const wmx = Math.max(0, ...agg.map(wonVal)), what = MAP.m === 'v' ? 'offer value (net)' : 'offers';
+    const legend = on.length ? `<div class="legend map-leg">${cl.length ? `<span class="lt">${MAP.set === 'won' ? 'Won' : 'Open'} ${what}</span><span><i style="background:var(--map-0)"></i>none</span>${cl.map(c => `<span><i style="background:var(--${g}${c.step})"></i>${esc(c.label)}</span>`).join('')}` : ''}
+      <span id="mpwon" style="display:contents"></span><span class="r">lost not shown</span></div>` : '';
+    // the won circles in the legend, at the size they have on the map
+    const wonLeg = z => MAP.set === 'all' && wmx > 0 ? `<span class="lt" style="margin-left:${cl.length ? 14 : 0}px">Won ${what}</span>${[...new Set([MAP.m === 'v' ? nice2(wmx / 10) : 1, wmx])].filter(v => v > 0 && v <= wmx).map(v => { const r = wonR(v, wmx, z || 1.2); return `<span><svg width="${2 * r + 2}" height="${2 * r + 2}"><circle class="wb" cx="${r + 1}" cy="${r + 1}" r="${r}"/></svg>${MAP.m === 'v' ? eurK(v) : num(v)}</span>`; }).join('')}` : '';
     const ranked = on.slice().sort((a, b) => mapVal(b) - mapVal(a)), mx = Math.max(1, ...ranked.map(x => MAP.m === 'v' ? x.wv + x.ov : x.wn + x.on));
     const share = (a, b) => (MAP.m === 'v' ? a : b) / mx * 100;
     const tbl = ranked.length ? `<div style="overflow-x:auto"><table class="t map-t"><thead><tr><th>Country</th><th class="n">Won</th><th class="n">Open</th><th style="width:34%"></th></tr></thead><tbody>${ranked.slice(0, 18).map(x => `<tr class="click${FX.country && x.code === FX.country ? ' sel' : ''}" ${x.a2 ? `data-x="country:${esc(x.code)}"` : ''} data-tip="<b>${esc(x.name)}</b><br>Won: ${x.wn} · ${eurK(x.wv)}<br>Open: ${x.on} · ${eurK(x.ov)}">
@@ -32499,7 +32522,8 @@ function gantt(el, list){
       ${panel('c8', 'Offers by country', `<div class="map-bar">${seg('set', [['all', 'Won + open'], ['won', 'Won'], ['open', 'Open']])}${seg('m', [['n', 'Offers'], ['v', 'Value']])}<span style="margin-left:auto"></span>${seg('view', [['fit', 'Fit'], ['eu', 'Europe'], ['world', 'World']])}</div><div id="mp1"></div>${legend}`, 'click a country to filter')}
       ${panel('c4', 'Countries', tbl, MAP.m === 'v' ? 'offer value (net)' : 'number of offers')}</div>`;
     if(!GEO && !GEO_BUSY && !GEO_ERR) loadGeo();   // first time: the shapes are read, then the page is drawn again
-    drawMap($('mp1'), agg, cl);
+    const z = drawMap($('mp1'), agg, cl);
+    if($('mpwon')) $('mpwon').innerHTML = wonLeg(z);
   }
 
   function pEmpty(M){

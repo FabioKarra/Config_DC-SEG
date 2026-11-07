@@ -13705,6 +13705,28 @@
         .app-menu .am-item.am-cur { background: var(--accent-soft); }
             .app-menu .am-item .am-check { margin-left: auto; color: var(--accent); font-weight: 700; }
         .app-menu .am-line { height: 1px; background: var(--panel-border); margin: 6px 4px; }
+        /* beta_6.56: Won revision window (Project › Won revision…) */
+        .won-tbl { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+            .won-tbl th { text-align: left; font-weight: 600; font-size: 11.5px; color: var(--dim); padding: 6px 8px; border-bottom: 1px solid var(--panel-border); white-space: nowrap; }
+            .won-tbl td { padding: 8px; border-bottom: 1px solid var(--panel-border); vertical-align: top; color: var(--text); }
+            .won-tbl .n { text-align: right; white-space: nowrap; }
+            .won-tbl tr.won-on td { background: rgba(16,124,16,.08); }
+            .won-tbl tr.won-bad td { color: var(--dim); }
+            .won-tbl .won-note { max-width: 230px; color: var(--dim); }
+            .won-tbl .won-act { text-align: right; white-space: nowrap; }
+            .won-tbl .won-act .act { margin-left: 6px; padding: 5px 10px; font-size: 12.5px; }
+        .won-badge { font-weight: 700; color: #107C10; white-space: nowrap; }
+        body.dark-theme .won-badge { color: #6CCB5F; }
+        body.dark-theme .won-tbl tr.won-on td { background: rgba(108,203,95,.10); }
+        .won-sub { font-size: 12px; color: var(--dim); margin-top: 3px; }
+        .won-cur { font-size: 10.5px; font-weight: 600; color: var(--accent-dark); background: var(--accent-soft); border-radius: 8px; padding: 1px 6px; margin-left: 4px; white-space: nowrap; }
+        #ribbonPanel.rb-fit2 .rb-sm[data-cmd="markWon"] > span, #ribbonPanel.rb-fit2 .rb-sm[data-cmd="wonRev"] > span { display: none; }
+        /* beta_6.56: the won button of the revision card (main page) */
+        #statusBar #stRev .st-won { flex: none; }
+        #statusBar #stRev .st-won.st-won-on { background: #E9F6EE; border-color: #2F9E5B; color: #1E6B3F; font-weight: 600; }
+            #statusBar #stRev .st-won.st-won-on:hover { background: #DCEFE3; }
+        body.dark-theme #statusBar #stRev .st-won { background: var(--field-bg); border-color: var(--field-border); color: var(--accent); }
+        body.dark-theme #statusBar #stRev .st-won.st-won-on { background: rgba(70,176,122,.16); border-color: #46B07A; color: #8FD9B0; }
     </style>
     <style id="connectOverlayCss">
         /* beta_6.55: connection screen, from the first paint until the tenant connection is ready */
@@ -13975,7 +13997,7 @@
                     </div>
                     <div class="st-cell" id="stRev">
                         <span class="st-dot"></span><span class="st-txt"><b class="st-title"></b><span class="st-detail"></span></span>
-                        <span class="st-acts"><button type="button" id="btnNewRevision" class="st-act st-act-strong" style="display:none;">🔓 New Revision</button><button type="button" class="st-act" data-st-act="rev"></button></span>
+                        <span class="st-acts"><button type="button" id="btnNewRevision" class="st-act st-act-strong" style="display:none;">🔓 New Revision</button><button type="button" id="btnMarkWon" class="st-act" style="display:none;">🏆 Mark as won</button><button type="button" id="btnWonRevision" class="st-act" style="display:none;">Won revision…</button><button type="button" class="st-act" data-st-act="rev"></button></span><button type="button" id="stWonBtn" class="st-act st-won" style="display:none;"></button>
                         <div class="catalog-status" id="revisionStatus">
                             <span id="revisionStatusText">Revision: <b>R0</b> — open, editable.</span>
                         </div>
@@ -22936,6 +22958,34 @@ let REVISION_DESCRIPTION = '';
 // [{rev, openedAt, openedBy, openNote, closedAt, closedBy, closeNote, total}]. The opening note is
 // asked by "New Revision", the closing note by "Close Offer"; both are printed on every offer document.
 let REVISION_HISTORY = [];
+// beta_6.56: the won mark of the closed revision on screen ({at, by, status} + rev, ref), read from its JSON — written by
+// Project › Mark as won. It stays in the file when that closed revision is saved again (read only) and in the session copy;
+// it never goes to another revision (a new revision, a draft, an autosave).
+let LOADED_WON = null;
+function loadedWonHere(){ const ref = (document.getElementById('prjRef')?.value || '').trim(); return LOADED_WON && REVISION_CLOSED && LOADED_WON.rev === REVISION && LOADED_WON.ref === ref ? LOADED_WON : null; }
+function wonToKeep(){ const w = READ_ONLY ? loadedWonHere() : null; if(!w) return null; const {rev, ref, ...won} = w; return won; }
+function wonBadgeText(){ const w = loadedWonHere(); return w ? ` · ${LANG === 'it' ? 'vinta' : 'won'}${w.status ? ' (' + w.status + ')' : ''}` : ''; }
+// beta_6.56: the won button of the revision card on the main page: Won (this closed revision is the won one) → the revisions;
+// Mark as won (closed revision) → marks it; Won revision… (open revision after R0: an earlier one may be closed) → the revisions
+const WON_TXT = {
+  en: {won: 'Won', mark: 'Mark as won', list: 'Won revision…', wonTip: 'is the won revision', markTip: 'Mark this closed revision as the one the customer awarded', listTip: 'Choose which closed revision of the offer the customer awarded'},
+  it: {won: 'Vinta', mark: 'Segna come vinta', list: 'Revisione vinta…', wonTip: 'è la revisione vinta', markTip: 'Segna questa revisione chiusa come quella aggiudicata dal cliente', listTip: 'Scegli quale revisione chiusa dell’offerta ha vinto'},
+  de: {won: 'Gewonnen', mark: 'Als gewonnen markieren', list: 'Gewonnene Revision…'},
+  fr: {won: 'Gagnée', mark: 'Marquer comme gagnée', list: 'Révision gagnée…'},
+  es: {won: 'Ganada', mark: 'Marcar como ganada', list: 'Revisión ganada…'}};
+function renderWonButton(){
+  const b = document.getElementById('stWonBtn'); if(!b) return;
+  const ref = (document.getElementById('prjRef')?.value || '').trim(), w = loadedWonHere();
+  const L = Object.assign({}, WON_TXT.en, WON_TXT[LANG] || {});
+  const mode = !ref ? '' : w ? 'won' : REVISION_CLOSED ? 'mark' : REVISION > 0 ? 'list' : '';
+  b.style.display = mode ? '' : 'none';
+  if(!mode) return;
+  b.dataset.mode = mode;
+  b.classList.toggle('st-won-on', mode === 'won');
+  const txt = '🏆 ' + L[mode];
+  if(b.textContent !== txt) b.textContent = txt;
+  b.title = mode === 'won' ? `R${REVISION} ${L.wonTip}${w.status ? ' · ' + w.status : ''}${w.at ? ' · ' + fmtStamp(w.at) : ''}${w.by ? ' · ' + w.by : ''}` : mode === 'mark' ? L.markTip : L.listTip;
+}
 function currentUserName(){
   return (msalAccount && (msalAccount.name || msalAccount.username)) || document.getElementById('prjOwner').value.trim() || '';
 }
@@ -23886,7 +23936,7 @@ function renderStatusBar(){
   }
   // revision
   const ro = typeof READ_ONLY !== 'undefined' && READ_ONLY, cl = typeof REVISION_CLOSED !== 'undefined' && REVISION_CLOSED, r = typeof REVISION !== 'undefined' ? REVISION : 0;
-  stSet('stRev', {dot: ro || cl ? '' : 'info', title: T.rev(r), detail: ro ? T.closedRo : cl ? T.closedNext(r + 1) : T.open, act: T.history});
+  stSet('stRev', {dot: ro || cl ? '' : 'info', title: T.rev(r), detail: (ro ? T.closedRo : cl ? T.closedNext(r + 1) : T.open) + wonBadgeText(), act: T.history}); renderWonButton();
   // user chip
   const chip = document.getElementById('userChip');
   if(chip){
@@ -25115,7 +25165,9 @@ const RIBBON = (function(){
     up: '<path d="M6 15l6-6 6 6"/>',
     pin: '<path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/>',
     chart: '<path d="M4 20V11M10 20V5M16 20v-6M3 20h18"/>',
-    battery: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2M6 10v4M10 10v4M14 10v4"/>'
+    battery: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2M6 10v4M10 10v4M14 10v4"/>',
+    trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 4M17 6h2.5a2.5 2.5 0 0 1-2.6 4"/>',
+    wonlist: '<path d="M11 6h10M11 12h10M11 18h10"/><path d="M3.5 4.5h4v2a2 2 0 0 1-4 0zM5.5 8.5v2M4 11h3"/>'
   };
   const svg = (n, s) => {
     // Custom multicolour SharePoint mark with an overlaid floppy-disk save badge.
@@ -25141,7 +25193,7 @@ const RIBBON = (function(){
     en: {home: 'Home', project: 'Project', documents: 'Documents', prices: 'Price list', settings: 'Settings', collapse: 'Collapse the ribbon (Ctrl+F1)', pin: 'Keep the ribbon open (Ctrl+F1)',
       g_project: 'Project', projects: 'Projects', newProject: 'New project', clone: 'Clone offer', resetOffer: 'Reset offer',
       g_work: 'Project workflow', fileUpload: 'File upload', projectFolder: 'Project folder', kitManagement: 'Kit management', saveSpData: 'Save SharePoint data', g_offerCommand: 'Offer Command', projectDetails: 'Project details', systemConfig: 'System configuration', offerLines: 'Offer lines', addSection: 'Add project section',
-      g_rev: 'Revision', save: 'Save', report: 'Print report', close: 'Close offer', newRev: 'New revision', history: 'Revision history', load: 'Load configuration',
+      g_rev: 'Revision', save: 'Save', report: 'Print report', close: 'Close offer', newRev: 'New revision', markWon: 'Mark as won', wonRev: 'Won revision…', history: 'Revision history', load: 'Load configuration',
       g_cfg: 'Configuration', addPos: 'Add position', generate: 'Generate offer', battSizing: 'Battery sizing',
       g_prev: 'Preview', prevOffer: 'Preview offer', prevBom: 'Preview BOM', g_offer: 'Offer', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
       g_tech: 'Technical', techSum: 'Technical summary', techNote: 'Technical note (Word)', initRep: 'Initialize report',
@@ -25150,7 +25202,7 @@ const RIBBON = (function(){
     it: {home: 'Home', project: 'Progetto', documents: 'Documenti', prices: 'Listino', settings: 'Impostazioni', collapse: 'Comprimi la barra (Ctrl+F1)', pin: 'Tieni aperta la barra (Ctrl+F1)',
       g_project: 'Progetto', projects: 'Progetti', newProject: 'Nuovo progetto', clone: 'Clona offerta', resetOffer: 'Reset offerta',
       g_work: 'Lavoro sul progetto', fileUpload: 'Carica file', projectFolder: 'Cartella progetto', kitManagement: 'Gestione kit', saveSpData: 'Salva dati SharePoint', g_offerCommand: 'Comandi offerta', projectDetails: 'Dati progetto', systemConfig: 'Configurazione sistema', offerLines: 'Righe offerta', addSection: 'Aggiungi sezione offerta',
-      g_rev: 'Revisione', save: 'Salva', report: 'Stampa report', close: 'Chiudi offerta', newRev: 'Nuova revisione', history: 'Storico revisioni', load: 'Carica configurazione',
+      g_rev: 'Revisione', save: 'Salva', report: 'Stampa report', close: 'Chiudi offerta', newRev: 'Nuova revisione', markWon: 'Segna come vinta', wonRev: 'Revisione vinta…', history: 'Storico revisioni', load: 'Carica configurazione',
       g_cfg: 'Configurazione', addPos: 'Aggiungi posizione', generate: 'Genera offerta', battSizing: 'Dimensionamento batterie',
       g_prev: 'Anteprima', prevOffer: 'Anteprima offerta', prevBom: 'Anteprima BOM', g_offer: 'Offerta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
       g_tech: 'Tecnico', techSum: 'Technical summary', techNote: 'Nota tecnica (Word)', initRep: 'Inizializza report',
@@ -25159,7 +25211,7 @@ const RIBBON = (function(){
     de: {home: 'Start', project: 'Projekt', documents: 'Dokumente', prices: 'Preisliste', settings: 'Einstellungen', collapse: 'Menüband reduzieren (Strg+F1)', pin: 'Menüband fixieren (Strg+F1)',
       g_project: 'Projekt', projects: 'Projekte', newProject: 'Neues Projekt', clone: 'Angebot klonen', resetOffer: 'Angebot zurücksetzen',
       g_work: 'Projektbearbeitung', fileUpload: 'Datei hochladen', projectFolder: 'Projektordner', kitManagement: 'Kit-Verwaltung', saveSpData: 'SharePoint-Daten speichern', g_offerCommand: 'Angebotsbefehle', projectDetails: 'Projektdetails', systemConfig: 'Systemkonfiguration', offerLines: 'Angebotspositionen', addSection: 'Angebotsabschnitt hinzufügen',
-      g_rev: 'Revision', save: 'Speichern', report: 'Bericht drucken', close: 'Angebot schließen', newRev: 'Neue Revision', history: 'Revisionsverlauf', load: 'Konfiguration laden',
+      g_rev: 'Revision', save: 'Speichern', report: 'Bericht drucken', close: 'Angebot schließen', newRev: 'Neue Revision', markWon: 'Als gewonnen markieren', wonRev: 'Gewonnene Revision…', history: 'Revisionsverlauf', load: 'Konfiguration laden',
       g_cfg: 'Konfiguration', addPos: 'Position hinzufügen', generate: 'Angebot erstellen', battSizing: 'Batterieauslegung',
       g_prev: 'Vorschau', prevOffer: 'Angebots\u00ADvorschau', prevBom: 'BOM-Vorschau', g_offer: 'Angebot', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
       g_tech: 'Technik', techSum: 'Technical summary', techNote: 'Technische Notiz (Word)', initRep: 'Bericht initialisieren',
@@ -25168,7 +25220,7 @@ const RIBBON = (function(){
     fr: {home: 'Accueil', project: 'Projet', documents: 'Documents', prices: 'Tarif', settings: 'Paramètres', collapse: 'Réduire le ruban (Ctrl+F1)', pin: 'Épingler le ruban (Ctrl+F1)',
       g_project: 'Projet', projects: 'Projets', newProject: 'Nouveau projet', clone: "Cloner l'offre", resetOffer: "Réinitialiser l'offre",
       g_work: 'Travail sur le projet', fileUpload: 'Téléverser des fichiers', projectFolder: 'Dossier du projet', kitManagement: 'Gestion des kits', saveSpData: 'Enregistrer les données SharePoint', g_offerCommand: 'Commandes de l’offre', projectDetails: 'Détails du projet', systemConfig: 'Configuration système', offerLines: 'Lignes d’offre', addSection: 'Ajouter une section',
-      g_rev: 'Révision', save: 'Enregistrer', report: 'Imprimer le rapport', close: "Clôturer l'offre", newRev: 'Nouvelle révision', history: 'Historique des révisions', load: 'Charger une configuration',
+      g_rev: 'Révision', save: 'Enregistrer', report: 'Imprimer le rapport', close: "Clôturer l'offre", newRev: 'Nouvelle révision', markWon: 'Marquer comme gagnée', wonRev: 'Révision gagnée…', history: 'Historique des révisions', load: 'Charger une configuration',
       g_cfg: 'Configuration', addPos: 'Ajouter une position', generate: "Générer l'offre", battSizing: 'Dimensionnement batteries',
       g_prev: 'Aperçu', prevOffer: "Aperçu de l'offre", prevBom: 'Aperçu BOM', g_offer: 'Offre', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
       g_tech: 'Technique', techSum: 'Technical summary', techNote: 'Note technique (Word)', initRep: 'Initialiser le rapport',
@@ -25177,7 +25229,7 @@ const RIBBON = (function(){
     es: {home: 'Inicio', project: 'Proyecto', documents: 'Documentos', prices: 'Tarifa', settings: 'Ajustes', collapse: 'Contraer la cinta (Ctrl+F1)', pin: 'Fijar la cinta (Ctrl+F1)',
       g_project: 'Proyecto', projects: 'Proyectos', newProject: 'Nuevo proyecto', clone: 'Clonar oferta', resetOffer: 'Restablecer oferta',
       g_work: 'Trabajo del proyecto', fileUpload: 'Subir archivos', projectFolder: 'Carpeta del proyecto', kitManagement: 'Gestión de kits', saveSpData: 'Guardar datos de SharePoint', g_offerCommand: 'Comandos de oferta', projectDetails: 'Detalles del proyecto', systemConfig: 'Configuración del sistema', offerLines: 'Líneas de oferta', addSection: 'Añadir sección de oferta',
-      g_rev: 'Revisión', save: 'Guardar', report: 'Imprimir informe', close: 'Cerrar oferta', newRev: 'Nueva revisión', history: 'Historial de revisiones', load: 'Cargar configuración',
+      g_rev: 'Revisión', save: 'Guardar', report: 'Imprimir informe', close: 'Cerrar oferta', newRev: 'Nueva revisión', markWon: 'Marcar como ganada', wonRev: 'Revisión ganada…', history: 'Historial de revisiones', load: 'Cargar configuración',
       g_cfg: 'Configuración', addPos: 'Añadir posición', generate: 'Generar oferta', battSizing: 'Dimensionado de baterías',
       g_prev: 'Vista previa', prevOffer: 'Vista previa oferta', prevBom: 'Vista previa BOM', g_offer: 'Oferta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
       g_tech: 'Técnico', techSum: 'Technical summary', techNote: 'Nota técnica (Word)', initRep: 'Inicializar informe',
@@ -25207,8 +25259,8 @@ const RIBBON = (function(){
         big('print', 'report', 'btnSaveFile', {run: () => saveConfigurationFlow('reports')}),
         big('sharepointSave', 'saveSpData', 'btnSaveProjectDetails'),
         // project folder and file upload as compact commands, so the Project tab fits at 1280 px also in German / French
-        col(sm('folder', 'projectFolder', 'btnProjectFolder'), sm('upload', 'fileUpload', 'btnUploadFiles')),
-        col(sm('history', 'history', 'btnRevisionHistory'), sm('upload', 'load', 'btnLoadFile'))
+        col(sm('folder', 'projectFolder', 'btnProjectFolder'), sm('upload', 'fileUpload', 'btnUploadFiles'), sm('trophy', 'markWon', 'btnMarkWon', {when: () => REVISION_CLOSED})),
+        col(sm('history', 'history', 'btnRevisionHistory'), sm('upload', 'load', 'btnLoadFile'), sm('wonlist', 'wonRev', 'btnWonRevision'))
       ]],
       // Workflow actions, including New Revision as a prominent large command instead of a small stack item.
       ['g_work', [
@@ -25354,8 +25406,9 @@ const RIBBON = (function(){
   }
   // narrower buttons when the commands of the tab do not fit (long labels in German / French, small screens)
   function fitPanel(){
-    panel.classList.remove('rb-fit');
+    panel.classList.remove('rb-fit', 'rb-fit2');
     if(panel.offsetParent !== null && panel.scrollWidth > panel.clientWidth + 1) panel.classList.add('rb-fit');
+    if(panel.offsetParent !== null && panel.scrollWidth > panel.clientWidth + 1) panel.classList.add('rb-fit2');   // beta_6.56: still too wide → Mark as won / Won revision as icons (name in the tooltip)
   }
   window.addEventListener('resize', () => fitPanel());
   function syncDisabled(){
@@ -26010,7 +26063,7 @@ function buildConfigState(){
   });
   return {
     schema:'ups-configurator', version:2, savedAt:new Date().toISOString(), market: PRICE_MARKET,
-    revision: REVISION, closed: REVISION_CLOSED, revisionDescription: REVISION_DESCRIPTION, revisionHistory: REVISION_HISTORY.map(e => ({...e})), report: REPORT ? JSON.parse(JSON.stringify(REPORT)) : null, tco: (typeof TCO !== 'undefined' && TCO) ? TCO.getState() : null,
+    ...((w => w ? {won: w} : {})(wonToKeep())), revision: REVISION, closed: REVISION_CLOSED, revisionDescription: REVISION_DESCRIPTION, revisionHistory: REVISION_HISTORY.map(e => ({...e})), report: REPORT ? JSON.parse(JSON.stringify(REPORT)) : null, tco: (typeof TCO !== 'undefined' && TCO) ? TCO.getState() : null,
     currency: CURRENCY, currencyRate: CURRENCY_RATE, projectDiscount: PROJECT_DISCOUNT, deliveryPercent: DELIVERY_PERCENT, deliveryEnabled: DELIVERY_ENABLED,
     project, positions, bom,
   };
@@ -27156,6 +27209,7 @@ function applyLoadedState(state){
     if(!REVISION_HISTORY.length && (state.revisionDescription || Number(state.revision))){
       REVISION_HISTORY = [{rev: Number(state.revision) || 0, openedAt: '', openedBy: '', openNote: state.revisionDescription || '', closedAt: '', closedBy: '', closeNote: '', total: null}];
     }
+    LOADED_WON = state.closed === true && state.won && typeof state.won === 'object' ? {...state.won, rev: Number(state.revision) || 0, ref: String((state.project && state.project.ref) || '').trim()} : null;   // beta_6.56
     if(state.closed === true){
       REVISION = Number(state.revision)||0;
       REVISION_CLOSED = true;
@@ -30260,6 +30314,15 @@ const CHANGELOG = [
     'Valore delle offerte: se il file offerta (.json) manca o non ha un valore, la dashboard usa il valore di vendita della colonna OfferValue € (OfferValue_x20ac_) della Progress tracker list; nella finestra dell\'offerta si legge «Offer value (SharePoint)», la barra di stato conta questi valori e l\'export CSV ha la colonna Value from',
     'Value by family and status: i progetti senza file offerta (valore preso da Offer Value € della lista) vanno nella riga Various; anche il filtro Family ha la voce Various',
     'View › Data check: per ogni progetto della lista cosa è stato letto nella cartella 02 OFFER (file offerta letto, nessun .json, .json non valido o di un altro progetto, cartella non raggiungibile, nessuna cartella di progetto), da dove viene il valore (file offerta / Offer Value € / nessuno) e quanti .json ci sono; i riquadri in alto contano i casi e filtrano la tabella',
+    'Totali Won verificati: il periodo va a mesi interi (es. 12 mesi = dal 1° del mese di 11 mesi fa), così totali, tabella e grafico mensile contano le stesse offerte (prima le offerte create nei primi giorni del periodo erano nei totali ma non nel grafico); le righe di Value by family and status sommano sempre al totale (anche le offerte con file senza UPS, nella riga Various); stati della lista mappati uno per uno e le negazioni (Not awarded, No order, Non vinta) contano come Lost; un PRJ_ID ripetuto nella lista conta una volta; tra i file offerta della cartella vale la revisione più alta',
+    'View › Value: Offer file first (predefinito) o Offer Value € first; Data check mostra per ogni progetto il valore del file, quello della lista e quello contato, e un riquadro Won con i totali nel periodo e su tutta la lista nei tre modi',
+    'Value by family and status divisa per capitolo: i capitoli UPS vanno alla loro famiglia, il capitolo servizi nella riga Services, la riga di consegna nella riga Delivery (sconto progetto compreso); gli altri capitoli restano con la famiglia principale; Various = valore da Offer Value € della lista. Le famiglie nelle schede Products & services contano solo i loro capitoli; l\'export CSV ha le colonne Services value e Delivery value',
+    'Revisione vinta: nel ribbon Project, gruppo Revision, Mark as won segna come vinta la revisione chiusa aperta; Project › Won revision… elenca le revisioni chiuse del progetto (chiusura, nota, valore netto) e permette di segnarne una o di togliere il segno. Il file <PRJ_ID>_R<n>.json in 02 OFFER riceve «won» (data, utente, stato) e le altre revisioni lo perdono; nella Progress tracker list si scrive solo lo Status scelto tra quelli vinti (Awarder, Project Execution, Project Closed…), Offer Value € non cambia. Solo una revisione chiusa può essere segnata; la barra di stato mostra 🏆 won sulla revisione vinta',
+    'Dashboard: per ogni progetto conta la revisione segnata vinta; senza segno la revisione chiusa più alta; la bozza (_ongoing) solo se non c\'è nessuna revisione chiusa. Data check: riquadri Won con / senza revisione segnata e Valore da bozza, 🏆 accanto al file letto; la finestra dell\'offerta indica la revisione vinta',
+    'Won nel budget della dashboard: un progetto vinto conta nel periodo dalla data in cui la vittoria è registrata (il segno won della revisione); senza segno dalla Due date di SharePoint (una Due date futura conta oggi); senza nessuna delle due dalla data di creazione. Gli altri progetti contano dalla data di creazione. Mark as won chiede anche la data won (proposta: quella già registrata, per un progetto già vinto la Due date su cui conta ora, altrimenti oggi); Data check ha la colonna Counts on',
+    'Dashboard: quando un\'offerta passa a Won (post-it trascinato nella colonna Won o stato dal menu ⋯) il segno won si scrive subito nel file offerta, sulla revisione chiusa che la dashboard legge, con la data di oggi; Undo lo toglie. Senza una revisione chiusa lo stato cambia lo stesso e il messaggio lo dice',
+    'Pagina principale: nel riquadro Revisione c\'è il tasto won — 🏆 Won (verde) se la revisione aperta è quella vinta, 🏆 Mark as won su una revisione chiusa, 🏆 Won revision… su una revisione aperta dopo R0 — che apre la stessa finestra del ribbon',
+    'Dashboard, nuova pagina Map: mappa per nazione delle offerte vinte e di quelle in essere (New, In progress, Offer review; le perse no), colore = densità per nazione in numero di offerte o valore, con Won + open / Won / Open, viste Fit / Europe / World, clic su una nazione per filtrare, tabella delle nazioni con barre won / open e riquadri di sintesi. Le sagome delle nazioni (Natural Earth, world-atlas) si leggono dal CDN jsdelivr / unpkg all\'apertura della pagina; se il CDN non risponde la tabella resta completa',
     'Manuale a parte UPS_Dashboard_Guide.pdf (stessa cartella degli altri manuali): si apre dal menu della scheda blu (Dashboard Guide, solo Admin) e dal ribbon della dashboard (Help › Dashboard Guide)',
   ]},
   {version:'beta_6.55', date:'2026-11-05', notes:[
@@ -31310,14 +31373,19 @@ const UPS_DASH = (function(){
 
   /* ---------- status ---------- */
   const STATUS = ['New', 'In progress', 'Offer review', 'Won', 'Lost'];
-  // The SharePoint Status in the five stages of the dashboard. Won = Won, Awarded / Awarder, Project Execution
-  // and Project Closed (also Execution, Order); Lost = Lost, Cancelled, Declined.
+  // The SharePoint Status in the five stages of the dashboard. The values of the list are mapped one by one;
+  // anything else goes by its words. A negative ("Not awarded", "No order", "Non vinta") is Lost, never Won.
+  const STATUS_MAP = {'new': 'New', 'in progress': 'In progress', 'offer review': 'Offer review', 'on hold': 'In progress',
+    'won': 'Won', 'awarder': 'Won', 'awarded': 'Won', 'project execution': 'Won', 'project closed': 'Won', 'execution': 'Won',
+    'lost': 'Lost', 'cancelled': 'Lost', 'canceled': 'Lost', 'declined': 'Lost'};
   function stageName(s){
     s = String(s || '').trim();
-    if(!s || /^new$|draft|not started|to do/i.test(s)) return 'New';
-    if(/^offer review$/i.test(s)) return 'Offer review';
-    if(/lost|cancel|declin|\bpers/i.test(s)) return 'Lost';
-    if(/won|award|order|vint|execut|esecuz|closed|chius/i.test(s)) return 'Won';
+    const k = s.toLowerCase().replace(/\s+/g, ' ');
+    if(STATUS_MAP[k]) return STATUS_MAP[k];
+    if(!s || /draft|not started|to do/i.test(s)) return 'New';
+    if(/^offer review/i.test(s)) return 'Offer review';
+    if(/\b(not|non|no)\b|lost|cancel|declin|reject|withdr|\bpers/i.test(s)) return 'Lost';
+    if(/\bwon\b|award|order|vint|execut|esecuz|closed|chius/i.test(s)) return 'Won';
     return 'In progress';
   }
   const won = o => o.status === 'Won', lost = o => o.status === 'Lost', open = o => ['New', 'In progress', 'Offer review'].includes(o.status), working = o => ['New', 'In progress'].includes(o.status);
@@ -31330,7 +31398,9 @@ const UPS_DASH = (function(){
   const host = document.createElement('div'); host.id = 'upsDashHost'; host.className = 'ud-only';
   mainContent.appendChild(host);
   const root = host.attachShadow({mode: 'open'});
-  root.innerHTML = `<style>:host{display:block; --s1:#2F5597; --s2:#0E9488; --s3:#D9782B; --s4:#7B61C9; --s5:#C2408A; --other:#A3ABB8;
+  root.innerHTML = `<style>:host{--q1:#cde2fb; --q2:#86b6ef; --q3:#3987e5; --q4:#256abf; --q5:#104281; --qg1:#CDEBD8; --qg2:#8FD0A9; --qg3:#4CAE74; --qg4:#2E8B57; --qg5:#1A5C37; --map-0:#E4E8EE; --map-sea:transparent}
+:host(.dark){--q1:#184f95; --q2:#256abf; --q3:#3987e5; --q4:#6da7ec; --q5:#b7d3f6; --qg1:#1F5A3A; --qg2:#2E8B57; --qg3:#46B07A; --qg4:#7CCB9C; --qg5:#BDE8CD; --map-0:#323843}
+:host{display:block; --s1:#2F5597; --s2:#0E9488; --s3:#D9782B; --s4:#7B61C9; --s5:#C2408A; --other:#A3ABB8;
   --st-new:#8A94A6; --st-prog:#4472C4; --st-rev:#D9A11F; --st-won:#2E8B57; --st-lost:#C8102E;
   --grid:#EEF1F5; --axis:#C9D0DB; --tick:#6B7383; --lbl:#2B2F36; --row:#F0F2F5; --hover:#F6F9FE; --chip:#EAF0FB; --chip-b:#C9D8F2; --chip-t:#2F5597;
   color:var(--text); font-family:'Work Sans',system-ui,sans-serif; font-size:13px}
@@ -31481,6 +31551,21 @@ table.mx tr.sel td:first-child{color:var(--accent); font-weight:700}
 .ck{background:var(--panel); border:1px solid var(--panel-border); border-left:4px solid var(--c); border-radius:10px; padding:10px 12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:2px}
 .ck b{font-size:22px; font-weight:600} .ck span{font-size:12px; color:var(--dim)}
 .ck:hover{box-shadow:0 4px 12px rgba(20,22,26,.08)} .ck.on{box-shadow:inset 0 0 0 1.5px var(--c); background:var(--chip)}
+.wmk { cursor: help; margin-left: 2px; }
+/* beta_6.56: Map page */
+.map-bar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:-2px 0 10px}
+.map{display:block}
+.map path{stroke:var(--panel); stroke-width:.6; vector-effect:non-scaling-stroke; stroke-linejoin:round}
+.map .c{cursor:pointer} .map path.c:hover{stroke:var(--lbl); stroke-width:1.4}
+.map .sel{stroke:var(--lbl) !important; stroke-width:2.2 !important}
+.map circle{stroke:var(--panel); stroke-width:1.3; vector-effect:non-scaling-stroke} .map circle:hover{stroke:var(--lbl)}
+.map-wait{display:flex; align-items:center; justify-content:center; gap:10px; text-align:center; color:var(--dim); font-size:13px; line-height:1.6; background:var(--row); border-radius:8px; padding:20px}
+.map-wait a{color:var(--accent)}
+.spin{width:16px; height:16px; border-radius:50%; border:2px solid var(--axis); border-top-color:var(--accent); animation:udspin .8s linear infinite}
+@keyframes udspin{to{transform:rotate(360deg)}}
+.map-leg{margin-top:10px; align-items:center} .map-leg i{width:18px; height:10px; border-radius:2px} .map-leg .r{margin-left:auto}
+.mbar{display:flex; gap:2px; height:8px} .mbar i{display:block; height:100%; border-radius:4px; min-width:0}
+table.map-t tr.sel td{background:var(--chip)}
 </style><main id="main"></main><div class="statusbar" id="sbar"></div><div class="ov" id="ov"><div class="pop" id="pop"></div></div><div class="cmenu" id="cmenu" role="menu"></div><div class="toast" id="toast" role="status" aria-live="polite"></div><div id="tip"></div>`;
   const $ = id => root.getElementById(id);
   const cssv = n => getComputedStyle(host).getPropertyValue(n).trim();
@@ -31608,29 +31693,70 @@ function gantt(el, list){
   /* ---------- data ---------- */
   let OFFERS = [], FAMS = [], FAMS_M = [], OWN = [], COUNTRIES = [], SRC = 'none';
   const SCAN = {running: false, done: 0, total: 0, err: '', at: null};
+  let ROWKEYS = [];                     // rows of "Value by family and status": UPS families, Services, Delivery, Various
+  const PART_END = ['Services', 'Delivery', 'Various'];
+  function refreshRowKeys(){
+    const ks = new Set(); OFFERS.forEach(o => Object.keys(o.parts || {}).forEach(k => ks.add(k)));
+    const fams = [...ks].filter(k => !PART_END.includes(k)).sort((a, b) => { const x = KNOWN_FAMS.indexOf(a), y = KNOWN_FAMS.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || a.localeCompare(b); });
+    ROWKEYS = fams.concat(PART_END.filter(k => ks.has(k)));
+  }
+  // beta_6.56: the date an offer counts on in the period (budget). Won: the day its win was recorded (the won mark of the
+  // revision: Project › Mark as won in the configurator, or the status set to Won here); without a mark its Due date
+  // (SharePoint; a Due date still to come counts today); with neither the creation date. Any other offer: the date it was created.
+  function setPd(o){
+    const w = o.wonMark && dateOf(o.wonMark.at);
+    if(o.status !== 'Won' || !(w || o.due)){ o.pd = o.created; o.pdSrc = 'created'; }
+    else if(w){ o.pd = w; o.pdSrc = 'won'; }
+    else { o.pd = o.due > TODAY ? new Date(TODAY) : o.due; o.pdSrc = 'due'; }
+    return o;
+  }
+  const pDate = o => o.pd || o.created;
+  const PD_TXT = {won: 'won date', due: 'Due date', created: 'created'};
+  let VALUE_FIRST = 'offer';            // 'offer' = offer file first, 'list' = OfferValue € of the list first
+  function applyValue(o){
+    setPd(o);
+    if(o.valueJson === undefined) return o;
+    const a = VALUE_FIRST === 'list' ? ['list', o.valueList] : ['offer', o.valueJson], b = VALUE_FIRST === 'list' ? ['offer', o.valueJson] : ['list', o.valueList];
+    const [src, v] = a[1] > 0 ? a : b[1] > 0 ? b : ['', 0];
+    o.value = v; o.valueSrc = src;
+    o.parts = src === 'offer' ? (o.partsJson || {[o.famM]: v}) : src === 'list' ? {Various: v} : {};   // a value from the list has no split: Various
+    return o;
+  }
   function setData(list, src){
     CHOICES = null;
+    list.forEach(applyValue);
     OFFERS = list.slice().sort((a, b) => b.created - a.created); SRC = src;
     const fu = {}; OFFERS.forEach(o => o.positions.forEach(p => fu[p.fam] = (fu[p.fam] || 0) + p.units));
     FAMS = Object.keys(fu).sort((a, b) => { const x = KNOWN_FAMS.indexOf(a), y = KNOWN_FAMS.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || a.localeCompare(b); });
-    FAMS_M = FAMS.concat(OFFERS.some(o => o.famM === 'Various') ? ['Various'] : []);   // "Various" = no offer file, value from the list
+    const fm = [...new Set(OFFERS.map(o => o.famM))].filter(f => f && !FAMS.includes(f) && f !== 'Various').sort();
+    FAMS_M = FAMS.concat(fm, OFFERS.some(o => o.famM === 'Various') ? ['Various'] : []);
+    refreshRowKeys();   // "Various" = no UPS in an offer file: value from the list, or none
     OWN = [...new Set(OFFERS.map(o => o.owner).filter(o => o && o !== '—'))].sort((a, b) => a.localeCompare(b));
     COUNTRIES = [...new Map(OFFERS.filter(o => o.country && o.country !== '—').map(o => [o.country, o.countryName])).entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
   }
   const textOf = v => { try{ const x = typeof v === 'object' && v !== null ? extractDisplayValue(v) : v; return String(x ?? '').trim(); }catch(e){ return ''; } };
   const famOf = m => String(m || '').trim().split(/\s+/)[0].toUpperCase();
+  // The offer value as the configurator makes it (each chapter × its systems, then the project discount), split by
+  // chapter: the UPS family of the position, Services (the services chapter), Delivery (the delivery line) and ''
+  // for the other chapters (custom sections), which go with the main family of the offer.
   function offerTotals(st){
-    let total = 0, tcost = 0, cur = null; const groups = [], sla = {}; let fok = false;
+    let total = 0, tcost = 0, cur = null; const sla = {}, parts = {}; let fok = false;
+    const pd = 1 - (Number(st.projectDiscount) || 0) / 100;
     (st.bom || []).forEach(it => {
-      if(it.kind === 'header'){ const p = it.cfgPos ? (st.positions || [])[Number(it.cfgPos) - 1] : null; cur = {mult: p ? (Number(p.qty) || 1) : 1, price: 0, cost: 0}; groups.push(cur); return; }
+      if(it.kind === 'header'){
+        const p = it.cfgPos ? (st.positions || [])[Number(it.cfgPos) - 1] : null;
+        cur = {mult: p ? (Number(p.qty) || 1) : 1, key: it.isServices ? 'Services' : p ? famOf(p.model) : ''};
+        return;
+      }
       if(it.kind === 'total' || !cur) return;
       if(it.kitId && !it.kitParent) return;          // a kit is one line: its components are inside its price
       const q = Number(it.qty) || 0, g = Number(it.gross) || 0, d = Number(it.disc) || 0, c = Number(it.cost) || 0;
-      cur.price += g * (1 - d / 100) * q; cur.cost += c * q;
+      const net = g * (1 - d / 100) * q * cur.mult, key = it.kind === 'delivery' ? 'Delivery' : cur.key;
+      total += net; tcost += c * q * cur.mult;
+      parts[key] = (parts[key] || 0) + net * pd;
       if(it.svcLevel){ sla[it.svcLevel] = (sla[it.svcLevel] || 0) + q; if(it.svcFok) fok = true; }
     });
-    groups.forEach(g => { total += g.price * g.mult; tcost += g.cost * g.mult; });
-    return {value: total * (1 - (Number(st.projectDiscount) || 0) / 100), cost: tcost, sla, fok};
+    return {value: total * pd, cost: tcost, sla, fok, parts};
   }
   function toPosition(p){
     const model = String(p.model || '').trim(), kwm = (typeof moduleKwForModel === 'function' && moduleKwForModel(model)) || (typeof MODULE_KW_ACTIVE !== 'undefined' ? MODULE_KW_ACTIVE : 0) || 0;
@@ -31660,15 +31786,72 @@ function gantt(el, list){
     const fu = {}; positions.forEach(p => fu[p.fam] = (fu[p.fam] || 0) + p.units);
     const fam = Object.keys(fu).sort((a, b) => fu[b] - fu[a])[0] || famOf(textOf(rec.Product)) || '—';
     const t = st ? offerTotals(st) : {value: 0, cost: 0, sla: {}, fok: false};
-    // beta_6.56: no value in the offer file (no file, or no priced lines) → the general selling value of the list (OfferValue €)
-    let valueSrc = st && t.value > 0 ? 'offer' : '';
-    if(!valueSrc){ const k = SP_VALUE_FIELDS.find(f => raw[f] != null && raw[f] !== ''); const v = k ? moneyOf(raw[k]) : 0; if(v > 0){ t.value = v; valueSrc = 'list'; } }
+    // beta_6.56: two values – the offer file (net, after the project discount) and the list (OfferValue €). Which one
+    // counts is chosen in View › Value (offer file first = default: the list only when the file has no value).
+    const vk = SP_VALUE_FIELDS.find(f => raw[f] != null && raw[f] !== '');
+    const valueJson = st ? t.value : 0, valueList = vk ? moneyOf(raw[vk]) : 0;
+    const partsJson = {}; Object.entries(t.parts || {}).forEach(([k, v]) => { const key = k || (positions.length ? fam : 'Various'); partsJson[key] = (partsJson[key] || 0) + v; });
     const modified = dateOf(raw.Modified);
     return {ref, customer: textOf(rec.Customer) || '—', project: textOf(rec['Project Name']), country: c.code || c.name || '—', countryName: c.name || '—',
       owner: shortName(textOf(rec['Created By.title'])) || '—', ownerId: String(raw[(typeof OWNER_PERSON_FIELD !== 'undefined' ? OWNER_PERSON_FIELD : 'AssignedTo0') + 'LookupId'] ?? ''), status, rawStatus: textOf(rec.Status), market: (st && st.market) || (/^M2[FU]$/.test(fam) ? 'UL' : 'IEC'), fam, positions,
-      value: t.value, cost: t.cost, sla: t.sla, fok: t.fok, revisions: st ? Number(st.revision) || 0 : 0,
+      value: 0, valueJson, valueList, partsJson, parts: {}, cost: t.cost, sla: t.sla, fok: t.fok, revisions: st ? Number(st.revision) || 0 : 0,
       created: dateOf(raw.Created) || dateOf(st && st.savedAt) || new Date(TODAY), due: dateOf(rec['Due date']) ? dayOf(dateOf(rec['Due date'])) : null,
-      closed: ['Won', 'Lost', 'Offer review'].includes(status) ? modified : null, hasOffer: !!st, famM: st ? fam : 'Various', valueSrc, file: file ? file.name : '', saved: file ? dateOf(file.lastModifiedDateTime) : null};
+      closed: ['Won', 'Lost', 'Offer review'].includes(status) ? modified : null, hasOffer: !!st, famM: positions.length ? fam : 'Various', valueSrc: '', file: file ? file.name : '', saved: file ? dateOf(file.lastModifiedDateTime) : null,
+      fileKind: !file ? '' : /_ongoing\.json$/i.test(file.name) ? 'draft' : OFFER_FILE_RE.test(file.name) ? 'closed' : 'other', wonMark: st && st.won && typeof st.won === 'object' ? st.won : null};
+  }
+  // beta_6.56: which offer file of the "02 OFFER" folder counts. <ref>_R<n>.json = closed revision, <ref>_R<n>_ongoing.json = draft.
+  //  1. a closed revision marked won (Project › Mark as won): for a Won project every closed revision is read for it
+  //     (two marked → the one marked last);  2. else the highest closed revision;  3. a draft only when there is no closed
+  //     revision;  4. files with other names (saved by hand): the highest revision among the 4 newest, as before.
+  const OFFER_FILE_RE = /_R(\d+)(_ongoing)?\.json$/i;
+  async function readOffer(rec, site, token){
+    const ref = String(rec.PRJ_ID).trim(), none = (scan, nfiles = 0) => ({st: null, file: null, scan, nfiles});
+    const fl = rec._raw && rec._raw.FolderLink0, path = fl ? resolveProjectSubfolderPath(fl, '02 OFFER') : '';
+    if(!path) return none('no-link');
+    let files;
+    try{ files = await listOfferJsonFiles({site, token, targetPath: path}); }catch(e){ return none('no-folder'); }   // no "02 OFFER" folder or not readable
+    if(!files.length) return none('no-json');
+    const revOf = f => { const m = OFFER_FILE_RE.exec(f.name); return m ? Number(m[1]) : -1; };
+    const closed = files.filter(f => OFFER_FILE_RE.test(f.name) && !/_ongoing\.json$/i.test(f.name)).sort((a, b) => revOf(b) - revOf(a));
+    const drafts = files.filter(f => /_R\d+_ongoing\.json$/i.test(f.name)).sort((a, b) => revOf(b) - revOf(a));
+    const other = files.filter(f => !OFFER_FILE_RE.test(f.name));   // newest first, as listed
+    const read = async f => {
+      try{
+        const s = JSON.parse(await downloadDriveFileText(site.id, f));
+        if(!s || !Array.isArray(s.positions)) return null;
+        const fr = s.project && String(s.project.ref || '').trim();
+        return fr && fr !== ref ? null : s;   // a file of another project
+      }catch(e){ return null; }
+    };
+    const wonStage = stageName(textOf(rec.Status)) === 'Won';
+    let best = null, marked = null;
+    for(const f of closed.slice(0, 25)){
+      const s = await read(f); if(!s) continue;
+      if(!best) best = {s, f};
+      if(s.won && (!marked || String(s.won.at || '') > String(marked.s.won.at || ''))) marked = {s, f};
+      if(!wonStage) break;   // not won: the highest closed revision is enough
+    }
+    const pick = marked || best;
+    if(pick) return {st: pick.s, file: pick.f, scan: 'ok', nfiles: files.length};
+    for(const f of drafts){ const s = await read(f); if(s) return {st: s, file: f, scan: 'ok', nfiles: files.length}; }
+    let st = null, file = null;
+    for(const f of other.slice(0, 4)){ const s = await read(f); if(s && (!st || (Number(s.revision) || 0) > (Number(st.revision) || 0))){ st = s; file = f; } }
+    return st ? {st, file, scan: 'ok', nfiles: files.length} : none('invalid', files.length);
+  }
+  // one project read again (after Mark as won in the configurator), when the dashboard holds the SharePoint data
+  async function refreshProject(ref){
+    ref = String(ref || '').trim();
+    if(SRC !== 'sp' || !ref) return false;
+    const rec = recOf(ref), prev = OFFERS.find(o => o.ref === ref);
+    if(!rec) return false;
+    const token = await getGraphToken();
+    const {site} = await resolveSharePointList(token);
+    const r = await readOffer(rec, site, token);
+    const o = toOffer(rec, r.st, r.file); Object.assign(o, {scan: r.scan, nfiles: r.nfiles, dup: prev ? prev.dup : 0});
+    if(prev && prev.status === o.status && prev.closed && (!o.closed || prev.closed > o.closed)){ o.closed = prev.closed; o.prevStage = prev.prevStage; }   // a status just changed here keeps its day
+    setData(prev ? OFFERS.map(x => x === prev ? o : x) : OFFERS.concat(o), 'sp');
+    if(active()) render();
+    return true;
   }
   let scanSeq = 0;
   async function loadSharePoint(reloadList){
@@ -31679,30 +31862,20 @@ function gantt(el, list){
       if(reloadList || !PROGRESS.length) await fetchSharePointList();
       const token = await getGraphToken();
       const {site} = await resolveSharePointList(token);
-      const recs = (PROGRESS || []).filter(r => r && String(r.PRJ_ID || '').trim());
+      const byRef = new Map();
+      (PROGRESS || []).filter(r => r && String(r.PRJ_ID || '').trim()).forEach(r => {
+        const k = String(r.PRJ_ID).trim(), m = dateOf(r._raw && r._raw.Modified) || new Date(0), cur = byRef.get(k);
+        if(!cur) byRef.set(k, {r, m, n: 1});
+        else { cur.n++; if(m > cur.m){ cur.r = r; cur.m = m; } }
+      });
+      const recs = [...byRef.values()].map(x => x.r), dups = new Map([...byRef.entries()].filter(([, x]) => x.n > 1).map(([k, x]) => [k, x.n]));
       SCAN.total = recs.length;
       const out = new Array(recs.length); let i = 0, painted = Date.now();
       const worker = async () => {
         while(i < recs.length && seq === scanSeq){
-          const k = i++, rec = recs[k]; let st = null, file = null, scan = 'no-link', nfiles = 0;
-          const fl = rec._raw && rec._raw.FolderLink0, path = fl ? resolveProjectSubfolderPath(fl, '02 OFFER') : '';
-          if(path){
-            scan = 'no-folder';
-            try{
-              const files = await listOfferJsonFiles({site, token, targetPath: path});
-              nfiles = files.length; scan = files.length ? 'invalid' : 'no-json';
-              for(const f of files.slice(0, 3)){
-                try{
-                  const s = JSON.parse(await downloadDriveFileText(site.id, f));
-                  if(!s || !Array.isArray(s.positions)) continue;
-                  const fr = s.project && String(s.project.ref || '').trim();
-                  if(fr && fr !== String(rec.PRJ_ID).trim()) continue;   // a file of another project
-                  st = s; file = f; scan = 'ok'; break;
-                }catch(e){}
-              }
-            }catch(e){ /* no "02 OFFER" folder or not readable */ }
-          }
-          try{ out[k] = toOffer(rec, st, file); out[k].scan = scan; out[k].nfiles = nfiles; }catch(e){ console.warn('Dashboard: project not read', rec.PRJ_ID, e); }
+          const k = i++, rec = recs[k];
+          const {st, file, scan, nfiles} = await readOffer(rec, site, token).catch(() => ({st: null, file: null, scan: 'no-folder', nfiles: 0}));
+          try{ out[k] = toOffer(rec, st, file); out[k].scan = scan; out[k].nfiles = nfiles; out[k].dup = dups.get(String(rec.PRJ_ID).trim()) || 0; }catch(e){ console.warn('Dashboard: project not read', rec.PRJ_ID, e); }
           SCAN.done++;
           if(seq === scanSeq && Date.now() - painted > 1200){ painted = Date.now(); setData(out.filter(Boolean), 'sp'); if(active()) render(); }
         }
@@ -31736,7 +31909,7 @@ function gantt(el, list){
       list.push({ref: String(260000 + 96 - i), customer: pick(CUST), project: pick(['Campus', 'Hub', 'West', 'North', 'Edge', 'Core', 'Data hall', 'South']) + ' ' + (1 + Math.floor(rnd() * 9)) + ' MW',
         country: c[0], countryName: c[1], owner: pick(OWNERS), status, rawStatus: status, market, fam, positions, value, cost: Math.round(value * (1 - mp)), sla, fok: rnd() < 0.12,
         revisions: status === 'New' ? 0 : Math.floor(rnd() * rnd() * 4), created, due: dayOf(new Date(created.getTime() + (14 + Math.floor(rnd() * 30)) * 864e5)),
-        closed: ['Won', 'Lost', 'Offer review'].includes(status) ? new Date(created.getTime() + (8 + Math.floor(rnd() * 40)) * 864e5) : null, hasOffer: true, famM: fam, valueSrc: 'offer', file: 'example', saved: null});
+        closed: ['Won', 'Lost', 'Offer review'].includes(status) ? new Date(created.getTime() + (8 + Math.floor(rnd() * 40)) * 864e5) : null, hasOffer: true, famM: fam, partsJson: {[fam]: value * 0.9, Services: value * 0.075, Delivery: value * 0.025}, parts: {}, valueJson: value, valueList: Math.round(value * (0.97 + rnd() * 0.06)), valueSrc: 'offer', file: 'example', saved: null, fileKind: 'closed', wonMark: status === 'Won' && rnd() < 0.8 ? {at: '', by: '', status: 'Awarder'} : null});
     }
     return list;
   }
@@ -31757,27 +31930,33 @@ function gantt(el, list){
     team: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/>',
     up: '<path d="m18 15-6-6-6 6"/>', check: '<path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>', pin: '<path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
     bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', guide: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', demo: '<path d="M9 3h6M10 3v6L4 19a2 2 0 0 0 1.7 3h12.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/>',
+    map: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
     sp: '<path d="M4 7a8 3 0 1 0 16 0a8 3 0 1 0-16 0"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
   };
 
   /* ---------- state ---------- */
   const GUIDE_URL = (typeof MANUALS_BASE !== 'undefined' ? MANUALS_BASE : '') + 'UPS_Dashboard_Guide.pdf';   // the Dashboard Guide (PDF), next to the other manuals
-  const PAGES = [['overview', 'Overview', I.overview], ['pipeline', 'Pipeline', I.pipeline], ['products', 'Products & services', I.products], ['work', 'My workspace', I.work]];
+  const PAGES = [['overview', 'Overview', I.overview], ['pipeline', 'Pipeline', I.pipeline], ['products', 'Products & services', I.products], ['map', 'Map', I.map], ['work', 'My workspace', I.work]];
   const S = {page: 'overview', rb: 'home', collapsed: false, cal: [TODAY.getFullYear(), TODAY.getMonth()]};
   const FX = {period: '12', market: '', owner: '', country: '', status: '', fam: '', customer: ''};
   const FXL = {period: 'Period', market: 'Price list', owner: 'Owner', country: 'Country', status: 'Status', fam: 'Family', customer: 'Customer'};
   const PERIODS = [['3', 'Last 3 months'], ['6', 'Last 6 months'], ['12', 'Last 12 months'], ['24', 'Last 24 months'], ['ytd', 'Year to date'], ['all', 'All']];
-  const fxText = (k, v) => k === 'country' ? ((COUNTRIES.find(c => c[0] === v) || [v, v])[1]) : k === 'period' ? PERIODS.find(p => p[0] === v)[1] : v;
+  const fxText = (k, v) => k === 'country' ? ((COUNTRIES.find(c => c[0] === v) || [v, v])[1]) : k === 'period' ? PERIODS.find(p => p[0] === v)[1] + (v === 'all' ? '' : ` (from ${fmtDY(win()[0])})`) : v;
   const pMonths = () => FX.period === 'ytd' ? TODAY.getMonth() + 1 : FX.period === 'all' ? 12 : Number(FX.period);
   function win(shift){
     if(FX.period === 'all') return shift ? [new Date(0), new Date(0)] : [new Date(0), new Date(TODAY.getTime() + 864e5)];
-    let to = new Date(TODAY.getTime() + 864e5), from = FX.period === 'ytd' ? D(TODAY.getFullYear(), 0, 1) : new Date(TODAY.getFullYear(), TODAY.getMonth() - Number(FX.period), TODAY.getDate() + 1);
-    if(shift){ const span = to - from; to = from; from = new Date(from.getTime() - span); }
-    return [from, to];
+    // whole calendar months (the current one included): the totals cover exactly the months of the charts
+    const n = pMonths(), to = new Date(TODAY.getTime() + 864e5);
+    if(FX.period === 'ytd'){
+      const from = D(TODAY.getFullYear(), 0, 1);
+      return shift ? [D(TODAY.getFullYear() - 1, 0, 1), new Date(TODAY.getFullYear() - 1, TODAY.getMonth(), TODAY.getDate() + 1)] : [from, to];
+    }
+    const from = new Date(TODAY.getFullYear(), TODAY.getMonth() - n + 1, 1);
+    return shift ? [new Date(from.getFullYear(), from.getMonth() - n, 1), from] : [from, to];
   }
   function rows(shift, skip){
     const [from, to] = win(shift);
-    return OFFERS.filter(o => o.created >= from && o.created < to && ['market', 'owner', 'country', 'status', 'fam', 'customer'].every(k => k === skip || !FX[k] || (k === 'fam' ? o.famM : o[k]) === FX[k]));
+    return OFFERS.filter(o => pDate(o) >= from && pDate(o) < to && ['market', 'owner', 'country', 'status', 'fam', 'customer'].every(k => k === skip || !FX[k] || (k === 'fam' ? o.famM : o[k]) === FX[k]));
   }
   const monthsInPeriod = () => { const n = Math.min(24, pMonths()); const out = []; for(let k = n - 1; k >= 0; k--) out.push(monthKey(new Date(TODAY.getFullYear(), TODAY.getMonth() - k, 1))); return out; };
 
@@ -31813,6 +31992,7 @@ function gantt(el, list){
       + grp('Help', big('guide', 'Dashboard Guide', I.guide));
     else h = grp('Offers shown', big('who:me', 'My offers', I.me, !!FX.owner && nameKey(FX.owner) === nameKey(me)) + big('who:team', 'All team', I.team, !FX.owner))
       + grp('Data source', big('src:sp', 'SharePoint', I.sp, SRC === 'sp') + big('src:demo', 'Example data', I.demo, SRC === 'demo') + big('page:check', 'Data check', I.check, S.page === 'check'))
+      + grp('Value', big('vfirst:offer', 'Offer file first', I.csv, VALUE_FIRST === 'offer') + big('vfirst:list', 'Offer Value € first', I.sp, VALUE_FIRST === 'list'))
       + grp('Ribbon', big('collapse', S.collapsed ? 'Pin the ribbon' : 'Collapse the ribbon', S.collapsed ? I.pin : I.up));
     panelEl.innerHTML = h + `<button type="button" class="rb-pin" data-ud="collapse" title="Collapse the ribbon">${ic(I.up, 16)}</button>`;
     tabsEl.innerHTML = [['home', 'Home'], ['view', 'View']].map(([k, l]) => `<button type="button" class="rb-tab${S.rb === k ? ' on' : ''}" data-udtab="${k}">${l}</button>`).join('');
@@ -31831,7 +32011,7 @@ function gantt(el, list){
     const src = SRC === 'demo' ? `<span class="src"><span class="dot demo"></span>Example data – not your offers · <a href="#" data-act="src:sp">use SharePoint</a></span>`
       : SCAN.running ? `<span class="src"><span class="prog"><i style="width:${SCAN.total ? SCAN.done / SCAN.total * 100 : 5}%"></i></span>Reading the offers ${SCAN.done} / ${SCAN.total || '…'}</span>`
       : SRC === 'sp' ? `<span class="src"><span class="dot"></span>SharePoint · ${OFFERS.length} projects${SCAN.at ? ' · ' + SCAN.at.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : ''}</span>` : '';
-    return `<div class="chips"><span class="lab">Filters</span>${set.length ? set.map(k => `<span class="chip">${FXL[k]} is <b>${esc(fxText(k, FX[k]))}</b><button type="button" data-act="unset:${k}" title="Remove">✕</button></span>`).join('') : '<span class="chip none">none – created in the last 12 months. Click a chart (status, family, customer, owner) to filter.</span>'}${src}</div>`;
+    return `<div class="chips"><span class="lab">Filters</span>${set.length ? set.map(k => `<span class="chip">${FXL[k]} is <b>${esc(fxText(k, FX[k]))}</b><button type="button" data-act="unset:${k}" title="Remove">✕</button></span>`).join('') : `<span class="chip none">none – from ${fmtDY(win()[0])} (last 12 months). Click a chart (status, family, customer, owner) to filter.</span>`}${src}</div>`;
   }
   const panel = (cls, title, body, right = '') => `<section class="panel ${cls}"><div class="ptitle">${title}${right ? `<span class="r">${right}</span>` : ''}</div>${body}</section>`;
   const nothing = msg => `<p class="sub">${msg || 'No offers with these filters.'}</p>`;
@@ -31840,20 +32020,25 @@ function gantt(el, list){
   function pOverview(M){
     const A = rows(), P = rows(1), fc = FAMC(), sc = SC(), ms = monthsInPeriod();
     const dl = (c, p) => { if(!p || FX.period === 'all') return ''; const d = (c - p) / p; return `<em class="${d >= 0 ? 'up' : 'dn'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d * 100).toFixed(0)}%</em>`; };
-    const bym = (a, f) => ms.map(k => sum(a.filter(o => monthKey(o.created) === k), f));
+    const bym = (a, f) => ms.map(k => sum(a.filter(o => monthKey(pDate(o)) === k), f));
     const k = [['var(--s1)', eurK(val(A)), 'offer value (net)', dl(val(A), val(P)), spark(bym(A, o => o.value), 'var(--s1)')], ['var(--s2)', num(A.length), 'offers · ' + A.filter(open).length + ' open', dl(A.length, P.length), spark(bym(A, () => 1), 'var(--s2)')],
       ['var(--s3)', num(sum(A, units)), 'UPS · ' + num(sum(A, modules)) + ' power modules', dl(sum(A, units), sum(P, units)), spark(bym(A, units), 'var(--s3)')], ['var(--st-won)', pct(winRate(A)), `win rate · ${A.filter(won).length} won, ${A.filter(lost).length} lost`, dl(winRate(A), winRate(P)), '']];
     M.innerHTML = chips() + `<div class="cv">
       <div class="strip">${k.map(([c, v, l, d, sp]) => `<div><span class="dot" style="background:${c}"></span><div style="flex:1;min-width:0"><b>${v}</b><span>${l}</span>${d ? `<br><span>${d} vs previous period</span>` : ''}${sp}</div></div>`).join('')}</div>
-      ${panel('c8', 'Offer value by month', '<div id="ov1"></div>', 'offered and won · by creation month')}
+      ${panel('c8', 'Offer value by month', '<div id="ov1"></div>', `offered by creation month, won by won date${FX.period === 'all' ? ' · last 12 months' : ''}`)}
       ${panel('c4', 'Offers by status', '<div id="ov2"></div>', 'click to filter')}
-      ${panel('c7', 'Value by family and status', '<div id="ov3" style="overflow-x:auto"></div>', 'click a family to filter')}
+      ${panel('c7', 'Value by family and status', '<div id="ov3" style="overflow-x:auto"></div>', 'UPS families, services and delivery · click a family to filter')}
       ${panel('c5', 'UPS units by model', '<div id="ov4"></div>')}
       ${panel('c12', 'Offer value by customer', '<div id="ov5"></div>', 'click to filter')}</div>`;
     lines($('ov1'), {cats: ms.map(mLabel), series: [{name: 'Offered', color: 'var(--s1)', values: bym(A, o => o.value)}, {name: 'Won', color: 'var(--s2)', values: bym(A.filter(won), o => o.value)}], area: true, h: 240});
     const As = rows(0, 'status'); donut($('ov2'), {parts: STATUS.map(s => ({name: s, value: As.filter(o => o.status === s).length, color: sc[s]})), center: As.length, sub: 'offers', key: 'status'});
-    const Af = rows(0, 'fam'), mx = Math.max(1, ...FAMS_M.flatMap(f => STATUS.map(s => val(Af.filter(o => o.famM === f && o.status === s)))));
-    $('ov3').innerHTML = FAMS_M.length ? `<table class="t mx"><thead><tr><th>Family</th>${STATUS.map(s => `<th>${s}</th>`).join('')}<th>Total</th></tr></thead><tbody>${FAMS_M.map(f => `<tr class="fr ${FX.fam === f ? 'sel' : ''}" data-x="fam:${f}"><td${f === 'Various' ? ' title="Projects without an offer file: value from the Offer Value € of the Progress tracker list"' : ''}><b style="color:${f === 'Various' ? 'var(--other)' : fc[f]}">■</b> ${esc(f)}${f === 'Various' ? ' <span style="color:var(--dim);font-size:11px">(no offer file)</span>' : ''}</td>${STATUS.map(s => { const v = val(Af.filter(o => o.famM === f && o.status === s)); return `<td style="background:rgba(68,114,196,${(v / mx * 0.5).toFixed(2)})" data-tip="<b>${esc(f)} · ${s}</b><br>${eur(v)}">${v ? eurK(v) : ''}</td>`; }).join('')}<td><b>${eurK(val(Af.filter(o => o.famM === f)))}</b></td></tr>`).join('')}<tr class="tot"><td>Total</td>${STATUS.map(s => `<td>${eurK(val(Af.filter(o => o.status === s)))}</td>`).join('')}<td>${eurK(val(Af))}</td></tr></tbody></table>` : nothing();
+    const Af = rows(0, 'fam'), part = (a, f) => sum(a, o => (o.parts && o.parts[f]) || 0);
+    const mx = Math.max(1, ...ROWKEYS.flatMap(f => STATUS.map(s => part(Af.filter(o => o.status === s), f))));
+    const NOTE = {Services: 'services chapter (SLA levels, start-up, training…)', Delivery: 'delivery line', Various: 'no offer file: Offer Value € of the list'};
+    const CLR = {Services: '#4B5B7A', Delivery: '#9AA3B2', Various: 'var(--other)'};   // neutral: not a UPS family colour
+    $('ov3').innerHTML = ROWKEYS.length ? `<table class="t mx"><thead><tr><th>Family</th>${STATUS.map(s => `<th>${s}</th>`).join('')}<th>Total</th></tr></thead><tbody>${ROWKEYS.map(f => { const isFam = !['Services', 'Delivery'].includes(f);
+      return `<tr class="${isFam ? 'fr' : ''} ${FX.fam === f ? 'sel' : ''}" ${isFam ? `data-x="fam:${esc(f)}"` : ''}><td${NOTE[f] ? ` title="${esc(NOTE[f])}"` : ''}><b style="color:${CLR[f] || fc[f] || 'var(--other)'}">■</b> ${esc(f)}${f === 'Various' ? ' <span style="color:var(--dim);font-size:11px">(no offer file)</span>' : ''}</td>${STATUS.map(s => { const v = part(Af.filter(o => o.status === s), f); return `<td style="background:rgba(68,114,196,${(v / mx * 0.5).toFixed(2)})" data-tip="<b>${esc(f)} · ${s}</b><br>${eur(v)}">${v ? eurK(v) : ''}</td>`; }).join('')}<td><b>${eurK(part(Af, f))}</b></td></tr>`; }).join('')}<tr class="tot"><td>Total</td>${STATUS.map(s => `<td>${eurK(val(Af.filter(o => o.status === s)))}</td>`).join('')}<td>${eurK(val(Af))}</td></tr></tbody></table>
+      <div class="sub">Each offer is split by chapter: the UPS chapters go to their family, the services chapter to Services, the delivery line to Delivery (project discount included). Other chapters go with the main family of the offer.</div>` : nothing();
     const bm = {}; A.forEach(o => o.positions.forEach(p => { bm[p.model] = bm[p.model] || {v: 0, f: p.fam}; bm[p.model].v += p.units; }));
     const bmi = Object.entries(bm).sort((a, b) => b[1].v - a[1].v).slice(0, 8);
     if(bmi.length) hbars($('ov4'), {items: bmi.map(([m, x]) => ({label: m, value: x.v, color: fc[x.f]})), fmt: num}); else $('ov4').innerHTML = nothing();
@@ -31875,18 +32060,18 @@ function gantt(el, list){
     const gl = openA.slice().sort((a, b) => b.created - a.created).slice(0, 16).sort((a, b) => a.created - b.created).map(o => o.due ? o : {...o, due: new Date(TODAY)});
     M.innerHTML = chips() + `<div class="cv">
       ${panel('c5', 'Pipeline funnel', '<div id="pp1"></div><div class="sub">Each stage counts the offers that reached it; lost offers count until Offer review.</div>')}
-      ${panel('c7', 'Offers by month and stage', '<div id="pp2"></div>', 'offer value · by creation month')}
+      ${panel('c7', 'Offers by month and stage', '<div id="pp2"></div>', 'offer value · by creation month (won: won date)')}
       ${panel('c12', 'Team', own.length ? `<div style="overflow-x:auto"><table class="t"><thead><tr><th>Owner</th><th class="n">Offers</th><th class="n">Open</th><th class="n">Open value</th><th class="n">Late</th><th class="n">Won</th><th class="n">Win rate</th><th class="n">Margin</th><th style="width:26%">Open value</th></tr></thead><tbody>${own.map(x => `<tr class="click" data-x="owner:${esc(x.w)}"><td><span class="av">${esc(ini(x.w))}</span> ${esc(x.w)}</td><td class="n">${x.a.length}</td><td class="n">${x.op.length}</td><td class="n"><b>${eurK(val(x.op))}</b></td><td class="n" style="${x.od.length ? 'color:var(--st-lost);font-weight:600' : ''}">${x.od.length || '–'}</td><td class="n">${x.a.filter(won).length}</td><td class="n">${pct(winRate(x.a))}</td><td class="n">${x.a.some(o => o.cost > 0) ? pct(marginOf(x.a)) : '–'}</td><td><div style="height:8px;border-radius:4px;background:var(--st-prog);width:${val(x.op) / maxOp * 100}%"></div></td></tr>`).join('')}</tbody></table></div>` : nothing(), 'click an owner to filter')}
       ${panel('c12', 'Open offers – timeline (latest 16)', '<div id="pp3"></div>', 'bar = from creation to sent (or today) · ◆ = due date · click for details')}</div>`;
     funnel($('pp1'), st); $('pp1').querySelectorAll('rect.mark').forEach((r, i) => { if(i < 3){ r.dataset.x = 'status:' + st[i].label; r.style.cursor = 'pointer'; } });
-    bars($('pp2'), {cats: ms.map(mLabel), stacked: true, series: STATUS.map(s => ({name: s, color: sc[s], values: ms.map(k => val(A.filter(o => o.status === s && monthKey(o.created) === k)))}))});
+    bars($('pp2'), {cats: ms.map(mLabel), stacked: true, series: STATUS.map(s => ({name: s, color: sc[s], values: ms.map(k => val(A.filter(o => o.status === s && monthKey(pDate(o)) === k)))}))});
     if(gl.length){ gantt($('pp3'), gl); $('pp3').querySelectorAll('rect.mark').forEach((r, i) => { if(gl[i]){ r.dataset.ref = gl[i].ref; r.style.cursor = 'pointer'; } }); } else $('pp3').innerHTML = nothing('No open offers with these filters.');
   }
 
   function pProducts(M){
     const A = rows(), Af = rows(0, 'fam'), fc = FAMC(), ms = monthsInPeriod(), all = A.flatMap(o => o.positions.map(p => ({...p, o})));
     const fam = FAMS.map(f => { const ps = Af.flatMap(o => o.positions.filter(p => p.fam === f).map(p => ({...p, o}))), off = [...new Set(ps.map(p => p.o))];
-      return {f, ps, u: sum(ps, p => p.units), m: sum(ps, p => p.modules), mw: sum(ps, p => p.kw * p.units) / 1000, v: val(Af.filter(o => o.fam === f)), models: [...new Set(ps.map(p => p.model))], ul: off.filter(o => o.market === 'UL').length > off.length / 2}; }).filter(x => x.u);
+      return {f, ps, u: sum(ps, p => p.units), m: sum(ps, p => p.modules), mw: sum(ps, p => p.kw * p.units) / 1000, v: sum(Af, o => (o.parts && o.parts[f]) || 0), models: [...new Set(ps.map(p => p.model))], ul: off.filter(o => o.market === 'UL').length > off.length / 2}; }).filter(x => x.u);
     const models = {}; all.forEach(p => { const m = models[p.model] = models[p.model] || {f: p.fam, u: 0, mo: 0, li: 0, kw: 0, o: new Set()}; m.u += p.units; m.mo += p.modules; m.kw += p.kw * p.units; m.li += p.lithium ? p.units : 0; m.o.add(p.o); });
     const U = sum(A, units), L = liUnits(A), withOffer = A.filter(o => o.hasOffer);
     M.innerHTML = chips() + `<div class="cv">
@@ -31895,7 +32080,7 @@ function gantt(el, list){
       ${panel('c4', 'Battery technology', '<div id="pr2"></div>', 'UPS units')}
       ${panel('c5', 'Services attached', '<div id="pr3"></div>', `share of the ${withOffer.length} offers with each SLA level`)}
       ${panel('c7', 'Models', Object.keys(models).length ? `<div style="overflow-x:auto"><table class="t"><thead><tr><th>Model</th><th class="n">kW / UPS</th><th class="n">UPS</th><th class="n">Modules</th><th class="n">Lithium</th><th class="n">Offers</th></tr></thead><tbody>${Object.entries(models).sort((a, b) => b[1].u - a[1].u).map(([m, x]) => `<tr><td><b style="color:${fc[x.f]}">■</b> ${esc(m)}</td><td class="n">${num(x.kw / Math.max(1, x.u))}</td><td class="n"><b>${num(x.u)}</b></td><td class="n">${num(x.mo)}</td><td class="n">${pct(x.li / Math.max(1, x.u))}</td><td class="n">${x.o.size}</td></tr>`).join('')}</tbody></table></div>` : nothing(), 'installed kW = modules × module kW')}</div>`;
-    bars($('pr1'), {cats: ms.map(mLabel), stacked: true, fmt: num, series: FAMS.map(f => ({name: f, color: fc[f], values: ms.map(k => sum(A.filter(o => monthKey(o.created) === k), o => sum(o.positions.filter(p => p.fam === f), p => p.units)))}))});
+    bars($('pr1'), {cats: ms.map(mLabel), stacked: true, fmt: num, series: FAMS.map(f => ({name: f, color: fc[f], values: ms.map(k => sum(A.filter(o => monthKey(pDate(o)) === k), o => sum(o.positions.filter(p => p.fam === f), p => p.units)))}))});
     donut($('pr2'), {parts: [{name: 'Lithium', value: L, color: 'var(--s2)'}, {name: 'VRLA / other', value: U - L, color: 'var(--st-new)'}], center: U ? Math.round(L / U * 100) + '%' : '–', sub: 'lithium'});
     hbars($('pr3'), {items: SLA_IDS.map(l => ({label: l + ' ' + (SLA_N[l] || ''), value: withOffer.filter(o => o.sla[l]).length / Math.max(1, withOffer.length), color: 'var(--s1)'})), fmt: v => Math.round(v * 100) + '%', max: 1});
   }
@@ -31932,21 +32117,70 @@ function gantt(el, list){
     await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, fields);
   }
   function setStatusLocal(o, value){
-    o.rawStatus = value; o.status = stageName(value);
+    o.rawStatus = value; o.status = stageName(value); setPd(o);
     if(['Won', 'Lost', 'Offer review'].includes(o.status)) o.closed = o.closed && o.prevStage === o.status ? o.closed : new Date();
     else o.closed = null;
     o.prevStage = o.status;
     const rec = recOf(o.ref);
     if(rec){ try{ setLocalProgressStatus(o.ref, value); }catch(e){ rec.Status = value; } }
   }
-  async function changeStatus(o, value, undo){
+  // beta_6.56: an offer set to Won here (from any other stage) gets the won mark in its offer file at once: the revision the
+  // dashboard reads, when it is a closed one (<ref>_R<n>.json) and no revision is marked yet. Undo takes the mark away again.
+  async function wonFile(o){
+    const rec = recOf(o.ref); if(!rec) return null;
+    const token = await getGraphToken(); const {site} = await resolveSharePointList(token);
+    const r = await readOffer(rec, site, token);
+    const path = rec._raw && rec._raw.FolderLink0 ? resolveProjectSubfolderPath(rec._raw.FolderLink0, '02 OFFER') : '';
+    return {token, site, path, ...r};
+  }
+  async function putWonFile(f, st){
+    const up = await uploadOneFile(f.token, f.site.id, f.path, new File([JSON.stringify(st, null, 2)], f.file.name, {type: 'application/json'}));
+    try{ rememberOfferSync(up && up.name ? up : {name: f.file.name}); }catch(e){}
+  }
+  const revOfName = n => Number((OFFER_FILE_RE.exec(n) || [])[1]);
+  function onScreen(ref, rev, won){   // the configurator shows that closed revision: its status bar and a new save keep the mark
+    try{
+      if((document.getElementById('prjRef')?.value || '').trim() !== ref || !REVISION_CLOSED || REVISION !== rev) return;
+      LOADED_WON = won ? Object.assign({}, won, {rev, ref}) : null;
+      renderStatusBar();
+    }catch(e){}
+  }
+  async function autoMarkWon(o, status){
+    if(SRC !== 'sp'){ if(!o.wonMark){ o.wonMark = {at: new Date().toISOString(), by: meName(), status}; setPd(o); return {rev: o.revisions, demo: true}; } return {why: 'already'}; }
+    const f = await wonFile(o);
+    if(!f || !f.file || !f.st || !f.path) return {why: 'no-file'};
+    if(f.st.won) return {why: 'already'};
+    if(f.st.closed !== true || !OFFER_FILE_RE.test(f.file.name) || /_ongoing\.json$/i.test(f.file.name)) return {why: 'no-closed'};
+    const won = {at: new Date().toISOString(), by: typeof currentUserName === 'function' ? currentUserName() : meName(), status};
+    await putWonFile(f, Object.assign({}, f.st, {won}));
+    const rev = revOfName(f.file.name);
+    onScreen(o.ref, rev, won);
+    await refreshProject(o.ref).catch(() => {});
+    return {rev, name: f.file.name, at: won.at};
+  }
+  async function unmarkAuto(o, m){
+    if(SRC !== 'sp'){ o.wonMark = null; setPd(o); return; }
+    const f = await wonFile(o);
+    if(!f || !f.file || !f.st || !f.st.won || f.file.name !== m.name || f.st.won.at !== m.at) return;   // only the mark set by this change
+    const st = Object.assign({}, f.st); delete st.won;
+    await putWonFile(f, st);
+    onScreen(o.ref, m.rev, null);
+    await refreshProject(o.ref).catch(() => {});
+  }
+  async function changeStatus(o, value, undo, mk){
+    if(o) o = OFFERS.find(x => x.ref === o.ref) || o;   // the project may have been read again meanwhile (won mark)
     if(!o || !value || value === o.rawStatus) return;
     const old = {raw: o.rawStatus, closed: o.closed};
+    const toWon = !undo && stageName(value) === 'Won' && o.status !== 'Won';
     setStatusLocal(o, value); render();
     try{
       await writeFields(o, {Status: value});
-      if(!undo) toast(`<b>${esc(o.ref)}</b> · status <b>${esc(value)}</b>${SRC === 'sp' ? ' – saved on SharePoint' : ' (example data)'}`, () => changeStatus(o, old.raw, true));
-      else toast(`<b>${esc(o.ref)}</b> · status back to <b>${esc(value)}</b>`);
+      let m = null;
+      if(toWon){ try{ m = await autoMarkWon(o, value); }catch(e){ console.warn('Dashboard: won mark not written', e); m = {err: String((e && e.message) || e)}; } render(); }
+      if(undo && mk && mk.rev >= 0){ try{ await unmarkAuto(o, mk); }catch(e){ console.warn('Dashboard: won mark not removed', e); } render(); }
+      const mt = !m ? '' : m.rev >= 0 ? ` · 🏆 R${m.rev} marked won${m.demo ? '' : ' in its offer file'}` : m.err ? ` · <b>won mark not written</b>: ${esc(m.err)}` : m.why === 'no-closed' || m.why === 'no-file' ? ' · no closed revision to mark won (close the offer in the configurator)' : '';
+      if(!undo) toast(`<b>${esc(o.ref)}</b> · status <b>${esc(value)}</b>${SRC === 'sp' ? ' – saved on SharePoint' : ' (example data)'}${mt}`, () => changeStatus(o, old.raw, true, m && m.rev >= 0 ? m : null), !!(m && m.err));
+      else toast(`<b>${esc(o.ref)}</b> · status back to <b>${esc(value)}</b>${mk && mk.rev >= 0 ? ' · won mark removed' : ''}`);
     }catch(err){
       setStatusLocal(o, old.raw); o.closed = old.closed; render();
       toast(`<b>${esc(o.ref)}</b>: the status was NOT changed – ${esc(err.message || err)}`, null, true);
@@ -32058,19 +32292,216 @@ function gantt(el, list){
   const CHK = {f: ''};
   const SCAN_TXT = {ok: ['Offer file read', 'var(--st-won)'], 'no-json': ['No .json in 02 OFFER', 'var(--st-rev)'], invalid: ['.json not valid / of another project', 'var(--st-lost)'],
     'no-folder': ['02 OFFER folder not reachable', 'var(--st-lost)'], 'no-link': ['No project folder (FolderLink)', 'var(--st-new)']};
+  const wonTag = o => o.wonMark ? ` <span class="wmk" title="${esc(['Marked won', o.wonMark.at ? fmtDY(dateOf(o.wonMark.at)) : '', o.wonMark.by, o.wonMark.status ? '(' + o.wonMark.status + ')' : ''].filter(Boolean).join(' '))}">🏆</span>` : '';
   function pCheck(M){
-    const all = OFFERS, sc = SC();
+    const all = OFFERS, P = rows(), inP = new Set(P);
     const res = o => SRC === 'demo' ? 'ok' : (o.scan || (o.hasOffer ? 'ok' : 'no-json'));
+    const diff = o => o.valueJson > 0 && o.valueList > 0 && Math.abs(o.valueJson - o.valueList) > Math.max(1, 0.01 * o.valueList);
     const tiles = [['', 'Projects in the list', all.length, 'var(--accent)'], ...Object.entries(SCAN_TXT).map(([k, [t, c]]) => [k, t, all.filter(o => res(o) === k).length, c]),
-      ['v-offer', 'Value from the offer file', all.filter(o => o.valueSrc === 'offer').length, 'var(--s1)'], ['v-list', 'Value from Offer Value € (list)', all.filter(o => o.valueSrc === 'list').length, 'var(--s3)'], ['v-none', 'No value', all.filter(o => !(o.value > 0)).length, 'var(--other)']];
-    const pass = o => !CHK.f || (CHK.f.startsWith('v-') ? (CHK.f === 'v-none' ? !(o.value > 0) : o.valueSrc === CHK.f.slice(2)) : res(o) === CHK.f);
+      ['dup', 'PRJ_ID twice or more in the list (counted once)', all.filter(o => o.dup > 1).length, 'var(--st-lost)'],
+      ['v-offer', 'Value from the offer file', all.filter(o => o.valueSrc === 'offer').length, 'var(--s1)'], ['v-list', 'Value from Offer Value € (list)', all.filter(o => o.valueSrc === 'list').length, 'var(--s3)'],
+      ['v-none', 'No value', all.filter(o => !(o.value > 0)).length, 'var(--other)'], ['diff', 'Offer file ≠ Offer Value € (more than 1 %)', all.filter(diff).length, 'var(--st-rev)'],
+      ['w-mark', 'Won: revision marked won (its value counts)', all.filter(o => won(o) && o.wonMark).length, 'var(--st-won)'],
+      ['w-nomark', 'Won: no revision marked won (highest closed revision counts)', all.filter(o => won(o) && o.hasOffer && !o.wonMark).length, 'var(--st-rev)'],
+      ['draft', 'Value from a draft (_ongoing): no closed revision', all.filter(o => o.fileKind === 'draft' && o.valueSrc === 'offer').length, 'var(--st-new)']];
+    // Won: the same projects counted three ways, in the period of the filters and over the whole list
+    const W = a => { const w = a.filter(won); return {n: w.length, counted: val(w), file: sum(w, o => o.valueJson || 0), list: sum(w, o => o.valueList || 0), none: w.filter(o => !(o.value > 0)).length, onlyList: w.filter(o => !(o.valueJson > 0) && o.valueList > 0).length, marked: w.filter(o => o.wonMark).length, onDue: w.filter(o => o.pdSrc === 'due').length}; };
+    const wp = W(P), wa = W(all);
+    const wonVals = [...new Set(all.filter(won).map(o => o.rawStatus || '—'))].map(v => `${esc(v)} (${all.filter(o => won(o) && (o.rawStatus || '—') === v).length})`).join(' · ');
+    const pass = o => !CHK.f || (CHK.f === 'won' ? won(o) : CHK.f === 'dup' ? o.dup > 1 : CHK.f === 'diff' ? diff(o) : CHK.f === 'w-mark' ? won(o) && !!o.wonMark : CHK.f === 'w-nomark' ? won(o) && o.hasOffer && !o.wonMark : CHK.f === 'draft' ? o.fileKind === 'draft' && o.valueSrc === 'offer' : CHK.f.startsWith('v-') ? (CHK.f === 'v-none' ? !(o.value > 0) : o.valueSrc === CHK.f.slice(2)) : res(o) === CHK.f);
     const list = all.filter(pass).sort((a, b) => String(b.ref).localeCompare(String(a.ref)));
-    M.innerHTML = `<div class="chips"><span class="lab">Data check</span><span class="chip none">every project of the Progress tracker list and what was read in its 02 OFFER folder – period and filters are not applied here</span></div>
+    const money = v => v > 0 ? eur(v) : '–';
+    M.innerHTML = `<div class="chips"><span class="lab">Data check</span><span class="chip none">every project of the Progress tracker list and what was read in its 02 OFFER folder</span></div>
+      <section class="panel" style="margin-bottom:16px"><div class="ptitle">Won – how the total is made<span class="r"><a href="#" data-chk="won">show the won projects</a></span></div>
+        <div style="overflow-x:auto"><table class="t"><thead><tr><th></th><th class="n">Won projects</th><th class="n">Counted in the dashboard</th><th class="n">Sum of the offer files</th><th class="n">Sum of Offer Value € (list)</th><th class="n">Won with no value</th><th class="n">Value only in the list</th><th class="n" title="Won projects with a revision marked won in the configurator">Marked won</th></tr></thead><tbody>
+          <tr><td><b>Period of the filters</b> <span class="sub">from ${FX.period === 'all' ? 'the start' : fmtDY(win()[0])}</span></td><td class="n">${wp.n}</td><td class="n"><b>${eur(wp.counted)}</b></td><td class="n">${eur(wp.file)}</td><td class="n">${eur(wp.list)}</td><td class="n">${wp.none}</td><td class="n">${wp.onlyList}</td><td class="n">${wp.marked}</td></tr>
+          <tr><td><b>Whole list</b> <span class="sub">every date, no filter</span></td><td class="n">${wa.n}</td><td class="n"><b>${eur(wa.counted)}</b></td><td class="n">${eur(wa.file)}</td><td class="n">${eur(wa.list)}</td><td class="n">${wa.none}</td><td class="n">${wa.onlyList}</td><td class="n">${wa.marked}</td></tr></tbody></table></div>
+        <div class="sub">Counted = ${VALUE_FIRST === 'list' ? 'Offer Value € of the list; the offer file only when the list has no value' : 'the offer file (net, after the project discount); Offer Value € of the list only when the file has no value'} (View › Value). Statuses counted as Won: ${wonVals || '–'}. Won with no revision marked, counted on the Due date: ${wp.onDue} in the period, ${wa.onDue} in the whole list. Period: a won project counts on the day its win was recorded (revision marked won), without a mark on its Due date, with neither on its creation date; every other project on the date it was created in the list. Offer file of a project: the revision marked won (Project › Mark as won in the configurator), else the highest closed revision, a draft only when no revision is closed.</div></section>
       <div class="ckt">${tiles.map(([k, t, n, c]) => `<button type="button" class="ck${CHK.f === k ? ' on' : ''}" data-chk="${k}" style="--c:${c}"><b>${n}</b><span>${esc(t)}</span></button>`).join('')}</div>
-      <section class="panel" style="margin-top:16px"><div class="ptitle">Projects<span class="r">${list.length} shown${CHK.f ? ' · <a href="#" data-chk="">show all</a>' : ''}</span></div><div style="overflow-x:auto"><table class="t"><thead><tr><th>Project</th><th>Customer</th><th>SharePoint status</th><th>Owner</th><th>Offer file</th><th class="n">.json in 02 OFFER</th><th class="n">Value</th><th>Value from</th><th>Family</th></tr></thead><tbody>
-      ${list.map(o => { const r = res(o), [t, c] = SCAN_TXT[r] || ['—', 'var(--dim)']; return `<tr class="click" data-ref="${esc(o.ref)}"><td><b>${esc(o.ref)}</b></td><td>${esc(o.customer)}</td><td>${esc(o.rawStatus || '—')}</td><td>${esc(o.owner)}</td><td><span style="color:${c};font-weight:600">●</span> ${o.file && o.file !== 'example' ? esc(o.file) : esc(t)}</td><td class="n">${o.nfiles ?? '–'}</td><td class="n">${o.value > 0 ? eur(o.value) : '–'}</td><td>${o.valueSrc === 'list' ? 'Offer Value € (list)' : o.valueSrc === 'offer' ? 'offer file' : '–'}</td><td>${esc(o.famM || o.fam)}</td></tr>`; }).join('')}
+      <section class="panel" style="margin-top:16px"><div class="ptitle">Projects<span class="r">${list.length} shown${CHK.f ? ' · <a href="#" data-chk="">show all</a>' : ''}</span></div><div style="overflow-x:auto"><table class="t"><thead><tr><th>Project</th><th>Customer</th><th>SharePoint status</th><th>Counted as</th><th>Created</th><th>Counts on</th><th>Owner</th><th>Offer file</th><th class="n">.json</th><th class="n">Offer file €</th><th class="n">Offer Value € (list)</th><th class="n">Counted</th><th>Family</th><th>In period</th></tr></thead><tbody>
+      ${list.map(o => { const r = res(o), [t, c] = SCAN_TXT[r] || ['—', 'var(--dim)']; return `<tr class="click" data-ref="${esc(o.ref)}"><td><b>${esc(o.ref)}</b>${o.dup > 1 ? ` <span style="color:var(--st-lost)" title="${o.dup} items with this PRJ_ID in the list: counted once">×${o.dup}</span>` : ''}</td><td>${esc(o.customer)}</td><td>${esc(o.rawStatus || '—')}</td><td>${pill(o.status)}</td><td>${fmtDY(o.created)}</td><td>${fmtDY(pDate(o))} <span class="sub">${PD_TXT[o.pdSrc] || ''}</span></td><td>${esc(o.owner)}</td><td><span style="color:${c};font-weight:600">●</span> ${o.file && o.file !== 'example' ? esc(o.file) : esc(t)}${wonTag(o)}${o.fileKind === 'draft' ? ' <span class="sub">draft</span>' : ''}</td><td class="n">${o.nfiles ?? '–'}</td><td class="n">${money(o.valueJson)}</td><td class="n" style="${diff(o) ? 'color:var(--st-rev);font-weight:600' : ''}">${money(o.valueList)}</td><td class="n"><b>${money(o.value)}</b></td><td>${esc(o.famM || o.fam)}</td><td>${inP.has(o) ? 'yes' : '<span style="color:var(--dim)">no</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></section>`;
   }
+  /* ---------- beta_6.56: Map — won and open offers by country (lost offers are not shown), density per country ----------
+     The country shapes are Natural Earth (world-atlas 2.0.2, public domain), read once from the CDN when the page opens and
+     drawn with the Natural Earth projection. The offers follow the filters, except the country (the map is where to pick it). */
+  const MAP = {set: 'all', m: 'n', view: 'fit'};
+  const N2A = (() => { const s = '004AF008AL010AQ012DZ016AS020AD024AO028AG031AZ032AR036AU040AT044BS048BH050BD051AM052BB056BE060BM064BT068BO070BA072BW074BV076BR084BZ086IO090SB092VG096BN100BG104MM108BI112BY116KH120CM124CA132CV136KY140CF144LK148TD152CL156CN158TW162CX166CC170CO174KM175YT178CG180CD184CK188CR191HR192CU196CY203CZ204BJ208DK212DM214DO218EC222SV226GQ231ET232ER233EE234FO238FK239GS242FJ246FI248AX250FR254GF258PF260TF262DJ266GA268GE270GM275PS276DE288GH292GI296KI300GR304GL308GD312GP316GU320GT324GN328GY332HT334HM336VA340HN344HK348HU352IS356IN360ID364IR368IQ372IE376IL380IT384CI388JM392JP398KZ400JO404KE408KP410KR414KW417KG418LA422LB426LS428LV430LR434LY438LI440LT442LU446MO450MG454MW458MY462MV466ML470MT474MQ478MR480MU484MX492MC496MN498MD499ME500MS504MA508MZ512OM516NA520NR524NP528NL531CW533AW534SX535BQ540NC548VU554NZ558NI562NE566NG570NU574NF578NO580MP581UM583FM584MH585PW586PK591PA598PG600PY604PE608PH612PN616PL620PT624GW626TL630PR634QA638RE642RO643RU646RW652BL654SH659KN660AI662LC663MF666PM670VC674SM678ST682SA686SN688RS690SC694SL702SG703SK704VN705SI706SO710ZA716ZW724ES728SS729SD732EH740SR744SJ748SZ752SE756CH760SY762TJ764TH768TG772TK776TO780TT784AE788TN792TR795TM796TC798TV800UG804UA807MK818EG826GB831GG832JE833IM834TZ840US850VI854BF858UY860UZ862VE876WF882WS887YE894ZM';
+    const o = {}; for(let i = 0; i < s.length; i += 5) o[s.slice(i, i + 3)] = s.slice(i + 3, i + 5); return o; })();
+  const A2_OK = new Set([...Object.values(N2A), 'XK']);
+  const CODE_ALIAS = {UK: 'GB', EL: 'GR'};
+  const normName = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z]+/g, ' ').trim();
+  // names → code, for a country written without its code (the shape names are added when the map is read)
+  const NAME_A2 = Object.fromEntries(Object.entries({
+    US: 'usa|united states|united states of america|stati uniti', GB: 'uk|united kingdom|great britain|england|scotland|wales|northern ireland|regno unito|gran bretagna',
+    AE: 'uae|united arab emirates|emirati arabi uniti', SA: 'ksa|saudi arabia|kingdom of saudi arabia|arabia saudita', CZ: 'czech republic|czechia|repubblica ceca',
+    RU: 'russia|russian federation', KR: 'south korea|korea|republic of korea', NL: 'netherlands|the netherlands|holland|paesi bassi|olanda', CI: 'ivory coast|cote d ivoire',
+    TR: 'turkey|turkiye|turchia', MK: 'north macedonia|macedonia', BA: 'bosnia and herzegovina|bosnia and herz|bosnia', SZ: 'eswatini|swaziland', XK: 'kosovo', HK: 'hong kong',
+    IT: 'italy|italia', DE: 'germany|germania|deutschland', FR: 'france|francia', ES: 'spain|spagna|espana', CH: 'switzerland|svizzera|schweiz|suisse', AT: 'austria|osterreich',
+    BE: 'belgium|belgio', PT: 'portugal|portogallo', GR: 'greece|grecia', IE: 'ireland|irlanda', DK: 'denmark|danimarca', SE: 'sweden|svezia', NO: 'norway|norvegia',
+    FI: 'finland|finlandia', PL: 'poland|polonia', HU: 'hungary|ungheria', RO: 'romania', BG: 'bulgaria', HR: 'croatia|croazia', SI: 'slovenia', SK: 'slovakia|slovacchia',
+    RS: 'serbia', LU: 'luxembourg|lussemburgo', MT: 'malta', CY: 'cyprus|cipro', IS: 'iceland|islanda', QA: 'qatar', KW: 'kuwait', BH: 'bahrain', OM: 'oman', EG: 'egypt|egitto',
+    MA: 'morocco|marocco', TN: 'tunisia', DZ: 'algeria', ZA: 'south africa|sudafrica', NG: 'nigeria', KE: 'kenya', IN: 'india', SG: 'singapore', CN: 'china|cina', JP: 'japan|giappone',
+    AU: 'australia', CA: 'canada', MX: 'mexico|messico', BR: 'brazil|brasile', AR: 'argentina', CL: 'chile|cile', IL: 'israel|israele', JO: 'jordan|giordania', LB: 'lebanon|libano',
+    UA: 'ukraine|ucraina', EE: 'estonia', LV: 'latvia|lettonia', LT: 'lithuania|lituania', AL: 'albania', ME: 'montenegro', MD: 'moldova', BY: 'belarus|bielorussia', GE: 'georgia'
+  }).flatMap(([a2, n]) => n.split('|').map(x => [normName(x), a2])));
+  function ctryA2(o){
+    let c = String(o.country || '').trim().toUpperCase();
+    c = CODE_ALIAS[c] || c;
+    if(/^[A-Z]{2}$/.test(c) && A2_OK.has(c)) return c;
+    return NAME_A2[normName(o.countryName)] || NAME_A2[normName(o.country)] || '';
+  }
+  // Natural Earth I projection, the world 1000 wide (y 0 at the pole)
+  const PK = 1000 / (2 * Math.PI * 0.8707), PY0 = PK * 1.4224;
+  function proj(lon, lat){
+    const l = lon * Math.PI / 180, p = Math.max(-89.9, Math.min(89.9, lat)) * Math.PI / 180, p2 = p * p, p4 = p2 * p2;
+    return [500 + PK * l * (0.8707 - 0.131979 * p2 + p4 * (-0.013791 + p4 * (0.003971 * p2 - 0.001529 * p4))),
+            PY0 - PK * p * (1.007226 + p2 * (0.015085 + p4 * (-0.044475 + 0.028874 * p2 - 0.005916 * p4)))];
+  }
+  const boxOf = pts => { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; pts.forEach(([x, y]) => { if(x < a) a = x; if(y < b) b = y; if(x > c) c = x; if(y > d) d = y; }); return [a, b, c, d]; };
+  // TopoJSON (quantized, delta-encoded arcs) → one SVG path per country, projected once
+  function buildGeo(topo){
+    const obj = (topo.objects && (topo.objects.countries || Object.values(topo.objects)[0])) || {geometries: []};
+    const tr = topo.transform;
+    const arcs = (topo.arcs || []).map(a => { let x = 0, y = 0; return a.map(p => tr ? [(x += p[0]) * tr.scale[0] + tr.translate[0], (y += p[1]) * tr.scale[1] + tr.translate[1]] : [p[0], p[1]]); });
+    const ring = idx => { const out = []; idx.forEach((i, k) => { const a = i < 0 ? arcs[~i].slice().reverse() : arcs[i]; if(!a) return; for(let j = k ? 1 : 0; j < a.length; j++) out.push(a[j]); }); return out; };
+    const feats = [];
+    (obj.geometries || []).forEach(g => {
+      if(!g || !g.arcs) return;
+      const name = (g.properties && g.properties.name) || '';
+      const a2 = N2A[String(g.id == null ? '' : g.id).padStart(3, '0')] || NAME_A2[normName(name)] || '';
+      if(a2 === 'AQ') return;   // Antarctica: no data centres
+      const polys = g.type === 'Polygon' ? [g.arcs] : g.type === 'MultiPolygon' ? g.arcs : [];
+      let d = '', main = null, mainA = 0;
+      polys.forEach(poly => poly.forEach((r, ri) => {
+        const pts = ring(r).map(([lon, lat]) => proj(lon, lat));
+        if(pts.length < 3) return;
+        const keep = [];
+        for(let j = 0; j < pts.length; j++){
+          const q = pts[j], l = keep[keep.length - 1];
+          if(l && Math.abs(q[0] - l[0]) > 300) return;   // a ring across the date line: left out rather than drawn across the map
+          if(l && j < pts.length - 1 && Math.abs(q[0] - l[0]) < 0.12 && Math.abs(q[1] - l[1]) < 0.12) continue;
+          keep.push(q);
+        }
+        if(keep.length < 3) return;
+        d += 'M' + keep.map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('L') + 'Z';
+        if(ri === 0){
+          let ar = 0; for(let j = 0; j < keep.length; j++){ const a = keep[j], b = keep[(j + 1) % keep.length]; ar += a[0] * b[1] - b[0] * a[1]; }
+          ar = Math.abs(ar) / 2; if(ar > mainA){ mainA = ar; main = boxOf(keep); }
+        }
+      }));
+      if(d && main){ feats.push({a2, name: name || a2, d, main, area: mainA}); if(name && a2 && !NAME_A2[normName(name)]) NAME_A2[normName(name)] = a2; }
+    });
+    const all = boxOf(feats.flatMap(f => [[f.main[0], f.main[1]], [f.main[2], f.main[3]]]));
+    return {feats, world: [Math.max(0, all[0] - 5), Math.max(0, all[1] - 5), Math.min(1000, all[2] + 5), all[3] + 5]};
+  }
+  const GEO_URLS = ['https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json', 'https://unpkg.com/world-atlas@2.0.2/countries-50m.json',
+    'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json', 'https://unpkg.com/world-atlas@2.0.2/countries-110m.json'];
+  let GEO = null, GEO_ERR = '', GEO_BUSY = false;
+  async function loadGeo(){
+    if(GEO || GEO_BUSY) return;
+    GEO_BUSY = true; GEO_ERR = '';
+    for(const u of GEO_URLS){
+      try{
+        const r = await fetch(u, {cache: 'force-cache'});
+        if(!r.ok) throw new Error(`HTTP ${r.status}`);
+        const g = buildGeo(await r.json());
+        if(!g.feats.length) throw new Error('no country shapes in the file');
+        GEO = g; break;
+      }catch(e){ GEO_ERR = `${new URL(u).host}: ${(e && e.message) || e}`; console.warn('Dashboard map: shapes not read from', u, e); }
+    }
+    GEO_BUSY = false;
+    if(active() && S.page === 'map') render();
+  }
+  const mapVal = x => MAP.m === 'v' ? (MAP.set === 'won' ? x.wv : MAP.set === 'open' ? x.ov : x.wv + x.ov) : (MAP.set === 'won' ? x.wn : MAP.set === 'open' ? x.on : x.wn + x.on);
+  const mapFmt = v => MAP.m === 'v' ? eurK(v) : num(v);
+  function mapAgg(){
+    const by = {};
+    rows(0, 'country').filter(o => won(o) || open(o)).forEach(o => {
+      const a2 = ctryA2(o), k = a2 || 'name:' + (o.countryName || o.country || '—');
+      const x = by[k] = by[k] || {a2, code: o.country, name: o.countryName && o.countryName !== '—' ? o.countryName : (o.country || '—'), wn: 0, wv: 0, on: 0, ov: 0};
+      if(won(o)){ x.wn++; x.wv += o.value || 0; } else { x.on++; x.ov += o.value || 0; }
+    });
+    return Object.values(by);
+  }
+  // classes of the density: exact counts up to 5, else steps on a square-root scale (most countries have few offers)
+  function mapClasses(vals){
+    const mx = Math.max(0, ...vals); if(!(mx > 0)) return [];
+    const nice = v => { if(v <= 0) return 0; const e = Math.pow(10, Math.floor(Math.log10(v))), f = v / e; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * e; };
+    let cuts = MAP.m === 'n' && mx <= 5 ? Array.from({length: mx - 1}, (_, i) => i + 2) : [1, 2, 3, 4].map(i => MAP.m === 'n' ? Math.max(2, Math.round(nice(mx * (i / 5) ** 2))) : nice(mx * (i / 5) ** 2));
+    cuts = [...new Set(cuts)].filter(c => c > (MAP.m === 'n' ? 1 : 0) && c <= mx).sort((a, b) => a - b);
+    const lo = [MAP.m === 'n' ? 1 : 0, ...cuts], n = lo.length;
+    const steps = n === 1 ? [4] : lo.map((_, i) => Math.round(i * 4 / (n - 1)));   // spread on the 5 steps of the ramp
+    return lo.map((l, i) => ({lo: l, hi: i < n - 1 ? lo[i + 1] : Infinity, step: steps[i] + 1,
+      label: MAP.m === 'n' ? (i < n - 1 ? (lo[i + 1] - 1 > l ? `${l}–${lo[i + 1] - 1}` : `${l}`) : (l === mx ? `${l}` : `${l}+`)) : (i < n - 1 ? (i ? `${eurK(l)}–${eurK(lo[i + 1])}` : `< ${eurK(lo[1])}`) : `${eurK(l)}+`)}));
+  }
+  const clsOf = (cl, v) => v > 0 ? cl.find(c => v >= c.lo && v < c.hi) || cl[cl.length - 1] : null;
+  function mapBox(feats, agg, W, H){
+    const want = MAP.view;
+    let b;
+    if(want === 'eu') b = boxOf([[-11, 35], [-11, 71], [16, 72], [42, 71], [42, 35], [16, 34]].map(([lo, la]) => proj(lo, la)));
+    else if(want === 'world' || !GEO) b = GEO ? GEO.world : [0, 0, 1000, 500];
+    else {
+      const on = new Set(agg.filter(x => x.a2 && mapVal(x) > 0).map(x => x.a2));
+      const fs = feats.filter(f => on.has(f.a2));
+      if(!fs.length) b = GEO.world;
+      else { b = boxOf(fs.flatMap(f => [[f.main[0], f.main[1]], [f.main[2], f.main[3]]])); const pw = Math.max(40, (b[2] - b[0]) * 0.12), ph = Math.max(30, (b[3] - b[1]) * 0.12); b = [b[0] - pw, b[1] - ph, b[2] + pw, b[3] + ph]; }
+    }
+    let [x0, y0, x1, y1] = b, w = x1 - x0, h = y1 - y0;
+    if(w < 160){ x0 -= (160 - w) / 2; w = 160; } if(h < 90){ y0 -= (90 - h) / 2; h = 90; }
+    const r = W / H;   // the box takes the shape of the map area
+    if(w / h > r){ const nh = w / r; y0 -= (nh - h) / 2; h = nh; } else { const nw = h * r; x0 -= (nw - w) / 2; w = nw; }
+    return [x0, y0, w, h];
+  }
+  function drawMap(el, agg, cl){
+    const W = Math.max(320, el.clientWidth || 800), H = Math.round(Math.max(300, Math.min(500, W * 0.56)));
+    if(!GEO){
+      el.innerHTML = `<div class="map-wait" style="height:${H}px">${GEO_BUSY ? '<span class="spin"></span>Reading the world map…' : `<div><b>The world map was not read.</b><br>The shapes of the countries come from cdn.jsdelivr.net / unpkg.com (Natural Earth): ${esc(GEO_ERR || 'not reachable')}.<br>The table of the countries is complete. <a href="#" data-act="map:retry">Try again</a></div>`}</div>`;
+      return;
+    }
+    const byA2 = new Map(agg.filter(x => x.a2).map(x => [x.a2, x])), g = MAP.set === 'won' ? 'qg' : 'q';
+    const [vx, vy, vw, vh] = mapBox(GEO.feats, agg, W, H), z = W / vw;
+    const tipOf = (name, x) => `<b>${esc(name)}</b><br>Won: ${x.wn} · ${eurK(x.wv)}<br>Open: ${x.on} · ${eurK(x.ov)}<br><i>click to filter</i>`;
+    let paths = '', dots = '';
+    GEO.feats.forEach(f => {
+      const x = f.a2 && byA2.get(f.a2), v = x ? mapVal(x) : 0, c = clsOf(cl, v), sel = x && FX.country && x.code === FX.country;
+      paths += c ? `<path class="c${sel ? ' sel' : ''}" d="${f.d}" fill="var(--${g}${c.step})" data-x="country:${esc(x.code)}" data-tip="${esc(tipOf(x.name, x))}"/>`
+        : `<path d="${f.d}" fill="var(--map-0)"${x ? ` data-tip="${esc(tipOf(x.name, x))}"` : ''}/>`;
+      if(c && f.area * z * z < 60){ const [a, b, cc, d] = f.main;   // too small to see: a dot on it
+        dots += `<circle class="c${sel ? ' sel' : ''}" cx="${((a + cc) / 2).toFixed(1)}" cy="${((b + d) / 2).toFixed(1)}" r="${(5 / z).toFixed(2)}" fill="var(--${g}${c.step})" data-x="country:${esc(x.code)}" data-tip="${esc(tipOf(x.name, x))}"/>`; }
+    });
+    el.innerHTML = `<svg class="map" viewBox="${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" width="100%" height="${H}" role="img" aria-label="Won and open offers by country">
+      <rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="var(--map-sea)"/><g>${paths}</g><g>${dots}</g></svg>`;
+    const svg = el.querySelector('svg');
+    svg.querySelectorAll('.sel').forEach(p => p.parentNode.appendChild(p));
+    svg.addEventListener('mouseover', e => { const p = e.target.closest && e.target.closest('path.c'); if(p && p !== p.parentNode.lastElementChild && !p.parentNode.querySelector('.sel')) p.parentNode.appendChild(p); });
+  }
+  function pMap(M){
+    const agg = mapAgg(), on = agg.filter(x => mapVal(x) > 0), cl = mapClasses(on.map(mapVal));
+    const T = k => sum(agg, x => x[k]), top = on.slice().sort((a, b) => mapVal(b) - mapVal(a))[0];
+    const off = agg.filter(x => !x.a2 && mapVal(x) > 0);
+    const seg = (k, opts) => `<span class="seg">${opts.map(([v, l]) => `<button type="button" class="${MAP[k] === v ? 'on' : ''}" data-act="map:${k}:${v}">${l}</button>`).join('')}</span>`;
+    const g = MAP.set === 'won' ? 'qg' : 'q';
+    const legend = cl.length ? `<div class="legend map-leg"><span><i style="background:var(--map-0)"></i>none</span>${cl.map(c => `<span><i style="background:var(--${g}${c.step})"></i>${esc(c.label)}</span>`).join('')}<span class="r">${MAP.m === 'v' ? 'offer value (net) per country' : 'offers per country'} · ${MAP.set === 'won' ? 'won' : MAP.set === 'open' ? 'open' : 'won + open'} · lost not shown</span></div>` : '';
+    const ranked = on.slice().sort((a, b) => mapVal(b) - mapVal(a)), mx = Math.max(1, ...ranked.map(x => MAP.m === 'v' ? x.wv + x.ov : x.wn + x.on));
+    const share = (a, b) => (MAP.m === 'v' ? a : b) / mx * 100;
+    const tbl = ranked.length ? `<div style="overflow-x:auto"><table class="t map-t"><thead><tr><th>Country</th><th class="n">Won</th><th class="n">Open</th><th style="width:34%"></th></tr></thead><tbody>${ranked.slice(0, 18).map(x => `<tr class="click${FX.country && x.code === FX.country ? ' sel' : ''}" ${x.a2 ? `data-x="country:${esc(x.code)}"` : ''} data-tip="<b>${esc(x.name)}</b><br>Won: ${x.wn} · ${eurK(x.wv)}<br>Open: ${x.on} · ${eurK(x.ov)}">
+        <td>${esc(x.name)}${x.a2 ? '' : ' <span class="sub">not on the map</span>'}</td><td class="n">${MAP.set === 'open' || !x.wn ? '<span class="sub">–</span>' : mapFmt(MAP.m === 'v' ? x.wv : x.wn)}</td><td class="n">${MAP.set === 'won' || !x.on ? '<span class="sub">–</span>' : mapFmt(MAP.m === 'v' ? x.ov : x.on)}</td>
+        <td><div class="mbar">${MAP.set !== 'open' ? `<i style="width:${share(x.wv, x.wn).toFixed(1)}%;background:var(--st-won)"></i>` : ''}${MAP.set !== 'won' ? `<i style="width:${share(x.ov, x.on).toFixed(1)}%;background:var(--st-prog)"></i>` : ''}</div></td></tr>`).join('')}</tbody></table></div>${ranked.length > 18 ? `<div class="sub">${ranked.length - 18} more countries — see the map.</div>` : ''}
+      <div class="legend" style="margin-top:8px">${MAP.set !== 'open' ? '<span><i style="background:var(--st-won)"></i>Won</span>' : ''}${MAP.set !== 'won' ? '<span><i style="background:var(--st-prog)"></i>Open (new, in progress, offer review)</span>' : ''}</div>` : nothing('No won or open offers with these filters.');
+    M.innerHTML = chips() + `<div class="cv">
+      <div class="strip">
+        <div><span class="dot" style="background:var(--s1)"></span><div><b>${on.filter(x => x.a2).length}</b><span>countries with ${MAP.set === 'won' ? 'won' : MAP.set === 'open' ? 'open' : 'won or open'} offers${off.length ? ` · ${off.length} not on the map` : ''}</span></div></div>
+        <div><span class="dot" style="background:var(--st-won)"></span><div><b>${num(T('wn'))}</b><span>won · ${eurK(T('wv'))}</span></div></div>
+        <div><span class="dot" style="background:var(--st-prog)"></span><div><b>${num(T('on'))}</b><span>open · ${eurK(T('ov'))}</span></div></div>
+        <div><span class="dot" style="background:var(--s3)"></span><div style="min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${top ? esc(top.name) : '–'}</b><span>${top ? `first country · ${mapFmt(mapVal(top))}${on.length > 1 ? ` · ${pct(mapVal(top) / sum(on, mapVal))} of the total` : ''}` : 'no offers'}</span></div></div>
+      </div>
+      ${panel('c8', 'Offers by country', `<div class="map-bar">${seg('set', [['all', 'Won + open'], ['won', 'Won'], ['open', 'Open']])}${seg('m', [['n', 'Offers'], ['v', 'Value']])}<span style="margin-left:auto"></span>${seg('view', [['fit', 'Fit'], ['eu', 'Europe'], ['world', 'World']])}</div><div id="mp1"></div>${legend}`, 'click a country to filter')}
+      ${panel('c4', 'Countries', tbl, MAP.m === 'v' ? 'offer value (net)' : 'number of offers')}</div>`;
+    if(!GEO && !GEO_BUSY && !GEO_ERR) loadGeo();   // first time: the shapes are read, then the page is drawn again
+    drawMap($('mp1'), agg, cl);
+  }
+
   function pEmpty(M){
     const signed = (() => { try{ return signedIn(); }catch(e){ return false; } })();
     M.innerHTML = chips() + `<div class="panel empty"><b>${SCAN.running ? 'Reading the offers from SharePoint…' : SCAN.err ? 'The offers could not be read' : signed ? 'No projects in the Progress tracker list' : 'Not connected to Microsoft 365'}</b>
@@ -32085,11 +32516,11 @@ function gantt(el, list){
     POPREF = ref;
     const sc = SC();
     $('pop').innerHTML = `<div class="pop-h"><span class="ic">${ic(I.bolt, 20)}</span><div><h3>${esc(o.ref)} · ${esc(o.customer)}</h3><small>${esc(o.project)}${o.countryName && o.countryName !== '—' ? ' · ' + esc(o.countryName) : ''}</small></div><button type="button" class="x" data-act="close" title="Close">✕</button></div>
-      <div class="pop-strip"><span style="color:${sc[o.status]};font-weight:600" title="SharePoint: ${esc(o.rawStatus || '—')}">● ${o.status}</span>${o.hasOffer ? `<span>${esc(o.market)} price list</span>` : ''}<span>${esc(o.owner)}</span><span>created ${fmtDY(o.created)}</span><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtDY(o.due)}</span>${o.closed ? `<span>${o.status === 'Offer review' ? 'sent' : 'closed'} ${fmtDY(o.closed)}</span>` : ''}${o.hasOffer ? `<span>R${o.revisions}</span>` : ''}</div>
-      <div class="pop-b">${o.hasOffer ? `<div class="kv"><div>${o.valueSrc === 'list' ? 'Offer value (SharePoint)' : 'Offer value (net)'}<b>${o.value > 0 ? eur(o.value) : '—'}</b></div><div>UPS units<b>${units(o)}</b></div><div>Power modules<b>${modules(o)}</b></div><div>Installed power<b>${(kwOf(o) / 1000).toFixed(2)} MW</b></div></div>
+      <div class="pop-strip"><span style="color:${sc[o.status]};font-weight:600" title="SharePoint: ${esc(o.rawStatus || '—')}">● ${o.status}</span>${o.hasOffer ? `<span>${esc(o.market)} price list</span>` : ''}<span>${esc(o.owner)}</span><span>created ${fmtDY(o.created)}</span><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtDY(o.due)}</span>${o.closed ? `<span>${o.status === 'Offer review' ? 'sent' : 'closed'} ${fmtDY(o.closed)}</span>` : ''}${o.hasOffer ? `<span>R${o.revisions}${o.fileKind === 'draft' ? ' (draft)' : ''}</span>` : ''}${o.wonMark ? `<span style="color:var(--st-won);font-weight:600">🏆 won revision</span>` : ''}</div>
+      <div class="pop-b">${o.hasOffer ? `<div class="kv"><div>${o.valueSrc === 'list' ? 'Offer value (SharePoint)' : 'Offer value (net)'}<b>${o.value > 0 ? eur(o.value) : '—'}</b>${o.valueJson > 0 && o.valueList > 0 ? `<span class="sub" style="display:block">file ${eurK(o.valueJson)} · list ${eurK(o.valueList)}</span>` : ''}</div><div>UPS units<b>${units(o)}</b></div><div>Power modules<b>${modules(o)}</b></div><div>Installed power<b>${(kwOf(o) / 1000).toFixed(2)} MW</b></div></div>
         <div class="ptitle">UPS configurations</div>${o.positions.length ? `<table class="t"><thead><tr><th>Model</th><th class="n">Load kW</th><th class="n">Systems × UPS</th><th class="n">Modules / UPS</th><th>Battery</th></tr></thead><tbody>${o.positions.map(p => `<tr><td><b>${esc(p.model)}</b></td><td class="n">${num(p.pload)}</td><td class="n">${p.qty} × ${p.ups}</td><td class="n">${p.npm}</td><td>${p.lithium ? 'Lithium' : 'VRLA / other'}</td></tr>`).join('')}</tbody></table>` : nothing('No UPS configuration in the offer.')}
         <div class="ptitle" style="margin-top:14px">Services</div><div class="sla">${SLA_IDS.map(l => `<span class="${o.sla[l] ? 'on' : ''}" title="${esc(SLA_N[l] || '')}">${l} ${o.sla[l] ? '× ' + o.sla[l] : ''}</span>`).join('')}${o.fok ? '<span class="on">FOK</span>' : ''}</div>
-        ${o.file && o.file !== 'example' ? `<div class="sub" style="margin-top:12px">From ${esc(o.file)}${o.saved ? ' · saved ' + fmtDY(o.saved) : ''}</div>` : ''}` : `${o.value > 0 ? `<div class="kv"><div>Offer value (SharePoint)<b>${eur(o.value)}</b></div></div>` : ''}<div class="empty"><b>No saved offer</b>There is no offer file in the "02 OFFER" folder of this project yet${o.value > 0 ? ': the value is the Offer Value € of the Progress tracker list' : ''}.</div>`}</div>
+        ${o.file && o.file !== 'example' ? `<div class="sub" style="margin-top:12px">From ${esc(o.file)}${o.saved ? ' · saved ' + fmtDY(o.saved) : ''}${o.wonMark ? ' · marked won' + (o.wonMark.at ? ' ' + fmtDY(dateOf(o.wonMark.at)) : '') + (o.wonMark.by ? ' by ' + esc(o.wonMark.by) : '') : won(o) && o.fileKind === 'closed' ? ' · no revision marked won: the highest closed one counts' : ''}</div>` : ''}` : `${o.value > 0 ? `<div class="kv"><div>Offer value (SharePoint)<b>${eur(o.value)}</b></div></div>` : ''}<div class="empty"><b>No saved offer</b>There is no offer file in the "02 OFFER" folder of this project yet${o.value > 0 ? ': the value is the Offer Value € of the Progress tracker list' : ''}.</div>`}</div>
       <div class="pop-f"><button type="button" class="btn" data-menu="${esc(o.ref)}" style="margin-right:auto">Status / owner</button><button type="button" class="btn" data-act="close">Close</button>${SRC === 'sp' ? `<button type="button" class="btn pri" data-cfg="${esc(o.ref)}">${ic(I.cfg, 14)}Open in configurator</button>` : ''}</div>`;
     $('ov').classList.add('open'); tip.style.display = 'none';
   }
@@ -32102,7 +32533,7 @@ function gantt(el, list){
     ribbon();
     const M = $('main');
     if(!OFFERS.length) pEmpty(M);
-    else ({overview: pOverview, pipeline: pPipeline, products: pProducts, work: pWork, check: pCheck})[S.page](M);
+    else ({overview: pOverview, pipeline: pPipeline, products: pProducts, map: pMap, work: pWork, check: pCheck})[S.page](M);
     if($('ov').classList.contains('open') && POPREF) openOffer(POPREF);
     const A = rows();
     $('sbar').innerHTML = SRC === 'demo' ? `<span class="warn">● Example data</span><span>${OFFERS.length} offers</span><span>${A.length} shown · ${eurK(val(A))}</span>`
@@ -32115,6 +32546,8 @@ function gantt(el, list){
     else if(k === 'unset') FX[v] = v === 'period' ? '12' : '';
     else if(k === 'who'){ const me = meName(); FX.owner = v === 'me' ? (OWN.find(o => nameKey(o) === nameKey(me)) || me) : ''; }
     else if(k === 'collapse') S.collapsed = !S.collapsed;
+    else if(k === 'vfirst'){ VALUE_FIRST = v === 'list' ? 'list' : 'offer'; OFFERS.forEach(applyValue); refreshRowKeys(); }
+    else if(k === 'map'){ const [a, b] = v.split(':'); if(a === 'retry'){ GEO_ERR = ''; loadGeo(); } else MAP[a] = b; }
     else if(k === 'cal'){ let [y, m] = S.cal; m += Number(v); if(m < 0){ m = 11; y--; } if(m > 11){ m = 0; y++; } S.cal = [y, m]; }
     else if(k === 'close'){ $('ov').classList.remove('open'); return; }
     else if(k === 'refresh'){ if(SRC === 'demo'){ setData(demoOffers(), 'demo'); } else { loadSharePoint(true); return; } }
@@ -32126,9 +32559,9 @@ function gantt(el, list){
     render();
   }
   function exportCsv(){
-    const A = rows(), h = ['Project','Customer','Project name','Country','Owner','Status','SharePoint status','Price list','Family','UPS','Power modules','Installed kW','Net value','Value from','Cost','Created','Due','Offer file'];
+    const A = rows(), h = ['Project','Customer','Project name','Country','Owner','Status','SharePoint status','Price list','Family','UPS','Power modules','Installed kW','Counted value','Value from','Offer file value','Offer Value € (list)','Services value','Delivery value','Cost','Created','Due','Offer file'];
     const d = x => x ? `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}` : '';
-    const csv = [h, ...A.map(o => [o.ref, o.customer, o.project, o.countryName, o.owner, o.status, o.rawStatus, o.hasOffer ? o.market : '', o.fam, units(o), modules(o), Math.round(kwOf(o)), Math.round(o.value), o.valueSrc === 'list' ? 'SharePoint OfferValue' : o.valueSrc ? 'offer file' : '', Math.round(o.cost), d(o.created), d(o.due), o.file])]
+    const csv = [h, ...A.map(o => [o.ref, o.customer, o.project, o.countryName, o.owner, o.status, o.rawStatus, o.hasOffer ? o.market : '', o.fam, units(o), modules(o), Math.round(kwOf(o)), Math.round(o.value), o.valueSrc === 'list' ? 'SharePoint OfferValue' : o.valueSrc ? 'offer file' : '', Math.round(o.valueJson || 0), Math.round(o.valueList || 0), Math.round((o.parts || {}).Services || 0), Math.round((o.parts || {}).Delivery || 0), Math.round(o.cost), d(o.created), d(o.due), o.file])]
       .map(r => r.map(c => /[;"\n]/.test(String(c)) ? '"' + String(c).replace(/"/g, '""') + '"' : c).join(';')).join('\r\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], {type: 'text/csv'})); a.download = `UPS_Dashboard_${d(TODAY)}.csv`; document.body.appendChild(a); a.click(); a.remove();
   }
@@ -32224,7 +32657,262 @@ function gantt(el, list){
     m.querySelector('[data-am="dashguide"]')?.addEventListener('click', () => setTimeout(close, 0));
     m.querySelectorAll('[data-udswitch]').forEach(b => b.addEventListener('click', () => { close(); if(b.dataset.udswitch === 'dash') show(); else hide(); }));
   }
-  return {show, hide, active, decorateMenu, render, reload: () => loadSharePoint(true), _data: () => OFFERS, _set: setData, _toOffer: toOffer};
+  // self-check of the Won figures (used by the tests): the same won offers summed the way each view sums them
+  function audit(){
+    const A = rows(), Af = rows(0, 'fam'), ms = monthsInPeriod(), w = A.filter(won), wf = Af.filter(won);
+    return {won: w.length, total: val(w), chart: sum(ms, k => val(w.filter(o => monthKey(pDate(o)) === k))), outsideChart: w.filter(o => !ms.includes(monthKey(pDate(o)))).length,
+      matrixRows: sum(ROWKEYS, f => sum(wf, o => (o.parts && o.parts[f]) || 0)), matrixTotal: val(wf), from: win()[0].toISOString().slice(0, 10)};
+  }
+  return {show, hide, active, decorateMenu, render, reload: () => loadSharePoint(true), _data: () => OFFERS, _set: setData, _toOffer: toOffer, _audit: audit, _stage: stageName, _totals: offerTotals, refreshProject,
+    _period: v => { FX.period = v; render(); }};
+})();
+
+</script>
+<script>
+// ---- beta_6.56: won revision. Project › Mark as won (the closed revision on screen) and Project › Won revision… (any closed
+// revision of the offer). The chosen <ref>_R<n>.json in "02 OFFER" gets "won": {at, by, status} (any other revision that had it
+// loses it) and the Status of the Progress tracker list is set to the won status chosen (Awarder, Project Execution, …): only
+// the Status, the Offer Value € column is not touched. Only a closed revision can be marked won. The dashboard counts the value
+// of the revision marked won (else the highest closed revision). ----
+const UPS_WON = (() => {
+  const FALLBACK = ['Awarder', 'Project Execution', 'Project Closed'];
+  const refNow = () => (document.getElementById('prjRef')?.value || '').trim();
+  const safeRef = ref => (ref || 'draft').replace(/[^a-z0-9_-]/gi, '_');
+  const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const stage = s => {
+    try{ if(typeof UPS_DASH !== 'undefined' && UPS_DASH) return UPS_DASH._stage(s); }catch(e){}
+    s = String(s || ''); return /award|execut|project closed|\bwon\b/i.test(s) && !/\b(not|non|no)\b|lost/i.test(s) ? 'Won' : '';
+  };
+  const money = v => (typeof CURRENCY !== 'undefined' && CURRENCY && CURRENCY.symbol ? CURRENCY.symbol : '€') + ' ' + fmt2(v);
+  const stamp = iso => iso ? fmtStamp(iso) : '';
+  const hideToast = () => { const t = document.getElementById('exportToast'); if(t) t.style.display = 'none'; };
+  const curRec = () => (typeof PROGRESS !== 'undefined' && PROGRESS ? PROGRESS : []).find(p => String(p.PRJ_ID).trim() === refNow());
+  const curStatus = () => { const r = curRec(); return r ? String(r.Status || '').trim() : ''; };
+  const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // the won date (the day the win counts in the budget of the dashboard): today → now, another day → that day at noon
+  const atOf = v => !v || v === ymd(new Date()) ? new Date().toISOString() : new Date(v + 'T12:00:00').toISOString();
+  const valueOf = (st, rev) => {
+    let v = 0;
+    try{ if(typeof UPS_DASH !== 'undefined' && UPS_DASH) v = UPS_DASH._totals(st).value; }catch(e){}
+    if(!(v > 0)){ const e = (st.revisionHistory || []).find(x => Number(x.rev) === rev); if(e && Number(e.total) > 0) v = Number(e.total); }
+    return v;
+  };
+
+  async function canStart(title){
+    if(!(msalInstance && msalAccount)){
+      await openAppDialog({title, message: 'Sign in with Microsoft 365 first (Reconnect): the won mark is written in the offer file of the project in its 02 OFFER folder on SharePoint.'});
+      return false;
+    }
+    if(!refNow()){ await openAppDialog({title, message: 'Open a project first.'}); return false; }
+    return true;
+  }
+  // the revisions of the project in "02 OFFER": closed ones read (newest revision first), drafts only named
+  async function readRevisions(){
+    const ref = refNow(), res = await resolveProjectOfferFolder(ref);
+    const files = await listOfferJsonFiles(res);
+    const re = new RegExp('^' + reEsc(safeRef(ref)) + '_R(\\d+)(_ongoing)?\\.json$', 'i');
+    const closed = [], drafts = [];
+    files.forEach(f => { const m = re.exec(f.name); if(!m) return; if(m[2]) drafts.push(Number(m[1])); else closed.push({rev: Number(m[1]), f}); });
+    closed.sort((a, b) => b.rev - a.rev);
+    await Promise.all(closed.map(async x => {
+      try{ const st = JSON.parse(await downloadDriveFileText(res.site.id, x.f)); if(st && st.closed === true) x.st = st; else x.bad = 'not saved as closed'; }
+      catch(e){ x.bad = 'not readable'; }
+    }));
+    return {ref, list: closed, drafts: [...new Set(drafts)].sort((a, b) => b - a)};
+  }
+  let CHOICES = null;
+  async function wonChoices(){
+    if(CHOICES) return CHOICES;
+    let list = [];
+    try{
+      const token = await getGraphToken(); const r = await resolveSharePointList(token);
+      const cols = await graphGet(`https://graph.microsoft.com/v1.0/sites/${r.site.id}/lists/${r.list.id}/columns`, token);
+      const c = (cols.value || []).find(x => x.name === 'Status') || (cols.value || []).find(x => /^status$/i.test(x.displayName || ''));
+      if(c && c.choice && Array.isArray(c.choice.choices)) list = c.choice.choices.filter(x => stage(x) === 'Won');
+    }catch(e){ console.warn('Won revision: the Status choices were not read, using the usual ones', e); }
+    CHOICES = list.length ? list : FALLBACK.slice();
+    return CHOICES;
+  }
+  const writeFile = (x, st) => uploadToProjectOfferFolder(new Blob([JSON.stringify(st, null, 2)], {type: 'application/json'}), x.f.name);
+  async function writeStatus(ref, status){
+    if(!status || status === curStatus()) return '';
+    try{
+      const token = await getGraphToken(); const {site, list} = await resolveSharePointList(token);
+      const item = await findSharePointItemByRef(token, site, list, ref);
+      if(!item) throw new Error('the project is not in the Progress tracker list');
+      await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, {Status: status});
+      setLocalProgressStatus(ref, status);
+      return '';
+    }catch(e){ return (e && e.message) || String(e); }
+  }
+  function afterChange(ref){
+    try{ renderStatusBar(); }catch(e){}
+    try{ if(typeof UPS_DASH !== 'undefined' && UPS_DASH) UPS_DASH.refreshProject(ref).catch(e => console.warn('Dashboard: project not read again', e)); }catch(e){}
+  }
+  // marks revision rev won (and no other one), then writes the Status
+  async function mark(ctx, rev, status, at){
+    const x = ctx.list.find(y => y.rev === rev && y.st);
+    if(!x) throw new Error(`R${rev} is not a closed revision of ${ctx.ref}`);
+    const won = {at: at || new Date().toISOString(), by: currentUserName(), status: status || ''};
+    await writeFile(x, Object.assign({}, x.st, {won}));
+    x.st.won = won;
+    const failed = [];
+    for(const y of ctx.list.filter(z => z !== x && z.st && z.st.won)){
+      const st = Object.assign({}, y.st); delete st.won;
+      try{ await writeFile(y, st); delete y.st.won; }catch(e){ failed.push(`R${y.rev}`); }
+    }
+    const statusErr = await writeStatus(ctx.ref, status);
+    LOADED_WON = REVISION_CLOSED && REVISION === rev ? Object.assign({}, won, {rev, ref: ctx.ref}) : null;
+    afterChange(ctx.ref);
+    return {failed, statusErr};
+  }
+  async function unmark(ctx, rev){
+    const x = ctx.list.find(y => y.rev === rev && y.st && y.st.won);
+    if(!x) return;
+    const st = Object.assign({}, x.st); delete st.won;
+    await writeFile(x, st);
+    delete x.st.won;
+    if(LOADED_WON && LOADED_WON.rev === rev && LOADED_WON.ref === ctx.ref) LOADED_WON = null;
+    afterChange(ctx.ref);
+  }
+
+  function overlay(html, width){
+    const ov = document.createElement('div');
+    ov.className = 'settings-overlay won-overlay';
+    ov.style.display = 'flex';
+    ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" style="max-width:${width}px; width:100%;">${html}</div>`;
+    document.body.appendChild(ov);
+    return ov;
+  }
+  const closedLine = x => {
+    const e = (x.st.revisionHistory || []).find(y => Number(y.rev) === x.rev) || {};
+    return [stamp(e.closedAt) || stamp(x.f.lastModifiedDateTime), e.closedBy].filter(Boolean).join(' — ');
+  };
+  // the question before marking: which won status goes to the Progress tracker list
+  async function askStatus(ctx, rev){
+    const x = ctx.list.find(y => y.rev === rev);
+    const choices = await wonChoices(), cur = curStatus();
+    const def = choices.find(c => c.toLowerCase() === cur.toLowerCase()) || choices[0];
+    const other = ctx.list.filter(y => y.rev !== rev && y.st && y.st.won).map(y => `R${y.rev}`);
+    const v = valueOf(x.st, rev);
+    const already = x.st.won;
+    // the won date: the one already recorded (on any revision); a project already won on SharePoint keeps the Due date it is
+    // counted on now; otherwise today
+    const prevAt = (ctx.list.find(y => y.st && y.st.won && y.st.won.at) || {st: {won: {}}}).st.won.at;
+    const rec = curRec(), due = rec && rec['Due date'] ? new Date(rec['Due date']) : null;
+    const defDate = prevAt && !isNaN(new Date(prevAt)) ? ymd(new Date(prevAt)) : stage(cur) === 'Won' && due && !isNaN(due) && due < new Date() ? ymd(due) : ymd(new Date());
+    const fieldCss = 'width:100%; height:34px; background:var(--field-bg); border:1px solid var(--field-border); color:var(--text); border-radius:7px; padding:0 8px; font-size:13.5px;';
+    return new Promise(resolve => {
+      const ov = overlay(`<div class="acc-modal-header"><h3>Mark R${rev} as won — ${escapeHtml(ctx.ref)}</h3><button type="button" class="acc-modal-close" data-x>×</button></div>
+        <div class="settings-body">
+          <p class="settings-note">${already
+            ? `R${rev} is already the won revision (${escapeHtml([stamp(already.at), already.by].filter(Boolean).join(' — '))}). Choose the Status to write in the Progress tracker list and the won date.`
+            : `R${rev} (closed ${escapeHtml(closedLine(x) || '—')}) becomes the revision the customer awarded: the dashboard counts its value${v > 0 ? ` (${escapeHtml(money(v))})` : ''}.${other.length ? ` ${other.join(', ')} ${other.length > 1 ? 'are' : 'is'} no longer marked won.` : ''}`}</p>
+          <div class="field"><label>Status in the Progress tracker list</label>
+            <select data-st style="${fieldCss}">${choices.map(c => `<option${c === def ? ' selected' : ''}>${escapeHtml(c)}</option>`).join('')}</select>
+            <div class="won-sub">Now: ${escapeHtml(cur || '—')}. Only the Status is written; Offer Value € stays as it is.</div></div>
+          <div class="field" style="margin-top:12px"><label>Won date</label>
+            <input type="date" data-dt value="${defDate}" max="${ymd(new Date())}" style="${fieldCss}">
+            <div class="won-sub">The day the win counts in the budget of the dashboard${prevAt ? ' (the date already recorded)' : stage(cur) === 'Won' && defDate !== ymd(new Date()) ? ' (the Due date it is counted on now)' : ''}.</div></div>
+        </div>
+        <div class="acc-modal-footer"><button type="button" class="btn-ghost act" data-cancel>Cancel</button><button type="button" class="act btn-primary" data-ok>🏆 Mark R${rev} as won</button></div>`, 520);
+      const done = v => { ov.remove(); resolve(v); };
+      ov.querySelector('[data-ok]').addEventListener('click', () => done({status: ov.querySelector('[data-st]').value, at: atOf(ov.querySelector('[data-dt]').value)}));
+      ov.querySelectorAll('[data-x], [data-cancel]').forEach(b => b.addEventListener('click', () => done(null)));
+      ov.addEventListener('keydown', e => { if(e.key === 'Escape') done(null); });
+      ov.addEventListener('click', e => { if(e.target === ov) done(null); });
+      setTimeout(() => ov.querySelector('[data-st]').focus(), 30);
+    });
+  }
+  async function doMark(ctx, rev){
+    const ans = await askStatus(ctx, rev);
+    if(ans == null) return false;
+    const status = ans.status;
+    showExportToast(`Marking R${rev} as won…`);
+    try{
+      const r = await mark(ctx, rev, status, ans.at);
+      const warn = [r.failed.length ? `${r.failed.join(', ')} could not be unmarked (the dashboard uses the revision marked last).` : '', r.statusErr ? `The Status was not written: ${r.statusErr}` : ''].filter(Boolean);
+      if(warn.length) openAppDialog({title: `R${rev} marked as won`, message: `R${rev} is the won revision of ${ctx.ref}.\n\n${warn.join('\n')}`});
+      else showExportToast(`🏆 R${rev} is the won revision of ${ctx.ref} — Status: ${status}`, 'ok');
+      return true;
+    }catch(e){
+      hideToast();
+      openAppDialog({title: 'Mark as won', message: `R${rev} was not marked: ${(e && e.message) || e}`});
+      return false;
+    }
+  }
+
+  // Project › Mark as won: the closed revision on screen
+  async function quick(){
+    const title = 'Mark as won';
+    if(!REVISION_CLOSED){ await openAppDialog({title, message: `Only a closed revision can be marked won. Close the offer first (Project › Close offer): R${REVISION} is still open.`}); return; }
+    if(!(await canStart(title))) return;
+    const rev = REVISION;
+    showExportToast(`Reading R${rev}…`);
+    let ctx;
+    try{ ctx = await readRevisions(); }catch(e){ hideToast(); await openAppDialog({title, message: `The 02 OFFER folder was not read: ${(e && e.message) || e}`}); return; }
+    hideToast();
+    const x = ctx.list.find(y => y.rev === rev);
+    if(!x || !x.st){ await openAppDialog({title, message: `${safeRef(ctx.ref)}_R${rev}.json ${x ? 'is ' + x.bad : 'is not in the 02 OFFER folder'}: R${rev} cannot be marked won. Use Project › Won revision… to choose another closed revision.`}); return; }
+    await doMark(ctx, rev);
+  }
+
+  // Project › Won revision…: every closed revision of the offer, the one marked won, and the commands
+  async function openWindow(){
+    if(!(await canStart('Won revision'))) return;
+    const ref = refNow();
+    const ov = overlay(`<div class="acc-modal-header"><h3>Won revision — ${escapeHtml(ref)}</h3><button type="button" class="acc-modal-close" data-x>×</button></div>
+      <div class="settings-body" data-body><p class="settings-note">Reading the closed revisions in 02 OFFER…</p></div>
+      <div class="acc-modal-footer"><button type="button" class="act btn-primary" data-x>Close</button></div>`, 820);
+    ov.id = 'wonRevOverlay';
+    const close = () => ov.remove();
+    ov.querySelectorAll('[data-x]').forEach(b => b.addEventListener('click', close));
+    ov.addEventListener('click', e => { if(e.target === ov) close(); });
+    ov.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.querySelector('.won-overlay:not(#wonRevOverlay)')) close(); });
+    const body = ov.querySelector('[data-body]');
+    let ctx = null;
+    const paint = () => {
+      const rows = ctx.list.map(x => {
+        if(!x.st) return `<tr class="won-bad"><td><b>R${x.rev}</b></td><td colspan="4">${escapeHtml(x.f.name)} — ${escapeHtml(x.bad || '')}</td><td></td></tr>`;
+        const e = (x.st.revisionHistory || []).find(y => Number(y.rev) === x.rev) || {}, w = x.st.won, v = valueOf(x.st, x.rev);
+        return `<tr class="${w ? 'won-on' : ''}"><td><b>R${x.rev}</b>${x.rev === REVISION && REVISION_CLOSED ? ' <span class="won-cur">on screen</span>' : ''}</td>
+          <td>${escapeHtml(closedLine(x) || '—')}</td><td class="won-note">${escapeHtml(e.closeNote || '—')}</td><td class="n">${v > 0 ? escapeHtml(money(v)) : '—'}</td>
+          <td>${w ? `<span class="won-badge">🏆 Won</span><div class="won-sub">${escapeHtml([w.status, stamp(w.at), w.by].filter(Boolean).join(' · '))}</div>` : ''}</td>
+          <td class="won-act">${w ? `<button type="button" class="btn-ghost act" data-mark="${x.rev}">Status…</button><button type="button" class="btn-ghost act" data-unmark="${x.rev}">Remove mark</button>` : `<button type="button" class="act btn-primary" data-mark="${x.rev}">Mark as won</button>`}</td></tr>`;
+      }).join('');
+      const marked = ctx.list.filter(x => x.st && x.st.won);
+      body.innerHTML = `<p class="settings-note">Mark the closed revision the customer awarded: the dashboard counts the value of that revision (without a mark, the highest closed revision). The Status in the Progress tracker list is set to the won status you choose; Offer Value € is not changed. Only closed revisions can be marked.</p>
+        ${ctx.list.length ? `<table class="won-tbl"><thead><tr><th>Revision</th><th>Closed</th><th>Closing note</th><th class="n">Value (net)</th><th>Won</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+          : `<p class="settings-note"><b>No closed revision in 02 OFFER.</b> Close the offer first (Project › Close offer).</p>`}
+        <div class="won-sub" style="margin-top:10px">${marked.length ? `Won revision: <b>${marked.map(x => 'R' + x.rev).join(', ')}</b>.` : ctx.list.length ? 'No revision marked won yet.' : ''}${ctx.drafts.length ? ` Draft (not closed, cannot be marked): ${ctx.drafts.map(n => 'R' + n).join(', ')}.` : ''} SharePoint Status now: ${escapeHtml(curStatus() || '—')}.</div>`;
+    };
+    const load = async () => {
+      try{ ctx = await readRevisions(); paint(); }
+      catch(e){ body.innerHTML = `<p class="settings-note" style="color:var(--red)">The 02 OFFER folder was not read: ${escapeHtml((e && e.message) || String(e))}</p>`; }
+    };
+    body.addEventListener('click', async e => {
+      const m = e.target.closest('[data-mark]'), u = e.target.closest('[data-unmark]');
+      if(!ctx || !(m || u)) return;
+      body.querySelectorAll('button').forEach(b => b.disabled = true);
+      if(m) await doMark(ctx, Number(m.dataset.mark));
+      else {
+        const rev = Number(u.dataset.unmark);
+        const yes = await openAppDialog({title: `Remove the won mark — R${rev}`, message: `R${rev} will no longer be the won revision of ${ctx.ref}: the dashboard will count the highest closed revision. The Status in the Progress tracker list is not changed.`,
+          buttons: [{label: 'Cancel', value: false}, {label: 'Remove mark', value: true, primary: true}]});
+        if(yes === true){
+          try{ await unmark(ctx, rev); showExportToast(`R${rev} is no longer marked won`, 'ok'); }
+          catch(err){ openAppDialog({title: 'Remove the won mark', message: `Not removed: ${(err && err.message) || err}`}); }
+        }
+      }
+      paint();
+    });
+    load();
+  }
+
+  document.getElementById('btnMarkWon')?.addEventListener('click', quick);
+  document.getElementById('btnWonRevision')?.addEventListener('click', openWindow);
+  document.getElementById('stWonBtn')?.addEventListener('click', e => (e.currentTarget.dataset.mode === 'mark' ? quick : openWindow)());   // revision card, main page
+  return {quick, openWindow, _read: readRevisions};
 })();
 
 </script>

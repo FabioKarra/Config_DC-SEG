@@ -13979,7 +13979,7 @@
 
                 <div class="page-header u10">
                     <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-                    <h1>UPS Configurator <span class="version-badge">beta_6.56</span></h1>
+                    <h1>UPS Configurator <span class="version-badge">beta_6.57</span></h1>
                     <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
                 </div>
 
@@ -15611,6 +15611,7 @@ async function fetchSharePointList(){
     await loadSiteUsers(token, site.id);
     const rows = items.map(it=>{
       const fields = {...(it.fields || {})};
+      fields.__itemId = it.id != null ? String(it.id) : '';   // beta_6.57: the item itself (two items can share a PRJ_ID)
       // Person column → name via the site's users (key always present so the field mapping sees it)
       const ownerId = fields[OWNER_PERSON_FIELD + 'LookupId'];
       const owner = ownerId != null && ownerId !== '' ? siteUserById(ownerId) : null;
@@ -23149,7 +23150,27 @@ async function findSharePointItemsByRef(token, site, list, ref){
   return [];
 }
 
-async function findSharePointItemByRef(token, site, list, ref){
+// beta_6.57: one PRJ_ID on more than one item of the list (different projects with the same code). Which project is
+// meant can't be told from the code, so nothing is written: the caller gets an error (code 'duplicate-ref') and a
+// warning shows at the bottom of the page (at most once a minute per code, also when the caller fails quietly).
+// itemId (the item the caller has read) picks that item among them.
+const DUP_REF_SHOWN = new Map();
+function pickItemByRef(items, ref, itemId){
+  items = (items || []).filter(Boolean);
+  if(itemId != null && String(itemId) !== ''){
+    const m = items.find(x => String(x.id) === String(itemId));
+    if(m) return m;
+  }
+  if(items.length <= 1) return items[0];
+  const who = items.slice(0, 6).map(x => { const f = x.fields || {}; return [f.Title, f.ProjectName].map(v => String(v || '').trim()).filter(Boolean).join(' – ') || ('item ' + x.id); });
+  const msg = `PRJ_ID ${ref} is on ${items.length} items of the Progress tracker list (${who.join('; ')}${items.length > 6 ? '; …' : ''}): nothing was written to SharePoint, so as not to change the wrong project. Give each project its own PRJ_ID in the list, then try again.`;
+  const k = String(ref), last = DUP_REF_SHOWN.get(k) || 0;
+  if(Date.now() - last > 60000){ DUP_REF_SHOWN.set(k, Date.now()); try{ showExportToast('⚠ ' + msg, 'warn'); }catch(e){} }
+  const err = new Error(msg); err.code = 'duplicate-ref'; err.items = items.length;
+  throw err;
+}
+async function findSharePointItemByRef(token, site, list, ref, itemId){
+  ref = String(ref ?? '').trim();
   const safeRef = ref.replace(/'/g,"''");
   // PRJ_ID isn't an indexed column on the real list, and Graph refuses to filter on a non-indexed
   // field unless explicitly told the (small, and here acceptable) risk of an unreliable/slow query
@@ -23160,15 +23181,16 @@ async function findSharePointItemByRef(token, site, list, ref){
     `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$filter=${encodeURIComponent(`fields/PRJ_ID eq '${safeRef}'`)}`,
     token, nonIndexedHeader
   );
-  if(asText.value && asText.value[0]) return asText.value[0];
+  if(asText.value && asText.value[0]) return pickItemByRef(asText.value, ref, itemId);
   if(!isNaN(ref) && ref.trim() !== ''){
     try{
       const asNumber = await graphGet(
         `https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items?expand=fields&$filter=${encodeURIComponent(`fields/PRJ_ID eq ${Number(ref)}`)}`,
         token, nonIndexedHeader
       );
-      if(asNumber.value && asNumber.value[0]) return asNumber.value[0];
+      if(asNumber.value && asNumber.value[0]) return pickItemByRef(asNumber.value, ref, itemId);
     }catch(err){
+      if(err && err.code === 'duplicate-ref') throw err;
       console.warn('Numeric PRJ_ID filter also failed:', err);
     }
   }
@@ -23458,7 +23480,7 @@ function psCountry(r){
 }
 // Every other column of the SharePoint list (those not already shown as Ref. / Customer / Project /
 // Country / Owner / Due date / Status), named as SharePoint names them — to be trimmed later.
-const PS_SKIP_KEYS = new Set(['@odata.etag', '__graphcreatedbyname', '__assignedtoname']);
+const PS_SKIP_KEYS = new Set(['@odata.etag', '__graphcreatedbyname', '__assignedtoname', '__itemid']);
 function psMainRawKeys(){
   const al = [...PROGRESS_FIELD_ALIASES.PRJ_ID, ...PROGRESS_FIELD_ALIASES.Customer, ...PROGRESS_FIELD_ALIASES['Project Name'],
     ...PROGRESS_FIELD_ALIASES['Country.lookupValue'], ...PROGRESS_FIELD_ALIASES['Created By.title'], ...PROGRESS_FIELD_ALIASES['Due date'], ...PROGRESS_FIELD_ALIASES.Status];
@@ -26615,10 +26637,10 @@ function offerHasDeadline(r){
 }
 // Close offer / New revision change the Status on SharePoint in the background: the list loaded at
 // sign-in follows at once, so the bell and the Projects window agree with the status path.
-function setLocalProgressStatus(ref, status){
+function setLocalProgressStatus(ref, status, onRec){
   ref = String(ref || '').trim();
   if(ref) LAST_REVISION_CLOSED.set(ref, /^offer review$/i.test(status));
-  const rec = ref && (PROGRESS || []).find(p => String(p.PRJ_ID) === ref);
+  const rec = onRec || (ref && (PROGRESS || []).find(p => String(p.PRJ_ID) === ref));
   if(rec) rec.Status = status;
   try{ refreshDeadlineBell(); if(document.getElementById('deadlinePanel')) openDeadlinePanel(); }catch(e){}
 }
@@ -30251,7 +30273,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.56';
+const CURRENT_VERSION = 'beta_6.57';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Battery sizing (sottoprogramma)', date: '2026-10-26', notes:[
@@ -30304,6 +30326,12 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 // RIBBON is initialized before this state restoration; refresh once to match the saved Admin state.
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.57', date:'2026-11-09', notes:[
+    'Dashboard, paese: la colonna Country della Progress tracker list è una lookup e Microsoft Graph restituisce solo il suo id (Country0LookupId); la dashboard ora legge il nome dalla lista Country REF_Alpha2 (come la finestra Projects). Prima tutti i progetti senza file offerta avevano paese «—» e la Map e il filtro Country erano vuoti',
+    'Dashboard, PRJ_ID duplicati: ogni elemento della lista è un progetto, anche quando il suo PRJ_ID è usato da altri elementi (prima ne contava uno solo, l\'ultimo modificato, e gli altri sparivano da totali e grafici). Data check li segna con ×n; la finestra dell\'offerta mostra «PRJ_ID ×n in the list»',
+    'Dashboard: stato e owner cambiati da My workspace o dal menu ⋯ vengono scritti sull\'elemento esatto della lista (il suo id SharePoint), non sul primo elemento con quel PRJ_ID',
+    'Protezione PRJ_ID duplicati nel configuratore: se lo stesso PRJ_ID è su più elementi della lista, il configuratore non scrive su SharePoint (Save Project Details, Status, totali alla chiusura, Follow up, rinvio scadenza, Mark as won, cartella 02 OFFER) e mostra un avviso con i progetti coinvolti, per non modificare il progetto sbagliato. Si sblocca dando a ogni progetto il suo PRJ_ID nella lista'
+  ]},
   {version:'beta_6.56', date:'2026-11-06', notes:[
     'Dashboard per gli Admin: la scheda blu «UPS Configurator ▾» ha le voci UPS Configurator e UPS Dashboard (solo per il gruppo Admin). La dashboard ha il suo ribbon (Home, View), le pagine Overview, Pipeline, Products & services e My workspace come schede sotto il ribbon, e la barra di stato',
     'Dati della dashboard: tutti i progetti della Progress tracker list e, per ognuno, l\'ultimo file offerta (.json) della cartella 02 OFFER: valore netto (dopo lo sconto progetto), costo, UPS, moduli di potenza, batterie e livelli SLA. Stati SharePoint contati come Won: Won, Awarded / Awarder, Project Execution, Project Closed (e Execution, Order); Lost: Lost, Cancelled, Declined. Refresh rilegge lista e offerte; View › Example data mostra dati di esempio',
@@ -31728,6 +31756,7 @@ function gantt(el, list){
   }
   function setData(list, src){
     CHOICES = null;
+    list.forEach(o => { if(!o.key) o.key = 'r' + o.ref; });   // beta_6.57: identity of an offer = its list item (example data: the ref)
     list.forEach(applyValue);
     OFFERS = list.slice().sort((a, b) => b.created - a.created); SRC = src;
     const fu = {}; OFFERS.forEach(o => o.positions.forEach(p => fu[p.fam] = (fu[p.fam] || 0) + p.units));
@@ -31784,7 +31813,11 @@ function gantt(el, list){
   const SP_VALUE_FIELDS = ['OfferValue_x20ac_', 'OfferValue', 'Offer Value €', 'Offer Value'];
   function toOffer(rec, st, file){
     const raw = rec._raw || {}, ref = String(rec.PRJ_ID).trim();
-    const c = countryDisplay(textOf(st && st.project && st.project.country) || textOf(rec['Country.lookupValue']));
+    // beta_6.57: Country is a lookup – Graph gives only its id (Country0LookupId): the name comes from the Country REF_Alpha2 list
+    let spC = ''; try{ spC = typeof psCountry === 'function' ? psCountry(rec) : textOf(rec['Country.lookupValue']); }catch(e){ spC = textOf(rec['Country.lookupValue']); }
+    if(/^\d+$/.test(String(spC || '').trim())) spC = '';   // an id not resolved: no country rather than a number
+    const c = countryDisplay(textOf(st && st.project && st.project.country) || textOf(spC));
+    const itemId = String(raw.__itemId ?? raw.id ?? '').trim();
     const status = stageName(textOf(rec.Status));
     const positions = st && Array.isArray(st.positions) ? st.positions.map(toPosition).filter(p => p.units > 0 && p.model) : [];
     const fu = {}; positions.forEach(p => fu[p.fam] = (fu[p.fam] || 0) + p.units);
@@ -31796,7 +31829,7 @@ function gantt(el, list){
     const valueJson = st ? t.value : 0, valueList = vk ? moneyOf(raw[vk]) : 0;
     const partsJson = {}; Object.entries(t.parts || {}).forEach(([k, v]) => { const key = k || (positions.length ? fam : 'Various'); partsJson[key] = (partsJson[key] || 0) + v; });
     const modified = dateOf(raw.Modified);
-    return {ref, customer: textOf(rec.Customer) || '—', project: textOf(rec['Project Name']), country: c.code || c.name || '—', countryName: c.name || '—',
+    return {ref, key: itemId ? 'i' + itemId : 'r' + ref, itemId, customer: textOf(rec.Customer) || '—', project: textOf(rec['Project Name']), country: c.code || c.name || '—', countryName: c.name || '—',
       owner: shortName(textOf(rec['Created By.title'])) || '—', ownerId: String(raw[(typeof OWNER_PERSON_FIELD !== 'undefined' ? OWNER_PERSON_FIELD : 'AssignedTo0') + 'LookupId'] ?? ''), status, rawStatus: textOf(rec.Status), market: (st && st.market) || (/^M2[FU]$/.test(fam) ? 'UL' : 'IEC'), fam, positions,
       value: 0, valueJson, valueList, partsJson, parts: {}, cost: t.cost, sla: t.sla, fok: t.fok, revisions: st ? Number(st.revision) || 0 : 0,
       created: dateOf(raw.Created) || dateOf(st && st.savedAt) || new Date(TODAY), due: dateOf(rec['Due date']) ? dayOf(dateOf(rec['Due date'])) : null,
@@ -31843,17 +31876,25 @@ function gantt(el, list){
     return st ? {st, file, scan: 'ok', nfiles: files.length} : none('invalid', files.length);
   }
   // one project read again (after Mark as won in the configurator), when the dashboard holds the SharePoint data
+  // beta_6.57: every item of the list with that PRJ_ID (two projects can share a code), each with its own record
   async function refreshProject(ref){
     ref = String(ref || '').trim();
     if(SRC !== 'sp' || !ref) return false;
-    const rec = recOf(ref), prev = OFFERS.find(o => o.ref === ref);
-    if(!rec) return false;
+    const P = typeof PROGRESS !== 'undefined' ? PROGRESS : [];
+    const recs = P.filter(p => String(p.PRJ_ID).trim() === ref);
+    if(!recs.length) return false;
     const token = await getGraphToken();
     const {site} = await resolveSharePointList(token);
-    const r = await readOffer(rec, site, token);
-    const o = toOffer(rec, r.st, r.file); Object.assign(o, {scan: r.scan, nfiles: r.nfiles, dup: prev ? prev.dup : 0});
-    if(prev && prev.status === o.status && prev.closed && (!o.closed || prev.closed > o.closed)){ o.closed = prev.closed; o.prevStage = prev.prevStage; }   // a status just changed here keeps its day
-    setData(prev ? OFFERS.map(x => x === prev ? o : x) : OFFERS.concat(o), 'sp');
+    let list = OFFERS.slice();
+    for(const rec of recs){
+      const id = String((rec._raw && rec._raw.__itemId) || '').trim();
+      const prev = list.find(o => o.ref === ref && (id ? o.itemId === id : true));
+      const r = await readOffer(rec, site, token);
+      const o = toOffer(rec, r.st, r.file); Object.assign(o, {scan: r.scan, nfiles: r.nfiles, dup: recs.length > 1 ? recs.length : 0});
+      if(prev && prev.status === o.status && prev.closed && (!o.closed || prev.closed > o.closed)){ o.closed = prev.closed; o.prevStage = prev.prevStage; }   // a status just changed here keeps its day
+      list = prev ? list.map(x => x === prev ? o : x) : list.concat(o);
+    }
+    setData(list, 'sp');
     if(active()) render();
     return true;
   }
@@ -31864,15 +31905,16 @@ function gantt(el, list){
     render();
     try{
       if(reloadList || !PROGRESS.length) await fetchSharePointList();
+      // beta_6.57: countries known only by their lookup id → the Country REF_Alpha2 list, once
+      if(typeof countryOptionsLoaded !== 'undefined' && !countryOptionsLoaded && (PROGRESS || []).some(r => r._countryLookupId != null && r._countryLookupId !== '')){
+        try{ await ensureCountryOptionsLoaded(); }catch(e){ console.warn('Dashboard: country list not read – countries by id stay empty', e); }
+      }
       const token = await getGraphToken();
       const {site} = await resolveSharePointList(token);
-      const byRef = new Map();
-      (PROGRESS || []).filter(r => r && String(r.PRJ_ID || '').trim()).forEach(r => {
-        const k = String(r.PRJ_ID).trim(), m = dateOf(r._raw && r._raw.Modified) || new Date(0), cur = byRef.get(k);
-        if(!cur) byRef.set(k, {r, m, n: 1});
-        else { cur.n++; if(m > cur.m){ cur.r = r; cur.m = m; } }
-      });
-      const recs = [...byRef.values()].map(x => x.r), dups = new Map([...byRef.entries()].filter(([, x]) => x.n > 1).map(([k, x]) => [k, x.n]));
+      // beta_6.57: every item of the list is a project, also when its PRJ_ID is on other items too (×n in Data check)
+      const recs = (PROGRESS || []).filter(r => r && String(r.PRJ_ID || '').trim()), dups = new Map();
+      recs.forEach(r => { const k = String(r.PRJ_ID).trim(); dups.set(k, (dups.get(k) || 0) + 1); });
+      [...dups.keys()].forEach(k => { if(dups.get(k) < 2) dups.delete(k); });
       SCAN.total = recs.length;
       const out = new Array(recs.length); let i = 0, painted = Date.now();
       const worker = async () => {
@@ -32069,7 +32111,7 @@ function gantt(el, list){
       ${panel('c12', 'Open offers – timeline (latest 16)', '<div id="pp3"></div>', 'bar = from creation to sent (or today) · ◆ = due date · click for details')}</div>`;
     funnel($('pp1'), st); $('pp1').querySelectorAll('rect.mark').forEach((r, i) => { if(i < 3){ r.dataset.x = 'status:' + st[i].label; r.style.cursor = 'pointer'; } });
     bars($('pp2'), {cats: ms.map(mLabel), stacked: true, series: STATUS.map(s => ({name: s, color: sc[s], values: ms.map(k => val(A.filter(o => o.status === s && monthKey(pDate(o)) === k)))}))});
-    if(gl.length){ gantt($('pp3'), gl); $('pp3').querySelectorAll('rect.mark').forEach((r, i) => { if(gl[i]){ r.dataset.ref = gl[i].ref; r.style.cursor = 'pointer'; } }); } else $('pp3').innerHTML = nothing('No open offers with these filters.');
+    if(gl.length){ gantt($('pp3'), gl); $('pp3').querySelectorAll('rect.mark').forEach((r, i) => { if(gl[i]){ r.dataset.ref = gl[i].key; r.style.cursor = 'pointer'; } }); } else $('pp3').innerHTML = nothing('No open offers with these filters.');
   }
 
   function pProducts(M){
@@ -32112,26 +32154,30 @@ function gantt(el, list){
   }
   const choicesFor = stage => (CHOICES || DEFAULT_CHOICES).filter(c => stageName(c) === stage);
   const recOf = ref => (typeof PROGRESS !== 'undefined' ? PROGRESS : []).find(p => String(p.PRJ_ID).trim() === String(ref));
+  // beta_6.57: the record of that very item (two items can share a PRJ_ID); example data / no id: by ref
+  const recOfOffer = o => { if(!o) return null; const P = typeof PROGRESS !== 'undefined' ? PROGRESS : []; return o.itemId ? P.find(p => p._raw && String(p._raw.__itemId) === o.itemId) || null : recOf(o.ref); };
+  const byKey = k => OFFERS.find(x => x.key === k);
   async function writeFields(o, fields){
     if(SRC !== 'sp') return;                                   // example data: changed here only
     const token = await getGraphToken();
     const {site, list} = await resolveSharePointList(token);
-    const item = await findSharePointItemByRef(token, site, list, o.ref);
-    if(!item) throw new Error(`Project ${o.ref} not found in the Progress tracker list`);
-    await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, fields);
+    // beta_6.57: the item read by the dashboard, by its id – never "the first item with this PRJ_ID"
+    const id = o.itemId || ((await findSharePointItemByRef(token, site, list, o.ref)) || {}).id;
+    if(!id) throw new Error(`Project ${o.ref} not found in the Progress tracker list`);
+    await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${id}/fields`, token, fields);
   }
   function setStatusLocal(o, value){
     o.rawStatus = value; o.status = stageName(value); setPd(o);
     if(['Won', 'Lost', 'Offer review'].includes(o.status)) o.closed = o.closed && o.prevStage === o.status ? o.closed : new Date();
     else o.closed = null;
     o.prevStage = o.status;
-    const rec = recOf(o.ref);
-    if(rec){ try{ setLocalProgressStatus(o.ref, value); }catch(e){ rec.Status = value; } }
+    const rec = recOfOffer(o);
+    if(rec){ try{ setLocalProgressStatus(o.ref, value, rec); }catch(e){ rec.Status = value; } }
   }
   // beta_6.56: an offer set to Won here (from any other stage) gets the won mark in its offer file at once: the revision the
   // dashboard reads, when it is a closed one (<ref>_R<n>.json) and no revision is marked yet. Undo takes the mark away again.
   async function wonFile(o){
-    const rec = recOf(o.ref); if(!rec) return null;
+    const rec = recOfOffer(o); if(!rec) return null;
     const token = await getGraphToken(); const {site} = await resolveSharePointList(token);
     const r = await readOffer(rec, site, token);
     const path = rec._raw && rec._raw.FolderLink0 ? resolveProjectSubfolderPath(rec._raw.FolderLink0, '02 OFFER') : '';
@@ -32172,7 +32218,7 @@ function gantt(el, list){
     await refreshProject(o.ref).catch(() => {});
   }
   async function changeStatus(o, value, undo, mk){
-    if(o) o = OFFERS.find(x => x.ref === o.ref) || o;   // the project may have been read again meanwhile (won mark)
+    if(o) o = byKey(o.key) || o;   // the project may have been read again meanwhile (won mark)
     if(!o || !value || value === o.rawStatus) return;
     const old = {raw: o.rawStatus, closed: o.closed};
     const toWon = !undo && stageName(value) === 'Won' && o.status !== 'Won';
@@ -32201,7 +32247,7 @@ function gantt(el, list){
   async function changeOwner(o, person, undo){
     if(!o || !person || nameKey(person.name) === nameKey(o.owner)) return;
     const old = {owner: o.owner, id: o.ownerId};
-    const rec = recOf(o.ref), fld = (typeof OWNER_PERSON_FIELD !== 'undefined' ? OWNER_PERSON_FIELD : 'AssignedTo0') + 'LookupId';
+    const rec = recOfOffer(o), fld = (typeof OWNER_PERSON_FIELD !== 'undefined' ? OWNER_PERSON_FIELD : 'AssignedTo0') + 'LookupId';
     const apply = (name, raw, id) => { o.owner = name; o.ownerId = id; if(rec){ rec['Created By.title'] = raw; if(rec._raw) rec._raw[fld] = id; } if(!OWN.includes(name)){ OWN.push(name); OWN.sort((a, b) => a.localeCompare(b)); } };
     apply(person.name, person.raw, person.id); render();
     try{
@@ -32228,14 +32274,14 @@ function gantt(el, list){
   // the ⋯ menu of a post-it: status (the list's choices) and assignment (people of the site, searchable)
   let MENU = null;
   function closeMenu(){ const m = $('cmenu'); m.className = 'cmenu'; m.innerHTML = ''; MENU = null; }
-  async function openMenu(ref, anchor, focus, onlyStage){
-    const o = OFFERS.find(x => x.ref === ref); if(!o) return;
-    MENU = {ref, focus};
+  async function openMenu(key, anchor, focus, onlyStage){
+    const o = byKey(key); if(!o) return;
+    MENU = {key, focus};
     const m = $('cmenu');
     m.innerHTML = '<div class="cm-load">…</div>'; m.className = 'cmenu open'; place(m, anchor);
     await loadChoices();
     const users = onlyStage ? [] : await siteUsers();
-    if(!MENU || MENU.ref !== ref) return;
+    if(!MENU || MENU.key !== key) return;
     const sc = SC();
     const stList = (onlyStage ? choicesFor(onlyStage) : CHOICES).map(c => `<button type="button" class="cm-it${c === o.rawStatus ? ' on' : ''}" data-cmstatus="${esc(c)}"><i style="background:${sc[stageName(c)]}"></i>${esc(c)}${stageName(c).toLowerCase() !== c.toLowerCase() ? `<small>${stageName(c)}</small>` : ''}${c === o.rawStatus ? '<b>✓</b>' : ''}</button>`).join('');
     const team = OWN.slice();
@@ -32265,19 +32311,19 @@ function gantt(el, list){
   function pWork(M){
     const A = rows(), sc = SC(), mine = !!FX.owner && nameKey(FX.owner) === nameKey(meName());
     const late = A.filter(overdue).sort((a, b) => dueT(a) - dueT(b)), soon = A.filter(o => open(o) && o.due && o.due >= TODAY && daysTo(o.due) <= 14).sort((a, b) => dueT(a) - dueT(b));
-    const task = (o, cls) => `<div class="task ${cls}"><b>${esc(o.ref)} · ${esc(o.customer)}</b>${esc(o.project)}${o.value > 0 ? ' · ' + eurK(o.value) : ''}${mine ? '' : ' · ' + esc(o.owner)}<br><span class="w" style="color:${cls === 'late' ? 'var(--st-lost)' : 'var(--st-rev)'}">${cls === 'late' ? 'late by ' + -daysTo(o.due) + ' days' : 'due ' + fmtD(o.due) + ' · in ' + daysTo(o.due) + ' days'}</span> · ${esc(o.rawStatus || o.status)}<div class="a"><button type="button" class="btn" data-ref="${esc(o.ref)}">Details</button><button type="button" class="btn" data-menu="${esc(o.ref)}">Status / owner</button><button type="button" class="btn pri" data-cfg="${esc(o.ref)}" title="Open in configurator">${ic(I.cfg, 13)}Configurator</button></div></div>`;
+    const task = (o, cls) => `<div class="task ${cls}"><b>${esc(o.ref)} · ${esc(o.customer)}</b>${esc(o.project)}${o.value > 0 ? ' · ' + eurK(o.value) : ''}${mine ? '' : ' · ' + esc(o.owner)}<br><span class="w" style="color:${cls === 'late' ? 'var(--st-lost)' : 'var(--st-rev)'}">${cls === 'late' ? 'late by ' + -daysTo(o.due) + ' days' : 'due ' + fmtD(o.due) + ' · in ' + daysTo(o.due) + ' days'}</span> · ${esc(o.rawStatus || o.status)}<div class="a"><button type="button" class="btn" data-ref="${esc(o.key)}">Details</button><button type="button" class="btn" data-menu="${esc(o.key)}">Status / owner</button><button type="button" class="btn pri" data-cfg="${esc(o.ref)}" title="Open in configurator">${ic(I.cfg, 13)}Configurator</button></div></div>`;
     const lanes = LANES.map(([s]) => { let l = A.filter(o => o.status === s); if(s === 'Won' || s === 'Lost') l = l.filter(o => !o.closed || (TODAY - o.closed) / 864e5 < 90); return [s, l.sort((a, b) => dueT(a) - dueT(b))]; });
     const [cy, cm] = S.cal, first = new Date(cy, cm, 1), off = (first.getDay() + 6) % 7; let cal = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => `<div class="h">${d}</div>`).join('');
     const same = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
     for(let i = 0; i < 42; i++){ const dt = new Date(cy, cm, 1 - off + i), dd = A.filter(o => open(o) && same(o.due, dt));
-      cal += `<div class="d ${dt.getMonth() === cm ? '' : 'o'} ${same(dt, TODAY) ? 't' : ''} ${dd.length ? 'has' : ''}" ${dd.length ? `data-ref="${esc(dd[0].ref)}" data-tip="${esc(dd.map(o => `<b>${esc(o.ref)}</b> ${esc(o.customer)} · ${o.status}`).join('<br>'))}"` : ''}>${dt.getDate()}${dd.length ? `<em>${dd.slice(0, 3).map(o => `<i style="background:${sc[o.status]}"></i>`).join('')}</em>` : ''}</div>`; }
+      cal += `<div class="d ${dt.getMonth() === cm ? '' : 'o'} ${same(dt, TODAY) ? 't' : ''} ${dd.length ? 'has' : ''}" ${dd.length ? `data-ref="${esc(dd[0].key)}" data-tip="${esc(dd.map(o => `<b>${esc(o.ref)}</b> ${esc(o.customer)} · ${o.status}`).join('<br>'))}"` : ''}>${dt.getDate()}${dd.length ? `<em>${dd.slice(0, 3).map(o => `<i style="background:${sc[o.status]}"></i>`).join('')}</em>` : ''}</div>`; }
     const up = A.filter(o => open(o) && o.due && o.due >= TODAY).sort((a, b) => dueT(a) - dueT(b)).slice(0, 7);
     const hr = new Date().getHours(), hi = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
-    const card = (o, i) => `<div class="kc st-${o.status.replace(/\s+/g, '-').toLowerCase()}" draggable="true" data-drag="${esc(o.ref)}" data-ref="${esc(o.ref)}" style="--r:${PI_ROT[i % PI_ROT.length]}">
-        <div class="kc-t"><span class="kc-st" title="Status on SharePoint">${esc(o.rawStatus || o.status)}</span><button type="button" class="kc-m" data-menu="${esc(o.ref)}" title="Status and assignment" aria-label="Status and assignment of ${esc(o.ref)}">⋯</button></div>
+    const card = (o, i) => `<div class="kc st-${o.status.replace(/\s+/g, '-').toLowerCase()}" draggable="true" data-drag="${esc(o.key)}" data-ref="${esc(o.key)}" style="--r:${PI_ROT[i % PI_ROT.length]}">
+        <div class="kc-t"><span class="kc-st" title="Status on SharePoint">${esc(o.rawStatus || o.status)}</span><button type="button" class="kc-m" data-menu="${esc(o.key)}" title="Status and assignment" aria-label="Status and assignment of ${esc(o.ref)}">⋯</button></div>
         <b>${esc(o.customer)}</b><span class="kc-p">${esc(o.ref)}${o.project ? ' · ' + esc(o.project) : ''}</span>
         <div class="m"><span>${o.value > 0 ? eurK(o.value) + ' · ' : ''}${esc(o.fam)}${units(o) ? ' · ' + units(o) + ' UPS' : ''}</span></div>
-        <div class="m"><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtD(o.due)}</span><button type="button" class="av" data-menu="${esc(o.ref)}" data-focus="owner" title="${esc(o.owner)} – click to assign to someone else">${esc(ini(o.owner))}</button></div></div>`;
+        <div class="m"><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtD(o.due)}</span><button type="button" class="av" data-menu="${esc(o.key)}" data-focus="owner" title="${esc(o.owner)} – click to assign to someone else">${esc(ini(o.owner))}</button></div></div>`;
     M.innerHTML = chips() + `<div class="wsb">
       <section class="panel"><div class="ptitle">Offers board<span class="hint">drag a post-it to another column to change its status · ⋯ or the initials to change status and assignment</span><span class="r"><span class="seg"><button type="button" data-act="who:me" class="${mine ? 'on' : ''}">Mine</button><button type="button" data-act="who:team" class="${!FX.owner ? 'on' : ''}">Team</button></span></span></div>
         <div class="hello">${hi}${firstName(meName()) ? ', ' + esc(firstName(meName())) : ''}</div><p>${A.filter(open).length} open offers · ${eurK(val(A.filter(open)))} · ${late.length} late · ${soon.length} due in the next 14 days${SRC === 'sp' ? '' : ' · <b>example data: changes are not saved</b>'}</p>
@@ -32287,7 +32333,7 @@ function gantt(el, list){
           <div class="ptitle" style="margin-top:14px">Due soon<span class="r">${soon.length}</span></div>${soon.slice(0, 4).map(o => task(o, 'soon')).join('') || nothing('Nothing due in the next 14 days.')}${soon.length > 4 ? `<p class="sub">+ ${soon.length - 4} more – see the calendar</p>` : ''}</section>
         <section class="panel"><div class="cal-h"><button type="button" class="ib" data-act="cal:-1" title="Previous month">${ic('<path d="m15 18-6-6 6-6"/>', 16)}</button><b>${first.toLocaleString('en-GB', {month: 'long', year: 'numeric'})}</b><button type="button" class="ib" data-act="cal:1" title="Next month">${ic('<path d="m9 18 6-6-6-6"/>', 16)}</button></div><div class="cal">${cal}</div>
           <div class="legend" style="margin-top:8px">${['New', 'In progress', 'Offer review'].map(s => `<span><i style="background:${sc[s]};border-radius:50%"></i>${s}</span>`).join('')}</div></section>
-        <section class="panel"><div class="ptitle">Upcoming</div>${up.map(o => `<div class="up" data-ref="${esc(o.ref)}"><div class="dt"><b>${o.due.getDate()}</b>${o.due.toLocaleString('en-GB', {month: 'short'})}</div><div><b>${esc(o.customer)}</b><br>${esc(o.ref)} · ${esc(o.rawStatus || o.status)}${o.value > 0 ? ' · ' + eurK(o.value) : ''} · ${esc(o.owner)}</div></div>`).join('') || nothing('No deadlines ahead.')}</section>
+        <section class="panel"><div class="ptitle">Upcoming</div>${up.map(o => `<div class="up" data-ref="${esc(o.key)}"><div class="dt"><b>${o.due.getDate()}</b>${o.due.toLocaleString('en-GB', {month: 'short'})}</div><div><b>${esc(o.customer)}</b><br>${esc(o.ref)} · ${esc(o.rawStatus || o.status)}${o.value > 0 ? ' · ' + eurK(o.value) : ''} · ${esc(o.owner)}</div></div>`).join('') || nothing('No deadlines ahead.')}</section>
       </div></div>`;
     loadChoices();     // ready for the first drop
   }
@@ -32302,7 +32348,7 @@ function gantt(el, list){
     const res = o => SRC === 'demo' ? 'ok' : (o.scan || (o.hasOffer ? 'ok' : 'no-json'));
     const diff = o => o.valueJson > 0 && o.valueList > 0 && Math.abs(o.valueJson - o.valueList) > Math.max(1, 0.01 * o.valueList);
     const tiles = [['', 'Projects in the list', all.length, 'var(--accent)'], ...Object.entries(SCAN_TXT).map(([k, [t, c]]) => [k, t, all.filter(o => res(o) === k).length, c]),
-      ['dup', 'PRJ_ID twice or more in the list (counted once)', all.filter(o => o.dup > 1).length, 'var(--st-lost)'],
+      ['dup', 'PRJ_ID on more than one item (each counted: give them their own PRJ_ID)', all.filter(o => o.dup > 1).length, 'var(--st-lost)'],
       ['v-offer', 'Value from the offer file', all.filter(o => o.valueSrc === 'offer').length, 'var(--s1)'], ['v-list', 'Value from Offer Value € (list)', all.filter(o => o.valueSrc === 'list').length, 'var(--s3)'],
       ['v-none', 'No value', all.filter(o => !(o.value > 0)).length, 'var(--other)'], ['diff', 'Offer file ≠ Offer Value € (more than 1 %)', all.filter(diff).length, 'var(--st-rev)'],
       ['w-mark', 'Won: revision marked won (its value counts)', all.filter(o => won(o) && o.wonMark).length, 'var(--st-won)'],
@@ -32323,7 +32369,7 @@ function gantt(el, list){
         <div class="sub">Counted = ${VALUE_FIRST === 'list' ? 'Offer Value € of the list; the offer file only when the list has no value' : 'the offer file (net, after the project discount); Offer Value € of the list only when the file has no value'} (View › Value). Statuses counted as Won: ${wonVals || '–'}. Won with no revision marked, counted on the Due date: ${wp.onDue} in the period, ${wa.onDue} in the whole list. Period: a won project counts on the day its win was recorded (revision marked won), without a mark on its Due date, with neither on its creation date; every other project on the date it was created in the list. Offer file of a project: the revision marked won (Project › Mark as won in the configurator), else the highest closed revision, a draft only when no revision is closed.</div></section>
       <div class="ckt">${tiles.map(([k, t, n, c]) => `<button type="button" class="ck${CHK.f === k ? ' on' : ''}" data-chk="${k}" style="--c:${c}"><b>${n}</b><span>${esc(t)}</span></button>`).join('')}</div>
       <section class="panel" style="margin-top:16px"><div class="ptitle">Projects<span class="r">${list.length} shown${CHK.f ? ' · <a href="#" data-chk="">show all</a>' : ''}</span></div><div style="overflow-x:auto"><table class="t"><thead><tr><th>Project</th><th>Customer</th><th>SharePoint status</th><th>Counted as</th><th>Created</th><th>Counts on</th><th>Owner</th><th>Offer file</th><th class="n">.json</th><th class="n">Offer file €</th><th class="n">Offer Value € (list)</th><th class="n">Counted</th><th>Family</th><th>In period</th></tr></thead><tbody>
-      ${list.map(o => { const r = res(o), [t, c] = SCAN_TXT[r] || ['—', 'var(--dim)']; return `<tr class="click" data-ref="${esc(o.ref)}"><td><b>${esc(o.ref)}</b>${o.dup > 1 ? ` <span style="color:var(--st-lost)" title="${o.dup} items with this PRJ_ID in the list: counted once">×${o.dup}</span>` : ''}</td><td>${esc(o.customer)}</td><td>${esc(o.rawStatus || '—')}</td><td>${pill(o.status)}</td><td>${fmtDY(o.created)}</td><td>${fmtDY(pDate(o))} <span class="sub">${PD_TXT[o.pdSrc] || ''}</span></td><td>${esc(o.owner)}</td><td><span style="color:${c};font-weight:600">●</span> ${o.file && o.file !== 'example' ? esc(o.file) : esc(t)}${wonTag(o)}${o.fileKind === 'draft' ? ' <span class="sub">draft</span>' : ''}</td><td class="n">${o.nfiles ?? '–'}</td><td class="n">${money(o.valueJson)}</td><td class="n" style="${diff(o) ? 'color:var(--st-rev);font-weight:600' : ''}">${money(o.valueList)}</td><td class="n"><b>${money(o.value)}</b></td><td>${esc(o.famM || o.fam)}</td><td>${inP.has(o) ? 'yes' : '<span style="color:var(--dim)">no</span>'}</td></tr>`; }).join('')}
+      ${list.map(o => { const r = res(o), [t, c] = SCAN_TXT[r] || ['—', 'var(--dim)']; return `<tr class="click" data-ref="${esc(o.key)}"><td><b>${esc(o.ref)}</b>${o.dup > 1 ? ` <span style="color:var(--st-lost)" title="${o.dup} items with this PRJ_ID in the list: each is counted as its own project. The configurator does not write to SharePoint for this PRJ_ID until each project has its own">×${o.dup}</span>` : ''}</td><td>${esc(o.customer)}</td><td>${esc(o.rawStatus || '—')}</td><td>${pill(o.status)}</td><td>${fmtDY(o.created)}</td><td>${fmtDY(pDate(o))} <span class="sub">${PD_TXT[o.pdSrc] || ''}</span></td><td>${esc(o.owner)}</td><td><span style="color:${c};font-weight:600">●</span> ${o.file && o.file !== 'example' ? esc(o.file) : esc(t)}${wonTag(o)}${o.fileKind === 'draft' ? ' <span class="sub">draft</span>' : ''}</td><td class="n">${o.nfiles ?? '–'}</td><td class="n">${money(o.valueJson)}</td><td class="n" style="${diff(o) ? 'color:var(--st-rev);font-weight:600' : ''}">${money(o.valueList)}</td><td class="n"><b>${money(o.value)}</b></td><td>${esc(o.famM || o.fam)}</td><td>${inP.has(o) ? 'yes' : '<span style="color:var(--dim)">no</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></section>`;
   }
   /* ---------- beta_6.56: Map — won and open offers by country (lost offers are not shown), density per country ----------
@@ -32535,17 +32581,17 @@ function gantt(el, list){
 
   /* ---------- offer window ---------- */
   let POPREF = null;
-  function openOffer(ref){
-    const o = OFFERS.find(x => x.ref === ref); if(!o) return;
-    POPREF = ref;
+  function openOffer(key){
+    const o = byKey(key); if(!o) return;
+    POPREF = key;
     const sc = SC();
     $('pop').innerHTML = `<div class="pop-h"><span class="ic">${ic(I.bolt, 20)}</span><div><h3>${esc(o.ref)} · ${esc(o.customer)}</h3><small>${esc(o.project)}${o.countryName && o.countryName !== '—' ? ' · ' + esc(o.countryName) : ''}</small></div><button type="button" class="x" data-act="close" title="Close">✕</button></div>
-      <div class="pop-strip"><span style="color:${sc[o.status]};font-weight:600" title="SharePoint: ${esc(o.rawStatus || '—')}">● ${o.status}</span>${o.hasOffer ? `<span>${esc(o.market)} price list</span>` : ''}<span>${esc(o.owner)}</span><span>created ${fmtDY(o.created)}</span><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtDY(o.due)}</span>${o.closed ? `<span>${o.status === 'Offer review' ? 'sent' : 'closed'} ${fmtDY(o.closed)}</span>` : ''}${o.hasOffer ? `<span>R${o.revisions}${o.fileKind === 'draft' ? ' (draft)' : ''}</span>` : ''}${o.wonMark ? `<span style="color:var(--st-won);font-weight:600">🏆 won revision</span>` : ''}</div>
+      <div class="pop-strip"><span style="color:${sc[o.status]};font-weight:600" title="SharePoint: ${esc(o.rawStatus || '—')}">● ${o.status}</span>${o.hasOffer ? `<span>${esc(o.market)} price list</span>` : ''}<span>${esc(o.owner)}</span>${o.dup > 1 ? `<span style="color:var(--st-lost);font-weight:600" title="Other items of the Progress tracker list have the same PRJ_ID. The status and owner changed here go to this item; the configurator does not write to SharePoint for this PRJ_ID until each project has its own.">PRJ_ID ×${o.dup} in the list</span>` : ''}<span>created ${fmtDY(o.created)}</span><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtDY(o.due)}</span>${o.closed ? `<span>${o.status === 'Offer review' ? 'sent' : 'closed'} ${fmtDY(o.closed)}</span>` : ''}${o.hasOffer ? `<span>R${o.revisions}${o.fileKind === 'draft' ? ' (draft)' : ''}</span>` : ''}${o.wonMark ? `<span style="color:var(--st-won);font-weight:600">🏆 won revision</span>` : ''}</div>
       <div class="pop-b">${o.hasOffer ? `<div class="kv"><div>${o.valueSrc === 'list' ? 'Offer value (SharePoint)' : 'Offer value (net)'}<b>${o.value > 0 ? eur(o.value) : '—'}</b>${o.valueJson > 0 && o.valueList > 0 ? `<span class="sub" style="display:block">file ${eurK(o.valueJson)} · list ${eurK(o.valueList)}</span>` : ''}</div><div>UPS units<b>${units(o)}</b></div><div>Power modules<b>${modules(o)}</b></div><div>Installed power<b>${(kwOf(o) / 1000).toFixed(2)} MW</b></div></div>
         <div class="ptitle">UPS configurations</div>${o.positions.length ? `<table class="t"><thead><tr><th>Model</th><th class="n">Load kW</th><th class="n">Systems × UPS</th><th class="n">Modules / UPS</th><th>Battery</th></tr></thead><tbody>${o.positions.map(p => `<tr><td><b>${esc(p.model)}</b></td><td class="n">${num(p.pload)}</td><td class="n">${p.qty} × ${p.ups}</td><td class="n">${p.npm}</td><td>${p.lithium ? 'Lithium' : 'VRLA / other'}</td></tr>`).join('')}</tbody></table>` : nothing('No UPS configuration in the offer.')}
         <div class="ptitle" style="margin-top:14px">Services</div><div class="sla">${SLA_IDS.map(l => `<span class="${o.sla[l] ? 'on' : ''}" title="${esc(SLA_N[l] || '')}">${l} ${o.sla[l] ? '× ' + o.sla[l] : ''}</span>`).join('')}${o.fok ? '<span class="on">FOK</span>' : ''}</div>
         ${o.file && o.file !== 'example' ? `<div class="sub" style="margin-top:12px">From ${esc(o.file)}${o.saved ? ' · saved ' + fmtDY(o.saved) : ''}${o.wonMark ? ' · marked won' + (o.wonMark.at ? ' ' + fmtDY(dateOf(o.wonMark.at)) : '') + (o.wonMark.by ? ' by ' + esc(o.wonMark.by) : '') : won(o) && o.fileKind === 'closed' ? ' · no revision marked won: the highest closed one counts' : ''}</div>` : ''}` : `${o.value > 0 ? `<div class="kv"><div>Offer value (SharePoint)<b>${eur(o.value)}</b></div></div>` : ''}<div class="empty"><b>No saved offer</b>There is no offer file in the "02 OFFER" folder of this project yet${o.value > 0 ? ': the value is the Offer Value € of the Progress tracker list' : ''}.</div>`}</div>
-      <div class="pop-f"><button type="button" class="btn" data-menu="${esc(o.ref)}" style="margin-right:auto">Status / owner</button><button type="button" class="btn" data-act="close">Close</button>${SRC === 'sp' ? `<button type="button" class="btn pri" data-cfg="${esc(o.ref)}">${ic(I.cfg, 14)}Open in configurator</button>` : ''}</div>`;
+      <div class="pop-f"><button type="button" class="btn" data-menu="${esc(o.key)}" style="margin-right:auto">Status / owner</button><button type="button" class="btn" data-act="close">Close</button>${SRC === 'sp' ? `<button type="button" class="btn pri" data-cfg="${esc(o.ref)}">${ic(I.cfg, 14)}Open in configurator</button>` : ''}</div>`;
     $('ov').classList.add('open'); tip.style.display = 'none';
   }
 
@@ -32599,10 +32645,10 @@ function gantt(el, list){
     if(MENU && !e.target.closest('#cmenu') && !e.target.closest('[data-menu]')) closeMenu();
     const cmS = e.target.closest('[data-cmstatus]'), cmO = e.target.closest('[data-cmowner]');
     if(e.target.closest('[data-cmclose]')){ closeMenu(); return; }
-    if(cmS){ const o = OFFERS.find(x => x.ref === MENU.ref); closeMenu(); changeStatus(o, cmS.dataset.cmstatus); return; }
-    if(cmO){ const o = OFFERS.find(x => x.ref === MENU.ref), u = (MENU.users || []).find(x => String(x.id) === cmO.dataset.cmowner); closeMenu(); changeOwner(o, u); return; }
+    if(cmS){ const o = byKey(MENU.key); closeMenu(); changeStatus(o, cmS.dataset.cmstatus); return; }
+    if(cmO){ const o = byKey(MENU.key), u = (MENU.users || []).find(x => String(x.id) === cmO.dataset.cmowner); closeMenu(); changeOwner(o, u); return; }
     const mb = e.target.closest('[data-menu]');
-    if(mb){ e.stopPropagation(); if(MENU && MENU.ref === mb.dataset.menu && !MENU.only){ closeMenu(); return; } openMenu(mb.dataset.menu, mb, mb.dataset.focus || 'status'); return; }
+    if(mb){ e.stopPropagation(); if(MENU && MENU.key === mb.dataset.menu && !MENU.only){ closeMenu(); return; } openMenu(mb.dataset.menu, mb, mb.dataset.focus || 'status'); return; }
     if(e.target.closest('#cmenu')) return;
     const ck = e.target.closest('[data-chk]'); if(ck){ e.preventDefault(); CHK.f = CHK.f === ck.dataset.chk ? '' : ck.dataset.chk; render(); return; }
     const t = e.target.closest('[data-act],[data-x],[data-ref],[data-cfg]'); if(!t) return;
@@ -32620,12 +32666,12 @@ function gantt(el, list){
   root.addEventListener('drop', async e => {
     const l = DRAG && e.target.closest && e.target.closest('[data-lane]'); if(!l) return;
     e.preventDefault(); l.classList.remove('over');
-    const o = OFFERS.find(x => x.ref === DRAG); DRAG = null; if(!o) return;
+    const o = byKey(DRAG); DRAG = null; if(!o) return;
     const stage = l.dataset.lane; if(stage === o.status) return;
     await loadChoices();
     const ch = choicesFor(stage);
     if(ch.length === 1) changeStatus(o, ch[0]);
-    else { openMenu(o.ref, {left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY}, 'status', stage); MENU.only = true; }
+    else { openMenu(o.key, {left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY}, 'status', stage); MENU.only = true; }
   });
   root.addEventListener('keydown', e => { if(e.key === 'Escape' && MENU){ e.stopPropagation(); closeMenu(); return; } if(e.key === 'Escape' && $('ov').classList.contains('open')){ e.stopPropagation(); $('ov').classList.remove('open'); } });
   panelEl.addEventListener('click', e => { const b = e.target.closest('[data-ud]'); if(b) act(b.dataset.ud); });

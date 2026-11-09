@@ -8493,8 +8493,13 @@
         .st-search { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; margin-bottom: 4px; border: 1px solid var(--field-border); border-radius: 9px; background: var(--field-bg); color: var(--dim); }
         .st-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--text); font: 500 14px 'Work Sans', sans-serif; }
         .st-list { max-height: 46vh; overflow: auto; }
-        .st-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--panel-border); }
-        .st-row:last-child { border-bottom: 0; }
+        .st-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 6px; border-radius: 10px; }
+        .st-r-new { background: rgba(138, 148, 166, .10); } .st-r-prog { background: rgba(68, 114, 196, .08); } .st-r-rev { background: rgba(217, 161, 31, .10); }
+        .st-r-won { background: rgba(46, 139, 87, .08); } .st-r-lost { background: rgba(200, 16, 46, .07); }
+        body.dark-theme .st-r-new { background: rgba(138, 148, 166, .16); } body.dark-theme .st-r-prog { background: rgba(120, 169, 255, .14); } body.dark-theme .st-r-rev { background: rgba(217, 161, 31, .16); }
+        body.dark-theme .st-r-won { background: rgba(46, 139, 87, .18); } body.dark-theme .st-r-lost { background: rgba(255, 107, 129, .14); }
+        .st-ico { width: 34px; height: 34px; flex: none; border-radius: 9px; display: grid; place-items: center; color: #fff; }
+        .st-i-new { background: #8A94A6; } .st-i-prog { background: #4472C4; } .st-i-rev { background: #D9A11F; } .st-i-won { background: #2E8B57; } .st-i-lost { background: #C8102E; }
         .st-prj { flex: 1; min-width: 0; display: block; padding: 6px 4px; border: 0; background: none; color: var(--text); font: inherit; font-size: 14px; text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .st-prj b { font-weight: 600; }
         .st-prj small { display: block; color: var(--dim); font-size: 12.5px; margin-top: 2px; }
@@ -8503,17 +8508,14 @@
         .st-chip { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 999px; font: 500 12px 'Work Sans', sans-serif; white-space: nowrap; cursor: pointer; flex: none; }
         .st-chip:disabled { cursor: default; opacity: .7; }
         .st-role { cursor: default; min-height: 24px; }
-        .st-new { background: #EEF0F4; color: #4A5160; }
-        .st-prog { background: #E3ECFA; color: #2F5597; }
-        .st-rev { background: #FBF1D9; color: #7A5600; }
-        .st-won { background: #E1F2E8; color: #1F6B43; }
-        .st-lost { background: #FBE3E7; color: #A50D26; }
-        body.dark-theme .st-new { background: #343A46; color: #D5DAE3; }
-        body.dark-theme .st-prog { background: #24395C; color: #B9D0FF; }
-        body.dark-theme .st-rev { background: #4A3D17; color: #F2D58B; }
-        body.dark-theme .st-won { background: #1D4A33; color: #A9E2C2; }
-        body.dark-theme .st-lost { background: #55212C; color: #FFB3C0; }
-        .st-miss { flex: none; min-height: 30px; padding: 0 8px; border: 1px solid currentColor; border-radius: 8px; background: none; color: var(--red); font: 600 12px 'Work Sans', sans-serif; cursor: pointer; }
+        /* beta_6.60 – style G07, status colour: solid chips (white on the colour of the stage), the same in both themes */
+        .st-new { background: #5F6673; color: #fff; }
+        .st-prog { background: #2F5597; color: #fff; }
+        .st-rev { background: #8A6200; color: #fff; }
+        .st-won { background: #1F6B43; color: #fff; }
+        .st-lost { background: #A50D26; color: #fff; }
+        .st-chip { font-weight: 600; }
+        .st-miss { flex: none; min-height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: #C8102E; color: #fff; font: 600 12px 'Work Sans', sans-serif; cursor: pointer; }
         .st-more { align-self: flex-start; margin-top: 6px; min-height: 36px; padding: 0 4px; border: 0; background: none; color: var(--accent-dark); font: 600 13px 'Work Sans', sans-serif; cursor: pointer; }
         .st-empty { margin: 10px 0; color: var(--dim); line-height: 1.5; }
         .st-skip { display: flex; align-items: center; gap: 10px; margin-top: 24px; font-size: 14px; color: var(--dim); cursor: pointer; }
@@ -8560,6 +8562,93 @@
         #stWonMsg:empty { display: none; }
         .st-search input:focus { outline: none; box-shadow: none; border: 0; }
         .st-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+        /* beta_6.59: Offer console */
+        .cs-main { max-width: 1320px; padding-top: 32px; }
+        .cs-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
+        .cs-top .st-lead { margin: 6px 0 0; }
+        .cs-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .cs-tools .st-search { margin: 0; min-width: 300px; }
+        .cs-back { width: 36px; height: 36px; border: 1px solid var(--field-border); border-radius: 8px; background: var(--panel); color: var(--text); cursor: pointer; display: grid; place-items: center; }
+        .cs-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .cs-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 84px; padding: 14px 16px; border: 1px solid var(--panel-border); border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; text-align: left; cursor: pointer; box-shadow: inset 0 4px 0 var(--panel-border); }
+        .cs-tab span { font-size: 13px; font-weight: 500; color: var(--dim); }
+        .cs-tab em { font-style: normal; font-size: 24px; font-weight: 600; }
+        .cs-tab small { min-height: 1.2em; font-size: 13px; color: var(--dim); }
+        .cs-tab.cs-open { box-shadow: inset 0 4px 0 #D9A11F; }
+        .cs-tab.cs-won { box-shadow: inset 0 4px 0 #2E8B57; }
+        .cs-tab.cs-lost { box-shadow: inset 0 4px 0 #C8102E; }
+        .cs-tab.cs-all { box-shadow: inset 0 4px 0 #4472C4; }
+        .cs-tab[aria-pressed="true"] { outline: 2px solid var(--accent-dark); outline-offset: -2px; background: var(--accent-soft); }
+        .cs-table { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 12px; overflow-x: auto; }
+        .cs-table table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .cs-table th { padding: 10px 12px; border-bottom: 1px solid var(--panel-border); font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; text-align: left; white-space: nowrap; color: var(--dim); }
+        .cs-table th.n, .cs-v { text-align: right; }
+        .cs-table td { padding: 6px 12px; border-bottom: 1px solid var(--panel-border); vertical-align: middle; }
+        .cs-table tbody tr:last-child td { border-bottom: 0; }
+        .cs-prj { max-width: 460px; }
+        .cs-due { white-space: nowrap; font-size: 13px; }
+        .cs-in { min-height: 36px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 8px; background: var(--field-bg); color: var(--text); font: 500 14px 'Work Sans', sans-serif; }
+        .cs-in:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+        .cs-in:disabled { opacity: .6; }
+        .cs-succ { max-width: 200px; }
+        .cs-val { width: 150px; text-align: right; font-weight: 600; }
+        .st-link-btn { min-height: 30px; padding: 0 8px; border: 0; background: none; color: #1F6B43; font: 600 12px 'Work Sans', sans-serif; cursor: pointer; }
+        body.dark-theme .st-link-btn { color: #A9E2C2; }
+        .cs-note { margin: 12px 0 0; color: var(--dim); font-size: 13px; }
+        @media (max-width: 860px) { .cs-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cs-tools, .cs-tools .st-search { min-width: 0; flex: 1; } }
+        .cs-vbtn { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 150px; min-height: 36px; padding: 0 10px; border: 1px dashed var(--field-border); border-radius: 8px; background: none; color: var(--text); font: 600 14px 'Work Sans', sans-serif; cursor: pointer; }
+        .cs-vbtn svg { color: var(--dim); flex: none; }
+        .cs-vbtn:hover, .cs-vbtn:focus-visible { border-style: solid; border-color: var(--accent); outline: none; }
+        .cs-fv { font-weight: 600; }
+        .cs-src { display: block; font-size: 11.5px; color: var(--dim); }
+        .cs-wait { color: var(--dim); }
+        .settings-modal.st-valmodal { max-width: 620px; width: 100%; }
+        .st-valmodal .acc-modal-header small { display: block; color: var(--dim); font-size: 13px; margin-top: 2px; }
+        #stValMsg:empty { display: none; }
+
+        /* beta_6.60 – style G07: counters, the dashboard door, window headers in the colour of the status */
+        .st-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+        .st-doors { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
+        .st-dic-dash { background: #0E9488; color: #fff; }
+        .st-btn-dash { background: #0E9488; border-color: #0E9488; }
+        .st-cnts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 2px 0 8px; }
+        .st-cnt { display: flex; flex-direction: column; align-items: flex-start; gap: 0; min-height: 64px; padding: 10px 14px; border: 0; border-radius: 10px; color: var(--text); font: inherit; text-align: left; cursor: pointer; outline: 2px solid transparent; outline-offset: -2px; }
+        .st-cnt b { font-size: 22px; font-weight: 600; line-height: 1.2; }
+        .st-cnt span { font-size: 12.5px; }
+        .st-cnt[aria-pressed="true"] { outline-color: currentColor; }
+        .st-cnt-prog { background: rgba(68, 114, 196, .10); } .st-cnt-prog b { color: #2F5597; }
+        .st-cnt-rev { background: rgba(217, 161, 31, .14); } .st-cnt-rev b { color: #8A6200; }
+        .st-cnt-miss { background: rgba(200, 16, 46, .08); } .st-cnt-miss b { color: #C8102E; }
+        .st-cnt-prog[aria-pressed="true"] { outline-color: #2F5597; } .st-cnt-rev[aria-pressed="true"] { outline-color: #8A6200; } .st-cnt-miss[aria-pressed="true"] { outline-color: #C8102E; }
+        body.dark-theme .st-cnt-prog { background: rgba(120, 169, 255, .14); } body.dark-theme .st-cnt-prog b { color: #B9D0FF; }
+        body.dark-theme .st-cnt-rev { background: rgba(217, 161, 31, .18); } body.dark-theme .st-cnt-rev b { color: #F2D58B; }
+        body.dark-theme .st-cnt-miss { background: rgba(255, 107, 129, .14); } body.dark-theme .st-cnt-miss b { color: #FF8A9C; }
+        .settings-modal .acc-modal-header.st-hd, body.dark-theme .settings-modal .acc-modal-header.st-hd { color: #fff; border-bottom: 0; }
+        .settings-modal .acc-modal-header.st-hd h3, .settings-modal .acc-modal-header.st-hd small, body.dark-theme .settings-modal .acc-modal-header.st-hd h3, body.dark-theme .settings-modal .acc-modal-header.st-hd small { color: #fff; }
+        .settings-modal .acc-modal-header.st-hd small { opacity: .9; }
+        .st-hdl { display: flex; align-items: center; gap: 12px; }
+        .settings-modal .acc-modal-header.st-hd .acc-modal-close { width: 34px; height: 34px; border-radius: 8px; background: rgba(255, 255, 255, .16); color: #fff; }
+        .st-hd-won, body.dark-theme .st-hd-won { background: #1F6B43 !important; }
+        .st-hd-rev, body.dark-theme .st-hd-rev { background: #8A6200 !important; }
+        .st-hd-lost, body.dark-theme .st-hd-lost { background: #A50D26 !important; }
+        .st-hd-prog, body.dark-theme .st-hd-prog { background: #2F5597 !important; }
+        .st-hd-new, body.dark-theme .st-hd-new { background: #5F6673 !important; }
+        .st-hd-navy, body.dark-theme .st-hd-navy { background: #00257A !important; }
+        .st-save-won { background: #1F6B43 !important; border-color: #1F6B43 !important; }
+        .st-save-rev { background: #8A6200 !important; border-color: #8A6200 !important; }
+        .st-save-lost { background: #A50D26 !important; border-color: #A50D26 !important; }
+        .st-vh-ups { border-bottom: 2px solid #2F5597; color: var(--text); }
+        .st-vh-oth { border-bottom: 2px solid #0E9488; color: var(--text); }
+        .st-vbar { display: flex; height: 10px; margin-top: 16px; border-radius: 5px; overflow: hidden; background: var(--field-bg); }
+        .st-vbar i { display: block; height: 100%; width: 0; transition: width .2s; }
+        .b-ups { background: #2F5597; } .b-oth { background: #0E9488; }
+        .st-vleg { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; font-size: 12.5px; color: var(--dim); }
+        .st-vleg i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
+        .st-vleg span:first-child i { background: #2F5597; } .st-vleg span:last-child i { background: #0E9488; }
+        .st-vsum { margin-top: 8px; }
+        .st-won-h { }
+        @media (max-width: 860px) { .st-doors { grid-template-columns: minmax(0, 1fr); } .st-cnts { grid-template-columns: minmax(0, 1fr); } }
+        body.dark-theme .st-btn.btn-ghost { border: 1px solid var(--field-border); background: var(--panel); color: var(--text); }
 
         .settings-overlay.no-bs-overlay {
             padding: 0;
@@ -14084,7 +14173,7 @@
 
                 <div class="page-header u10">
                     <p class="brand-eyebrow" data-i18n="header.eyebrow">Pre-Sales &middot; Data Center Power</p>
-                    <h1>UPS Configurator <span class="version-badge">beta_6.58</span></h1>
+                    <h1>UPS Configurator <span class="version-badge">beta_6.60</span></h1>
                     <p class="subtitle" data-i18n="header.subtitle">Select the project, define the required load, and generate the UPS architecture with its offer.</p>
                 </div>
 
@@ -23298,7 +23387,9 @@ function startNewRevision(note){
   REVISION_CLOSED = false;
   setReadOnly(false);
   syncSharePointStatusInReview();
-  setLocalProgressStatus(document.getElementById('prjRef').value, 'In Review');
+  const newRevRef = document.getElementById('prjRef').value;
+  if(localStatusIsWon(newRevRef)) LAST_REVISION_CLOSED.set(String(newRevRef || '').trim(), false);   // beta_6.59: won stays won
+  else setLocalProgressStatus(newRevRef, 'In Review');
 }
 document.getElementById('btnNewRevClose').addEventListener('click', closeNewRevModal);
 document.getElementById('btnNewRevCancel').addEventListener('click', closeNewRevModal);
@@ -23381,6 +23472,18 @@ async function findSharePointItemByRef(token, site, list, ref, itemId){
   return undefined;
 }
 
+// beta_6.59: a won project keeps its status. Awarder, Project Execution, Project Closed (and Won, Awarded…) are won, as in
+// the dashboard and the start page: a new revision or a closed revision of a won project (e.g. changes during execution)
+// never puts it back to In Review / Offer Review on SharePoint, nor in the list loaded here.
+function isWonStatus(s){
+  try{ if(typeof UPS_DASH !== 'undefined' && UPS_DASH && UPS_DASH._stage) return UPS_DASH._stage(s) === 'Won'; }catch(e){}
+  return /\bwon\b|award|order|vint|execut|esecuz|closed|chius|aggiudic/i.test(String(s || ''));
+}
+function localStatusIsWon(ref){
+  ref = String(ref || '').trim();
+  const rec = ref && (PROGRESS || []).find(p => String(p.PRJ_ID).trim() === ref);
+  return !!rec && isWonStatus(rec.Status);
+}
 // Best-effort SharePoint sync: reopening a closed offer for a new revision flags it as "In
 // Review" back on the source list, so anyone looking at the Progress tracker list sees it's
 // being worked on again — without needing to open this tool to find out. Fire-and-forget: if
@@ -23396,6 +23499,8 @@ async function syncSharePointStatusInReview(){
     const {site, list} = await resolveSharePointList(token);
     const item = await findSharePointItemByRef(token, site, list, ref);
     if(!item){ console.warn('SharePoint status sync: no list item found for', ref); return; }
+    const now = item.fields && item.fields.Status;
+    if(isWonStatus(now)){ console.info(`SharePoint status of ${ref} stays "${now}": the project is won (beta_6.59).`); return; }
     await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, {Status: 'In Review'});
     console.log(`SharePoint Status set to "In Review" for ${ref}.`);
   }catch(err){
@@ -25854,6 +25959,9 @@ const APP_MENU = (function(){
     // beta_6.58: Start page (Economic offer or Project), for everyone
     m.querySelector('[data-am="news"]').insertAdjacentHTML('beforebegin', `<button type="button" class="am-item" role="menuitem" data-am="start"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg><span>Start page<small>Economic offer or project</small></span></button>`);
     m.querySelector('[data-am="start"]').addEventListener('click', () => { close(); try{ if(window.START_PAGE) window.START_PAGE.open(); }catch(e){ console.warn(e); } });
+    // beta_6.59: Offer console (status, chance of success, value and sales values of the offers), for everyone
+    m.querySelector('[data-am="news"]').insertAdjacentHTML('beforebegin', `<button type="button" class="am-item" role="menuitem" data-am="console"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg><span>Offer console<small>status and values of the offers</small></span></button>`);
+    m.querySelector('[data-am="console"]').addEventListener('click', () => { close(); try{ if(window.START_PAGE) window.START_PAGE.openConsole(); }catch(e){ console.warn(e); } });
     btn.setAttribute('aria-expanded', 'true');
     m.querySelector('[data-am="news"]').addEventListener('click', () => { close(); openWhatsNew(); });
     m.querySelectorAll('a.am-item').forEach(a => a.addEventListener('click', () => setTimeout(close, 0)));
@@ -26374,8 +26482,10 @@ async function syncCloseOfferTotalsToSharePoint(){
       N_x002e_Cabinet: totalCabinets,
       Status: 'Offer Review',
     };
+    const now = item.fields && item.fields.Status;
+    if(isWonStatus(now)) delete fields.Status;   // beta_6.59: a won project keeps its status (only the totals are written)
     await graphPatch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${list.id}/items/${item.id}/fields`, token, fields);
-    console.log(`SharePoint updated for ${ref}: Status "Offer Review", ${totalPowerModules} power modules, ${totalCabinets} cabinets.`);
+    console.log(`SharePoint updated for ${ref}: ${fields.Status ? 'Status "Offer Review"' : `Status kept "${now}" (won)`}, ${totalPowerModules} power modules, ${totalCabinets} cabinets.`);
   }catch(err){
     console.warn('Close Offer → SharePoint sync failed (non-blocking — the offer still closed normally):', err);
   }
@@ -26622,7 +26732,8 @@ document.getElementById('btnCloseOffer').addEventListener('click', async ()=>{
   // nothing waits on; answering "Yes" writes "ToFollow?" on its own, whenever that happens.
   syncCloseOfferTotalsToSharePoint();
   const closedRef = document.getElementById('prjRef').value.trim();
-  setLocalProgressStatus(closedRef, 'Offer Review');
+  if(localStatusIsWon(closedRef)) LAST_REVISION_CLOSED.set(closedRef, true);   // beta_6.59: won stays won
+  else setLocalProgressStatus(closedRef, 'Offer Review');
   const canWriteSharePoint = !!(msalInstance && msalAccount && closedRef);
   const next = `R${REVISION} is now locked. Click "New Revision" (under the title) to start R${REVISION+1}.`;
   let docsText = '';
@@ -30460,7 +30571,7 @@ const PRISTINE_POSITIONS_SIG = JSON.stringify(buildConfigState().positions);
 // policy going forward: a change substantial enough to matter to how the tool is used gets a new
 // version number here; a pure bug fix gets logged under the CURRENT version instead of bumping it.
 const ADMIN_PASSWORD = 'debug@007';
-const CURRENT_VERSION = 'beta_6.58';
+const CURRENT_VERSION = 'beta_6.60';
 // Beta functions — trial features shown only after the Admin login; deliberately NOT in the version log.
 const BETA_FUNCTIONS = [
   {name: 'Battery sizing (sottoprogramma)', date: '2026-10-26', notes:[
@@ -30513,6 +30624,17 @@ try{ if(sessionStorage.getItem(BETA_UNLOCK_KEY) === '1') document.body.classList
 // RIBBON is initialized before this state restoration; refresh once to match the saved Admin state.
 try{ if(typeof RIBBON !== 'undefined' && RIBBON && typeof RIBBON.render === 'function') RIBBON.render(); }catch(e){}
 const CHANGELOG = [
+  {version:'beta_6.60', date:'2026-11-09', notes:[
+    'Grafica «Colore di stato» (G07) per pagina iniziale, console offerte e finestre: ogni stato ha il suo colore e la sua icona (New grigio, In progress blu, Offer review ambra, Won verde, Lost rosso); righe dei progetti colorate per stato, chip di stato pieni, «sales values missing» in rosso',
+    'Pagina iniziale: sopra l\'elenco tre contatori (In progress, Offer review, Won senza valori) che filtrano l\'elenco con un clic',
+    'Finestre con l\'intestazione del colore dello stato: Won verde con barra della ripartizione (UPS blu, altri capitoli verde acqua), Offer Review ambra, Lost rosso; Clone navy',
+    'Pagina iniziale per gli Admin: riquadro Dashboard («Open the dashboard») sotto Offerta economica'
+  ]},
+  {version:'beta_6.59', date:'2026-11-09', notes:[
+    'Un progetto vinto resta vinto: Awarder, Project Execution e Project Closed sono Won (come in dashboard e nella pagina iniziale). Aprire una nuova revisione o chiudere un\'offerta di un progetto vinto (es. modifiche in esecuzione) non rimette più lo Status a In Review / Offer Review su SharePoint; alla chiusura si scrivono solo moduli e armadi',
+    'Console offerte (pagina iniziale › Offer console, o menu blu › Offer console), per chi non fa l\'offerta economica qui: tutte le proprie offerte divise in Open / Won / Lost / All con numero e valore; per ognuna si cambiano lo Status, la probabilità di successo (colonna Successfull Range, letta dalla lista con le sue scelte), e il valore. Admin e Costi e margini: Mine / Team',
+    'Valore economico con una finestra al cambio di stato, solo per i progetti senza offerta economica (.json) nella cartella 02 OFFER: Offer Review chiede Offer Value € e probabilità di successo, Lost il valore dell\'offerta persa, uno stato vinto i valori di vendita (anche dalla dashboard). Con il .json il valore viene dal file e non si chiede nulla; nella console ✎ cambia il valore dopo'
+  ]},
   {version:'beta_6.58', date:'2026-11-09', notes:[
     'Pagina iniziale «Due porte»: dopo l\'accesso si sceglie Offerta economica (il configuratore) o Progetto. Si apre una volta per scheda del browser (F5 lascia il lavoro a schermo); «Don\'t show this page…» va dritto al configuratore; si riapre dal menu blu › Start page',
     'Porta Progetto: New project (la pagina New project), Clone one of mine (sceglie un proprio progetto e apre New project con cliente, paese, prodotto, tipo offerta e batteria già compilati), elenco dei propri progetti aperti con ricerca; lo stato si cambia dal chip ed è scritto sull\'elemento della lista; il nome apre il progetto nel configuratore',
@@ -32444,6 +32566,7 @@ function gantt(el, list){
       if(undo && mk && mk.rev >= 0){ try{ await unmarkAuto(o, mk); }catch(e){ console.warn('Dashboard: won mark not removed', e); } render(); }
       const mt = !m ? '' : m.rev >= 0 ? ` · 🏆 R${m.rev} marked won${m.demo ? '' : ' in its offer file'}` : m.err ? ` · <b>won mark not written</b>: ${esc(m.err)}` : m.why === 'no-closed' || m.why === 'no-file' ? ' · no closed revision to mark won (close the offer in the configurator)' : '';
       if(!undo) toast(`<b>${esc(o.ref)}</b> · status <b>${esc(value)}</b>${SRC === 'sp' ? ' – saved on SharePoint' : ' (example data)'}${mt}`, () => changeStatus(o, old.raw, true, m && m.rev >= 0 ? m : null), !!(m && m.err));
+      if(!undo && SRC === 'sp' && !o.hasOffer){ try{ if(window.START_PAGE) window.START_PAGE.askValuesFor(o.itemId, value, old.raw, true); }catch(e){ console.warn(e); } }   // beta_6.59: no offer file → the value window
       else toast(`<b>${esc(o.ref)}</b> · status back to <b>${esc(value)}</b>${mk && mk.rev >= 0 ? ' · won mark removed' : ''}`);
     }catch(err){
       setStatusLocal(o, old.raw); o.closed = old.closed; render();
@@ -33208,6 +33331,8 @@ const UPS_WON = (() => {
 // UPS family, batteries, accessories, services and delivery: saved as text in the SalesSplit column of the Progress tracker
 // list (one line each, "UPS M2S: 9600000"), read by the dashboard. Who sees which projects: seesAllProjects() / isMyProject().
 // Shown once per browser tab (F5 keeps the work on screen); "Don't show this page" skips it; blue menu › Start page.
+// beta_6.59: Offer console – for those who don't make the economic offer here: every offer (open, won, lost) with its status,
+// chance of success (Successfull Range), Offer Value € and, when won, its sales values; totals by status. Blue menu › Offer console.
 window.START_PAGE = (function(){
   const PREF_KEY = 'upsConfigurator.startPage.v1', SHOWN_KEY = 'upsConfigurator.startShown';
   const DEF_CHOICES = ['New', 'In Progress', 'Offer Review', 'Awarder', 'Project Execution', 'Project Closed', 'Lost'];
@@ -33215,6 +33340,7 @@ window.START_PAGE = (function(){
   const OPEN_STAGES = ['New', 'In progress', 'Offer review'];
   const VALUE_FIELDS = ['OfferValue_x20ac_', 'OfferValue'];
   let el = null, scope = 'mine', q = '', choices = null;
+  let con = null, cScope = 'mine', cQ = '', cStage = 'open', successCol = null;   // the offer console
   const esc = s => escapeHtml(String(s ?? ''));
   const pref = () => { try{ return localStorage.getItem(PREF_KEY) || ''; }catch(e){ return ''; } };
   const setPref = v => { try{ if(v) localStorage.setItem(PREF_KEY, v); else localStorage.removeItem(PREF_KEY); }catch(e){} };
@@ -33227,7 +33353,57 @@ window.START_PAGE = (function(){
   const itemIdOf = r => String((r && r._raw && r._raw.__itemId) || '').trim();
   const recByKey = k => (PROGRESS || []).find(r => itemIdOf(r) === k);
   const splitOf = r => String(((r && r._raw) || {})[SALES_SPLIT_FIELD] || '').trim();
-  const missingSplit = r => stage(r.Status) === 'Won' && !splitOf(r);
+  // beta_6.59: is there an economic offer (.json) in the 02 OFFER folder of the project? Then its value and its split come
+  // from the file: no value window, no sales values to enter. Read once per project, and only for projects with a folder link.
+  const OFFER_INFO = new Map(), OFFER_PENDING = new Map();
+  const infoKey = r => itemIdOf(r) || 'r' + String(r.PRJ_ID);
+  const fileInfo = r => (r && r._raw && r._raw.FolderLink0) ? (OFFER_INFO.get(infoKey(r)) || null) : {has: false};   // null = not read yet
+  function offerFileOf(r){
+    const k = infoKey(r);
+    if(!(r && r._raw && r._raw.FolderLink0)) return Promise.resolve({has: false});
+    if(OFFER_INFO.has(k)) return Promise.resolve(OFFER_INFO.get(k));
+    if(OFFER_PENDING.has(k)) return OFFER_PENDING.get(k);
+    const pr = (async () => {
+      let info = {has: false};
+      const path = resolveProjectSubfolderPath(r._raw.FolderLink0, '02 OFFER');
+      if(path && signed()){
+        try{
+          const token = await getGraphToken(); const {site} = await resolveSharePointList(token);
+          const files = await listOfferJsonFiles({site, token, targetPath: path});
+          const re = /_R(\d+)(_ongoing)?\.json$/i, rev = f => Number((re.exec(f.name) || [])[1]) || 0, draft = f => /_ongoing\.json$/i.test(f.name);
+          const order = files.filter(f => re.test(f.name) && !draft(f)).sort((a, b) => rev(b) - rev(a))
+            .concat(files.filter(f => re.test(f.name) && draft(f)).sort((a, b) => rev(b) - rev(a)), files.filter(f => !re.test(f.name)).slice(0, 4));
+          const ref = String(r.PRJ_ID).trim();
+          for(const f of order.slice(0, 8)){
+            try{
+              const st = JSON.parse(await downloadDriveFileText(site.id, f));
+              if(!st || !Array.isArray(st.positions)) continue;
+              const fr = st.project && String(st.project.ref || '').trim();
+              if(fr && fr !== ref) continue;   // a file of another project
+              let value = 0;
+              try{ if(typeof UPS_DASH !== 'undefined' && UPS_DASH && UPS_DASH._totals) value = UPS_DASH._totals(st).value || 0; }catch(e){}
+              info = {has: true, value, file: f.name};
+              break;
+            }catch(e){}
+          }
+        }catch(e){ console.info('Start page: 02 OFFER of', r.PRJ_ID, 'not read:', e && (e.message || e)); }   // no folder: no offer file
+      }
+      OFFER_INFO.set(k, info); OFFER_PENDING.delete(k);
+      return info;
+    })();
+    OFFER_PENDING.set(k, pr);
+    return pr;
+  }
+  let redrawT = null;
+  const redrawSoon = () => { clearTimeout(redrawT); redrawT = setTimeout(() => { renderList(); renderConsole(); }, 150); };
+  const needInfo = r => { if(signed() && fileInfo(r) === null) offerFileOf(r).then(redrawSoon); };
+  // a won project without an offer file and without its sales values
+  const missingSplit = r => {
+    if(stage(r.Status) !== 'Won' || splitOf(r)) return false;
+    const f = fileInfo(r);
+    if(f === null){ needInfo(r); return false; }
+    return !f.has;
+  };
   const dueOf = r => { const d = r['Due date'] ? new Date(r['Due date']) : null; return d && !isNaN(d) ? d : null; };
   const fmtDue = d => d ? d.toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: '2-digit'}) : '';
   const fmtEur = n => (Math.round(Number(n) || 0)).toLocaleString('de-DE');
@@ -33242,16 +33418,36 @@ window.START_PAGE = (function(){
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
     trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
-    chev: '<path d="m6 9 6 6 6-6"/>'
+    chev: '<path d="m6 9 6 6 6-6"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>',
+    back: '<path d="M19 12H5M11 18l-6-6 6-6"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'
   };
+  // beta_6.60 (style G07, status colour): each stage has its colour and its icon – rows, chips, counters, window headers
+  const STAGE_ICON = {
+    'New': '<path d="M12 5v14M5 12h14"/>',
+    'In progress': '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+    'Offer review': '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>',
+    'Won': '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+    'Lost': '<path d="M6 6l12 12M18 6 6 18"/>'
+  };
+  const clsOf = st => STAGE_CLS[st] || 'prog';
+  const stIco = st => `<span class="st-ico st-i-${clsOf(st)}" aria-hidden="true">${svg(STAGE_ICON[st] || STAGE_ICON['In progress'], 17)}</span>`;
+  let fSel = '';   // the counter chosen above the list: '' | 'prog' | 'rev' | 'miss'
+  const inF = (r, f) => f === 'prog' ? ['New', 'In progress'].includes(stage(r.Status)) : f === 'rev' ? stage(r.Status) === 'Offer review'
+    : f === 'miss' ? missingSplit(r) : (OPEN_STAGES.includes(stage(r.Status)) || missingSplit(r));
 
   // ---------- the projects of the Project door ----------
-  function listRows(){
+  function baseRows(){
     const all = (PROGRESS || []).filter(r => String(r.PRJ_ID || '').trim());
-    const base = scope === 'team' && seesAllProjects() ? all : all.filter(isMyProject);
+    return scope === 'team' && seesAllProjects() ? all : all.filter(isMyProject);
+  }
+  function listRows(){
+    const base = baseRows();
     const n = q.trim().toLowerCase();
     const far = 8.64e15;
-    return base.filter(r => OPEN_STAGES.includes(stage(r.Status)) || missingSplit(r))
+    return base.filter(r => inF(r, fSel))
       .filter(r => !n || [r.PRJ_ID, r.Customer, r['Project Name']].some(x => String(x || '').toLowerCase().includes(n)))
       .sort((a, b) => (missingSplit(b) - missingSplit(a)) || ((dueOf(a) || far) - (dueOf(b) || far))
         || String(b.PRJ_ID).localeCompare(String(a.PRJ_ID), undefined, {numeric: true}));
@@ -33259,7 +33455,7 @@ window.START_PAGE = (function(){
   function rowHtml(r){
     const k = itemIdOf(r), st = stage(r.Status), d = dueOf(r), late = d && OPEN_STAGES.includes(st) && d < dayStart(new Date());
     const owner = scope === 'team' ? String(r['Created By.title'] || '') : '';
-    return `<div class="st-row">
+    return `<div class="st-row st-r-${clsOf(st)}">${stIco(st)}
       <button type="button" class="st-prj" data-st-open="${esc(r.PRJ_ID)}" title="Open ${esc(r.PRJ_ID)} in the configurator">
         <b>${esc(r.PRJ_ID)}</b> · ${esc(r.Customer || '—')}${r['Project Name'] ? ' · ' + esc(r['Project Name']) : ''}
         <small>${d ? `<span class="${late ? 'st-late' : ''}">due ${esc(fmtDue(d))}</span>` : 'no deadline'}${owner ? ' · ' + esc(owner) : ''}</small>
@@ -33276,10 +33472,11 @@ window.START_PAGE = (function(){
       if(cnt) cnt.textContent = '';
       return;
     }
-    const rows = listRows();
+    const rows = listRows(), base = baseRows();
     if(cnt) cnt.textContent = rows.length ? String(rows.length) : '';
+    el.querySelectorAll('[data-st-f]').forEach(b => { const f = b.dataset.stF; b.querySelector('b').textContent = base.filter(r => inF(r, f)).length; b.setAttribute('aria-pressed', String(f === fSel)); });
     box.innerHTML = rows.length ? rows.map(rowHtml).join('')
-      : `<p class="st-empty">${q ? 'No open project matches the search.' : scope === 'team' ? 'No open project in the list.' : 'You have no open projects: create one, or clone one you made before.'}</p>`;
+      : `<p class="st-empty">${q ? 'No open project matches the search.' : fSel ? 'No project in this group.' : scope === 'team' ? 'No open project in the list.' : 'You have no open projects: create one, or clone one you made before.'}</p>`;
   }
   function render(){
     if(!el) return;
@@ -33288,6 +33485,7 @@ window.START_PAGE = (function(){
     if(/,/.test(who)){ const [last, first] = who.split(',').map(x => x.trim()); who = `${first} ${last}`.trim(); }
     const ref = (document.getElementById('prjRef')?.value || '').trim(), name = (document.getElementById('prjName')?.value || '').trim();
     const team = signed() && seesAllProjects();
+    const dash = signed() && isAdminUser() && typeof UPS_DASH !== 'undefined' && !!UPS_DASH;   // beta_6.60: the dashboard door, Admin only
     if(!team) scope = 'mine';
     el.innerHTML = `<header class="st-head">
         <div class="st-brand"><span class="st-logo">${svg(IC.bolt, 18, 'stroke="#fff"')}</span><b>UPS Configurator</b></div>
@@ -33297,6 +33495,7 @@ window.START_PAGE = (function(){
         <h1 id="stTitle">What are you working on today?</h1>
         <p class="st-lead">Choose a path. You can come back to this page from the blue menu at the top left (Start page).</p>
         <div class="st-doors">
+          <div class="st-col">
           <section class="st-door" aria-labelledby="stOfferH">
             <div class="st-dh"><span class="st-dic">${svg(IC.calc, 26)}</span><div><h2 id="stOfferH">Economic offer</h2><span>For pre-sales · the full configurator</span></div></div>
             <p>Configure UPS, batteries, accessories and services, price the offer and save each revision in the project's 02 OFFER folder.</p>
@@ -33307,21 +33506,32 @@ window.START_PAGE = (function(){
               <button type="button" class="st-link" data-st-go="projects"><span>Open a project…</span><small>${team ? 'all projects' : 'your projects'}</small></button>
             </div>
           </section>
+          ${dash ? `<section class="st-door st-door-dash" aria-labelledby="stDashH">
+            <div class="st-dh"><span class="st-dic st-dic-dash">${svg(IC.chart, 26)}</span><div><h2 id="stDashH">Dashboard</h2><span>Admin · offers, pipeline and workload</span></div></div>
+            <div class="st-acts"><button type="button" class="act btn-primary st-btn st-btn-dash" data-st-go="dash">Open the dashboard ${svg(IC.arrow, 16)}</button></div>
+          </section>` : ''}
+          </div>
           <section class="st-door st-door-pri" aria-labelledby="stPrjH">
             <div class="st-dh"><span class="st-dic st-dic-pri">${svg(IC.folder, 26)}</span><div><h2 id="stPrjH">Project</h2><span>For everyone · the Progress tracker list</span></div></div>
             <p>Create a project or clone one of yours, and keep its status up to date. When it is won, enter the sales values by UPS family, services and accessories.</p>
             <div class="st-acts">
               <button type="button" class="act btn-primary st-btn" data-st-go="new" ${signed() ? '' : 'disabled'}>${svg(IC.plus, 16)}New project</button>
               <button type="button" class="btn-ghost act st-btn" data-st-go="clone" ${signed() ? '' : 'disabled'}>${svg(IC.copy, 16)}Clone one of mine</button>
+              <button type="button" class="btn-ghost act st-btn" data-st-go="console" ${signed() ? '' : 'disabled'}>${svg(IC.list, 16)}Offer console</button>
             </div>
             <div class="st-sec">
               <div class="st-lh">
                 <span class="st-sh">${scope === 'team' ? 'Open projects of the team' : 'My open projects'} <em id="stCount"></em></span>
                 ${team ? `<div class="st-seg" role="group" aria-label="Projects shown"><button type="button" data-st-scope="mine" aria-pressed="${scope === 'mine'}">Mine</button><button type="button" data-st-scope="team" aria-pressed="${scope === 'team'}">Team</button></div>` : ''}
               </div>
+              ${signed() ? `<div class="st-cnts" role="group" aria-label="Show by status">
+                <button type="button" class="st-cnt st-cnt-prog" data-st-f="prog" aria-pressed="false"><b></b><span>In progress</span></button>
+                <button type="button" class="st-cnt st-cnt-rev" data-st-f="rev" aria-pressed="false"><b></b><span>Offer review</span></button>
+                <button type="button" class="st-cnt st-cnt-miss" data-st-f="miss" aria-pressed="false"><b></b><span>Won, values missing</span></button>
+              </div>` : ''}
               ${signed() ? `<label class="st-search">${svg(IC.search, 15)}<input type="search" id="stQ" placeholder="Search reference, customer or project" value="${esc(q)}" autocomplete="off" aria-label="Search projects"></label>` : ''}
               <div class="st-list" id="stList"></div>
-              ${signed() ? `<button type="button" class="st-more" data-st-go="projects">All ${team ? '' : 'my '}projects, also won and lost…</button>` : ''}
+              ${signed() ? `<button type="button" class="st-more" data-st-go="console">All ${team ? '' : 'my '}offers, also won and lost: offer console…</button>` : ''}
             </div>
           </section>
         </div>
@@ -33350,8 +33560,9 @@ window.START_PAGE = (function(){
   function close(){
     closeMenu();
     if(!el) return;
-    el.hidden = true; document.body.classList.remove('st-open');
+    el.hidden = true; document.body.classList.toggle('st-open', !!(con && !con.hidden));
   }
+  function refreshViews(){ renderList(); renderConsole(); }
   const isOpen = () => !!(el && !el.hidden);
   function onClick(e){
     const t = e.target;
@@ -33362,8 +33573,11 @@ window.START_PAGE = (function(){
       if(g === 'projects'){ close(); return openProjectSearch(); }
       if(g === 'new'){ try{ resetNewOfferForm(); }catch(x){} return openNewProjectPage(); }
       if(g === 'clone') return openClonePicker();
+      if(g === 'console') return openConsole();
+      if(g === 'dash'){ close(); try{ UPS_DASH.show(); }catch(x){ console.warn(x); } return; }
     }
     const sc = t.closest('[data-st-scope]'); if(sc){ scope = sc.dataset.stScope; return render(); }
+    const cf = t.closest('[data-st-f]'); if(cf){ fSel = fSel === cf.dataset.stF ? '' : cf.dataset.stF; return renderList(); }
     const op = t.closest('[data-st-open]'); if(op){ close(); return openOfferFromDeadlines(op.dataset.stOpen); }
     const mn = t.closest('[data-st-menu]'); if(mn){ e.stopPropagation(); return openMenu(mn); }
     const wn = t.closest('[data-st-won]'); if(wn){ const r = recByKey(wn.dataset.stWon); if(r) openWonDialog(r); return; }
@@ -33379,6 +33593,9 @@ window.START_PAGE = (function(){
       const cols = await graphGet(`https://graph.microsoft.com/v1.0/sites/${r.site.id}/lists/${r.list.id}/columns`, token);
       const c = (cols.value || []).find(x => x.name === 'Status') || (cols.value || []).find(x => /^status$/i.test(x.displayName || ''));
       if(c && c.choice && Array.isArray(c.choice.choices)) list = c.choice.choices.slice();
+      // the chance of success: the "Successfull Range" column, found by its name (its internal name is read, not guessed)
+      const sc = (cols.value || []).find(x => /success/i.test(x.displayName || '') || /success/i.test(x.name || ''));
+      successCol = sc ? {name: sc.name, label: sc.displayName || sc.name, choices: sc.choice && Array.isArray(sc.choice.choices) ? sc.choice.choices.slice() : null} : null;
     }catch(e){ console.warn('Start page: Status choices not read, using the usual ones', e); }
     choices = list.length ? list : DEF_CHOICES.slice();
     return choices;
@@ -33424,13 +33641,77 @@ window.START_PAGE = (function(){
     try{
       await patchItem(r, {Status: value});
       try{ setLocalProgressStatus(String(r.PRJ_ID), value, r); }catch(e){ r.Status = value; }
-      renderList();
+      refreshViews();
       showExportToast(`${r.PRJ_ID} · status ${value} — saved on SharePoint`, 'ok');
       dashRefresh(String(r.PRJ_ID));
-      if(stage(value) === 'Won' && stage(old) !== 'Won') openWonDialog(r);
     }catch(err){
       showExportToast(`${r.PRJ_ID}: the status was NOT changed — ${(err && err.message) || err}`, 'warn');
+      return;
     }
+    await askValues(r, value, old);
+  }
+  // beta_6.59: after a status change, the value of the offer – only when the project has no economic offer (.json) in 02 OFFER:
+  // Offer review and Lost ask for the Offer Value € (Offer review also for the chance of success), a won status for the sales
+  // values. With an offer file the values come from it. Also called by the dashboard (askValuesFor).
+  async function askValues(r, value, old, knownNoFile){
+    const s = stage(value);
+    if(!['Offer review', 'Won', 'Lost'].includes(s) || (s === 'Won' && stage(old) === 'Won')) return;
+    const f = knownNoFile ? {has: false} : await offerFileOf(r);
+    if(f.has){ showExportToast(`${r.PRJ_ID} · ${value} — saved on SharePoint · the value comes from the offer file ${f.file}`, 'ok'); return; }
+    return s === 'Won' ? openWonDialog(r) : openValueDialog(r, value);
+  }
+  function askValuesFor(itemId, value, old, knownNoFile){ const r = recByKey(String(itemId || '')); if(r) return askValues(r, value, old, knownNoFile); }
+
+  // ---------- the value of an offer without offer file ----------
+  async function openValueDialog(r, status){
+    document.getElementById('stValOverlay')?.remove();
+    if(signed()) await loadChoices().catch(() => {});
+    const raw = r._raw || {}, vk = valueKey(raw), cur = parseMoney(raw[vk]), s = stage(status || r.Status);
+    const succNow = successCol ? String(extractDisplayValue(raw[successCol.name]) ?? '').trim() : '';
+    const askSucc = !!successCol && s !== 'Lost';
+    const succHtml = !askSucc ? '' : successCol.choices
+      ? `<div class="field"><label for="stValSucc">${esc(successCol.label)}</label><select id="stValSucc"><option value="">—</option>${successCol.choices.concat(succNow && !successCol.choices.includes(succNow) ? [succNow] : []).map(c => `<option ${c === succNow ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>`
+      : `<div class="field"><label for="stValSucc">${esc(successCol.label)}</label><input id="stValSucc" value="${esc(succNow)}" autocomplete="off"></div>`;
+    const ov = document.createElement('div');
+    ov.id = 'stValOverlay'; ov.className = 'settings-overlay'; ov.style.display = 'flex'; ov.style.zIndex = '1600';
+    ov.innerHTML = `<div class="settings-modal st-valmodal" role="dialog" aria-modal="true" aria-labelledby="stValH">
+      <div class="acc-modal-header st-hd st-hd-${clsOf(s)}"><div class="st-hdl">${svg(STAGE_ICON[s] || STAGE_ICON['In progress'], 24)}<div><h3 id="stValH">${esc(status || r.Status || '')} · ${esc(r.PRJ_ID)} ${esc(r.Customer || '')}</h3><small>${esc(r['Project Name'] || '')}</small></div></div><button type="button" class="acc-modal-close" data-x aria-label="Close">×</button></div>
+      <div class="settings-body">
+        <p class="settings-note" style="margin-top:0">This project has no economic offer (.json) in its 02 OFFER folder: enter ${s === 'Lost' ? 'the value of the lost offer' : 'the value of the offer'} here. It goes to the Offer Value € column of the Progress tracker list.</p>
+        <div class="st-wtop">
+          <div class="field"><label for="stValV">${s === 'Lost' ? 'Value of the lost offer (€)' : 'Offer value (€)'}</label><input id="stValV" type="text" inputmode="decimal" value="${cur ? fmtEur(cur) : ''}" placeholder="0" autocomplete="off"></div>
+          ${succHtml}
+        </div>
+        <p class="catalog-status" id="stValMsg" style="margin:8px 0 0"></p>
+      </div>
+      <div class="acc-modal-footer"><button type="button" class="btn-ghost act" data-x>Later</button><button type="button" class="act btn-primary st-save-${clsOf(s)}" id="stValSave">Save to SharePoint</button></div>
+    </div>`;
+    document.body.appendChild(ov);
+    const $ = q => ov.querySelector(q), closeIt = () => ov.remove(), vIn = $('#stValV');
+    ov.querySelectorAll('[data-x]').forEach(b => b.addEventListener('click', closeIt));
+    ov.addEventListener('keydown', e => {
+      if(e.key === 'Escape'){ e.stopPropagation(); closeIt(); }
+      if(e.key === 'Enter' && e.target === vIn){ e.preventDefault(); $('#stValSave').click(); }
+    });
+    vIn.addEventListener('blur', () => { const n = parseMoney(vIn.value); vIn.value = n ? fmtEur(n) : ''; });
+    $('#stValSave').addEventListener('click', async () => {
+      const n = Math.round(parseMoney(vIn.value) * 100) / 100, fields = {};
+      if(Math.round(n * 100) !== Math.round(cur * 100)) fields[vk] = n || null;
+      const sv = askSucc ? String($('#stValSucc').value || '').trim() : succNow;
+      if(askSucc && sv !== succNow) fields[successCol.name] = sv || null;
+      if(!Object.keys(fields).length){ closeIt(); return; }
+      const btn = $('#stValSave'), msg = $('#stValMsg');
+      btn.disabled = true; msg.className = 'catalog-status'; msg.textContent = 'Saving…';
+      try{
+        await patchItem(r, fields);
+        Object.assign(raw, fields);
+        closeIt(); refreshViews(); dashRefresh(String(r.PRJ_ID));
+        showExportToast(`${r.PRJ_ID} · ${n ? 'value ' + fmtEur(n) + ' €' : 'no value'}${askSucc && sv ? ' · ' + sv : ''} — saved on SharePoint`, 'ok');
+      }catch(err){
+        msg.className = 'catalog-status error'; msg.textContent = `Not saved: ${(err && err.message) || err}`; btn.disabled = false;
+      }
+    });
+    setTimeout(() => { if(ov.isConnected && !ov.contains(document.activeElement)){ vIn.focus(); vIn.select(); } }, 30);
   }
 
   // ---------- won: the sales values ----------
@@ -33444,10 +33725,10 @@ window.START_PAGE = (function(){
     const wonChoices = (choices || DEF_CHOICES).filter(c => stage(c) === 'Won');
     if(stage(r.Status) === 'Won' && !wonChoices.some(c => c.toLowerCase() === String(r.Status).toLowerCase())) wonChoices.unshift(String(r.Status));
     const ov = document.createElement('div');
-    ov.id = 'stWonOverlay'; ov.className = 'settings-overlay st-won-ov'; ov.style.display = 'flex'; ov.style.zIndex = '1150';
+    ov.id = 'stWonOverlay'; ov.className = 'settings-overlay st-won-ov'; ov.style.display = 'flex'; ov.style.zIndex = '1600';   // above the dashboard too
     const field = row => `<label class="st-vrow"><span>${esc(row.label)}</span><input type="text" inputmode="decimal" data-k="${esc(row.key)}" value="${prevVal(row.key) ? fmtEur(prevVal(row.key)) : ''}" placeholder="0" autocomplete="off"></label>`;
     ov.innerHTML = `<div class="settings-modal st-wonmodal" role="dialog" aria-modal="true" aria-labelledby="stWonH">
-      <div class="acc-modal-header st-won-h"><div style="display:flex;align-items:center;gap:12px">${svg(IC.trophy, 24)}<div><h3 id="stWonH">Won · ${esc(r.PRJ_ID)} ${esc(r.Customer || '')}</h3><small>${esc(r['Project Name'] || '')}</small></div></div><button type="button" class="acc-modal-close" data-x aria-label="Close">×</button></div>
+      <div class="acc-modal-header st-hd st-hd-won"><div class="st-hdl">${svg(IC.trophy, 26)}<div><h3 id="stWonH">${esc(r.PRJ_ID)} ${esc(r.Customer || '')} is won</h3><small>${esc([r['Project Name'], 'enter what was sold'].filter(Boolean).join(' · '))}</small></div></div><button type="button" class="acc-modal-close" data-x aria-label="Close">×</button></div>
       <div class="settings-body">
         <p class="settings-note" style="margin-top:0">What was sold: the values go to the <b>${esc(SALES_SPLIT_FIELD)}</b> column of the Progress tracker list and to the dashboard.</p>
         <div class="st-wtop">
@@ -33455,13 +33736,15 @@ window.START_PAGE = (function(){
           <div class="field"><label for="stWonTotal">Total sold (€)</label><input id="stWonTotal" type="text" inputmode="decimal" value="${listTotal ? fmtEur(listTotal) : ''}" placeholder="Offer Value €" autocomplete="off"></div>
         </div>
         <div class="st-vgrid">
-          <div><div class="st-vh">UPS by family</div>${SALES_SPLIT_ROWS.filter(x => x.ups).map(field).join('')}</div>
-          <div><div class="st-vh">Other chapters</div>${SALES_SPLIT_ROWS.filter(x => !x.ups).map(field).join('')}</div>
+          <div><div class="st-vh st-vh-ups">UPS by family</div>${SALES_SPLIT_ROWS.filter(x => x.ups).map(field).join('')}</div>
+          <div><div class="st-vh st-vh-oth">Other chapters</div>${SALES_SPLIT_ROWS.filter(x => !x.ups).map(field).join('')}</div>
         </div>
+        <div class="st-vbar" aria-hidden="true"><i class="b-ups" id="stBarUps"></i><i class="b-oth" id="stBarOth"></i></div>
+        <div class="st-vleg" id="stWonLeg"></div>
         <div class="st-vsum" id="stWonSum"></div>
         <p class="catalog-status" id="stWonMsg" style="margin:8px 0 0"></p>
       </div>
-      <div class="acc-modal-footer"><button type="button" class="btn-ghost act" data-x>Later</button><button type="button" class="act btn-primary" id="stWonSave">Save to SharePoint</button></div>
+      <div class="acc-modal-footer"><button type="button" class="btn-ghost act" data-x>Later</button><button type="button" class="act btn-primary st-save-won" id="stWonSave">Save to SharePoint</button></div>
     </div>`;
     document.body.appendChild(ov);
     const $ = s => ov.querySelector(s), inputs = [...ov.querySelectorAll('input[data-k]')];
@@ -33477,6 +33760,10 @@ window.START_PAGE = (function(){
         : `Split ${fmtEur(sum)} € · <b>${fmtEur(-rest)} € more than the total sold</b>`;
       if(sumEl.dataset.h !== html){ sumEl.innerHTML = html; sumEl.dataset.h = html; }   // unchanged: the button stays (a blur must not swallow its click)
       sumEl.dataset.rest = String(rest);
+      const upsSum = SALES_SPLIT_ROWS.filter(x => x.ups).reduce((a, x) => a + (v[x.key] || 0), 0), othSum = sum - upsSum, den = Math.max(tot, sum) || 1;
+      $('#stBarUps').style.width = `${Math.min(100, upsSum / den * 100)}%`;
+      $('#stBarOth').style.width = `${Math.min(100, othSum / den * 100)}%`;
+      $('#stWonLeg').innerHTML = `<span><i class="b-ups"></i>UPS ${fmtEur(upsSum)} €</span><span><i class="b-oth"></i>Other chapters ${fmtEur(othSum)} €</span>`;
       $('#stWonSave').disabled = !(sum > 0 && rest === 0);
       return {v, sum, tot};
     }
@@ -33503,7 +33790,7 @@ window.START_PAGE = (function(){
         raw[SALES_SPLIT_FIELD] = text;
         if(fields[vk] != null) raw[vk] = fields[vk];
         if(fields.Status){ try{ setLocalProgressStatus(String(r.PRJ_ID), fields.Status, r); }catch(e){ r.Status = fields.Status; } }
-        closeIt(); renderList(); dashRefresh(String(r.PRJ_ID));
+        closeIt(); refreshViews(); dashRefresh(String(r.PRJ_ID));
         showExportToast(`🏆 ${r.PRJ_ID} · sales values saved on SharePoint`, 'ok');
       }catch(err){
         const m = String((err && err.message) || err);
@@ -33515,7 +33802,7 @@ window.START_PAGE = (function(){
       }
     });
     check();
-    setTimeout(() => (inputs.find(i => !i.value) || inputs[0]).focus(), 30);
+    setTimeout(() => { if(ov.isConnected && !ov.contains(document.activeElement)) (inputs.find(i => !i.value) || inputs[0]).focus(); }, 30);   // not over a field already chosen
   }
 
   // ---------- clone one of my projects → the New project page, filled in like it ----------
@@ -33526,7 +33813,7 @@ window.START_PAGE = (function(){
     const ov = document.createElement('div');
     ov.id = 'stCloneOverlay'; ov.className = 'settings-overlay'; ov.style.display = 'flex'; ov.style.zIndex = '1150';
     ov.innerHTML = `<div class="settings-modal st-clone" role="dialog" aria-modal="true" aria-labelledby="stCloneH">
-      <div class="acc-modal-header"><div><h3 id="stCloneH">Clone a project</h3><small>Customer, country, product, offer type and battery come with it; the new project gets its own PRJ_ID.</small></div><button type="button" class="acc-modal-close" data-x aria-label="Close">×</button></div>
+      <div class="acc-modal-header st-hd st-hd-navy"><div><h3 id="stCloneH">Clone a project</h3><small>Customer, country, product, offer type and battery come with it; the new project gets its own PRJ_ID.</small></div><button type="button" class="acc-modal-close" data-x aria-label="Close">×</button></div>
       <div class="settings-body">
         <div class="st-lh">${team ? `<div class="st-seg" role="group" aria-label="Projects shown"><button type="button" data-cs="mine" aria-pressed="true">Mine</button><button type="button" data-cs="team" aria-pressed="false">Team</button></div>` : ''}
         <label class="st-search" style="flex:1">${svg(IC.search, 15)}<input type="search" id="stCloneQ" placeholder="Search reference, customer or project" autocomplete="off" aria-label="Search projects"></label></div>
@@ -33559,6 +33846,147 @@ window.START_PAGE = (function(){
     setTimeout(() => ov.querySelector('#stCloneQ')?.focus(), 30);
   }
 
+
+  // ---------- offer console ----------
+  const STAGE_TABS = [['open', 'Open'], ['won', 'Won'], ['lost', 'Lost'], ['all', 'All']];
+  const inTab = (r, t) => { const s = stage(r.Status); return t === 'all' || (t === 'open' ? OPEN_STAGES.includes(s) : t === 'won' ? s === 'Won' : s === 'Lost'); };
+  const cmpRef = (a, b) => String(b.PRJ_ID).localeCompare(String(a.PRJ_ID), undefined, {numeric: true});
+  const valueOf = r => { const raw = (r && r._raw) || {}; return parseMoney(raw[valueKey(raw)]); };
+  const effValue = r => { const f = fileInfo(r); return f && f.has && f.value > 0 ? f.value : valueOf(r); };   // as the dashboard: the offer file first
+  function valueCell(r, k){
+    const f = fileInfo(r), won = stage(r.Status) === 'Won';
+    if(f === null){ needInfo(r); return `<td class="cs-v"><span class="cs-wait" title="Looking for an economic offer (.json) in 02 OFFER…">…</span></td>`; }
+    if(f.has) return `<td class="cs-v"><span class="cs-fv" title="From the economic offer ${esc(f.file)}">${f.value ? fmtEur(f.value) + ' €' : '—'}</span><small class="cs-src">offer file</small></td>`;
+    const v = valueOf(r);
+    return `<td class="cs-v"><button type="button" class="cs-vbtn" data-cs-edit="${esc(k)}" ${k ? '' : 'disabled'} title="${won ? 'Total sold and sales values' : 'Value of the offer'}" aria-label="Value of ${esc(r.PRJ_ID)}: ${v ? fmtEur(v) + ' €' : 'none'}">${v ? fmtEur(v) + ' €' : '—'}${svg(IC.edit, 14)}</button></td>`;
+  }
+  function consoleBase(){
+    const all = (PROGRESS || []).filter(r => String(r.PRJ_ID || '').trim());
+    return cScope === 'team' && seesAllProjects() ? all : all.filter(isMyProject);
+  }
+  function consoleRows(){
+    const n = cQ.trim().toLowerCase(), far = 8.64e15;
+    return consoleBase().filter(r => inTab(r, cStage))
+      .filter(r => !n || [r.PRJ_ID, r.Customer, r['Project Name'], r.Status].some(x => String(x || '').toLowerCase().includes(n)))
+      .sort((a, b) => cStage === 'open' ? ((dueOf(a) || far) - (dueOf(b) || far)) || cmpRef(a, b) : cmpRef(a, b));
+  }
+  function succField(r, k){
+    const raw = r._raw || {}, cur = successCol ? String(extractDisplayValue(raw[successCol.name]) ?? '').trim() : '';
+    if(!successCol) return '';
+    const lab = `aria-label="${esc(successCol.label)} of ${esc(r.PRJ_ID)}" ${k ? '' : 'disabled'}`;
+    if(!successCol.choices) return `<td><input type="text" class="cs-in cs-succ" data-cs-succ="${esc(k)}" value="${esc(cur)}" ${lab}></td>`;
+    const opts = successCol.choices.concat(cur && !successCol.choices.includes(cur) ? [cur] : []);
+    return `<td><select class="cs-in cs-succ" data-cs-succ="${esc(k)}" ${lab}><option value="">—</option>${opts.map(c => `<option ${c === cur ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></td>`;
+  }
+  function conRow(r){
+    const k = itemIdOf(r), st = stage(r.Status), d = dueOf(r), late = d && OPEN_STAGES.includes(st) && d < dayStart(new Date());
+    const sub = [r['Project Name'], psCountry(r), cScope === 'team' ? r['Created By.title'] : ''].filter(Boolean).join(' · ');
+    return `<tr>
+      <td class="cs-prj"><button type="button" class="st-prj" data-st-open="${esc(r.PRJ_ID)}" title="Open ${esc(r.PRJ_ID)} in the configurator"><b>${esc(r.PRJ_ID)}</b> · ${esc(r.Customer || '—')}<small>${esc(sub)}</small></button></td>
+      <td class="cs-due">${d ? `<span class="${late ? 'st-late' : ''}">${esc(fmtDue(d))}</span>` : '—'}</td>
+      <td><button type="button" class="st-chip st-${STAGE_CLS[st] || 'prog'}" data-st-menu="${esc(k)}" ${k ? '' : 'disabled'} aria-haspopup="menu">${esc(r.Status || 'New')}${svg(IC.chev, 13)}</button></td>
+      ${succField(r, k)}
+      ${valueCell(r, k)}
+      <td class="cs-split">${st !== 'Won' ? '' : splitOf(r) ? `<button type="button" class="st-link-btn" data-st-won="${esc(k)}">Sales values ✓</button>` : missingSplit(r) ? `<button type="button" class="st-miss" data-st-won="${esc(k)}">values missing</button>` : (fileInfo(r) || {}).has ? '<small class="cs-src">from the offer file</small>' : ''}</td>
+    </tr>`;
+  }
+  function renderTabs(){
+    if(!con || con.hidden) return;
+    const b = consoleBase();
+    con.querySelectorAll('[data-cs-tab]').forEach(btn => {
+      const rs = b.filter(r => inTab(r, btn.dataset.csTab)), v = rs.reduce((a, r) => a + effValue(r), 0);
+      btn.setAttribute('aria-pressed', String(btn.dataset.csTab === cStage));
+      btn.querySelector('em').textContent = rs.length;
+      btn.querySelector('small').textContent = v ? `${fmtEur(v)} €` : '';
+    });
+  }
+  function renderConsole(){
+    if(!con || con.hidden) return;
+    const tb = con.querySelector('#csBody'); if(!tb) return;
+    renderTabs();
+    const rows = consoleRows();
+    tb.innerHTML = rows.length ? rows.map(conRow).join('')
+      : `<tr><td colspan="${successCol ? 6 : 5}"><p class="st-empty">${cQ ? 'No offer matches the search.' : cStage === 'open' ? 'No open offers.' : cStage === 'won' ? 'No won offers.' : cStage === 'lost' ? 'No lost offers.' : 'No offers.'}</p></td></tr>`;
+  }
+  function consoleFrame(loading){
+    const team = signed() && seesAllProjects();
+    if(!team) cScope = 'mine';
+    const role = !signed() ? '' : isAdminUser() ? 'Admin' : inGroup(COST_GROUP_ID) ? 'Costs & margins' : 'Pricing';
+    return `<header class="st-head">
+        <div class="st-brand"><button type="button" class="cs-back" data-cs-close aria-label="Back">${svg(IC.back, 18)}</button><span class="st-logo">${svg(IC.bolt, 18, 'stroke="#fff"')}</span><b>Offer console</b></div>
+        <div class="st-user">${role ? `<span class="st-chip st-prog st-role">${esc(role)}</span>` : ''}</div>
+      </header>
+      <main class="st-main cs-main">
+        <div class="cs-top">
+          <div><h1 id="csTitle">${cScope === 'team' ? 'Offers of the team' : 'My offers'}</h1><p class="st-lead">Status, chance of success and value of each offer; when an offer is won, its sales values. Everything is saved on the Progress tracker list.</p></div>
+          <div class="cs-tools">${team ? `<div class="st-seg" role="group" aria-label="Offers shown"><button type="button" data-cs-scope="mine" aria-pressed="${cScope === 'mine'}">Mine</button><button type="button" data-cs-scope="team" aria-pressed="${cScope === 'team'}">Team</button></div>` : ''}
+            <label class="st-search">${svg(IC.search, 15)}<input type="search" id="csQ" placeholder="Search offer, customer or status" value="${esc(cQ)}" autocomplete="off" aria-label="Search offers"></label></div>
+        </div>
+        <div class="cs-tabs" role="group" aria-label="Offers shown by status">${STAGE_TABS.map(([k, l]) => `<button type="button" class="cs-tab cs-${k}" data-cs-tab="${k}" aria-pressed="${k === cStage}"><span>${l}</span><em></em><small></small></button>`).join('')}</div>
+        ${loading ? '<p class="st-empty">Loading…</p>' : !signed() ? '<p class="st-empty">Not connected to Microsoft 365: the offers are in the Progress tracker list on SharePoint.</p>' : `<div class="cs-table"><table>
+          <thead><tr><th>Offer</th><th>Due</th><th>Status</th>${successCol ? `<th>${esc(successCol.label)}</th>` : ''}<th class="n">Offer value €</th><th>Sales values</th></tr></thead>
+          <tbody id="csBody"></tbody></table></div>
+        <p class="cs-note">Offers without an economic offer (.json) in 02 OFFER: changing the status asks for the value (Offer review, Lost) or for the sales values by UPS family, batteries, accessories, services and delivery (won); ✎ changes them later. With an offer file the value comes from the file.</p>`}
+      </main>`;
+  }
+  async function openConsole(){
+    closeMenu();
+    if(!con){
+      con = document.createElement('div');
+      con.id = 'offerConsole'; con.className = 'st-page cs-page';
+      con.setAttribute('role', 'dialog'); con.setAttribute('aria-modal', 'true'); con.setAttribute('aria-labelledby', 'csTitle');
+      document.body.appendChild(con);
+      con.addEventListener('click', onConsoleClick);
+      con.addEventListener('input', e => { if(e.target.id === 'csQ'){ cQ = e.target.value; renderConsole(); } });
+      con.addEventListener('change', onConsoleChange);
+      con.addEventListener('keydown', e => {
+        if(e.key === 'Escape' && !document.querySelector('.st-menu') && !document.getElementById('stWonOverlay') && !document.getElementById('stValOverlay')){ e.preventDefault(); closeConsole(); }
+      });
+    }
+    con.hidden = false; document.body.classList.add('st-open');
+    con.innerHTML = consoleFrame(true);
+    if(signed()) await loadChoices().catch(() => {});
+    if(con.hidden) return;
+    con.innerHTML = consoleFrame(false);
+    renderConsole();
+    setTimeout(() => { if(con && !con.hidden && !con.contains(document.activeElement)) con.querySelector('#csQ')?.focus(); }, 30);
+  }
+  function closeConsole(){
+    closeMenu();
+    if(!con) return;
+    con.hidden = true; document.body.classList.toggle('st-open', isOpen());
+    renderList();
+  }
+  function onConsoleClick(e){
+    const t = e.target;
+    if(t.closest('[data-cs-close]')) return closeConsole();
+    const sc = t.closest('[data-cs-scope]');
+    if(sc){ cScope = sc.dataset.csScope; con.querySelectorAll('[data-cs-scope]').forEach(b => b.setAttribute('aria-pressed', String(b === sc))); con.querySelector('#csTitle').textContent = cScope === 'team' ? 'Offers of the team' : 'My offers'; return renderConsole(); }
+    const tab = t.closest('[data-cs-tab]'); if(tab){ cStage = tab.dataset.csTab; return renderConsole(); }
+    const op = t.closest('[data-st-open]'); if(op){ closeConsole(); close(); return openOfferFromDeadlines(op.dataset.stOpen); }
+    const mn = t.closest('[data-st-menu]'); if(mn){ e.stopPropagation(); return openMenu(mn); }
+    const wn = t.closest('[data-st-won]'); if(wn){ const r = recByKey(wn.dataset.stWon); if(r) openWonDialog(r); return; }
+    const ed = t.closest('[data-cs-edit]'); if(ed){ const r = recByKey(ed.dataset.csEdit); if(r){ if(stage(r.Status) === 'Won') openWonDialog(r); else openValueDialog(r, r.Status); } }
+  }
+  async function onConsoleChange(e){
+    const t = e.target;
+    if(t.matches('[data-cs-succ]') && successCol){
+      const r = recByKey(t.dataset.csSucc); if(!r) return;
+      const raw = r._raw || {}, old = raw[successCol.name], v = String(t.value || '').trim();
+      t.disabled = true;
+      try{
+        await patchItem(r, {[successCol.name]: v || null});
+        raw[successCol.name] = v || null;
+        dashRefresh(String(r.PRJ_ID));
+        showExportToast(`${r.PRJ_ID} · ${successCol.label}: ${v || '—'} — saved on SharePoint`, 'ok');
+      }catch(err){
+        t.value = String(extractDisplayValue(old) ?? '');
+        showExportToast(`${r.PRJ_ID}: NOT saved — ${(err && err.message) || err}`, 'warn');
+      }
+      t.disabled = false;
+    }
+  }
+
   // ---------- when it shows ----------
   function maybeShowAtStart(){
     if(window.__startPageChecked) return;
@@ -33572,7 +34000,8 @@ window.START_PAGE = (function(){
   // the connection screen is over (signed in, or "Continue without connection")
   if(window.__connectDone) setTimeout(maybeShowAtStart, 0);
   document.getElementById('btnConnectSkip')?.addEventListener('click', () => setTimeout(maybeShowAtStart, 0));
-  return {open, close, isOpen, refresh: () => { if(isOpen()) render(); }, onConnected: maybeShowAtStart, openWonDialog, _rows: listRows};
+  return {open, close, isOpen, refresh: () => { OFFER_INFO.clear(); if(isOpen()) render(); renderConsole(); }, onConnected: maybeShowAtStart, openWonDialog, openValueDialog, askValuesFor, openConsole, closeConsole,
+    _rows: listRows, _consoleRows: consoleRows, _fileInfo: r => fileInfo(r)};
 })();
 </script>
 </body>

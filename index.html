@@ -66,7 +66,7 @@
             --field-bg: #F6F7F9;
             --field-border: #DEE2E8;
             --text: #14161A;
-            --dim: #767E8C;
+            --dim: #626A78;
             --accent: #4472C4;
             --accent-dark: #2F5597;
             --accent-soft: #DEEBF7;
@@ -13872,6 +13872,33 @@
             flex-shrink: 1;
         }
     </style>
+    <style id="reviewFixes">
+        /* ---- beta_6.59 review fixes ---- */
+        /* form controls follow the font of the page (the report window used the browser default) */
+        button, input, select, textarea { font-family: inherit; }
+        /* contrast (WCAG 1.4.3) */
+        .card-kw.empty { color: var(--dim); }
+        .autosave-status.warn { color: #8F5600; }
+        #appDocTitle .dt-state.dim { color: #5F6368; }
+        .beta-fn-badge { color: #8F5600; }
+        #bomBody tr[data-kind="header"] .bom-drag-handle { color: rgba(255,255,255,.78); }
+        .st-empty a { color: var(--accent-dark); font-weight: 600; }
+        body.dark-theme .st-empty a { color: #8AB4FF; }
+        /* dark theme: white text on the light-blue accent was unreadable */
+        body.dark-theme .btn-primary, body.dark-theme .st-act-strong { background: #2463A6; border-color: #367DC7; color: #fff; box-shadow: none; }
+        body.dark-theme .btn-primary:hover, body.dark-theme .st-act-strong:hover { background: #2C72BD; }
+        body.dark-theme .pd-outline { border: 1px solid #8AB4FF !important; color: #8AB4FF !important; }
+        /* 3-step guide: the step done */
+        .pd-step.done .pd-num { background: #E7F4EC; color: #1E6B3D; }
+        /* beta_6.60 */
+#ribbonPanel .rb-sm.rb-on { background: #E8EEF8; box-shadow: inset 0 0 0 1px #B4C6E6; color: #1F3F7A; font-weight: 600; }
+        body.dark-theme #ribbonPanel .rb-sm.rb-on { background: #26364D; box-shadow: inset 0 0 0 1px #4F83D1; color: #CFE0FF; }
+        .kb-data select.kb-in { width: 100%; }
+        .card-kw-sub { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--dim); }
+        /* the SharePoint mark is 34 px, the line icons 24: its label sat lower than the labels beside it */
+        #ribbonPanel .rb-big[data-cmd="saveSpData"] > svg { margin: -5px 0; }
+        body.dark-theme .pd-step.done .pd-num { background: #203A30; color: #8FE0B3; }
+    </style>
 
     <style id="udDashCss">
         /* ---- beta_6.56: UPS Dashboard (Admin) — the blue tab switches Configurator ⇄ Dashboard ---- */
@@ -14170,7 +14197,7 @@
                 </div>
                 <div class="lang-fixed">
                     <svg class="tb-ico lang-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
-                    <select id="langSelect">
+                    <select id="langSelect" aria-label="Language">
                         <option value="en">EN</option>
                         <option value="it">IT</option>
                         <option value="de">DE</option>
@@ -14724,8 +14751,6 @@
             <div class="settings-body">
                 <div id="spFormFields">
                     <div id="spAdvancedFields" style="display:none;">
-                        <input type="hidden" id="spClientId" value="43e401c3-5c50-4ab1-a4b1-f66ebcbbbfc4">
-                        <input type="hidden" id="spTenantId" value="d8fd0d39-8b2f-4760-af9e-84aadb8587ef">
                     </div>
                     <button type="button" class="btn-ghost act" id="btnUnlockDebug" style="margin-bottom:4px;" data-i18n="spLogin.advancedSettings">🔧 Advanced Settings</button>
                     <div class="field"><label data-i18n="spLogin.siteHost">Site host</label><input id="spSiteHost" value="rielloups.sharepoint.com"></div>
@@ -14886,6 +14911,13 @@ const battCatalogPriced = a => !!String(a.code || '').trim() && a.price !== null
 function escapeHtml(str){
   return String(str ?? '').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
+// beta_6.60: the power shown in the title of a position is the power of the whole system: load of one UPS (Pload)
+// multiplied by the UPS per system. 800 kW with 2 UPS per system reads 1600 kW; with 1 UPS nothing changes.
+function positionTotalKw(pload, upsPerSys){
+  const p = Number(pload), n = Math.max(1, Math.round(Number(upsPerSys) || 1));
+  if(!(p > 0)) return String(pload ?? '');
+  return String(Math.round(p * n * 100) / 100);
+}
 
 // Closes an overlay on a genuine "click on the backdrop" — but NOT when a text selection is
 // dragged from inside the modal out over the backdrop (a plain 'click' check alone fires in that
@@ -14896,6 +14928,24 @@ function setupBackdropClose(overlayEl, closeFn){
   overlayEl.addEventListener('mousedown', (e)=>{ downOnBackdrop = (e.target === overlayEl); });
   overlayEl.addEventListener('click', (e)=>{ if(e.target === overlayEl && downOnBackdrop) closeFn(); });
 }
+// beta_6.60: the same rule for every window, whatever closes it. A click on the backdrop counts only when the
+// button was pressed AND released there, without dragging: ending a text selection (or any drag started inside
+// the window) on the backdrop closed Revision history, the project list, the kit windows and others, whose own
+// handlers only looked at where the button was released.
+(function(){
+  let press = null;
+  const cls = el => String(el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className || '');
+  const isBackdrop = el => !!el && el.nodeType === 1 && el !== document.body && el !== document.documentElement &&
+    (el.classList.contains('settings-overlay') || el.classList.contains('acc-modal-overlay') || /overlay|backdrop|scrim/i.test(String(el.id || '') + ' ' + cls(el)));
+  document.addEventListener('pointerdown', e => { press = {t: e.target, x: e.clientX, y: e.clientY}; }, true);
+  document.addEventListener('click', e => {
+    if(e.detail === 0 || !isBackdrop(e.target)) return;   // detail 0: keyboard or script, not the mouse
+    const moved = press ? Math.hypot(e.clientX - press.x, e.clientY - press.y) : 0;
+    const sel = window.getSelection ? window.getSelection() : null;
+    const selecting = !!(sel && !sel.isCollapsed && String(sel).trim() && sel.anchorNode && e.target.contains(sel.anchorNode));
+    if(!press || press.t !== e.target || moved > 6 || selecting){ e.stopPropagation(); e.stopImmediatePropagation(); e.preventDefault(); }
+  }, true);
+})();
 
 
 // Shared popup behaviour: Enter applies the primary action; Escape/backdrop asks before discarding
@@ -17151,13 +17201,13 @@ async function buildOfferDocumentSet(rev = REVISION){
   try{
     const add = (label, fn) => { try{ pending.push({label, result: fn()}); }catch(e){ console.warn(label, 'not built:', e); problems.push(`${label}: ${e.message || e}`); } };
     if(typeof window.jspdf !== 'undefined'){
-      add('BOM PDF', ()=>{ const {doc, filename} = buildBomPdfDoc(); return {filename, blob: doc.output('blob')}; });
+      ['kits', 'exploded'].forEach(v => add(`BOM PDF (${bomViewName(v)})`, ()=>{ const {doc, filename} = buildBomPdfDoc(v); return {filename, blob: doc.output('blob')}; }));   // beta_6.61: both BOM documents
       add('Offer PDF', ()=>{ const {doc, filename} = buildOfferPdfDoc(false); return {filename, blob: doc.output('blob')}; });
       if(costsAllowed()) add('Offer PDF with margin', ()=>{ const {doc, filename} = buildOfferPdfDoc(true); return {filename, blob: doc.output('blob')}; });
     } else {
       problems.push('PDF files: the PDF library did not load');
     }
-    add('BOM Excel', ()=>prepareBomXlsxFile());
+    ['kits', 'exploded'].forEach(v => add(`BOM Excel (${bomViewName(v)})`, ()=>prepareBomXlsxFile(v)));
     add('Offer Excel', ()=>prepareOfferXlsxFile(false));
     if(costsAllowed()) add('Offer Excel with margin', ()=>prepareOfferXlsxFile(true));
     if(typeof JSZip !== 'undefined'){
@@ -17832,21 +17882,21 @@ function buildRow(prefill){
   tr.dataset.pos = posCounter;
   tr.innerHTML = `
     <td><div class="pos-badge">${String(posCounter).padStart(2,'0')}</div></td>
-    <td><input type="number" min="0" class="f-qty" value="1" style="width:52px"></td>
-    <td><input type="number" min="0" class="f-upssys" value="1" style="width:60px"></td>
-    <td><select class="f-loadtype" style="width:110px;">
+    <td><input type="number" min="0" class="f-qty" aria-label="Quantity of systems" value="1" style="width:52px"></td>
+    <td><input type="number" min="0" class="f-upssys" aria-label="UPS per system" value="1" style="width:60px"></td>
+    <td><select class="f-loadtype" aria-label="Loads type" style="width:110px;">
       <option>IT Loads</option><option>MECH Loads</option><option>HOUSE Loads</option><option>...</option>
-    </select><input type="text" class="f-loadtype-other" placeholder="Label…" style="display:none; width:110px; margin-top:4px;"></td>
-    <td><input type="number" min="0" class="f-pload" placeholder="kW" style="width:68px"></td>
-    <td><select class="f-red"><option>N</option><option selected>N+1</option><option>N+2</option></select></td>
-    <td><div class="npm-cell"><input type="number" min="0" step="1" class="f-npm" placeholder="–"><button type="button" class="npm-sug" title="Back to the suggested value" hidden><span data-i18n="sc.npmSuggested">${escapeHtml(t('sc.npmSuggested'))}</span>: <b>–</b> ↺</button></div></td>
-    <td><select class="f-model"></select></td>
-    <td><select class="f-conn"></select></td>
-    <td><select class="f-config"></select></td>
-    <td><select class="f-vent"><option>Standard</option><option>Front to Top</option></select></td>
-    <td><select class="f-batt"><option>VRLA</option><option>LITHIUM</option></select></td>
-    <td><select class="f-pmtype" title="Power Module type — SiC Model uses the BLUE (high-efficiency) power modules, IGBT Model the standard ones"><option value="IGBT">IGBT Model</option><option value="SiC">SiC Model</option></select></td>
-    <td><button type="button" class="row-remove" title="Remove position">×</button></td>
+    </select><input type="text" class="f-loadtype-other" aria-label="Loads type label" placeholder="Label…" style="display:none; width:110px; margin-top:4px;"></td>
+    <td><input type="number" min="0" class="f-pload" aria-label="Load power (kW)" placeholder="kW" style="width:68px"></td>
+    <td><select class="f-red" aria-label="Redundancy"><option>N</option><option selected>N+1</option><option>N+2</option></select></td>
+    <td><div class="npm-cell"><input type="number" min="0" step="1" class="f-npm" aria-label="Power modules per UPS" placeholder="–"><button type="button" class="npm-sug" title="Back to the suggested value" hidden><span data-i18n="sc.npmSuggested">${escapeHtml(t('sc.npmSuggested'))}</span>: <b>–</b> ↺</button></div></td>
+    <td><select class="f-model" aria-label="UPS model"></select></td>
+    <td><select class="f-conn" aria-label="Connection"></select></td>
+    <td><select class="f-config" aria-label="Configuration"></select></td>
+    <td><select class="f-vent" aria-label="Ventilation"><option>Standard</option><option>Front to Top</option></select></td>
+    <td><select class="f-batt" aria-label="Batteries"><option>VRLA</option><option>LITHIUM</option></select></td>
+    <td><select class="f-pmtype" aria-label="Power module type" title="Power Module type — SiC Model uses the BLUE (high-efficiency) power modules, IGBT Model the standard ones"><option value="IGBT">IGBT Model</option><option value="SiC">SiC Model</option></select></td>
+    <td><button type="button" class="row-remove" title="Remove position" aria-label="Remove position">×</button></td>
   `;
   cfgBody.appendChild(tr);
   renumberRows(); // keep position numbers linear (1,2,3…) regardless of earlier add/remove gaps
@@ -19371,6 +19421,7 @@ function addBomRow(data, insertBeforeNode){
   if(data.techCategory) row.dataset.techCategory = data.techCategory;
   if(data.manualEntry) row.dataset.manualEntry = 'true';
   if(Array.isArray(data.subBom) && data.subBom.length) row.dataset.subBom = JSON.stringify(data.subBom);
+  if(data.bomType === 'code' || data.bomType === 'group') row.dataset.bomType = data.bomType;   // beta_6.61
   if(data.kitId){
     row.dataset.kitId = data.kitId;
     if(data.kitParent) row.dataset.kitParent = 'true';
@@ -19389,14 +19440,14 @@ function addBomRow(data, insertBeforeNode){
   const extBadge = data.extSupplier ? ' <span class="ext-supplier-badge">Ext. Supplier</span>' : '';
   row.innerHTML = `
     <td>${escapeHtml(data.pos ?? '')}</td>
-    <td><input type="number" class="in-qty" value="${Number(data.qty)||0}" min="0" step="1"></td>
+    <td><input type="number" class="in-qty" aria-label="Quantity" value="${Number(data.qty)||0}" min="0" step="1"></td>
     <td>${modelCell}</td>
     <td>${escapeHtml(data.code||'')}</td>
     <td><span class="desc-text">${escapeHtml(data.desc||'')}</span>${catBadge}${extBadge}</td>
-    <td class="num"><input type="number" class="in-gross" value="${grossText(data.gross)}" step="0.01"></td>
-    <td class="num"><input type="number" class="in-disc" value="${Number(data.disc)||0}" step="1"></td>
+    <td class="num"><input type="number" class="in-gross" aria-label="Gross price" value="${grossText(data.gross)}" step="0.01"></td>
+    <td class="num"><input type="number" class="in-disc" aria-label="Discount %" value="${Number(data.disc)||0}" step="1"></td>
     <td class="num out-net">0</td>
-    <td class="num"><input type="number" class="in-cost" value="${(Number(data.cost)||0).toFixed(2)}" step="0.01"></td>
+    <td class="num"><input type="number" class="in-cost" aria-label="Unit cost" value="${(Number(data.cost)||0).toFixed(2)}" step="0.01"></td>
     <td class="num out-tcost">0</td>
     <td class="num out-tprice">0</td>
     <td class="num out-margin">0%</td>
@@ -20853,6 +20904,7 @@ function openSubBomView(row){
     <div class="acc-modal-header"><h3>${escapeHtml(rowCodeText(row))} — ${escapeHtml(rowModelText(row).replace(/^↳\s*/, ''))}</h3><button type="button" class="acc-modal-close" data-close>×</button></div>
     <div style="padding:14px 18px; max-height:78vh; overflow:auto;">
       <p class="pf-hint" style="margin-top:0;">Composition listed under this line in the BOM documents (quantities there are multiplied by the line's ${escapeHtml(String(bomLineQty(row)))}).</p>
+      <label class="pf-hint" style="display:flex; align-items:center; gap:8px; margin:0 0 10px;"><span style="flex:none;">In the BOM with kits exploded</span><select data-bomtype${READ_ONLY ? ' disabled' : ''} style="flex:1; min-width:0; height:30px; border:1px solid var(--field-border); border-radius:6px; background:var(--field-bg); color:var(--text); font:inherit; padding:0 6px;">${bomTypeOptionsHtml(row.dataset.bomType || '')}</select></label>
       ${subBomTableHtml(items)}
       <div class="pf-actions" style="justify-content:flex-end;">
         <button type="button" class="btn-ghost act" data-close>Close</button>
@@ -20865,21 +20917,51 @@ function openSubBomView(row){
   ov.addEventListener('click', e => { if(e.target === ov) close(); });
   const ed = ov.querySelector('[data-edit]');
   if(ed) ed.addEventListener('click', () => { close(); if(header) openSubBomImportDialog(header, row); });
+  const bts = ov.querySelector('[data-bomtype]');
+  if(bts) bts.addEventListener('change', () => { setBomType(row, bts.value); try{ if(typeof markDirty === 'function') markDirty(); }catch(e){} });
 }
-// The BOM documents' rows — a FLAT list, with no trace of nesting: a kit line or a sales code
-// never appears itself, only what it is made of, each item with its total quantity (quantity per
-// kit × kit quantity × the chapter's systems). No positions are printed. Chapter titles stay.
+// ---- beta_6.61: two BOM documents from the same offer lines ----
+// "With kits": every kit, and every line with a composition from Excel, is ONE line — as in the offer, no prices.
+// "Kits exploded": what is delivered, code by code. A kit (or a line with a composition) is either an article
+// with its own code in the ERP — its line stays and its content is listed under it, indented — or a commercial
+// grouping, replaced by its components. Unset, the type follows the code field: with a code = article, without
+// = grouping; it is set in the kit window (Kit data) and in the composition window of a line.
+// Quantities are totals: quantity per kit × kit quantity × the chapter's systems. No positions are printed.
+let BOM_VIEW = (() => { try{ return localStorage.getItem('upsConfigurator.bomView') === 'kits' ? 'kits' : 'exploded'; }catch(e){ return 'exploded'; } })();
+function setBomView(v){
+  BOM_VIEW = v === 'kits' ? 'kits' : 'exploded';
+  try{ localStorage.setItem('upsConfigurator.bomView', BOM_VIEW); }catch(e){}
+  try{ RIBBON.render(); }catch(e){}
+}
+const bomViewOf = v => (v === 'kits' || v === 'exploded' ? v : BOM_VIEW);
+const bomViewName = v => (v === 'kits' ? 'with kits' : 'kits exploded');
+function bomTypeOf(r){
+  const t = r && r.dataset.bomType;
+  if(t === 'code' || t === 'group') return t;
+  return String(rowCodeText(r) || '').trim() ? 'code' : 'group';
+}
+function setBomType(r, t){ if(!r) return; if(t === 'code' || t === 'group') r.dataset.bomType = t; else delete r.dataset.bomType; }
+function bomTypeOptionsHtml(cur){
+  const o = (v, t) => `<option value="${v}"${(cur || '') === v ? ' selected' : ''}>${t}</option>`;
+  return o('', 'Automatic — with a code: article · without a code: commercial grouping')
+    + o('code', 'Article with its own code — its line stays, its content is listed under it')
+    + o('group', 'Commercial grouping — only its components are listed');
+}
 // beta 6.50: the optional subtitle of a chapter (typed under its automatic title)
 function headerSubtitle(h){ const el = h && h.querySelector && h.querySelector('.hdr-sub'); return el ? el.value.replace(/\s+/g, ' ').trim() : ''; }
-function bomDocumentRows(){
+function bomDocumentRows(view){
+  const kitsView = bomViewOf(view) === 'kits';
   const out = [];
-  const line = (row, qty) => ({type: 'line', qty: Math.round(qty * 1000) / 1000, model: rowModelText(row).replace(/^↳\s*/, ''), code: rowCodeText(row),
-    desc: String(rowDescText(row)).replace(/\r\n?/g, '\n')});
-  // a row with an Excel BOM is replaced by its components; any other row is itself
-  const emit = (row, qty) => {
-    const sub = rowSubBom(row);
-    if(sub) sub.forEach(it => out.push({type: 'line', qty: Math.round((Number(it.qty) || 0) * qty * 1000) / 1000, model: '', code: it.code || '', desc: it.desc || ''}));
-    else out.push(line(row, qty));
+  const r3 = n => Math.round(n * 1000) / 1000;
+  const line = (row, qty, level, extra) => Object.assign({type: 'line', level: level || 0, qty: r3(qty), model: rowModelText(row).replace(/^↳\s*/, ''), code: rowCodeText(row),
+    desc: String(rowDescText(row)).replace(/\r\n?/g, '\n')}, extra || {});
+  // a line that is not a kit: itself, or — with a composition from Excel, in the exploded view — by its type
+  const emit = (row, qty, level) => {
+    const comp = rowSubBom(row);
+    if(!comp || kitsView){ out.push(line(row, qty, level)); return; }
+    const comps = lv => comp.forEach(it => out.push({type: 'line', level: lv, qty: r3((Number(it.qty) || 0) * qty), model: '', code: it.code || '', desc: it.desc || ''}));
+    if(bomTypeOf(row) === 'code'){ out.push(line(row, qty, level, {parent: true})); comps(level + 1); }
+    else comps(level);
   };
   [...bomBody.querySelectorAll('tr[data-kind]')].forEach(r => {
     const kind = r.dataset.kind;
@@ -20887,10 +20969,22 @@ function bomDocumentRows(){
     if(kind === 'header'){ out.push({type: 'header', label: r.cells[4].textContent, subtitle: headerSubtitle(r)}); return; }
     if(isKitMember(r)) return;   // emitted through their kit line, below
     const qty = Number(bomLineQty(r)) || 0;
-    if(isKitParent(r)) kitMembersOf(r.dataset.kitId).forEach(m => emit(m, (Number(rowQty(m)) || 0) * qty));
-    else emit(r, qty);
+    if(!isKitParent(r)){ emit(r, qty, 0); return; }
+    if(kitsView){ out.push(line(r, qty, 0, {kit: true})); return; }
+    const members = kitMembersOf(r.dataset.kitId);
+    if(bomTypeOf(r) === 'code'){ out.push(line(r, qty, 0, {kit: true, parent: true})); members.forEach(m => emit(m, (Number(rowQty(m)) || 0) * qty, 1)); }
+    else members.forEach(m => emit(m, (Number(rowQty(m)) || 0) * qty, 0));
   });
   return out;
+}
+// The ITEMs of a BOM document: each chapter title with its lines (the exploded BOM gives each ITEM its own page / sheet)
+function bomDocumentItems(view){
+  const items = [];
+  bomDocumentRows(view).forEach(e => {
+    if(e.type === 'header') items.push({label: e.label, subtitle: e.subtitle || '', lines: []});
+    else { if(!items.length) items.push({label: '', subtitle: '', lines: []}); items[items.length - 1].lines.push(e); }
+  });
+  return items;
 }
 
 // ---- Kits: a kit line with its component lines under it ----
@@ -21635,6 +21729,7 @@ function openKitPanel(opts = {}){
       comps: ordered.map(r => ({row: r, qty: Number(rowQty(r)) || 0, qty0: Number(rowQty(r)) || 0, added: true})), autoTexts: true};
   }
   Object.assign(d, {tab: 'comp', addOpen: d.mode === 'new' && !d.comps.length, addTab: 'rows', catQuery: '', catGroup: '', imported: null, importName: '', pasteText: '', pricing: 'list', markup: 35, msg: ''});
+  d.bomType = d.parent ? (d.parent.dataset.bomType || '') : '';   // beta_6.61: article with its own code / commercial grouping (BOM with kits exploded)
   KB = d;
   const bd = document.createElement('div'); bd.className = 'kb-backdrop'; bd.id = 'kbBackdrop';
   bd.addEventListener('click', () => requestCloseKitPanel());
@@ -21798,8 +21893,9 @@ function kbDataHtml(){
     ${(() => { const t = kbTotals(d.comps, d.priceTarget, d.discountTarget); return `<div class="kb-price"><label class="kb-lab">Selling price / kit<input type="number" class="kb-in" id="kbPrice" min="0" step="0.01" value="${t.net.toFixed(2)}"></label>
       <label class="kb-lab">Kit discount %<input type="number" class="kb-in" id="kbDiscount" min="0" max="100" step="0.1" value="${Number(d.discountTarget || 0)}"></label>
       <span class="kb-price-hint" id="kbPriceHint">${d.priceTarget != null ? `${escapeHtml(kbPriceHintText(d, t.sum))} <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>` : `Component total less ${Number(d.discountTarget || 0).toFixed(2)}% kit discount, spread over the component lines weighted on their value.${Number(d.discountTarget || 0) > 0 ? ' <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>' : ''}`}</span></div>`; })()}
+    <label class="kb-lab">In the BOM with kits exploded<select class="kb-in" id="kbBomType" title="Article with its own code: the kit line stays in the BOM and its content is listed under it. Commercial grouping: the BOM lists only its components.">${bomTypeOptionsHtml(d.bomType)}</select></label>
     <label class="kb-lab">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea class="kb-ta" id="kbDesc" rows="2" placeholder="What the offer says about this kit">${escapeHtml(d.desc)}</textarea></label>
-    <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:11.5px; color:#4B5260"><span id="kbDataHint">${d.mode === 'new' && d.autoTexts ? 'Proposed from the first component — overwrite as you like.' : 'Price = sum of the components; the BOM lists only the components.'}</span>
+    <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:11.5px; color:#4B5260"><span id="kbDataHint">${d.mode === 'new' && d.autoTexts ? 'Proposed from the first component — overwrite as you like.' : 'Price = sum of the components. BOM with kits: one line; kits exploded: as set here.'}</span>
     ${d.comps.length ? `<button type="button" class="kb-link" data-fromfirst>From the first component</button>` : ''}</div></div>`;
 }
 function kbPreviewHtml(){
@@ -21915,9 +22011,10 @@ function kbWire(panel){
   // kit data
   const nm = $('#kbName'), cd = $('#kbCode'), qy = $('#kbQty'), ds = $('#kbDesc');
   if(nm){
-    const typed = () => { d.autoTexts = false; const hn = document.getElementById('kbDataHint'); if(hn) hn.textContent = 'Price = sum of the components; the BOM lists only the components.'; kbSetDirtyBadge(); };
+    const typed = () => { d.autoTexts = false; const hn = document.getElementById('kbDataHint'); if(hn) hn.textContent = 'Price = sum of the components. BOM with kits: one line; kits exploded: as set here.'; kbSetDirtyBadge(); };
     nm.addEventListener('input', () => { d.name = nm.value; typed(); });
     cd.addEventListener('input', () => { d.code = cd.value; typed(); });
+    const bt = $('#kbBomType'); if(bt) bt.addEventListener('change', () => { d.bomType = bt.value; kbSetDirtyBadge(); });
     qy.addEventListener('input', () => { d.qty = Math.max(0, Number(qy.value) || 0); kbRenderSummary(); });
     const discIn = $('#kbDiscount');
     if(discIn){
@@ -22025,6 +22122,7 @@ function applyKitPanel(){
   }
   rows.forEach(r => rowRecalcOutputs(r));
   if(kitId && parent){
+    setBomType(parent, d.bomType);
     const kitGross = parent.querySelector('.in-gross');
     const kitDisc = parent.querySelector('.in-disc');
     const discount = Math.max(0, Math.min(100, Number(d.discountTarget) || 0));
@@ -22256,7 +22354,7 @@ function captureKitsForRegenerate(){
     const key = h.dataset.cfgPos ? `pos:${h.dataset.cfgPos}` : h.dataset.isServices === 'true' ? 'svc' : `sec:${h.cells[4].textContent}`;
     let defaults = null; try{ defaults = JSON.parse(p.dataset.kitDefaults || 'null'); }catch(e){}
     out.push({key, open: p.dataset.kitOpen === 'true', qty: rowQty(p),
-      parent: {model: rowModelText(p).replace(/^↳\s*/, ''), code: rowCodeText(p), desc: rowDescText(p), defaults, discount: Number(p.querySelector('.in-disc')?.value) || 0},
+      parent: {model: rowModelText(p).replace(/^↳\s*/, ''), code: rowCodeText(p), desc: rowDescText(p), defaults, bomType: p.dataset.bomType || '', discount: Number(p.querySelector('.in-disc')?.value) || 0},
       lines: kitMembersOf(p.dataset.kitId).map(m => ({kind: m.dataset.kind, model: rowModelText(m), code: rowCodeText(m), desc: rowDescText(m)}))});
   });
   return out;
@@ -22280,6 +22378,7 @@ function reapplyKitsAfterRegenerate(saved){
     const res = createKit(matched, null, {name: kit.parent.model, code: kit.parent.code, desc: kit.parent.desc, qty: kit.qty, open: kit.open});
     if(res){
       if(kit.parent.defaults) res.parent.dataset.kitDefaults = JSON.stringify(kit.parent.defaults);
+      setBomType(res.parent, kit.parent.bomType);
       const dsc = res.parent.querySelector('.in-disc'); if(dsc) dsc.value = String(Math.max(0, Math.min(100, Number(kit.parent.discount) || 0)));
       refreshKitsInChapter(res.parent.dataset.groupOf); recalcGroupTotal(res.parent.dataset.groupOf);
     }
@@ -22306,7 +22405,7 @@ function bomRowCopyData(r){
     techCategory: r.dataset.techCategory || null,
     baseModel: r.dataset.baseModel || '',
     pos: r.dataset.pos || '',   // renumbered right after, but the copy has to start numbered
-    subBom: rowSubBom(r),
+    subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined,
     svcLevel: r.dataset.svcLevel || undefined,
     svcPos: r.dataset.svcLevel ? svcRowPos(r) : undefined,
     svcFok: svcRowFok(r) || undefined,
@@ -22917,7 +23016,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       extSupplier: rowExtSupplier(r),
       techCategory: r.dataset.techCategory || null,
       manualEntry: r.dataset.manualEntry === 'true',
-      subBom: rowSubBom(r),
+      subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined,
     }));
   });
 
@@ -22949,7 +23048,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       qty: rowQty(r),
       extSupplier: rowExtSupplier(r),
       manualEntry: r.dataset.manualEntry === 'true',
-      subBom: rowSubBom(r),
+      subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined,
       svcLevel: r.dataset.svcLevel || undefined,
       svcPos: r.dataset.svcLevel ? svcRowPos(r) : undefined,
       svcFok: svcRowFok(r) || undefined,
@@ -22981,7 +23080,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         qty: rowQty(r),
         extSupplier: rowExtSupplier(r),
         manualEntry: r.dataset.manualEntry === 'true',
-        subBom: rowSubBom(r),
+        subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined,
       })),
     });
   });
@@ -23015,7 +23114,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     gruppo++;
     let subIdx = 0;
 
-    const headerLabel = `${loadTypeLabel} ${pload} kW`.replace(/\s+/g,' ').trim();
+    const headerLabel = `${loadTypeLabel} ${positionTotalKw(pload, upsPerSys)} kW`.replace(/\s+/g,' ').trim();   // total of the system: Pload × UPS per system
     const headerRow = addBomRow({kind:'header', pos:`${gruppo}.0`, label:headerLabel, baseModel:model, cfgPos: tr.dataset.pos});
     const owner = headerRow.dataset.rowId;
 
@@ -23166,7 +23265,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       carried.forEach(item=>{
         addBomRow({
           pos: `${gruppo}.${nextIdx}`, qty: item.qty, model: item.model, code: item.code, desc: item.desc,
-          gross: item.gross, disc: item.disc, cost: item.cost, extSupplier: item.extSupplier, techCategory: item.techCategory, subBom: item.subBom, kind:'accessory', groupOf:owner, manualEntry: item.manualEntry,
+          gross: item.gross, disc: item.disc, cost: item.cost, extSupplier: item.extSupplier, techCategory: item.techCategory, subBom: item.subBom, bomType: item.bomType, kind:'accessory', groupOf:owner, manualEntry: item.manualEntry,
         }, totalRow);
         nextIdx++;
       });
@@ -23186,7 +23285,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     savedServiceLines.forEach(item=>{
       addBomRow({
         qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-        gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, kind:'accessory', groupOf:servicesOwner, manualEntry:item.manualEntry,
+        gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, bomType:item.bomType, kind:'accessory', groupOf:servicesOwner, manualEntry:item.manualEntry,
         svcLevel:item.svcLevel, svcPos:item.svcPos, svcFok:item.svcFok,
       });
     });
@@ -23220,7 +23319,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         section.items.forEach(item=>{
           addBomRow({
             qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-            gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, kind:'accessory', groupOf:sectionOwner, manualEntry:item.manualEntry,
+            gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, bomType:item.bomType, kind:'accessory', groupOf:sectionOwner, manualEntry:item.manualEntry,
           }, insertBeforeHeader);
         });
         addBomRow({kind:'total', groupOf:sectionOwner, isCustomSection:true}, insertBeforeHeader);
@@ -23957,6 +24056,7 @@ const CFG_CARDS = (function(){
     const lt = v('.f-loadtype')?.value === '...' ? (v('.f-loadtype-other')?.value || 'Loads') : (v('.f-loadtype')?.value || '');
     const qty = Number(v('.f-qty')?.value) || 0;
     const kw = v('.f-pload')?.value;
+    const upsN = Math.max(1, Math.round(Number(v('.f-upssys')?.value) || 1)), kwTot = kw ? positionTotalKw(kw, upsN) : '';   // title = power of the whole system
     const mPM = manualNPM(tr);
     const tags = [v('.f-model')?.value, v('.f-red')?.value, mPM !== null ? `${mPM} PM ✎` : '', v('.f-conn')?.value, v('.f-config')?.value, v('.f-batt')?.value, v('.f-pmtype')?.value ? `${v('.f-pmtype').value} Model` : ''].filter(x => x && x !== 'n.d.');
     const L = linesFor(tr);
@@ -23968,7 +24068,7 @@ const CFG_CARDS = (function(){
     }
     const isNew = !kw && !L;
     return `<div class="card-head"><span class="ch-grip" title="Drag to change the order of the positions">⠿</span><span class="ch-pos">${escapeHtml(String(tr.dataset.pos || '').padStart(2, '0'))}</span><span class="ch-load">${escapeHtml(lt)}</span><span class="ch-qty">× ${qty} system${qty === 1 ? '' : 's'}</span></div>`
-      + (kw ? `<div class="card-kw">${escapeHtml(kw)} <small>kW</small></div>` : `<div class="card-kw empty">enter the load (kW)</div>`)
+      + (kw ? `<div class="card-kw">${escapeHtml(kwTot)} <small>kW</small>${upsN > 1 && Number(kw) > 0 ? `<span class="card-kw-sub">${upsN} UPS × ${escapeHtml(kw)} kW</span>` : ''}</div>` : `<div class="card-kw empty">enter the load (kW)</div>`)
       + `<div class="card-tags">${tags.map(x => `<span>${escapeHtml(x)}</span>`).join('')}</div>`
       + (isNew && tr.classList.contains('card-open') ? '<div class="card-hint">New position: enter the load in kW, then <b>Generate Offer</b> fills its lines. The model is proposed from the load.</div>' : '')
       + bszCardHtml(tr)
@@ -25341,17 +25441,71 @@ const BSZ = (function(){
       country: (document.getElementById('prjCountry')?.value || '').trim(), folderLink: fl && typeof fl === 'object' ? (fl.Url || '') : String(fl || '')};
   }
   function showMsg(html){ msgEl.innerHTML = html ? `<div class="bsz-msg-box">${html}</div>` : ''; msgEl.style.display = html ? '' : 'none'; }
-  function missingMsg(){
-    showMsg(`<h3>Battery Sizing did not start</h3><p>The sub-program is the file <code>${BSZ_FILE}</code>, published in the same folder as the configurator (same Netlify site). It was not found or did not answer.</p><p>Publish <code>${BSZ_FILE}</code> next to <code>index.html</code>, then try again.</p><button type="button" class="act btn-primary" data-bsz-retry>Try again</button>`);
+  // The sub-program is looked for next to this page first (same folder, same extension), then at BSZ_FILE as written
+  // and from the root of the site: the first address that answers is used.
+  function candidates(){
+    const here = new URL('.', location.href), list = [];
+    const add = u => { try{ const h = new URL(u, location.href).href; if(!list.includes(h)) list.push(h); }catch(e){} };
+    const base = (BSZ_FILE.split('/').pop() || '').replace(/\.[a-z0-9]+$/i, '');
+    const ext = (/\.(aspx|html?)$/i.exec(location.pathname) || [])[0] || '.html';
+    add(new URL(base + ext, here)); add(BSZ_FILE); add('/' + BSZ_FILE.replace(/^\/+/, ''));
+    ['.aspx', '.html'].forEach(x => add(new URL(base + x, here)));
+    return list;
+  }
+  let bszUrl = null, loadSeq = 0, frameLoaded = false, frameError = '';
+  async function probe(url){
+    try{
+      let r = await fetch(url, {method: 'HEAD', credentials: 'same-origin', redirect: 'manual', cache: 'no-store'});
+      if(r.status === 405 || r.status === 501) r = await fetch(url, {method: 'GET', credentials: 'same-origin', redirect: 'manual', cache: 'no-store'});
+      if(r.type === 'opaqueredirect' || r.status === 401 || r.status === 403) return 'auth';
+      return r.ok ? 'ok' : 'missing';
+    }catch(e){ return 'error'; }
+  }
+  function failMsg(kind){
+    const tried = candidates().map(u => `<code>${escapeHtml(new URL(u).pathname)}</code>`).join(', ');
+    const body = kind === 'auth' ? `<p>The site asked to sign in again: the Azure session of this page has expired, so the sub-program cannot be opened inside it.</p><p>Save your work, reload the page (F5) to sign in again, then reopen Battery sizing.</p>`
+      : kind === 'missing' ? `<p>The sub-program was not found on this site. Addresses tried: ${tried}.</p><p>Publish <code>${escapeHtml(BSZ_FILE.split('/').pop())}</code> in the same folder as the configurator, then try again.</p>`
+      : kind === 'error' ? `<p>The site did not answer (connection lost, or the site is restarting after a publication).</p><p>Wait a few seconds, then try again.</p>`
+      : kind === 'script' ? `<p>The sub-program was loaded but stopped with an error: <code>${escapeHtml(frameError)}</code></p><p>Reload the page (Ctrl+F5); if it happens again, report this message.</p>`
+      : kind === 'silent' ? `<p>The address <code>${escapeHtml(bszUrl ? new URL(bszUrl).pathname : BSZ_FILE)}</code> was loaded, but it did not answer as the Battery Sizing sub-program (another page was served there — a sign-in or error page — or an old copy is published).</p><p>Reload the page (Ctrl+F5) and try again.</p>`
+      : `<p>The sub-program is still loading after 60 seconds (slow connection, or the site is restarting after a publication).</p><p>Try again in a moment.</p>`;
+    showMsg(`<h3>Battery Sizing did not start</h3>${body}<button type="button" class="act btn-primary" data-bsz-retry>Try again</button>`);
     msgEl.querySelector('[data-bsz-retry]')?.addEventListener('click', () => { if(frame){ frame.remove(); frame = null; } ready = false; load(); });
   }
-  function load(){
+  async function load(){
+    const seq = ++loadSeq;
+    ready = false; frameLoaded = false; frameError = ''; clearTimeout(readyTimer);
     frame = document.createElement('iframe');
     frame.id = 'bszFrame'; frame.title = 'Battery Sizing';
-    frame.src = `${BSZ_FILE}?embed=1`;
     main.appendChild(frame);
+    const mine = frame;
     showMsg('<h3>Battery Sizing</h3><p>Opening the sub-program…</p>');
-    clearTimeout(readyTimer); readyTimer = setTimeout(() => { if(!ready) missingMsg(); }, 15000);
+    let url = bszUrl, worst = 'missing';
+    if(location.protocol === 'file:') url = url || candidates()[0];
+    else {
+      const list = url ? [url, ...candidates().filter(u => u !== url)] : candidates();
+      url = null;
+      for(const u of list){
+        const r = await probe(u);
+        if(seq !== loadSeq || frame !== mine) return;
+        if(r === 'ok'){ url = u; break; }
+        if(r === 'auth') worst = 'auth'; else if(r === 'error' && worst !== 'auth') worst = 'error';
+      }
+      if(!url){ bszUrl = null; failMsg(worst); return; }
+    }
+    bszUrl = url;
+    // the page is a sub-program when opened with embed=1; the #embed=1 copy survives a redirect that drops the query
+    mine.addEventListener('load', () => {
+      if(seq !== loadSeq || ready) return;
+      frameLoaded = true; clearTimeout(readyTimer);
+      readyTimer = setTimeout(() => { if(seq === loadSeq && !ready) failMsg(frameError ? 'script' : 'silent'); }, 4000);
+    });
+    mine.src = `${url}?embed=1#embed=1`;
+    readyTimer = setTimeout(() => {
+      if(seq !== loadSeq || ready || frameLoaded) return;
+      showMsg('<h3>Battery Sizing</h3><p>Still opening the sub-program… (slow connection, or first start after a publication)</p>');
+      readyTimer = setTimeout(() => { if(seq === loadSeq && !ready && !frameLoaded) failMsg('slow'); }, 45000);
+    }, 15000);
   }
   function sendInit(){
     const tr = rowFor(curPos); if(!tr) return;
@@ -25448,6 +25602,7 @@ const BSZ = (function(){
     if(location.protocol !== 'file:' && e.origin !== location.origin) return;
     const m = e.data; if(!m || m.src !== 'batt-sizing') return;
     if(m.type === 'ready'){ ready = true; clearTimeout(readyTimer); showMsg(''); if(page.style.display !== 'none') sendInit(); }
+    else if(m.type === 'error'){ if(!ready && !frameError) frameError = String(m.text || 'script error').slice(0, 300); }
     else if(m.type === 'state') store(m.pos, m.config, m.result, false);
     else if(m.type === 'apply') apply(m.pos, m.config, m.result);
     else if(m.type === 'token') token(m.id);
@@ -25494,7 +25649,15 @@ const RIBBON = (function(){
     chart: '<path d="M4 20V11M10 20V5M16 20v-6M3 20h18"/>',
     battery: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2M6 10v4M10 10v4M14 10v4"/>',
     trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 4M17 6h2.5a2.5 2.5 0 0 1-2.6 4"/>',
-    wonlist: '<path d="M11 6h10M11 12h10M11 18h10"/><path d="M3.5 4.5h4v2a2 2 0 0 1-4 0zM5.5 8.5v2M4 11h3"/>'
+    wonlist: '<path d="M11 6h10M11 12h10M11 18h10"/><path d="M3.5 4.5h4v2a2 2 0 0 1-4 0zM5.5 8.5v2M4 11h3"/>',
+    // beta_6.60 icon review: one meaning per icon, the same icon for the same thing in every sub-program
+    word: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M8 12l1.4 5 1.6-3.6 1.6 3.6L14 12"/>',
+    fileEdit: '<path d="M11 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v2.5"/><path d="M14 3v5h5"/><path d="M13.6 20.4l.5-2.6 5-5a1.5 1.5 0 0 1 2.1 2.1l-5 5z"/>',
+    filePlus: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11.5v6M9 14.5h6"/>',
+    cloudUp: '<path d="M7 18h10a4 4 0 0 0 .7-7.94A6 6 0 0 0 6.1 9.2 4.5 4.5 0 0 0 7 18z"/><path d="M12 11v6M9.5 13.5 12 11l2.5 2.5"/>',
+    package: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8M7.5 5.5l9 5"/>',
+    rowsPlus: '<path d="M4 6h16M4 11.5h9M4 17h9"/><path d="M18 13v7M14.5 16.5h7"/>',
+    listTree: '<path d="M4 6h16M10 12h10M10 18h10"/><path d="M5 9.5V18h2.5M5 12h2.5"/>'
   };
   const svg = (n, s) => {
     // Custom multicolour SharePoint mark with an overlaid floppy-disk save badge.
@@ -25522,7 +25685,7 @@ const RIBBON = (function(){
       g_work: 'Project workflow', fileUpload: 'File upload', projectFolder: 'Project folder', kitManagement: 'Kit management', saveSpData: 'Save SharePoint data', g_offerCommand: 'Offer Command', projectDetails: 'Project details', systemConfig: 'System configuration', offerLines: 'Offer lines', addSection: 'Add project section',
       g_rev: 'Revision', save: 'Save', report: 'Print report', close: 'Close offer', newRev: 'New revision', markWon: 'Mark as won', wonRev: 'Won revision…', history: 'Revision history', load: 'Load configuration',
       g_cfg: 'Configuration', addPos: 'Add position', generate: 'Generate offer', battSizing: 'Battery sizing',
-      g_prev: 'Preview', prevOffer: 'Preview offer', prevBom: 'Preview BOM', g_offer: 'Offer', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_prev: 'Preview', prevOffer: 'Preview offer', prevBom: 'Preview BOM', g_offer: 'Offer', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'With kits', bomExploded: 'Kits exploded',
       g_tech: 'Technical', techSum: 'Technical summary', techNote: 'Technical note (Word)', initRep: 'Initialize report',
       g_market: 'Market', mkIEC: 'IEC price list', mkUL: 'UL price list', g_pl: 'Price list', importPl: 'Import price list', refreshSp: 'Refresh from SharePoint', g_off: 'Offer', offerSet: 'Offer settings',
       g_page: 'Page', resetPage: 'Reset page', g_admin: 'Administration', admin: 'Admin', g_acc: 'Account', account: 'Microsoft 365 account', g_tco: 'Analysis', tco: 'TCO / Life cycle'},
@@ -25531,7 +25694,7 @@ const RIBBON = (function(){
       g_work: 'Lavoro sul progetto', fileUpload: 'Carica file', projectFolder: 'Cartella progetto', kitManagement: 'Gestione kit', saveSpData: 'Salva dati SharePoint', g_offerCommand: 'Comandi offerta', projectDetails: 'Dati progetto', systemConfig: 'Configurazione sistema', offerLines: 'Righe offerta', addSection: 'Aggiungi sezione offerta',
       g_rev: 'Revisione', save: 'Salva', report: 'Stampa report', close: 'Chiudi offerta', newRev: 'Nuova revisione', markWon: 'Segna come vinta', wonRev: 'Revisione vinta…', history: 'Storico revisioni', load: 'Carica configurazione',
       g_cfg: 'Configurazione', addPos: 'Aggiungi posizione', generate: 'Genera offerta', battSizing: 'Dimensionamento batterie',
-      g_prev: 'Anteprima', prevOffer: 'Anteprima offerta', prevBom: 'Anteprima BOM', g_offer: 'Offerta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_prev: 'Anteprima', prevOffer: 'Anteprima offerta', prevBom: 'Anteprima BOM', g_offer: 'Offerta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'Con kit', bomExploded: 'Kit esplosi',
       g_tech: 'Tecnico', techSum: 'Technical summary', techNote: 'Nota tecnica (Word)', initRep: 'Inizializza report',
       g_market: 'Mercato', mkIEC: 'Listino IEC', mkUL: 'Listino UL', g_pl: 'Listino', importPl: 'Importa listino', refreshSp: 'Aggiorna da SharePoint', g_off: 'Offerta', offerSet: 'Impostazioni offerta',
       g_page: 'Pagina', resetPage: 'Reset pagina', g_admin: 'Amministrazione', admin: 'Admin', g_acc: 'Account', account: 'Account Microsoft 365', g_tco: 'Analisi', tco: 'TCO / Ciclo di vita'},
@@ -25540,7 +25703,7 @@ const RIBBON = (function(){
       g_work: 'Projektbearbeitung', fileUpload: 'Datei hochladen', projectFolder: 'Projektordner', kitManagement: 'Kit-Verwaltung', saveSpData: 'SharePoint-Daten speichern', g_offerCommand: 'Angebotsbefehle', projectDetails: 'Projektdetails', systemConfig: 'Systemkonfiguration', offerLines: 'Angebotspositionen', addSection: 'Angebotsabschnitt hinzufügen',
       g_rev: 'Revision', save: 'Speichern', report: 'Bericht drucken', close: 'Angebot schließen', newRev: 'Neue Revision', markWon: 'Als gewonnen markieren', wonRev: 'Gewonnene Revision…', history: 'Revisionsverlauf', load: 'Konfiguration laden',
       g_cfg: 'Konfiguration', addPos: 'Position hinzufügen', generate: 'Angebot erstellen', battSizing: 'Batterieauslegung',
-      g_prev: 'Vorschau', prevOffer: 'Angebots\u00ADvorschau', prevBom: 'BOM-Vorschau', g_offer: 'Angebot', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_prev: 'Vorschau', prevOffer: 'Angebots\u00ADvorschau', prevBom: 'BOM-Vorschau', g_offer: 'Angebot', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'Mit Kits', bomExploded: 'Kits aufgelöst',
       g_tech: 'Technik', techSum: 'Technical summary', techNote: 'Technische Notiz (Word)', initRep: 'Bericht initialisieren',
       g_market: 'Markt', mkIEC: 'Preisliste IEC', mkUL: 'Preisliste UL', g_pl: 'Preisliste', importPl: 'Preisliste importieren', refreshSp: 'Aus SharePoint aktualisieren', g_off: 'Angebot', offerSet: 'Angebots\u00ADeinstellungen',
       g_page: 'Seite', resetPage: 'Seite zurücksetzen', g_admin: 'Administration', admin: 'Admin', g_acc: 'Konto', account: 'Microsoft 365-Konto', g_tco: 'Analyse', tco: 'TCO / Lebenszyklus'},
@@ -25549,7 +25712,7 @@ const RIBBON = (function(){
       g_work: 'Travail sur le projet', fileUpload: 'Téléverser des fichiers', projectFolder: 'Dossier du projet', kitManagement: 'Gestion des kits', saveSpData: 'Enregistrer les données SharePoint', g_offerCommand: 'Commandes de l’offre', projectDetails: 'Détails du projet', systemConfig: 'Configuration système', offerLines: 'Lignes d’offre', addSection: 'Ajouter une section',
       g_rev: 'Révision', save: 'Enregistrer', report: 'Imprimer le rapport', close: "Clôturer l'offre", newRev: 'Nouvelle révision', markWon: 'Marquer comme gagnée', wonRev: 'Révision gagnée…', history: 'Historique des révisions', load: 'Charger une configuration',
       g_cfg: 'Configuration', addPos: 'Ajouter une position', generate: "Générer l'offre", battSizing: 'Dimensionnement batteries',
-      g_prev: 'Aperçu', prevOffer: "Aperçu de l'offre", prevBom: 'Aperçu BOM', g_offer: 'Offre', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_prev: 'Aperçu', prevOffer: "Aperçu de l'offre", prevBom: 'Aperçu BOM', g_offer: 'Offre', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'Avec kits', bomExploded: 'Kits éclatés',
       g_tech: 'Technique', techSum: 'Technical summary', techNote: 'Note technique (Word)', initRep: 'Initialiser le rapport',
       g_market: 'Marché', mkIEC: 'Tarif IEC', mkUL: 'Tarif UL', g_pl: 'Tarif', importPl: 'Importer le tarif', refreshSp: 'Actualiser depuis SharePoint', g_off: 'Offre', offerSet: "Paramètres de l'offre",
       g_page: 'Page', resetPage: 'Réinitialiser la page', g_admin: 'Administration', admin: 'Admin', g_acc: 'Compte', account: 'Compte Microsoft 365', g_tco: 'Analyse', tco: 'TCO / Cycle de vie'},
@@ -25558,7 +25721,7 @@ const RIBBON = (function(){
       g_work: 'Trabajo del proyecto', fileUpload: 'Subir archivos', projectFolder: 'Carpeta del proyecto', kitManagement: 'Gestión de kits', saveSpData: 'Guardar datos de SharePoint', g_offerCommand: 'Comandos de oferta', projectDetails: 'Detalles del proyecto', systemConfig: 'Configuración del sistema', offerLines: 'Líneas de oferta', addSection: 'Añadir sección de oferta',
       g_rev: 'Revisión', save: 'Guardar', report: 'Imprimir informe', close: 'Cerrar oferta', newRev: 'Nueva revisión', markWon: 'Marcar como ganada', wonRev: 'Revisión ganada…', history: 'Historial de revisiones', load: 'Cargar configuración',
       g_cfg: 'Configuración', addPos: 'Añadir posición', generate: 'Generar oferta', battSizing: 'Dimensionado de baterías',
-      g_prev: 'Vista previa', prevOffer: 'Vista previa oferta', prevBom: 'Vista previa BOM', g_offer: 'Oferta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM',
+      g_prev: 'Vista previa', prevOffer: 'Vista previa oferta', prevBom: 'Vista previa BOM', g_offer: 'Oferta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'Con kits', bomExploded: 'Kits desglosados',
       g_tech: 'Técnico', techSum: 'Technical summary', techNote: 'Nota técnica (Word)', initRep: 'Inicializar informe',
       g_market: 'Mercado', mkIEC: 'Tarifa IEC', mkUL: 'Tarifa UL', g_pl: 'Tarifa', importPl: 'Importar tarifa', refreshSp: 'Actualizar desde SharePoint', g_off: 'Oferta', offerSet: 'Ajustes de la oferta',
       g_page: 'Página', resetPage: 'Restablecer página', g_admin: 'Administración', admin: 'Admin', g_acc: 'Cuenta', account: 'Cuenta Microsoft 365', g_tco: 'Análisis', tco: 'TCO / Ciclo de vida'}
@@ -25574,7 +25737,7 @@ const RIBBON = (function(){
         col(sm('copy', 'clone', 'btnCloneOffer'), sm('reset', 'resetOffer', 'btnResetOfferConfirm', {red: 1}))]],
       ['g_rev', [big('save', 'save', 'btnSaveFile', {pri: 1, run: () => saveConfigurationFlow('json')}), big('print', 'report', 'btnSaveFile', {run: () => saveConfigurationFlow('reports')}),
         big('lock', 'close', 'btnCloseOffer'),
-        col(sm('refresh', 'newRev', 'btnNewRevision', {when: () => REVISION_CLOSED}), sm('history', 'history', 'btnRevisionHistory'), sm('upload', 'load', 'btnLoadFile'))]],
+        col(sm('filePlus', 'newRev', 'btnNewRevision', {when: () => REVISION_CLOSED}), sm('history', 'history', 'btnRevisionHistory'), sm('upload', 'load', 'btnLoadFile'))]],
       // without a project open there is no Project tab: Add position and Generate offer stay reachable here
       ['g_cfg', [big('addpos', 'addPos', 'btnAddRow'), big('bolt', 'generate', 'btnGenerate'), big('battery', 'battSizing', 'btnBattSizing')], {noProject: true}],
     ],
@@ -25586,7 +25749,7 @@ const RIBBON = (function(){
         big('print', 'report', 'btnSaveFile', {run: () => saveConfigurationFlow('reports')}),
         big('sharepointSave', 'saveSpData', 'btnSaveProjectDetails'),
         // project folder and file upload as compact commands, so the Project tab fits at 1280 px also in German / French
-        col(sm('folder', 'projectFolder', 'btnProjectFolder'), sm('upload', 'fileUpload', 'btnUploadFiles'), sm('trophy', 'markWon', 'btnMarkWon', {when: () => REVISION_CLOSED})),
+        col(sm('folder', 'projectFolder', 'btnProjectFolder'), sm('cloudUp', 'fileUpload', 'btnUploadFiles'), sm('trophy', 'markWon', 'btnMarkWon', {when: () => REVISION_CLOSED})),
         col(sm('history', 'history', 'btnRevisionHistory'), sm('upload', 'load', 'btnLoadFile'), sm('wonlist', 'wonRev', 'btnWonRevision'))
       ]],
       // Workflow actions, including New Revision as a prominent large command instead of a small stack item.
@@ -25607,18 +25770,20 @@ const RIBBON = (function(){
           }
         }}),
         big('lock', 'close', 'btnCloseOffer'),
-        big('refresh', 'newRev', 'btnNewRevision', {when: () => REVISION_CLOSED})
+        big('filePlus', 'newRev', 'btnNewRevision', {when: () => REVISION_CLOSED})
       ]],
       ['g_offerCommand', [
-        big('plus', 'addSection', 'btnAddProjectSection', {run: () => { document.getElementById('pnlOffer')?.scrollIntoView({behavior:'smooth', block:'start'}); document.getElementById('btnAddProjectSection')?.click(); }}),
-        big('copy', 'kitManagement', 'btnAddRow', {run: () => openKitOverview()})
+        big('rowsPlus', 'addSection', 'btnAddProjectSection', {run: () => { document.getElementById('pnlOffer')?.scrollIntoView({behavior:'smooth', block:'start'}); document.getElementById('btnAddProjectSection')?.click(); }}),
+        big('package', 'kitManagement', 'btnAddRow', {run: () => openKitOverview()})
       ]]
     ],
     documents: [
       ['g_prev', [big('eye', 'prevOffer', 'btnPreviewOffer'), big('eye', 'prevBom', 'btnPreviewBom')]],
-      ['g_offer', [big('pdf', 'pdf', 'btnExportOfferPdf'), big('xls', 'excel', 'btnExportOfferXlsx'), big('doc', 'word', 'btnExportOfferDocx')]],
-      ['g_bom', [big('pdf', 'pdf', 'btnExportBomPdf'), big('xls', 'excel', 'btnExportBomXlsx')]],
-      ['g_tech', [big('ruler', 'techSum', 'btnExportTechSummary'), col(sm('doc', 'techNote', 'btnTechNote'), sm('pdf', 'initRep', 'btnInitReport'))]]
+      ['g_offer', [big('pdf', 'pdf', 'btnExportOfferPdf'), big('xls', 'excel', 'btnExportOfferXlsx'), big('word', 'word', 'btnExportOfferDocx')]],
+      ['g_bom', [big('pdf', 'pdf', 'btnExportBomPdf'), big('xls', 'excel', 'btnExportBomXlsx'),
+        // beta_6.61: the BOM that Preview BOM, PDF and Excel make — with kits, or kits exploded (one page per ITEM)
+        col(sm('package', 'bomKits', 'btnPreviewBom', {on: () => BOM_VIEW === 'kits', run: () => setBomView('kits')}), sm('listTree', 'bomExploded', 'btnPreviewBom', {on: () => BOM_VIEW !== 'kits', run: () => setBomView('exploded')}))]],
+      ['g_tech', [big('ruler', 'techSum', 'btnExportTechSummary'), col(sm('word', 'techNote', 'btnTechNote'), sm('fileEdit', 'initRep', 'btnInitReport'))]]
     ],
     prices: [
       ['g_pl', [big('tag', 'importPl', 'btnImportPriceList'), big('refresh', 'refreshSp', 'btnTopRefresh')]]
@@ -25721,7 +25886,9 @@ const RIBBON = (function(){
       // Hide the TCO command completely while Admin beta functions are locked.
       // The flex group is built from the remaining visible commands, so its width
       // shrinks naturally; when Admin is unlocked the original layout is restored.
-      const visibleItems = items.filter(it => (it.key !== 'tco' && it.key !== 'battSizing') || betaFunctionsUnlocked());   // TCO and Battery sizing: Admin only
+      // beta_6.59: Technical note and Initialize report are Admin-only too — they were shown to everyone and did nothing when clicked
+      const unlocked = betaFunctionsUnlocked(), keepCmd = it => unlocked || !['tco', 'battSizing', 'techNote', 'initRep'].includes(it.key);   // beta functions: Admin only
+      const visibleItems = items.map(it => it.type === 'col' ? Object.assign({}, it, {items: it.items.filter(keepCmd)}) : it).filter(it => it.type === 'col' ? it.items.length : keepCmd(it));
       if(!visibleItems.length) return '';
       return `<div class="rb-grp${go && go.beta ? ' rb-beta' : ''}"><div class="rb-items">${visibleItems.map(itemHtml).join('')}</div><div class="rb-lab">${escapeHtml(L[g])}</div></div>`;
     }).join('') +
@@ -26141,6 +26308,31 @@ function updateProjectDetailsView(){
   g.style.display = none ? '' : 'none';
   f.style.display = none ? 'none' : '';
 }
+// beta_6.59: the guide follows the work (it stayed on step 1 whatever was on the page): 1 no position yet,
+// 2 positions without offer lines, 3 offer generated. The "no rows yet" row spans the columns shown: with the
+// cost columns hidden its 13 columns left an empty strip on the right of the table.
+function updatePdGuideSteps(){
+  const g = document.getElementById('pdGuide'), c = document.getElementById('cfgBody'), b = document.getElementById('bomBody');
+  if(!g || !c || !b) return;
+  const steps = [...g.querySelectorAll('.pd-step')]; if(steps.length < 3) return;
+  const lines = !!b.querySelector('tr[data-kind="line"]');
+  const cur = lines ? 3 : c.querySelector(':scope > tr') ? 2 : 1;
+  steps.forEach((st, i) => { st.classList.toggle('on', i + 1 === cur); st.classList.toggle('done', i === 1 && lines); if(i + 1 === cur) st.setAttribute('aria-current', 'step'); else st.removeAttribute('aria-current'); });
+}
+function fixEmptyBomColspan(){
+  const b = document.getElementById('bomBody'), td = b ? b.querySelector('td.empty-bom') : null; if(!td) return;
+  const n = [...b.closest('table').querySelectorAll('thead th')].filter(th => getComputedStyle(th).display !== 'none').length;
+  if(n && td.colSpan !== n) td.colSpan = n;
+}
+(function(){
+  const run = () => { try{ updatePdGuideSteps(); fixEmptyBomColspan(); }catch(e){ console.warn(e); } };
+  let h = 0; const later = () => { if(!h) h = requestAnimationFrame(() => { h = 0; run(); }); };
+  if(window.MutationObserver){
+    ['cfgBody', 'bomBody'].forEach(id => { const el = document.getElementById(id); if(el) new MutationObserver(later).observe(el, {childList: true}); });
+    new MutationObserver(later).observe(document.body, {attributes: true, attributeFilter: ['class']});
+  }
+  run();
+})();
 (function(){
   const el = document.getElementById('prjRef');
   if(el){
@@ -26473,6 +26665,7 @@ function buildConfigState(){
     if(r.dataset.manualDelivery) item.deliveryManual = true;
     if(r.dataset.svcLevel){ item.svcLevel = r.dataset.svcLevel; item.svcPos = svcRowPos(r); if(svcRowFok(r)) item.svcFok = true; }
     if(r.dataset.subBom){ try{ item.subBom = JSON.parse(r.dataset.subBom); }catch(e){} }
+    if(r.dataset.bomType) item.bomType = r.dataset.bomType;   // beta_6.61
     if(r.dataset.kitId){
       item.kitId = r.dataset.kitId;
       if(r.dataset.kitParent === 'true'){ item.kitParent = true; try{ item.kitDefaults = JSON.parse(r.dataset.kitDefaults || 'null') || undefined; }catch(e){} }
@@ -27978,47 +28171,79 @@ function bomHasRows(){
   return !!bomBody.querySelector('tr[data-kind]');
 }
 
-function buildBomPdfDoc(){
+function buildBomPdfDoc(view){
+  view = bomViewOf(view);
+  const exploded = view === 'exploded';
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape', unit:'pt', format:'a4'});
   registerWorkSansFont(doc);
-  const pageW = doc.internal.pageSize.getWidth();
-  const margin = 34;
+  const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
+  const margin = 34, top = 106;
   const info = getProjectInfo();
+  const all = bomDocumentItems(view);
+  // beta_6.61 — kits exploded: every ITEM (chapter) starts on its own page; with kits: one continuous list, as before
+  const items = exploded ? all.filter(it => it.lines.length) : all;
+  const groups = exploded ? items.map(it => [it]) : (items.length ? [items] : []);
+  const hasContent = all.some(it => it.lines.some(l => l.level > 0));
 
-  try{ doc.addImage(LOGO_B64, 'PNG', margin, 20, 160, 47); }catch(e){ /* logo optional */ }
-
-  const boxW = 260, boxH = 40, boxX = pageW - margin - boxW, boxY = 22;
-  doc.setDrawColor(210); doc.setLineWidth(1); doc.rect(boxX, boxY, boxW, boxH);
-  doc.setFont('WorkSans','bold'); doc.setFontSize(13); doc.setTextColor(20,20,20);
-  doc.text('BILLS OF MATERIALS', boxX+boxW/2, boxY+boxH/2+5, {align:'center'});
-
-  let y = 96;
-  doc.setFont('WorkSans','bold'); doc.setFontSize(11); doc.setTextColor(0,112,192);
-  doc.text(info.name || info.ref, margin, y);
-
-  const body = [];
-  bomDocumentRows().forEach(e=>{
-    if(e.type === 'header'){
-      body.push([{content: e.label, colSpan:4, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
-      if(e.subtitle) body.push([{content: e.subtitle, colSpan:4, styles:{fillColor:[255,250,234], textColor:[60,60,60], fontStyle:'italic', halign:'left'}}]);
-      return;
+  const pageHead = gi => {
+    try{ doc.addImage(LOGO_B64, 'PNG', margin, 20, 160, 47); }catch(e){ /* logo optional */ }
+    const boxW = 260, boxH = 40, boxX = pageW - margin - boxW, boxY = 22;
+    doc.setDrawColor(210); doc.setLineWidth(1); doc.rect(boxX, boxY, boxW, boxH);
+    doc.setFont('WorkSans','bold'); doc.setFontSize(13); doc.setTextColor(20,20,20);
+    doc.text('BILLS OF MATERIALS', boxX+boxW/2, boxY+18, {align:'center'});
+    doc.setFontSize(8); doc.setTextColor(0,112,192);
+    doc.text(exploded ? 'KITS EXPLODED' : 'WITH KITS', boxX+boxW/2, boxY+32, {align:'center'});
+    doc.setFontSize(11); doc.setTextColor(0,112,192);
+    doc.text(String(info.name || info.ref || ''), margin, 96);
+    if(exploded && items.length){
+      doc.setFont('WorkSans','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
+      // the ITEM is named on every page: an ITEM longer than one page keeps its title only on the first
+      doc.text([`Item ${gi + 1} of ${items.length}`, items[gi] && items[gi].label].filter(Boolean).join('  ·  '), pageW - margin, 96, {align:'right'});
     }
-    body.push([e.qty, e.model, e.code, e.desc]);
+  };
+  const pad = lv => ({top: 4, right: 4, bottom: 4, left: 4 + 14 * (lv || 0)});
+  const bodyOf = its => {
+    const body = [];
+    its.forEach(it => {
+      if(it.label) body.push([{content: it.label, colSpan:4, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
+      if(it.subtitle) body.push([{content: it.subtitle, colSpan:4, styles:{fillColor:[255,250,234], textColor:[60,60,60], fontStyle:'italic', halign:'left'}}]);
+      it.lines.forEach(e => {
+        // an article kept with its content: bold on a light band; its content: indented, grey
+        const st = e.parent ? {fontStyle: 'bold', fillColor: [238,243,251]} : e.level ? {textColor: [85,85,85]} : {};
+        body.push([{content: String(e.qty), styles: st},
+          {content: e.model || '', styles: Object.assign({cellPadding: pad(e.level)}, st)},
+          {content: e.code || '', styles: Object.assign({cellPadding: pad(e.model ? 0 : e.level)}, st)},
+          {content: e.desc || '', styles: st}]);
+      });
+    });
+    return body;
+  };
+  if(!groups.length) pageHead(0);
+  groups.forEach((its, gi) => {
+    if(gi > 0) doc.addPage();
+    doc.autoTable({
+      startY: top,
+      head: [['Qty','Model','Code','Description']],
+      body: bodyOf(its),
+      margin:{left:margin, right:margin, top, bottom: 40},
+      styles:{font:'WorkSans', fontSize:8.5, cellPadding:4, lineColor:[225,225,225], lineWidth:0.5, overflow:'linebreak'},
+      headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize:9},
+      columnStyles:{0:{cellWidth:36, halign:'center'}, 1:{cellWidth:150}, 2:{cellWidth:140}, 3:{cellWidth:'auto'}},
+      didDrawPage: () => pageHead(gi),   // the same heading on every page of the ITEM
+    });
   });
-
-  doc.autoTable({
-    startY: y+10,
-    head: [['Qty','Model','Code','Description']],
-    body,
-    margin:{left:margin, right:margin},
-    styles:{font:'WorkSans', fontSize:8.5, cellPadding:4, lineColor:[225,225,225], lineWidth:0.5, overflow:'visible'},
-    headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize:9},
-    columnStyles:{0:{cellWidth:32, halign:'center'}, 1:{cellWidth:140}, 2:{cellWidth:140}, 3:{overflow:'linebreak', cellWidth:'auto'}},
-  });
+  const pages = doc.getNumberOfPages ? doc.getNumberOfPages() : doc.internal.getNumberOfPages();
+  for(let i = 1; i <= pages; i++){
+    doc.setPage(i);
+    doc.setFont('WorkSans','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+    doc.text([info.ref, `R${REVISION}`, `BOM ${bomViewName(view)}`].filter(Boolean).join('  ·  '), margin, pageH - 18);
+    if(exploded && hasContent) doc.text('Indented lines are the content of the line above them, not additional items.', pageW/2, pageH - 18, {align:'center'});
+    doc.text(`Page ${i} of ${pages}`, pageW - margin, pageH - 18, {align:'right'});
+  }
 
   const safeRef = (info.ref||'draft').replace(/[^a-z0-9_-]/gi,'_');
-  return {doc, filename: `${safeRef}_BOM_R${REVISION}.pdf`};
+  return {doc, filename: `${safeRef}_BOM_${view}_R${REVISION}.pdf`};
 }
 
 async function exportBomPdf(){
@@ -28033,7 +28258,7 @@ function previewBomPdf(){
   if(typeof window.jspdf === 'undefined'){ alert('The PDF library failed to load (no internet access?).'); return; }
   if(!bomHasRows()){ alert('Generate the Offer first — there are no lines to preview.'); return; }
   const {doc, filename} = buildBomPdfDoc();
-  showPdfPreview(doc, filename, 'BOM Preview');
+  showPdfPreview(doc, filename, `BOM Preview — ${bomViewName(BOM_VIEW)}`);
 }
 
 // Extracts the generated Offer into a plain data structure (groups of lines + totals), shared by
@@ -28340,7 +28565,7 @@ function xlsxStylesXml(list){
     if(s.numFmt === '0.00%') numFmtId = 10;
     else if(s.numFmt){ let i = numFmts.indexOf(s.numFmt); if(i < 0){ numFmts.push(s.numFmt); i = numFmts.length - 1; } numFmtId = 164 + i; }
     const a = s.align || {};
-    const alignXml = (a.h || a.v || a.wrap) ? `<alignment${a.h?` horizontal="${a.h}"`:''}${a.v?` vertical="${a.v}"`:''}${a.wrap?' wrapText="1"':''}/>` : '';
+    const alignXml = (a.h || a.v || a.wrap || a.indent) ? `<alignment${a.h?` horizontal="${a.h}"`:(a.indent?' horizontal="left"':'')}${a.v?` vertical="${a.v}"`:''}${a.wrap?' wrapText="1"':''}${a.indent?` indent="${Number(a.indent)}"`:''}/>` : '';
     xfs.push(`<xf numFmtId="${numFmtId}" fontId="${fontId}" fillId="${fillId}" borderId="${borderId}" xfId="0"${numFmtId?' applyNumberFormat="1"':''}${fontId?' applyFont="1"':''}${fillId?' applyFill="1"':''}${borderId?' applyBorder="1"':''}${alignXml?' applyAlignment="1">'+alignXml+'</xf>':'/>'}`);
   });
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -28602,34 +28827,50 @@ function buildOfferWorksheet(withMargin, opts = {}){
 
 
 // BOM as a real .xlsx (no prices, so no formulas — same content and look as the PDF BOM).
-function buildBomWorksheet(){
+// beta_6.61: "with kits" is one sheet; "kits exploded" has one sheet per ITEM (chapter), as the PDF has one page per ITEM.
+function buildBomWorksheet(view){
+  view = bomViewOf(view);
   const info = getProjectInfo();
-  const ws = createXlsxSheet('BOM');
-  ws.cols = [8, 22, 20, 80];
-  ws.image = {dataUrl: LOGO_B64, heightPx: 64};
+  const all = bomDocumentItems(view);
   const cellS = extra => ({border: XLSX_GRID, align: {v: 'top'}, ...extra});
-  xlsxSet(ws, 6, 1, {v: info.name || info.ref || '', s: {font: {b: true, color: '0070C0', sz: 13}}});
-  const headRow = 8;
-  ['Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
-  ws.freezeRow = headRow;
-  let r = headRow + 1;
-  bomDocumentRows().forEach(e => {
-    if(e.type === 'header'){
-      xlsxMerge(ws, r, 1, r, 4, {v: e.label, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}});
-      ws.heights[r] = 19;
-      r++;
-      if(e.subtitle){ xlsxMerge(ws, r, 1, r, 4, {v: e.subtitle, s: {font: {i: true, color: '404040'}, fill: 'FFFAEA', border: XLSX_GRID, align: {wrap: true}}}); ws.heights[r] = 18; r++; }
-      return;
-    }
-    const qn = Number(e.qty);
-    xlsxSet(ws, r, 1, {v: e.qty !== '' && Number.isFinite(qn) ? qn : String(e.qty ?? ''), s: cellS({align: {h: 'center', v: 'top'}})});
-    xlsxSet(ws, r, 2, {v: e.model || '', s: cellS({})});
-    xlsxSet(ws, r, 3, {v: e.code || '', s: cellS({})});
-    xlsxSet(ws, r, 4, {v: e.desc, s: cellS({align: {v: 'top', wrap: true}})});
-    ws.heights[r] = xlsxWrappedHeight(e.desc, ws.cols[3]);
-    r++;
+  const sheet = (name, its, itemNo, itemCount) => {
+    const ws = createXlsxSheet(name);
+    ws.cols = [8, 26, 22, 80];
+    ws.image = {dataUrl: LOGO_B64, heightPx: 64};
+    xlsxSet(ws, 6, 1, {v: info.name || info.ref || '', s: {font: {b: true, color: '0070C0', sz: 13}}});
+    xlsxSet(ws, 7, 1, {v: `Bill of materials — ${bomViewName(view)}${itemCount ? ` · item ${itemNo} of ${itemCount}` : ''}`, s: {font: {color: '595959', sz: 10}}});
+    const headRow = 8;
+    ['Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
+    ws.freezeRow = headRow; ws.printTitles = `$${headRow}:$${headRow}`;
+    let r = headRow + 1;
+    its.forEach(it => {
+      if(it.label){ xlsxMerge(ws, r, 1, r, 4, {v: it.label, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}}); ws.heights[r] = 19; r++; }
+      if(it.subtitle){ xlsxMerge(ws, r, 1, r, 4, {v: it.subtitle, s: {font: {i: true, color: '404040'}, fill: 'FFFAEA', border: XLSX_GRID, align: {wrap: true}}}); ws.heights[r] = 18; r++; }
+      it.lines.forEach(e => {
+        // an article kept with its content: bold on a light band; its content: indented, grey
+        const look = e.parent ? {font: {b: true}, fill: 'EEF3FB'} : e.level ? {font: {color: '595959'}} : {};
+        const st = align => cellS(Object.assign({}, look, {align}));
+        const qn = Number(e.qty);
+        xlsxSet(ws, r, 1, {v: e.qty !== '' && Number.isFinite(qn) ? qn : String(e.qty ?? ''), s: st({h: 'center', v: 'top'})});
+        xlsxSet(ws, r, 2, {v: e.model || '', s: st({v: 'top', indent: e.level || 0})});
+        xlsxSet(ws, r, 3, {v: e.code || '', s: st({v: 'top', indent: e.model ? 0 : (e.level || 0)})});
+        xlsxSet(ws, r, 4, {v: e.desc, s: st({v: 'top', wrap: true})});
+        ws.heights[r] = xlsxWrappedHeight(e.desc, ws.cols[3]);
+        r++;
+      });
+    });
+    return ws;
+  };
+  const items = all.filter(it => it.lines.length);
+  if(view !== 'exploded' || !items.length) return sheet('BOM', all);
+  const used = new Set();
+  return items.map((it, i) => {
+    const base = (`${i + 1} ${String(it.label || 'Item').replace(/[\\/?*:\[\]']/g, ' ').replace(/\s+/g, ' ').trim()}`).slice(0, 31).trim();
+    let name = base, k = 2;
+    while(used.has(name.toLowerCase())){ const suf = ` (${k++})`; name = base.slice(0, 31 - suf.length) + suf; }
+    used.add(name.toLowerCase());
+    return sheet(name, [it], i + 1, items.length);
   });
-  return ws;
 }
 
 // Excel documents in two steps: prepare (synchronous — reads the offer and REVISION) returns
@@ -28647,19 +28888,20 @@ function prepareOfferXlsxFile(withMargin){
     : buildOfferWorksheet(false);
   return {filename: `${safeRef}_Offer_R${REVISION}${suffix}.xlsx`, ws};
 }
-function prepareBomXlsxFile(){
+function prepareBomXlsxFile(view){
+  view = bomViewOf(view);
   const safeRef = (getProjectInfo().ref || 'draft').replace(/[^a-z0-9_-]/gi,'_');
   if(typeof JSZip === 'undefined'){
-    return {filename: `${safeRef}_BOM_R${REVISION}.xls`, blob: new Blob(['\ufeff', buildBomHtmlDoc()], {type:'application/vnd.ms-excel'})};
+    return {filename: `${safeRef}_BOM_${view}_R${REVISION}.xls`, blob: new Blob(['\ufeff', buildBomHtmlDoc(view)], {type:'application/vnd.ms-excel'})};
   }
-  return {filename: `${safeRef}_BOM_R${REVISION}.xlsx`, ws: buildBomWorksheet()};
+  return {filename: `${safeRef}_BOM_${view}_R${REVISION}.xlsx`, ws: buildBomWorksheet(view)};
 }
 async function finishXlsxFile(prep){
   if(prep.docx) return {filename: prep.filename, blob: await buildDocxBlob(prep.docx.body, prep.docx.header)};
   return prep.ws ? {filename: prep.filename, blob: await buildXlsxBlob(prep.ws)} : prep;
 }
 async function buildOfferXlsxFile(withMargin){ return finishXlsxFile(prepareOfferXlsxFile(withMargin)); }
-async function buildBomXlsxFile(){ return finishXlsxFile(prepareBomXlsxFile()); }
+async function buildBomXlsxFile(view){ return finishXlsxFile(prepareBomXlsxFile(view)); }
 
 // ---- Technical summary (per position) — from System Configuration, the same inputs Generate Offer
 // uses. Only figures the tool actually knows are shown (no dimensions / weights / losses: the
@@ -28684,7 +28926,7 @@ function collectTechnicalSummary(){
     const usable = Math.max(0, npm - redundancyCount(red)) * kw;
     positions.push({
       pos: String(tr.dataset.pos).padStart(2, '0'),
-      label: `${(loadType === '...' && other) ? other : loadType} ${pload} kW`.replace(/\s+/g, ' ').trim(),
+      label: `${(loadType === '...' && other) ? other : loadType} ${positionTotalKw(pload, ups)} kW`.replace(/\s+/g, ' ').trim(),
       qty, ups, pload, red, model, frame,
       conn: $('.f-conn').value, config: $('.f-config').value, vent: $('.f-vent').value,
       batt: $('.f-batt').value, heff: $('.f-pmtype').value === 'SiC',
@@ -30406,16 +30648,17 @@ async function generateTechNote(){
 // writer used elsewhere in this tool cannot write cell colours/fonts (free-tier limitation),
 // but Excel opens and displays a coloured HTML table just fine under the classic .xls format. ----
 
-function buildBomHtmlDoc(){
+function buildBomHtmlDoc(view){
   const info = getProjectInfo();
   const rowsHtml = [];
-  bomDocumentRows().forEach(e=>{
+  bomDocumentRows(view).forEach(e=>{
     if(e.type === 'header'){
       rowsHtml.push(`<tr><td colspan="4" style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml(e.label)}</td></tr>`);
       return;
     }
     const descHtml = escapeHtml(e.desc).replace(/\n/g, '<br>');
-    rowsHtml.push(`<tr><td style="text-align:center;">${escapeHtml(String(e.qty))}</td><td>${escapeHtml(e.model)}</td><td>${escapeHtml(e.code)}</td><td style="white-space:pre-line;">${descHtml}</td></tr>`);
+    const lk = e.parent ? 'font-weight:bold;background:#EEF3FB;' : e.level ? 'color:#595959;' : '', ind = lv => (lv ? `padding-left:${8 + 16 * lv}px;` : '');
+    rowsHtml.push(`<tr><td style="text-align:center;${lk}">${escapeHtml(String(e.qty))}</td><td style="${lk}${ind(e.level)}">${escapeHtml(e.model)}</td><td style="${lk}${ind(e.model ? 0 : e.level)}">${escapeHtml(e.code)}</td><td style="white-space:pre-line;${lk}">${descHtml}</td></tr>`);
   });
 
   return `<!DOCTYPE html>
@@ -31665,6 +31908,8 @@ function connectDone(){
 function connectFailed(reason){
   clearTimeout(window.connectSlowTimer);
   connectOverlay.classList.add('failed');
+  // beta_6.59: the copy with no sign-in data, opened outside the Azure site — say what it means and what still works
+  if(/Client ID\) and the tenant are not in this file/.test(String(reason || ''))) reason = 'Microsoft 365 sign-in is not available in this copy: it has no sign-in data and it is not opened from the Azure site. Continue without connection to work on an offer; projects, the SharePoint price list and saving to the project folder need the connection.';
   connectStep(t('connect.failed'), reason);
   document.getElementById('connectActions').hidden = false;
 }
@@ -32421,7 +32666,8 @@ function gantt(el, list){
     bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', guide: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>', demo: '<path d="M9 3h6M10 3v6L4 19a2 2 0 0 0 1.7 3h12.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/>',
     map: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
     sp: '<path d="M4 7a8 3 0 1 0 16 0a8 3 0 1 0-16 0"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
-    rpdf: '<path d="M6 9V3h12v6"/><rect x="6" y="14" width="12" height="7" rx="1"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>',
+    rpdf: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8.5 17v-4.5h1.6a1.4 1.4 0 0 1 0 2.8H8.5"/>',   // beta_6.60: the PDF file, as in the configurator (it was the printer)
+    euro: '<circle cx="12" cy="12" r="9"/><path d="M15.6 8.7a4.3 4.3 0 1 0 0 6.6M7 10.9h6.4M7 13.1h5.4"/>',
     rxls: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="m9 12 6 6M15 12l-6 6"/>',
   };
 
@@ -32483,7 +32729,7 @@ function gantt(el, list){
       + grp('Report', big('rep:pdf', 'PDF report', I.rpdf) + big('rep:xlsx', 'Excel report', I.rxls));   // beta_6.62: to print / Excel; no manual on the ribbon
     else h = grp('Offers shown', big('who:me', 'My offers', I.me, !!FX.owner && nameKey(FX.owner) === nameKey(me)) + big('who:team', 'All team', I.team, !FX.owner))
       + grp('Data source', big('src:sp', 'SharePoint', I.sp, SRC === 'sp') + big('page:check', 'Data check', I.check, S.page === 'check'))
-      + grp('Value', big('vfirst:offer', 'Offer file first', I.csv, VALUE_FIRST === 'offer') + big('vfirst:list', 'Offer Value € first', I.sp, VALUE_FIRST === 'list'))
+      + grp('Value', big('vfirst:offer', 'Offer file first', I.csv, VALUE_FIRST === 'offer') + big('vfirst:list', 'Offer Value € first', I.euro, VALUE_FIRST === 'list'))
       + grp('Ribbon', big('collapse', S.collapsed ? 'Pin the ribbon' : 'Collapse the ribbon', S.collapsed ? I.pin : I.up));
     panelEl.innerHTML = h + `<button type="button" class="rb-pin" data-ud="collapse" title="Collapse the ribbon">${ic(I.up, 16)}</button>`;
     tabsEl.innerHTML = [['home', 'Home'], ['view', 'View']].map(([k, l]) => `<button type="button" class="rb-tab${S.rb === k ? ' on' : ''}" data-udtab="${k}">${l}</button>`).join('');

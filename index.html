@@ -20938,44 +20938,50 @@ function setBomView(v){
 const bomViewOf = v => (v === 'kits' || v === 'exploded' ? v : BOM_VIEW);
 const bomViewName = v => (v === 'kits' ? 'with kits' : 'kits exploded');
 function bomTypeOf(r){
-  const t = r && r.dataset.bomType;
-  if(t === 'code' || t === 'group') return t;
-  return String(rowCodeText(r) || '').trim() ? 'code' : 'group';
+  // beta_6.62: "code" only when asked for — the positions (1.2 → 1.2.1, 1.2.2 …) already say which kit a component belongs to
+  return r && r.dataset.bomType === 'code' ? 'code' : 'group';
 }
-function setBomType(r, t){ if(!r) return; if(t === 'code' || t === 'group') r.dataset.bomType = t; else delete r.dataset.bomType; }
+function setBomType(r, t){ if(!r) return; if(t === 'code') r.dataset.bomType = 'code'; else delete r.dataset.bomType; }
 function bomTypeOptionsHtml(cur){
-  const o = (v, t) => `<option value="${v}"${(cur || '') === v ? ' selected' : ''}>${t}</option>`;
-  return o('', 'Automatic — with a code: article · without a code: commercial grouping')
-    + o('code', 'Article with its own code — its line stays, its content is listed under it')
-    + o('group', 'Commercial grouping — only its components are listed');
+  const o = (v, t) => `<option value="${v}"${(cur === 'code' ? 'code' : '') === v ? ' selected' : ''}>${t}</option>`;
+  return o('', 'Components only, as sub-positions (1.2.1, 1.2.2 …) — the kit line is not printed')
+    + o('code', 'Kit line too (1.2), with its components under it (1.2.1, 1.2.2 …)');
 }
 // beta 6.50: the optional subtitle of a chapter (typed under its automatic title)
 function headerSubtitle(h){ const el = h && h.querySelector && h.querySelector('.hdr-sub'); return el ? el.value.replace(/\s+/g, ' ').trim() : ''; }
 function bomDocumentRows(view){
+  // beta_6.62: every line has its position. ITEM n = the chapter; its lines are n.1, n.2 … in both documents. With kits
+  // exploded, the components of the kit at n.2 are n.2.1, n.2.2 … and the kit line itself is not printed (unless the
+  // kit asks for it): the position says which kit a component belongs to. Same for a line with a composition from Excel.
   const kitsView = bomViewOf(view) === 'kits';
   const out = [];
   const r3 = n => Math.round(n * 1000) / 1000;
-  const line = (row, qty, level, extra) => Object.assign({type: 'line', level: level || 0, qty: r3(qty), model: rowModelText(row).replace(/^↳\s*/, ''), code: rowCodeText(row),
+  const lvl = pos => Math.max(0, String(pos).split('.').length - 2);
+  const line = (row, qty, pos, extra) => Object.assign({type: 'line', pos, level: lvl(pos), qty: r3(qty), model: rowModelText(row).replace(/^↳\s*/, ''), code: rowCodeText(row),
     desc: String(rowDescText(row)).replace(/\r\n?/g, '\n')}, extra || {});
-  // a line that is not a kit: itself, or — with a composition from Excel, in the exploded view — by its type
-  const emit = (row, qty, level) => {
+  // a line that is not a kit: itself, or — with a composition from Excel, kits exploded — its components as sub-positions
+  const emit = (row, qty, pos) => {
     const comp = rowSubBom(row);
-    if(!comp || kitsView){ out.push(line(row, qty, level)); return; }
-    const comps = lv => comp.forEach(it => out.push({type: 'line', level: lv, qty: r3((Number(it.qty) || 0) * qty), model: '', code: it.code || '', desc: it.desc || ''}));
-    if(bomTypeOf(row) === 'code'){ out.push(line(row, qty, level, {parent: true})); comps(level + 1); }
-    else comps(level);
+    if(!comp || kitsView){ out.push(line(row, qty, pos)); return; }
+    if(bomTypeOf(row) === 'code') out.push(line(row, qty, pos, {parent: true}));
+    comp.forEach((it, i) => { const cp = `${pos}.${i + 1}`; out.push({type: 'line', pos: cp, level: lvl(cp), qty: r3((Number(it.qty) || 0) * qty), model: '', code: it.code || '', desc: it.desc || ''}); });
   };
+  let item = 0, n = 0;
   [...bomBody.querySelectorAll('tr[data-kind]')].forEach(r => {
     const kind = r.dataset.kind;
     if(kind === 'total' || isServicesRow(r)) return;
-    if(kind === 'header'){ out.push({type: 'header', label: r.cells[4].textContent, subtitle: headerSubtitle(r)}); return; }
+    if(kind === 'header'){
+      const m = String(r.dataset.pos || '').match(/^(\d+)\./);
+      item = m ? Number(m[1]) : item + 1; n = 0;
+      out.push({type: 'header', item, label: r.cells[4].textContent, subtitle: headerSubtitle(r)}); return;
+    }
     if(isKitMember(r)) return;   // emitted through their kit line, below
     const qty = Number(bomLineQty(r)) || 0;
-    if(!isKitParent(r)){ emit(r, qty, 0); return; }
-    if(kitsView){ out.push(line(r, qty, 0, {kit: true})); return; }
-    const members = kitMembersOf(r.dataset.kitId);
-    if(bomTypeOf(r) === 'code'){ out.push(line(r, qty, 0, {kit: true, parent: true})); members.forEach(m => emit(m, (Number(rowQty(m)) || 0) * qty, 1)); }
-    else members.forEach(m => emit(m, (Number(rowQty(m)) || 0) * qty, 0));
+    const pos = `${item || 1}.${++n}`;
+    if(!isKitParent(r)){ emit(r, qty, pos); return; }
+    if(kitsView){ out.push(line(r, qty, pos, {kit: true})); return; }
+    if(bomTypeOf(r) === 'code') out.push(line(r, qty, pos, {kit: true, parent: true}));
+    kitMembersOf(r.dataset.kitId).forEach((m, j) => emit(m, (Number(rowQty(m)) || 0) * qty, `${pos}.${j + 1}`));
   });
   return out;
 }
@@ -20983,11 +20989,12 @@ function bomDocumentRows(view){
 function bomDocumentItems(view){
   const items = [];
   bomDocumentRows(view).forEach(e => {
-    if(e.type === 'header') items.push({label: e.label, subtitle: e.subtitle || '', lines: []});
-    else { if(!items.length) items.push({label: '', subtitle: '', lines: []}); items[items.length - 1].lines.push(e); }
+    if(e.type === 'header') items.push({no: e.item, label: e.label, subtitle: e.subtitle || '', lines: []});
+    else { if(!items.length) items.push({no: 1, label: '', subtitle: '', lines: []}); items[items.length - 1].lines.push(e); }
   });
   return items;
 }
+const bomItemTitle = it => [it.no ? `ITEM ${it.no}` : '', it.label].filter(Boolean).join(' — ');
 
 // ---- Kits: a kit line with its component lines under it ----
 // A kit is its own line of the chapter (position 1.5) with its components right under it
@@ -28186,7 +28193,7 @@ function buildBomPdfDoc(view){
   // beta_6.61 — kits exploded: every ITEM (chapter) starts on its own page; with kits: one continuous list, as before
   const items = exploded ? all.filter(it => it.lines.length) : all;
   const groups = exploded ? items.map(it => [it]) : (items.length ? [items] : []);
-  const hasContent = all.some(it => it.lines.some(l => l.level > 0));
+  const hasKept = all.some(it => it.lines.some(l => l.parent));
 
   const pageHead = gi => {
     try{ doc.addImage(LOGO_B64, 'PNG', margin, 20, 160, 47); }catch(e){ /* logo optional */ }
@@ -28198,25 +28205,21 @@ function buildBomPdfDoc(view){
     doc.text(exploded ? 'KITS EXPLODED' : 'WITH KITS', boxX+boxW/2, boxY+32, {align:'center'});
     doc.setFontSize(11); doc.setTextColor(0,112,192);
     doc.text(String(info.name || info.ref || ''), margin, 96);
-    if(exploded && items.length){
+    if(exploded && items[gi]){
       doc.setFont('WorkSans','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
-      // the ITEM is named on every page: an ITEM longer than one page keeps its title only on the first
-      doc.text([`Item ${gi + 1} of ${items.length}`, items[gi] && items[gi].label].filter(Boolean).join('  ·  '), pageW - margin, 96, {align:'right'});
+      // the ITEM is named on every page: an ITEM longer than one page keeps its title band only on the first
+      doc.text(bomItemTitle(items[gi]), pageW - margin, 96, {align:'right'});
     }
   };
-  const pad = lv => ({top: 4, right: 4, bottom: 4, left: 4 + 14 * (lv || 0)});
   const bodyOf = its => {
     const body = [];
     its.forEach(it => {
-      if(it.label) body.push([{content: it.label, colSpan:4, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
-      if(it.subtitle) body.push([{content: it.subtitle, colSpan:4, styles:{fillColor:[255,250,234], textColor:[60,60,60], fontStyle:'italic', halign:'left'}}]);
+      const title = bomItemTitle(it);
+      if(title) body.push([{content: title, colSpan:5, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
+      if(it.subtitle) body.push([{content: it.subtitle, colSpan:5, styles:{fillColor:[255,250,234], textColor:[60,60,60], fontStyle:'italic', halign:'left'}}]);
       it.lines.forEach(e => {
-        // an article kept with its content: bold on a light band; its content: indented, grey
-        const st = e.parent ? {fontStyle: 'bold', fillColor: [238,243,251]} : e.level ? {textColor: [85,85,85]} : {};
-        body.push([{content: String(e.qty), styles: st},
-          {content: e.model || '', styles: Object.assign({cellPadding: pad(e.level)}, st)},
-          {content: e.code || '', styles: Object.assign({cellPadding: pad(e.model ? 0 : e.level)}, st)},
-          {content: e.desc || '', styles: st}]);
+        const st = e.parent ? {fontStyle: 'bold', fillColor: [238,243,251]} : {};   // a kit line kept with its components
+        body.push([{content: e.pos || '', styles: st}, {content: String(e.qty), styles: st}, {content: e.model || '', styles: st}, {content: e.code || '', styles: st}, {content: e.desc || '', styles: st}]);
       });
     });
     return body;
@@ -28226,12 +28229,12 @@ function buildBomPdfDoc(view){
     if(gi > 0) doc.addPage();
     doc.autoTable({
       startY: top,
-      head: [['Qty','Model','Code','Description']],
+      head: [['Pos','Qty','Model','Code','Description']],
       body: bodyOf(its),
       margin:{left:margin, right:margin, top, bottom: 40},
       styles:{font:'WorkSans', fontSize:8.5, cellPadding:4, lineColor:[225,225,225], lineWidth:0.5, overflow:'linebreak'},
       headStyles:{fillColor:[68,114,196], textColor:255, fontStyle:'bold', fontSize:9},
-      columnStyles:{0:{cellWidth:36, halign:'center'}, 1:{cellWidth:150}, 2:{cellWidth:140}, 3:{cellWidth:'auto'}},
+      columnStyles:{0:{cellWidth:48}, 1:{cellWidth:36, halign:'center'}, 2:{cellWidth:150}, 3:{cellWidth:136}, 4:{cellWidth:'auto'}},
       didDrawPage: () => pageHead(gi),   // the same heading on every page of the ITEM
     });
   });
@@ -28240,7 +28243,7 @@ function buildBomPdfDoc(view){
     doc.setPage(i);
     doc.setFont('WorkSans','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120);
     doc.text([info.ref, `R${REVISION}`, `BOM ${bomViewName(view)}`].filter(Boolean).join('  ·  '), margin, pageH - 18);
-    if(exploded && hasContent) doc.text('Indented lines are the content of the line above them, not additional items.', pageW/2, pageH - 18, {align:'center'});
+    if(exploded && hasKept) doc.text('Lines on a blue band are kits: the positions under them (e.g. 1.2.1) are their content, not additional items.', pageW/2, pageH - 18, {align:'center'});
     doc.text(`Page ${i} of ${pages}`, pageW - margin, pageH - 18, {align:'right'});
   }
 
@@ -28837,27 +28840,28 @@ function buildBomWorksheet(view){
   const cellS = extra => ({border: XLSX_GRID, align: {v: 'top'}, ...extra});
   const sheet = (name, its, itemNo, itemCount) => {
     const ws = createXlsxSheet(name);
-    ws.cols = [8, 26, 22, 80];
+    ws.cols = [9, 8, 26, 22, 80];
     ws.image = {dataUrl: LOGO_B64, heightPx: 64};
     xlsxSet(ws, 6, 1, {v: info.name || info.ref || '', s: {font: {b: true, color: '0070C0', sz: 13}}});
-    xlsxSet(ws, 7, 1, {v: `Bill of materials — ${bomViewName(view)}${itemCount ? ` · item ${itemNo} of ${itemCount}` : ''}`, s: {font: {color: '595959', sz: 10}}});
+    xlsxSet(ws, 7, 1, {v: `Bill of materials — ${bomViewName(view)}${itemNo ? ` · ITEM ${itemNo}` : ''}`, s: {font: {color: '595959', sz: 10}}});
     const headRow = 8;
-    ['Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
+    ['Pos','Qty','Model','Code','Description'].forEach((h, i) => xlsxSet(ws, headRow, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
     ws.freezeRow = headRow; ws.printTitles = `$${headRow}:$${headRow}`;
     let r = headRow + 1;
     its.forEach(it => {
-      if(it.label){ xlsxMerge(ws, r, 1, r, 4, {v: it.label, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}}); ws.heights[r] = 19; r++; }
-      if(it.subtitle){ xlsxMerge(ws, r, 1, r, 4, {v: it.subtitle, s: {font: {i: true, color: '404040'}, fill: 'FFFAEA', border: XLSX_GRID, align: {wrap: true}}}); ws.heights[r] = 18; r++; }
+      const title = bomItemTitle(it);
+      if(title){ xlsxMerge(ws, r, 1, r, 5, {v: title, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}}); ws.heights[r] = 19; r++; }
+      if(it.subtitle){ xlsxMerge(ws, r, 1, r, 5, {v: it.subtitle, s: {font: {i: true, color: '404040'}, fill: 'FFFAEA', border: XLSX_GRID, align: {wrap: true}}}); ws.heights[r] = 18; r++; }
       it.lines.forEach(e => {
-        // an article kept with its content: bold on a light band; its content: indented, grey
-        const look = e.parent ? {font: {b: true}, fill: 'EEF3FB'} : e.level ? {font: {color: '595959'}} : {};
+        const look = e.parent ? {font: {b: true}, fill: 'EEF3FB'} : {};   // a kit line kept with its components
         const st = align => cellS(Object.assign({}, look, {align}));
         const qn = Number(e.qty);
-        xlsxSet(ws, r, 1, {v: e.qty !== '' && Number.isFinite(qn) ? qn : String(e.qty ?? ''), s: st({h: 'center', v: 'top'})});
-        xlsxSet(ws, r, 2, {v: e.model || '', s: st({v: 'top', indent: e.level || 0})});
-        xlsxSet(ws, r, 3, {v: e.code || '', s: st({v: 'top', indent: e.model ? 0 : (e.level || 0)})});
-        xlsxSet(ws, r, 4, {v: e.desc, s: st({v: 'top', wrap: true})});
-        ws.heights[r] = xlsxWrappedHeight(e.desc, ws.cols[3]);
+        xlsxSet(ws, r, 1, {v: String(e.pos || ''), s: st({h: 'left', v: 'top'})});   // text: 1.10 must not become 1.1
+        xlsxSet(ws, r, 2, {v: e.qty !== '' && Number.isFinite(qn) ? qn : String(e.qty ?? ''), s: st({h: 'center', v: 'top'})});
+        xlsxSet(ws, r, 3, {v: e.model || '', s: st({v: 'top'})});
+        xlsxSet(ws, r, 4, {v: e.code || '', s: st({v: 'top'})});
+        xlsxSet(ws, r, 5, {v: e.desc, s: st({v: 'top', wrap: true})});
+        ws.heights[r] = xlsxWrappedHeight(e.desc, ws.cols[4]);
         r++;
       });
     });
@@ -28867,11 +28871,11 @@ function buildBomWorksheet(view){
   if(view !== 'exploded' || !items.length) return sheet('BOM', all);
   const used = new Set();
   return items.map((it, i) => {
-    const base = (`${i + 1} ${String(it.label || 'Item').replace(/[\\/?*:\[\]']/g, ' ').replace(/\s+/g, ' ').trim()}`).slice(0, 31).trim();
+    const base = (`ITEM ${it.no || i + 1} ${String(it.label || '').replace(/[\\/?*:\[\]']/g, ' ').replace(/\s+/g, ' ').trim()}`).slice(0, 31).trim();
     let name = base, k = 2;
     while(used.has(name.toLowerCase())){ const suf = ` (${k++})`; name = base.slice(0, 31 - suf.length) + suf; }
     used.add(name.toLowerCase());
-    return sheet(name, [it], i + 1, items.length);
+    return sheet(name, [it], it.no || i + 1);
   });
 }
 
@@ -30655,12 +30659,12 @@ function buildBomHtmlDoc(view){
   const rowsHtml = [];
   bomDocumentRows(view).forEach(e=>{
     if(e.type === 'header'){
-      rowsHtml.push(`<tr><td colspan="4" style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml(e.label)}</td></tr>`);
+      rowsHtml.push(`<tr><td colspan="5" style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml([e.item ? `ITEM ${e.item}` : '', e.label].filter(Boolean).join(' — '))}</td></tr>`);
       return;
     }
     const descHtml = escapeHtml(e.desc).replace(/\n/g, '<br>');
-    const lk = e.parent ? 'font-weight:bold;background:#EEF3FB;' : e.level ? 'color:#595959;' : '', ind = lv => (lv ? `padding-left:${8 + 16 * lv}px;` : '');
-    rowsHtml.push(`<tr><td style="text-align:center;${lk}">${escapeHtml(String(e.qty))}</td><td style="${lk}${ind(e.level)}">${escapeHtml(e.model)}</td><td style="${lk}${ind(e.model ? 0 : e.level)}">${escapeHtml(e.code)}</td><td style="white-space:pre-line;${lk}">${descHtml}</td></tr>`);
+    const lk = e.parent ? 'font-weight:bold;background:#EEF3FB;' : '';
+    rowsHtml.push(`<tr><td style="mso-number-format:'\\@';${lk}">${escapeHtml(e.pos || '')}</td><td style="text-align:center;${lk}">${escapeHtml(String(e.qty))}</td><td style="${lk}">${escapeHtml(e.model)}</td><td style="${lk}">${escapeHtml(e.code)}</td><td style="white-space:pre-line;${lk}">${descHtml}</td></tr>`);
   });
 
   return `<!DOCTYPE html>
@@ -30671,14 +30675,14 @@ function buildBomHtmlDoc(view){
   body{font-family:'Work Sans Light','Work Sans',Calibri,Arial,sans-serif; font-weight:300;}
   table.main{border-collapse:collapse; width:100%; margin-top:10px;}
   table.main td, table.main th{border:1px solid #D9D9D9; padding:5px 8px; font-size:11pt; white-space:nowrap;}
-  table.main td:nth-child(4), table.main th:nth-child(4){white-space:pre-wrap; vertical-align:top;}
+  table.main td:nth-child(5), table.main th:nth-child(5){white-space:pre-wrap; vertical-align:top;}
   table.main th{background:#4472C4; color:#FFFFFF; font-weight:bold; text-align:left;}
 </style></head>
 <body>
   <table style="border:none;"><tr><td style="border:none;"><img src="${LOGO_B64}" height="60"></td></tr></table>
   <p style="font-weight:bold; color:#0070C0; font-size:13pt; margin:0;">${escapeHtml(info.name || info.ref)}</p>
   <table class="main">
-    <tr><th>Qty</th><th>Model</th><th>Code</th><th>Description</th></tr>
+    <tr><th>Pos</th><th>Qty</th><th>Model</th><th>Code</th><th>Description</th></tr>
     ${rowsHtml.join('\n')}
   </table>
 </body></html>`;

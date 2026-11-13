@@ -727,6 +727,59 @@
             border-bottom: 1px solid var(--panel-border);
         }
 
+/* beta_6.75: Projects window — one search box, two quick switches, the rest behind "Filters"; a plain table */
+        #projectSearchOverlay .ps-modal.ps2 { width: min(980px, 96vw); max-width: 980px !important; padding: 0; border-radius: 14px; overflow: hidden; background: var(--panel); }
+        .ps2 .ps2-head { background: var(--panel) !important; color: var(--text) !important; padding: 18px 22px 12px !important; border-bottom: 0 !important; align-items: center; flex-wrap: nowrap; }
+        .ps2 .ps2-ttl { flex: 1; min-width: 0; } .ps2 .ps2-head h3 { margin: 0; font-size: 19px; font-weight: 600; color: var(--text) !important; letter-spacing: -.01em; }
+        .ps2 .ps2-head .ps-sub { margin: 3px 0 0; font-size: 12px; color: var(--dim) !important; }
+        .ps2 .ps2-head .ps-tools { margin-right: 34px; } .ps2 .ps2-head .ps-seg button { height: 28px; font-size: 11.5px; padding: 0 10px; }
+        .ps2 .ps2-head [data-close] { color: var(--dim) !important; background: none !important; border: 0 !important; }
+        .ps2-bar { display: flex; gap: 10px; padding: 2px 22px 10px; }
+        .ps2-search { flex: 1; position: relative; display: flex; align-items: center; margin: 0; }
+        .ps2-search svg { position: absolute; left: 14px; width: 18px; height: 18px; color: var(--dim); pointer-events: none; }
+        .ps2-in { width: 100%; height: 46px; border: 1.5px solid var(--field-border); border-radius: 12px; background: var(--field-bg); color: var(--text); font: inherit; font-size: 15px; padding: 0 14px 0 42px; box-sizing: border-box; }
+        .ps2-in:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(68,114,196,.2); }
+        .ps2-fbtn { height: 46px; padding: 0 16px; border: 1.5px solid var(--field-border); border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+        .ps2-fbtn:hover, .ps2-fbtn[aria-expanded="true"] { border-color: var(--accent); }
+        .ps2-fbtn em { font-style: normal; background: var(--accent-dark); color: #fff; border-radius: 9px; padding: 0 6px; font-size: 11px; line-height: 17px; }
+        .ps2-pills { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 2px 22px 12px; min-height: 40px; box-sizing: border-box; }
+        .ps2-pill { height: 28px; padding: 0 14px; border: 1px solid var(--field-border); border-radius: 14px; background: var(--panel); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+        .ps2-pill:hover { border-color: var(--accent); } .ps2-pill.on { background: var(--accent-dark); border-color: var(--accent-dark); color: #fff; }
+        .ps2-chip { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 4px 0 11px; border-radius: 13px; background: var(--accent-soft); color: var(--accent-dark); font-size: 11.5px; }
+        .ps2-chip button { border: 0; background: none; cursor: pointer; color: inherit; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; padding: 0; }
+        .ps2-chip button:hover { background: rgba(0,0,0,.12); }
+        .ps2 .ps-wrap { border-top: 1px solid var(--panel-border); }
+        .ps2 .ps-head { background: var(--bg) !important; color: var(--dim) !important; padding: 8px 22px !important; border-bottom: 1px solid var(--panel-border); }
+        .ps2 .ps-th { color: var(--dim) !important; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+        .ps2 .ps-item { padding: 10px 22px; border-bottom: 1px solid var(--panel-border); }
+        .ps2 .ps-item:hover { background: var(--accent-soft); } .ps2 .ps-item.on { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent-dark); }
+        .ps2 .ps-grp { padding: 8px 22px; }
+        .ps2-main { display: grid; gap: 1px; min-width: 0; } .ps2-main b { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ps2-main i { font-style: normal; font-size: 12px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ps2-cty { font-size: 12px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ps2-st { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 8px; border-radius: 11px; font-size: 11.5px; font-style: normal; color: #1c2430; white-space: nowrap; max-width: 100%; }
+        body.dark-theme .ps2-st { color: #E8EAF0; }
+        .ps2 .ps-item.on .ps2-own i { background: var(--panel); }
+        .ps2-st::before { content: ''; width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--c); }
+        .ps2-st.st-new { --c: #8A94A6; background: rgba(138,148,166,.18); } .ps2-st.st-prog { --c: #4472C4; background: rgba(68,114,196,.16); } .ps2-st.st-rev { --c: #D9A11F; background: rgba(217,161,31,.2); }
+        .ps2-st.st-won { --c: #2E8B57; background: rgba(46,139,87,.18); } .ps2-st.st-lost { --c: #C8102E; background: rgba(200,16,46,.15); }
+        .ps2-due { font-size: 12px; white-space: nowrap; } .ps2-own { text-align: center; }
+        .ps2-own i { display: inline-block; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-dark); font: 600 10px/26px 'Work Sans', sans-serif; text-align: center; font-style: normal; }
+        .ps2-fp { position: fixed; z-index: 1700; display: flex; gap: 0; background: var(--panel); color: var(--text); border: 1px solid var(--panel-border); border-radius: 12px; box-shadow: 0 14px 38px rgba(16,24,40,.24); overflow: auto; font: 13px 'Work Sans', sans-serif; }
+        .ps2-fp section { width: 200px; padding: 12px 10px 10px 14px; border-right: 1px solid var(--panel-border); } .ps2-fp section:last-child { border-right: 0; }
+        .ps2-fp h6 { display: flex; align-items: center; justify-content: space-between; margin: 0 0 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); }
+        .ps2-fp h6 button { border: 0; background: none; color: var(--accent-dark); cursor: pointer; font: inherit; font-size: 11px; text-transform: none; letter-spacing: 0; }
+        .ps2-fl { max-height: 300px; overflow-y: auto; } .ps2-fl label { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 1px 4px; border-radius: 6px; cursor: pointer; } .ps2-fl label:hover { background: var(--accent-soft); }
+        body.dark-theme #projectSearchOverlay .ps2 .ps-head { background: #22262E !important; color: #9AA3B2 !important; }
+        body.dark-theme #projectSearchOverlay .ps2 .ps-th, body.dark-theme #projectSearchOverlay .ps2 .ps-th * { color: #9AA3B2 !important; }
+        body.dark-theme #projectSearchOverlay .ps2 .ps-item.on { background: #26364D !important; }
+        body.dark-theme #projectSearchOverlay .ps2 .ps2-in, body.dark-theme #projectSearchOverlay .ps2 .ps2-fbtn, body.dark-theme #projectSearchOverlay .ps2 .ps2-pill:not(.on) { background: #292D36 !important; color: #E8EAF0 !important; border-color: #454B58 !important; }
+        body.dark-theme #projectSearchOverlay .ps2 .ps2-chip { color: #A9C7FF; } body.dark-theme #projectSearchOverlay .ps2 .ps2-own i { color: #A9C7FF; }
+        .ps-fi.ps-ms { display: flex; align-items: center; justify-content: space-between; gap: 4px; cursor: pointer; color: inherit; text-align: left; }
+        .ps-fi.ps-ms em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ps-fi.ps-ms i { font-style: normal; font-size: 9px; opacity: .7; }
+        .ps-fi.ps-ms.set { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); font-weight: 600; }
+        body.dark-theme #projectSearchOverlay .ps-fi.ps-ms.set { color: #A9C7FF !important; border-color: #4472C4 !important; }
         .ps-fi {
             height: 28px;
             border: 1px solid var(--field-border);
@@ -15139,6 +15192,7 @@ function setupBackdropClose(overlayEl, closeFn){
   }, true);
   document.addEventListener('keydown', e => {
     if(e.key === 'Escape'){
+      if(document.querySelector('.ud-mspop, .ps2-fp')) return;   // the list / panel of a filter (check boxes) closes first, on its own
       const stack = [...document.querySelectorAll('.settings-overlay, .acc-modal-overlay')].filter(el => isGuarded(el) && isVisible(el));
       const ov = stack[stack.length - 1];
       if(!ov) return;
@@ -24453,7 +24507,7 @@ function showFolderToast(rel, ref){
 // be closed without choosing anything. Moving to another project with unsaved work on the page
 // asks first whether to save it (Save / Print report / Don't save). ----
 const PS_PREF_KEY = 'upsConfigurator.projectsWindow.v1';
-const PS = {sort: {key: 'ref', dir: -1}, f: {ref: '', customer: '', name: '', country: '', owner: '', due: '', status: 'open', x: {}}, sel: null,
+const PS = {sort: {key: 'ref', dir: -1}, f: {q: '', country: [], owner: [], due: '', status: ['open'], x: {}}, sel: null,
   group: (() => { try{ return (JSON.parse(localStorage.getItem(PS_PREF_KEY) || '{}') || {}).group || 'customer'; }catch(e){ return 'customer'; } })(),
   open: new Set(), allOpen: false};
 function psSavePrefs(){ try{ localStorage.setItem(PS_PREF_KEY, JSON.stringify({group: PS.group})); }catch(e){} }
@@ -24496,19 +24550,35 @@ function psRows(){
     const days = due && !isNaN(due) ? Math.round((dayStart(due) - dayStart(new Date())) / 86400000) : null;
     const x = {};
     extra.forEach(k => { x[k] = psFormat((r._raw || {})[k], k); });
-    return {rec: r, ref: String(r.PRJ_ID || ''), customer: String(r.Customer || ''), name: String(r['Project Name'] || ''),
-      country: psCountry(r), owner: String(r['Created By.title'] || ''), status: String(r.Status || ''),
-      due, days, open: offerHasDeadline(r), x};
+    const row = {rec: r, ref: String(r.PRJ_ID || ''), customer: String(r.Customer || ''), name: String(r['Project Name'] || ''),
+      country: psCountry(r), countryKey: CTRY.ofRecord(r).key, owner: String(r['Created By.title'] || ''), status: String(r.Status || ''),
+      due, days, open: offerHasDeadline(r), x, hay: ''};
+    row.hay = psNorm([row.ref, row.customer, row.name, row.country, row.status, row.owner].join(' '));   // beta_6.75: one text to search
+    return row;
   });
 }
+// beta_6.74: Country, Owner and Status hold more than one value (a project passes with any of them; the filters together narrow
+// the list). Texts are compared without accents and capitals; an owner is the same person however the name is written
+// ("Anna Rossi" / "Rossi, Anna"); a status is the same status however it is capitalised ("Offer review" / "Offer Review").
+const psNorm = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const psNameKey = n => psNorm(n).replace(/[^a-z ]+/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
+const psList = v => Array.isArray(v) ? v : (v ? [v] : []);
+function psIsMe(name){
+  if(isMeName(name)) return true;
+  const k = psNameKey(name); if(!k) return false;
+  const acc = (typeof msalAccount !== 'undefined' && msalAccount) || {};
+  return [acc.name, (() => { try{ return currentUserName(); }catch(e){ return ''; } })()].some(x => x && psNameKey(x) === k);
+}
 function psFiltered(all, over){
-  const f = Object.assign({}, PS.f, over || {}), has = (v, q) => !q || v.toLowerCase().includes(q.trim().toLowerCase());
+  const f = Object.assign({}, PS.f, over || {});
+  const toks = psNorm(f.q || '').split(/\s+/).filter(Boolean);   // every word must be found, in any of ref / customer / project / country / status / owner
+  const cs = psList(f.country), os = psList(f.owner), ss = psList(f.status), has = (v, q) => !q || psNorm(v).includes(psNorm(q.trim()));
   const xf = Object.entries(f.x || {}).filter(([, q]) => q);
-  let rows = all.filter(x => has(x.ref, f.ref) && has(x.customer, f.customer) && has(x.name, f.name)
+  let rows = all.filter(x => toks.every(t => x.hay.includes(t))
     && xf.every(([k, q]) => q.startsWith('=') ? (x.x[k] || '') === q.slice(1) : has(x.x[k] || '', q))
-    && (!f.country || x.country === f.country)
-    && (!f.owner || (f.owner === '__me' ? isMeName(x.owner) : x.owner === f.owner))
-    && (!f.status || (f.status === 'open' ? x.open : f.status === 'closed' ? !x.open : x.status === f.status))
+    && (!cs.length || cs.includes(x.countryKey))
+    && (!os.length || os.some(o => o === '__me' ? psIsMe(x.owner) : psNameKey(x.owner) === o))
+    && (!ss.length || ss.some(s => s === 'open' ? x.open : s === 'closed' ? !x.open : psNorm(x.status) === psNorm(s)))
     && (!f.due || (f.due === 'over' ? (x.days != null && x.days < 0) : f.due === 'none' ? x.days == null : (x.days != null && x.days >= 0 && x.days <= Number(f.due)))));
   const k = PS.sort.key, dir = PS.sort.dir;
   const val = x => k === 'due' ? (x.due && !isNaN(x.due) ? x.due.getTime() : Infinity) : String((k.startsWith('x:') ? x.x[k.slice(2)] : x[k]) || '').toLowerCase();
@@ -24585,10 +24655,18 @@ async function switchToProject(ref){
 }
 let psAll = [], psShown = [];
 function psSelected(){ return psShown.find(x => x.ref === PS.sel) || null; }
+// beta_6.75: stage of a status as a colour class, and the initials of an owner
+function psStageCls(status){
+  let g = ''; try{ g = typeof UPS_DASH !== 'undefined' && UPS_DASH && UPS_DASH._stage ? UPS_DASH._stage(status) : ''; }catch(e){}
+  return ({New: 'new', 'In progress': 'prog', 'Offer review': 'rev', Won: 'won', Lost: 'lost'})[g] || 'prog';
+}
+const psInitials = n => String(n || '').split(',').map(t => t.trim()).reverse().join(' ').split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '—';
 function psItemHtml(x, grouped){
   const loaded = x.ref === document.getElementById('prjRef')?.value.trim();
+  const byCust = grouped && PS.group === 'customer';
+  const main = byCust ? `<b>${escapeHtml(x.name || '—')}</b>` : `<b>${escapeHtml(x.customer || '—')}</b>${x.name ? `<i>${escapeHtml(x.name)}</i>` : ''}`;
   return `<div class="ps-row ps-item${x.ref === PS.sel ? ' on' : ''}${grouped ? ' ps-child' : ''}" data-ref="${escapeHtml(x.ref)}">
-    <b class="ps-ref">${escapeHtml(x.ref)}${loaded ? ' <span class="ps-loaded" title="Open on this page">●</span>' : ''}</b><span>${grouped && PS.group === 'customer' ? '' : escapeHtml(x.customer)}</span><span>${escapeHtml(x.name)}</span><span>${grouped && PS.group === 'country' ? '' : escapeHtml(x.country)}</span><span>${escapeHtml(x.status || (x.open ? 'Open' : ''))}</span><span>${escapeHtml(x.owner)}</span></div>`;
+    <b class="ps-ref">${escapeHtml(x.ref)}${loaded ? ' <span class="ps-loaded" title="Open on this page">●</span>' : ''}</b><span class="ps2-main">${main}</span><span class="ps2-cty" title="${escapeHtml(x.country)}">${grouped && PS.group === 'country' ? '' : escapeHtml(x.country || '—')}</span><span>${x.status ? `<em class="ps2-st st-${psStageCls(x.status)}">${escapeHtml(x.status)}</em>` : (x.open ? '<em class="ps2-st st-prog">Open</em>' : '')}</span><span class="ps2-due">${psDueCell(x)}</span><span class="ps2-own"><i title="${escapeHtml(x.owner)}">${escapeHtml(psInitials(x.owner))}</i></span></div>`;
 }
 
 // ---- beta_6.29: System Configuration shown as one card per position (design Q3) ----
@@ -26029,25 +26107,53 @@ const BSZ = (function(){
     ['.aspx', '.html'].forEach(x => add(new URL(base + x, here)));
     return list;
   }
-  let bszUrl = null, loadSeq = 0, frameLoaded = false, frameError = '';
+  let bszUrl = null, loadSeq = 0, frameLoaded = false, frameError = '', probeType = '';
   async function probe(url){
     try{
       let r = await fetch(url, {method: 'HEAD', credentials: 'same-origin', redirect: 'manual', cache: 'no-store'});
       if(r.status === 405 || r.status === 501) r = await fetch(url, {method: 'GET', credentials: 'same-origin', redirect: 'manual', cache: 'no-store'});
       if(r.type === 'opaqueredirect' || r.status === 401 || r.status === 403) return 'auth';
-      return r.ok ? 'ok' : 'missing';
+      if(!r.ok) return 'missing';
+      const ct = r.headers.get('content-type') || '';
+      if(ct && !/text\/html|application\/xhtml/i.test(ct)){ probeType = ct; return 'type'; }   // beta_6.73: served as a download, not as a page
+      return 'ok';
     }catch(e){ return 'error'; }
+  }
+  // beta_6.73: the address answers but the page does not say "ready": look at what the site really serves and say why
+  async function diagnoseSilent(url){
+    if(!url || location.protocol === 'file:') return '';
+    const out = [];
+    try{
+      const r = await fetch(url, {credentials: 'same-origin', cache: 'no-store', redirect: 'manual'});
+      if(r.type === 'opaqueredirect' || r.status === 401 || r.status === 403) return 'The site sends this address to a sign-in page (or refuses it): the Azure sign-in of the page has expired, or the authentication of the site does not cover this file. Reload the page (F5) and sign in again.';
+      const ct = r.headers.get('content-type') || '', xfo = r.headers.get('x-frame-options') || '', csp = r.headers.get('content-security-policy') || '', fa = /frame-ancestors([^;]*)/i.exec(csp);
+      if(/^\s*deny/i.test(xfo)) out.push(`The site sends the header X-Frame-Options: ${xfo}, which forbids opening a page inside another one. Set it to SAMEORIGIN, or remove it, for this folder (web.config / App Service).`);
+      if(fa && !/'self'|\*/.test(fa[1]) && !fa[1].includes(location.origin)) out.push(`The site sends a Content-Security-Policy with frame-ancestors${fa[1].trim() ? ' ' + fa[1].trim() : ''}, which does not allow its own pages: add 'self'.`);
+      if(!r.ok) out.push(`The address answered HTTP ${r.status}.`);
+      else{
+        const txt = await r.text();
+        if(!/text\/html/i.test(ct)) out.push(`The file is served as “${ct || 'unknown type'}” instead of a web page: the .aspx files must be served as text/html.`);
+        const title = ((/<title[^>]*>([^<]{0,80})/i.exec(txt) || [])[1] || '').trim(), ver = (/APP_VERSION\s*=\s*'([^']+)'/.exec(txt) || [])[1];
+        const looksBsz = /src\s*:\s*'batt-sizing'/.test(txt) && /type\s*:\s*'ready'/.test(txt);
+        if(/sign.?in|log.?in|accedi|microsoft/i.test(title) && !looksBsz) out.push(`A sign-in page is served at this address (title “${title}”): the authentication of the site does not let the file through.`);
+        else if(!looksBsz) out.push(`The page published there is not the current Battery Sizing${title ? ` (its title is “${title}”)` : ''}${ver ? `, version ${ver}` : ''}: publish ${BSZ_FILE.split('/').pop()} again from the latest file.`);
+        else if(!out.length) out.push(`The published file is the Battery Sizing${ver ? ' ' + ver : ''} and no blocking header was found. Open the browser console (F12) and report the first red error.`);
+      }
+    }catch(e){ out.push('The address could not be read again: ' + ((e && e.message) || e)); }
+    return out.join(' ');
   }
   function failMsg(kind){
     const tried = candidates().map(u => `<code>${escapeHtml(new URL(u).pathname)}</code>`).join(', ');
     const body = kind === 'auth' ? `<p>The site asked to sign in again: the Azure session of this page has expired, so the sub-program cannot be opened inside it.</p><p>Save your work, reload the page (F5) to sign in again, then reopen Battery sizing.</p>`
       : kind === 'missing' ? `<p>The sub-program was not found on this site. Addresses tried: ${tried}.</p><p>Publish <code>${escapeHtml(BSZ_FILE.split('/').pop())}</code> in the same folder as the configurator, then try again.</p>`
+      : kind === 'type' ? `<p>The sub-program address answers, but the file is served as “${escapeHtml(probeType)}” instead of a web page, so the browser downloads it instead of opening it.</p><p>The .aspx files must be served as text/html, as the configurator page is. Fix this on the site, then try again.</p>`
       : kind === 'error' ? `<p>The site did not answer (connection lost, or the site is restarting after a publication).</p><p>Wait a few seconds, then try again.</p>`
       : kind === 'script' ? `<p>The sub-program was loaded but stopped with an error: <code>${escapeHtml(frameError)}</code></p><p>Reload the page (Ctrl+F5); if it happens again, report this message.</p>`
       : kind === 'silent' ? `<p>The address <code>${escapeHtml(bszUrl ? new URL(bszUrl).pathname : BSZ_FILE)}</code> was loaded, but it did not answer as the Battery Sizing sub-program (another page was served there — a sign-in or error page — or an old copy is published).</p><p>Reload the page (Ctrl+F5) and try again.</p>`
       : `<p>The sub-program is still loading after 60 seconds (slow connection, or the site is restarting after a publication).</p><p>Try again in a moment.</p>`;
     showMsg(`<h3>Battery Sizing did not start</h3>${body}<button type="button" class="act btn-primary" data-bsz-retry>Try again</button>`);
     msgEl.querySelector('[data-bsz-retry]')?.addEventListener('click', () => { if(frame){ frame.remove(); frame = null; } ready = false; load(); });
+    if(kind === 'silent'){ const sq = loadSeq; diagnoseSilent(bszUrl).then(t => { const b = msgEl.querySelector('[data-bsz-retry]'); if(!t || sq !== loadSeq || !b) return; console.warn('Battery Sizing:', t); const d = document.createElement('p'); d.className = 'bsz-diag'; d.innerHTML = '<b>Diagnosis:</b> ' + escapeHtml(t); b.before(d); }); }
   }
   async function load(){
     const seq = ++loadSeq;
@@ -26066,7 +26172,7 @@ const BSZ = (function(){
         const r = await probe(u);
         if(seq !== loadSeq || frame !== mine) return;
         if(r === 'ok'){ url = u; break; }
-        if(r === 'auth') worst = 'auth'; else if(r === 'error' && worst !== 'auth') worst = 'error';
+        if(r === 'auth') worst = 'auth'; else if(r === 'type' && worst !== 'auth') worst = 'type'; else if(r === 'error' && worst !== 'auth' && worst !== 'type') worst = 'error';
       }
       if(!url){ bszUrl = null; failMsg(worst); return; }
     }
@@ -26941,60 +27047,57 @@ function openProjectSearch(){
   PS.group = 'none'; PS.open.clear(); PS.allOpen = false;
   PS.extra = [];
   // beta 6.50: every opening starts with the filters reset (Status = Open, as at the first opening), no project selected
-  PS.f = {ref: '', customer: '', name: '', country: '', owner: '', due: '', status: 'open', x: {}};
+  PS.f = {q: '', country: [], owner: [], due: '', status: ['open'], x: {}};
   PS.sel = null;
   const opts = (key) => [...new Set(psAll.map(x => x[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  // an extra column with few different values gets a choice list, otherwise a text filter
-  const xFilter = k => {
-    const vals = [...new Set(psAll.map(x => x.x[k]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-    const cur = PS.f.x[k] || '';
-    return vals.length && vals.length <= 25
-      ? `<select class="ps-fi" data-fx="${escapeHtml(k)}" aria-label="Filter ${escapeHtml(psFieldLabel(k))}"><option value="">All</option>${vals.map(v => `<option value="=${escapeHtml(v)}"${cur === '=' + v ? ' selected' : ''}>${escapeHtml(v.length > 40 ? v.slice(0, 40) + '…' : v)}</option>`).join('')}</select>`
-      : `<input class="ps-fi" data-fx="${escapeHtml(k)}" type="search" placeholder="…" value="${escapeHtml(cur)}" aria-label="Filter ${escapeHtml(psFieldLabel(k))}">`;
+  // the choices of the three filters with more than one value: [value, label]; computed when the panel opens (the rows can change under it)
+  const msChoices = key => {
+    if(key === 'country'){ const m = new Map(); psAll.forEach(x => { if(x.countryKey && !m.has(x.countryKey)) m.set(x.countryKey, x.country); }); return [...m].sort((a, b) => a[1].localeCompare(b[1])); }
+    if(key === 'status'){ const seen = new Map(); psAll.forEach(x => { const k = psNorm(x.status); if(x.status && !seen.has(k)) seen.set(k, x.status); });
+      return [['open', 'Open'], ['closed', 'Not open'], ...[...seen.values()].sort((a, b) => a.localeCompare(b)).map(v => [v, v])]; }
+    const seen = new Map(); psAll.forEach(x => { const k = psNameKey(x.owner); if(k && !seen.has(k)) seen.set(k, /,/.test(x.owner) ? x.owner.split(',').map(t => t.trim()).reverse().join(' ') : x.owner); });
+    return [['__me', 'Me'], ...[...seen].sort((a, b) => a[1].localeCompare(b[1])).map(([k, v]) => [k, v])];
   };
-  const cols = `86px minmax(150px,1.2fr) minmax(170px,1.6fr) 120px 130px minmax(130px,0.9fr)`;
-  const minW = 86 + 150 + 170 + 120 + 130 + 130 + 5 * 8 + 28;
-  const sel = (id, list, cur) => `<select class="ps-fi" data-f="${id}" aria-label="Filter ${id}">${list.map(([v, l]) => `<option value="${escapeHtml(v)}"${cur === v ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>`;
+  const msText = (key, v) => (msChoices(key).find(c => c[0] === v) || [0, v])[1];
+  // beta_6.75: ONE search box (customer, project code, project name…), two quick switches (Open, Mine), the rest behind "Filters"
+  const cols = `84px minmax(0,2.4fr) 118px 118px 88px 56px`;
+  const minW = 84 + 220 + 118 + 118 + 88 + 56 + 5 * 8 + 44;
   const th = (key, label) => `<button type="button" class="ps-th" data-sort="${key}">${label}<span class="ps-arrow" data-arrow="${key}"></span></button>`;
-  ov.innerHTML = `<div class="settings-modal ps-modal" role="dialog" aria-modal="true" aria-label="Projects">
-    <div class="acc-modal-header ps-header"><div><h3>Projects</h3><p class="ps-sub">Filter under each column · click a customer to open its projects · double click (or Enter) opens a project</p></div>
-      <span class="ps-tools"><span class="ps-dim">Group</span><span class="ps-seg" role="group" aria-label="Group the projects"><button type="button" data-group="none">None</button><button type="button" data-group="customer">By customer</button><button type="button" data-group="country">By country</button></span>
+  ov.innerHTML = `<div class="settings-modal ps-modal ps2" role="dialog" aria-modal="true" aria-label="Projects">
+    <div class="acc-modal-header ps-header ps2-head"><div class="ps2-ttl"><h3>Open a project</h3><p class="ps-sub">Enter, or a double click, opens the selected project</p></div>
+      <span class="ps-tools"><span class="ps-dim">Group</span><span class="ps-seg" role="group" aria-label="Group the projects"><button type="button" data-group="none">None</button><button type="button" data-group="customer">Customer</button><button type="button" data-group="country">Country</button></span>
       <button type="button" class="btn-ghost act ps-small" data-all>Expand all</button><button type="button" class="btn-ghost act ps-small" data-export>Export Excel</button><button type="button" class="acc-modal-close" data-close aria-label="Close">×</button></span></div>
+    <div class="ps2-bar"><label class="ps2-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="ps2-in" data-f="q" type="search" autocomplete="off" spellcheck="false" placeholder="Customer, project code or project name…" aria-label="Search projects by customer, project code or project name"></label>
+      <button type="button" class="ps2-fbtn" data-fp aria-haspopup="true" aria-expanded="false">Filters<em hidden>0</em></button></div>
+    <div class="ps2-pills" id="psPills"></div>
     <div class="ps-wrap ps-hscroll"><div class="ps-inner" style="--ps-cols:${cols}; min-width:${minW}px;">
-      <div class="ps-row ps-head">${th('ref', 'Ref.')}${th('customer', 'Customer')}${th('name', 'Project')}${th('country', 'Country')}${th('status', 'Status')}${th('owner', 'Owner')}</div>
-      <div class="ps-row ps-filters">
-        <input class="ps-fi" data-f="ref" type="search" list="psDlRef" autocomplete="off" placeholder="ref…" value="${escapeHtml(PS.f.ref)}" aria-label="Filter reference">
-        <input class="ps-fi" data-f="customer" type="search" list="psDlCust" autocomplete="off" placeholder="customer…" value="${escapeHtml(PS.f.customer)}" aria-label="Filter customer">
-        <input class="ps-fi" data-f="name" type="search" list="psDlName" autocomplete="off" placeholder="project…" value="${escapeHtml(PS.f.name)}" aria-label="Filter project">
-        ${sel('country', [['', 'All'], ...opts('country').map(v => [v, v])], PS.f.country)}
-        ${sel('status', [['', 'All'], ['open', 'Open'], ['closed', 'Not open'], ...opts('status').map(v => [v, v])], PS.f.status)}
-        ${sel('owner', [['', 'All'], ['__me', 'Me'], ...opts('owner').map(v => [v, v])], PS.f.owner)}
-      </div>
+      <div class="ps-row ps-head">${th('ref', 'Ref.')}${th('customer', 'Customer / Project')}${th('country', 'Country')}${th('status', 'Status')}${th('due', 'Due')}${th('owner', 'Owner')}</div>
       <div class="ps-body" id="psBody" tabindex="0"></div>
     </div></div>
-    ${psDatalists(psAll)}
     <div class="ps-foot"><button type="button" class="btn-ghost act ps-new" data-new>✨ Create New Offer</button><span id="psCount" class="ps-dim"></span><button type="button" class="kb-link" data-reset>Clear filters</button>
       <span class="ps-actions"><button type="button" class="btn-ghost act" data-folder disabled>📂 Folder</button><button type="button" class="act btn-primary" data-open disabled>Open project</button></span></div>
   </div>`;
   document.body.appendChild(ov);
   const $ = s => ov.querySelector(s);
-  const close = () => { ov.remove(); document.removeEventListener('keydown', onKey, true); };
+  const close = () => { document.getElementById('psFp')?.remove(); ov.remove(); document.removeEventListener('keydown', onKey, true); };
   const updateButtons = () => {
     const x = psSelected();
     $('[data-open]').disabled = $('[data-folder]').disabled = !x;
     $('[data-open]').textContent = x ? (x.ref === document.getElementById('prjRef').value.trim() ? `Back to ${x.ref}` : `Open ${x.ref}`) : 'Open project';
   };
   const gkey = () => PS.group === 'country' ? 'country' : 'customer';
+  // a group is one country (by its code) or one customer (the same name whatever its capitals, accents and spaces)
+  const gidOf = x => gkey() === 'country' ? (x.countryKey || '—') : (psNorm(x.customer).replace(/\s+/g, ' ').trim() || '—');
   const render = () => {
     const psMain = psFiltered(psAll);
     // Typing a ref / customer / project always searches the whole SharePoint list: matches hidden by
     // the Status filter are listed underneath, so a closed or won project is still found.
-    const typed = !!(PS.f.ref.trim() || PS.f.customer.trim() || PS.f.name.trim());
+    const typed = !!PS.f.q.trim();
     const inShown = new Set(psMain.map(x => x.ref));
-    const psOther = typed && PS.f.status ? psFiltered.call(null, psAll, {status: ''}).filter(x => !inShown.has(x.ref)) : [];
+    const psOther = typed && psList(PS.f.status).length ? psFiltered.call(null, psAll, {status: []}).filter(x => !inShown.has(x.ref)) : [];
     psShown = psMain.concat(psOther);
     if(PS.sel && !psShown.some(x => x.ref === PS.sel)) PS.sel = null;
-    if(!PS.sel && psShown.length === 1) PS.sel = psShown[0].ref;
+    if(!PS.sel && psShown.length && (psShown.length === 1 || typed)) PS.sel = psShown[0].ref;   // typing: the first match is the one Enter opens
     ov.querySelectorAll('[data-group]').forEach(b => b.classList.toggle('on', b.dataset.group === PS.group));
     $('[data-all]').style.display = PS.group === 'none' ? 'none' : '';
     $('[data-all]').textContent = PS.allOpen ? 'Collapse all' : 'Expand all';
@@ -27008,22 +27111,23 @@ function openProjectSearch(){
       html = cap.map(x => psItemHtml(x, false)).join('') + (psMain.length > cap.length ? `<div class="ps-empty">${psMain.length - cap.length} more — narrow the filters</div>` : '');
     } else {
       const key = gkey(), groups = new Map();
-      psMain.forEach(x => { const g = x[key] || '—'; if(!groups.has(g)) groups.set(g, []); groups.get(g).push(x); });
-      const typing = !!(PS.f.ref.trim() || PS.f.customer.trim() || PS.f.name.trim());
+      psMain.forEach(x => { const g = gidOf(x); if(!groups.has(g)) groups.set(g, []); groups.get(g).push(x); });
+      const typing = !!PS.f.q.trim();
       html = [...groups].map(([g, items]) => {
         const open = PS.allOpen || typing || PS.open.has(g) || groups.size === 1;
         const countries = key === 'customer' ? [...new Set(items.map(x => x.country).filter(Boolean))].join(' · ') : '';
-        return `<button type="button" class="ps-grp" data-g="${escapeHtml(g)}" aria-expanded="${open}"><span class="ps-caret">${open ? '▾' : '▸'}</span><b>${escapeHtml(g)}</b><span class="ps-cnt">${items.length}</span>${countries ? `<span class="ps-dim">${escapeHtml(countries)}</span>` : ''}<span class="ps-ghint">${psGroupHint(items.slice())}</span></button>`
+        const gl = key === 'country' ? (items[0].country || '—') : (items[0].customer || '—');
+        return `<button type="button" class="ps-grp" data-g="${escapeHtml(g)}" aria-expanded="${open}"><span class="ps-caret">${open ? '▾' : '▸'}</span><b>${escapeHtml(gl)}</b><span class="ps-cnt">${items.length}</span>${countries ? `<span class="ps-dim">${escapeHtml(countries)}</span>` : ''}<span class="ps-ghint">${psGroupHint(items.slice())}</span></button>`
           + (open ? items.map(x => psItemHtml(x, true)).join('') : '');
       }).join('');
     }
     if(psOther.length){
       if(!psMain.length) html = '';
-      html += `<div class="ps-sep">Also in SharePoint · ${psOther.length} with another status</div>` + psOther.slice(0, 200).map(x => psItemHtml(x, false)).join('');
+      html += `<div class="ps-sep">Also found with another status · ${psOther.length}</div>` + psOther.slice(0, 200).map(x => psItemHtml(x, false)).join('');
     }
     $('#psBody').innerHTML = html;
-    $('#psCount').textContent = !psAll.length ? '' : PS.group === 'none' ? `${psMain.length} of ${psAll.length} projects${psOther.length ? ` + ${psOther.length} with another status` : ''}`
-      : `${psMain.length} projects · ${new Set(psMain.map(x => x[gkey()] || '—')).size} ${PS.group === 'country' ? 'countries' : 'customers'}`;
+    $('#psCount').textContent = !psAll.length ? '' : PS.group === 'none' ? (typed ? `${psMain.length + psOther.length} found${psOther.length ? ` · ${psOther.length} with another status` : ''}` : `${psMain.length} of ${psAll.length} projects`)
+      : `${psMain.length} projects · ${new Set(psMain.map(gidOf)).size} ${PS.group === 'country' ? 'countries' : 'customers'}`;
     ov.querySelectorAll('[data-arrow]').forEach(a => { a.textContent = a.dataset.arrow === PS.sort.key ? (PS.sort.dir > 0 ? ' ▴' : ' ▾') : ''; });
     ov.querySelectorAll('.ps-item').forEach(el => {
       el.addEventListener('click', () => { PS.sel = el.dataset.ref; ov.querySelectorAll('.ps-item.on').forEach(o => o.classList.remove('on')); el.classList.add('on'); updateButtons(); });
@@ -27054,17 +27158,53 @@ function openProjectSearch(){
     }
     document.getElementById('btnNewOffer').click();
   };
-  const setF = (el, v) => { if(el.dataset.fx != null) PS.f.x[el.dataset.fx] = v; else PS.f[el.dataset.f] = v; render(); };
-  ov.querySelectorAll('input.ps-fi').forEach(i => i.addEventListener('input', () => setF(i, i.value)));
-  ov.querySelectorAll('select.ps-fi').forEach(s => s.addEventListener('change', () => setF(s, s.value)));
+  ov.querySelector('input.ps2-in').addEventListener('input', e => { PS.f.q = e.target.value; render(); });
+  // quick switches and the chips of the other active filters
+  const pillsHtml = () => {
+    const st = psList(PS.f.status), ow = psList(PS.f.owner), chips = [];
+    psList(PS.f.country).forEach(v => chips.push(['country', v, 'Country: ' + msText('country', v)]));
+    st.filter(v => v !== 'open').forEach(v => chips.push(['status', v, 'Status: ' + msText('status', v)]));
+    ow.filter(v => v !== '__me').forEach(v => chips.push(['owner', v, 'Owner: ' + msText('owner', v)]));
+    return {n: chips.length, html: `<button type="button" class="ps2-pill${st.includes('open') ? ' on' : ''}" data-pill="open" aria-pressed="${st.includes('open')}" title="Projects with a deadline to manage (not closed, not in review)">Open</button><button type="button" class="ps2-pill${ow.includes('__me') ? ' on' : ''}" data-pill="mine" aria-pressed="${ow.includes('__me')}">Mine</button>`
+      + chips.map(([k, v, t]) => `<span class="ps2-chip">${escapeHtml(t)}<button type="button" data-chip="${k}" data-v="${escapeHtml(v)}" aria-label="Remove ${escapeHtml(t)}">✕</button></span>`).join('')};
+  };
+  const fpClose = () => { document.getElementById('psFp')?.remove(); $('[data-fp]')?.setAttribute('aria-expanded', 'false'); };
+  const fpFill = pop => pop.querySelectorAll('input[type=checkbox]').forEach(c => { c.checked = psList(PS.f[c.closest('section').dataset.k]).includes(c.value); });
+  const syncUi = () => {
+    const p = pillsHtml(); $('#psPills').innerHTML = p.html;
+    const b = $('[data-fp] em'); b.textContent = p.n; b.hidden = !p.n;
+    const pop = document.getElementById('psFp'); if(pop) fpFill(pop);
+  };
+  $('#psPills').addEventListener('click', e => {
+    const pl = e.target.closest('[data-pill]'), ch = e.target.closest('[data-chip]');
+    if(pl){ const k = pl.dataset.pill === 'open' ? 'status' : 'owner', v = pl.dataset.pill === 'open' ? 'open' : '__me', cur = psList(PS.f[k]); PS.f[k] = cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v]; }
+    else if(ch){ PS.f[ch.dataset.chip] = psList(PS.f[ch.dataset.chip]).filter(x => x !== ch.dataset.v); }
+    else return;
+    syncUi(); render();
+  });
+  // the panel of the filters: Status, Country, Owner, each a list with check boxes
+  $('[data-fp]').addEventListener('click', e => {
+    if(document.getElementById('psFp')){ fpClose(); return; }
+    const pop = document.createElement('div'); pop.id = 'psFp'; pop.className = 'ps2-fp'; pop.setAttribute('role', 'group'); pop.setAttribute('aria-label', 'Filters');
+    pop.innerHTML = [['status', 'Status'], ['country', 'Country'], ['owner', 'Owner']].map(([k, t]) => `<section data-k="${k}"><h6>${t}<button type="button" data-fall>All</button></h6><div class="ps2-fl">${msChoices(k).map(([v, l]) => `<label><input type="checkbox" value="${escapeHtml(v)}"><span>${escapeHtml(l)}</span></label>`).join('') || '<p class="ps-dim">Nothing to choose.</p>'}</div></section>`).join('');
+    document.body.appendChild(pop); fpFill(pop);
+    const r = e.currentTarget.getBoundingClientRect();
+    pop.style.top = (r.bottom + 6) + 'px'; pop.style.left = Math.max(8, Math.min(r.right - pop.offsetWidth, innerWidth - pop.offsetWidth - 8)) + 'px'; pop.style.maxHeight = Math.max(220, innerHeight - r.bottom - 20) + 'px';
+    e.currentTarget.setAttribute('aria-expanded', 'true');
+    pop.addEventListener('change', ev => { const c = ev.target.closest('input[type=checkbox]'); if(!c) return; const k = c.closest('section').dataset.k, cur = psList(PS.f[k]).filter(v => v !== c.value); PS.f[k] = c.checked ? [...cur, c.value] : cur; syncUi(); render(); });
+    pop.addEventListener('click', ev => { const a = ev.target.closest('[data-fall]'); if(!a) return; PS.f[a.closest('section').dataset.k] = []; syncUi(); render(); });
+    const onDown = ev => { if(!pop.isConnected){ document.removeEventListener('pointerdown', onDown, true); return; } if(!(ev.target.closest && ev.target.closest('#psFp, [data-fp]'))){ fpClose(); document.removeEventListener('pointerdown', onDown, true); } };
+    document.addEventListener('pointerdown', onDown, true);
+    pop.querySelector('input')?.focus();
+  });
   ov.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => {
     PS.sort = PS.sort.key === b.dataset.sort ? {key: b.dataset.sort, dir: -PS.sort.dir} : {key: b.dataset.sort, dir: 1}; render();
   }));
   ov.querySelectorAll('[data-group]').forEach(b => b.addEventListener('click', () => { PS.group = b.dataset.group; PS.open.clear(); PS.allOpen = false; psSavePrefs(); render(); }));
   $('[data-all]').addEventListener('click', () => { PS.allOpen = !PS.allOpen; if(!PS.allOpen) PS.open.clear(); render(); });
   $('[data-reset]').addEventListener('click', () => {
-    PS.f = {ref: '', customer: '', name: '', country: '', owner: '', due: '', status: '', x: {}};
-    ov.querySelectorAll('.ps-fi').forEach(el => { el.value = ''; }); render();
+    PS.f = {q: '', country: [], owner: [], due: '', status: [], x: {}};
+    ov.querySelector('input.ps2-in').value = ''; fpClose(); syncUi(); render(); ov.querySelector('input.ps2-in').focus();
   });
   $('[data-open]').addEventListener('click', doOpen);
   $('[data-folder]').addEventListener('click', doFolder);
@@ -27087,6 +27227,10 @@ function openProjectSearch(){
   function onKey(e){
     if(!document.body.contains(ov)) return;
     if(getComputedStyle(document.getElementById('appDialogOverlay')).display !== 'none') return;
+    if(document.getElementById('psFp')){   // Esc closes the panel of the filters first, not the window
+      if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); fpClose(); ov.querySelector('[data-fp]')?.focus(); }
+      return;
+    }
     if(e.key === 'Escape'){ e.preventDefault(); close(); return; }
     if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
       const items = [...ov.querySelectorAll('.ps-item')].map(el => el.dataset.ref);
@@ -27101,12 +27245,13 @@ function openProjectSearch(){
   }
   document.addEventListener('keydown', onKey, true);
   render();
-  setTimeout(() => $('[data-f="customer"]')?.focus(), 0);
+  syncUi();
+  setTimeout(() => $('input.ps2-in')?.focus(), 0);
   // countries known only by id: load the country list once, then show the window again with names
   if(typeof countryOptionsLoaded !== 'undefined' && !countryOptionsLoaded && msalInstance && msalAccount && (PROGRESS || []).some(r => r._countryLookupId != null && r._countryLookupId !== '')){
     ensureCountryOptionsLoaded().then(() => {
       if(!document.body.contains(ov)) return;
-      const keepSel = PS.sel; close(); PS.sel = keepSel; openProjectSearch();
+      psAll = psRows(); syncUi(); render();   // beta_6.74: in place — reopening the window wiped the filters and the selected project
     }).catch(err => console.info('Country list not available — countries stay as SharePoint gives them:', err && (err.message || err)));
   }
 }
@@ -28679,7 +28824,7 @@ const POP_V2 = (function(){
   }
   // the Projects window gets the same look (navy title with icon)
   function enhanceProjects(ov){
-    const m = ov.querySelector('.ps-modal'); if(!m || m.classList.contains('pop-v2-ps')) return;
+    const m = ov.querySelector('.ps-modal'); if(!m || m.classList.contains('pop-v2-ps') || m.classList.contains('ps2')) return;
     m.classList.add('pop-v2-ps');
     const head = m.querySelector('.ps-header > div:first-child');
     if(head && !head.querySelector('.pop-icon')){
@@ -33613,7 +33758,7 @@ function gantt(el, list){
       const mt = !m ? '' : m.rev >= 0 ? ` · 🏆 R${m.rev} marked won${m.demo ? '' : ' in its offer file'}` : m.err ? ` · <b>won mark not written</b>: ${esc(m.err)}` : m.why === 'no-closed' || m.why === 'no-file' ? ' · no closed revision to mark won (close the offer in the configurator)' : '';
       if(!undo) toast(`<b>${esc(o.ref)}</b> · status <b>${esc(value)}</b>${SRC === 'sp' ? ' – saved on SharePoint' : ' (example data)'}${mt}`, () => changeStatus(o, old.raw, true, m && m.rev >= 0 ? m : null), !!(m && m.err));
       if(!undo && SRC === 'sp' && !o.hasOffer){ try{ if(window.START_PAGE) window.START_PAGE.askValuesFor(o.itemId, value, old.raw, true); }catch(e){ console.warn(e); } }   // beta_6.59: no offer file → the value window
-      else toast(`<b>${esc(o.ref)}</b> · status back to <b>${esc(value)}</b>${mk && mk.rev >= 0 ? ' · won mark removed' : ''}`);
+      else if(undo) toast(`<b>${esc(o.ref)}</b> · status back to <b>${esc(value)}</b>${mk && mk.rev >= 0 ? ' · won mark removed' : ''}`);   // beta_6.72: only after an Undo (before, it covered the toast with the Undo button)
     }catch(err){
       setStatusLocal(o, old.raw); o.closed = old.closed; render();
       toast(`<b>${esc(o.ref)}</b>: the status was NOT changed – ${esc(err.message || err)}`, null, true);

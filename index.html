@@ -13956,34 +13956,44 @@
         .pop-pen { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; background: #FBE7E9; border: 1px solid #F3C9CF; color: #9E1F2A; font-size: 12.5px; }
         body.dark-theme .pd-pen-warn, body.dark-theme .pop-pen { background: #43272D; border-color: #6B3A44; color: #FF8FA0; }
         body.dark-theme .pen-tag { background: #43272D; color: #FF8FA0; }
-/* beta_6.68: delivery planner */
-        .pl-modal { width: min(1240px, 96vw); max-width: none; height: 92vh; max-height: none; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
-        .pl-table { border-collapse: collapse; width: 100%; font-size: 13px; }
-        .pl-table thead th { position: sticky; top: 0; z-index: 2; height: 34px; padding: 0 10px; text-align: left; font-size: 12px; font-weight: 600; color: #fff; background: #4472C4; white-space: nowrap; }
-        .pl-table thead th.num { text-align: right; }
-        .pl-table td { padding: 5px 10px; border-bottom: 1px solid var(--panel-border); vertical-align: middle; }
-        .pl-table tr.first td { border-top: 2px solid var(--panel-border); }
-        .pl-table td small { display: block; color: var(--dim); font-size: 11.5px; }
-        .pl-table td input { height: 30px; border: 1px solid var(--field-border); border-radius: 6px; background: var(--field-bg); color: var(--text); font: inherit; padding: 0 8px; }
-        .pl-table td.num input { width: 74px; text-align: right; }
-        .pl-table tr.bad td.num input { border-color: #C8102E; background: #FBE7E9; }
-        .pl-table td.bk { color: var(--dim); white-space: nowrap; }
-        .pl-table td.act { white-space: nowrap; text-align: right; min-width: 176px; }
-        .pl-table td input[type=date] { width: 140px; }
-.pl-scroll { padding: 14px 18px; background: var(--bg); }
-        .plp { margin: 0 0 14px; border: 1px solid var(--panel-border); border-radius: 10px; background: var(--panel); overflow: hidden; }
-        .plp.bad { border-color: #E0A3AB; }
-        .plp-h { display: flex; align-items: center; gap: 12px; padding: 9px 12px; font-size: 13px; }
-        .plp-h > span:first-child { flex: 1; min-width: 0; }
-        .plp-warn { color: #9E1F2A; font-size: 12px; font-weight: 600; }
-        .plp .pl-table thead th { position: static; height: auto; padding: 6px 10px; background: #EEF3FB; color: #1F3F7A; text-transform: none; letter-spacing: 0; vertical-align: bottom; }
-        .plp .pl-table thead th small { display: block; font-weight: 400; color: var(--dim); white-space: nowrap; }
-        .plp .pl-table td.num input { width: 64px; }
-        .pl-note { margin: 0; padding: 8px 12px; font-size: 12px; color: var(--dim); }
-        body.dark-theme .plp .pl-table thead th { background: #26364D; color: #CFE0FF; } body.dark-theme .plp-warn { color: #FF8FA0; }
-        .pl-btn { height: 28px; margin-left: 6px; padding: 0 10px; border: 1px solid #C9D3E3; border-radius: 6px; background: var(--panel); color: var(--accent-dark); font: 500 12px 'Work Sans', sans-serif; cursor: pointer; }
-        .pl-btn:hover { background: #EEF3FB; }
-        body.dark-theme .pl-btn { border-color: #454B58; color: #A9C7FF; } body.dark-theme .pl-table tr.bad td.num input { background: #43272D; }
+/* beta_6.70: delivery planner — its own class names (dp-*): pl-* is the Price list window, and sharing them restyled it.
+   ITEMs are the rows and batches the columns: an offer has many ITEMs and few batches, so the table grows downwards */
+        .dp-modal { width: min(1240px, 96vw); max-width: none; height: 92vh; max-height: none; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+        .dp-scroll { padding: 14px 18px; background: var(--bg); }
+        .dpp { margin: 0 0 14px; border: 1px solid var(--panel-border); border-radius: 10px; background: var(--panel); overflow: hidden; }
+        .dpp.bad { border-color: #E0A3AB; }
+        .dpp-h { display: flex; align-items: center; gap: 12px; padding: 9px 12px; font-size: 13px; }
+        .dpp-h > span:first-child { flex: 1; min-width: 0; }
+        .dpp-warn { color: #9E1F2A; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        .dpp-x { overflow-x: auto; border-top: 1px solid var(--panel-border); }
+        .dp-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+        .dp-table th, .dp-table td { padding: 6px 10px; border-bottom: 1px solid var(--panel-border); vertical-align: middle; text-align: left; font-weight: 400; background: var(--panel); }
+        .dp-table thead th { vertical-align: bottom; background: #EEF3FB; color: #1F3F7A; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        .dp-table tbody tr:last-child > * { border-bottom: 0; }
+        .dp-table .it { position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--panel-border); }
+        .dp-table thead .it { z-index: 2; }
+        .dp-table .it > div { min-width: 200px; max-width: 440px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        @media (max-width: 900px) { .dp-table .it > div { min-width: 150px; max-width: 190px; } .dp-scroll { padding: 10px; } }
+        .dp-table tbody tr:hover > * { background: #F6F9FE; } body.dark-theme .dp-table tbody tr:hover > * { background: #232B38; }
+        .dp-table tbody .it b { display: inline-block; min-width: 58px; margin-right: 6px; font-weight: 600; }
+        .dp-table tbody .it span { color: var(--dim); }
+        .dp-table .num { text-align: right; white-space: nowrap; }
+        .dp-table td.lf.bad { color: #9E1F2A; font-weight: 600; }
+        .dp-table .bt { border-left: 1px solid var(--panel-border); }
+        .dp-table td.bt { text-align: right; }
+        .dp-table .fill { width: 100%; padding: 0; }
+        .dp-table .bt-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; }
+        .dp-table thead label { display: block; margin-top: 5px; font-size: 11.5px; font-weight: 400; color: var(--dim); }
+        .dp-table .bk { display: block; margin-top: 6px; font-size: 11.5px; font-weight: 400; color: var(--dim); }
+        .dp-table input { height: 30px; border: 1px solid var(--field-border); border-radius: 6px; background: var(--field-bg); color: var(--text); font: inherit; padding: 0 8px; }
+        .dp-table input[type=date] { display: block; width: 150px; margin-top: 2px; }
+        .dp-table td.bt input { width: 76px; text-align: right; }
+        .dp-table tr.bad td.bt input { border-color: #C8102E; background: #FBE7E9; }
+        .dp-note { margin: 0; padding: 8px 12px; font-size: 12px; color: var(--dim); }
+        .dp-btn { height: 28px; padding: 0 10px; border: 1px solid #C9D3E3; border-radius: 6px; background: var(--panel); color: var(--accent-dark); font: 500 12px 'Work Sans', sans-serif; cursor: pointer; white-space: nowrap; }
+        .dp-btn:hover { background: #EEF3FB; }
+        body.dark-theme .dp-table thead th { background: #26364D; color: #CFE0FF; } body.dark-theme .dpp-warn, body.dark-theme .dp-table td.lf.bad { color: #FF8FA0; }
+        body.dark-theme .dp-btn { border-color: #454B58; color: #A9C7FF; } body.dark-theme .dp-btn:hover { background: #26364D; } body.dark-theme .dp-table tr.bad td.bt input { background: #43272D; }
         .card-kw-sub { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--dim); }
         /* the SharePoint mark is 34 px, the line icons 24: its label sat lower than the labels beside it */
         #ribbonPanel .rb-big[data-cmd="saveSpData"] > svg { margin: -5px 0; }
@@ -14007,6 +14017,19 @@
             .ud-sel select { height: 24px; min-width: 150px; max-width: 190px; border: 1px solid var(--field-border); border-radius: 5px; background: var(--field-bg); padding: 0 6px; font-size: 12.5px; color: var(--text); }
             .ud-sel select.set { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); font-weight: 600; }
         .rb-panel.ud-only .rb-col:has(.ud-sel) { gap: 4px; }
+        /* beta_6.72: a filter with more than one value — a button that opens a list with check boxes */
+        .ud-sel .ud-ms { height: 24px; min-width: 150px; max-width: 190px; display: inline-flex; align-items: center; justify-content: space-between; gap: 6px; border: 1px solid var(--field-border); border-radius: 5px; background: var(--field-bg); padding: 0 6px; font: inherit; font-size: 12.5px; color: var(--text); cursor: pointer; }
+        .ud-sel .ud-ms em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ud-sel .ud-ms i { font-style: normal; font-size: 10px; color: var(--dim); }
+        .ud-sel .ud-ms.set { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); font-weight: 600; }
+        .rb-panel.ud-tight .ud-sel .ud-ms { min-width: 112px; max-width: 130px; }
+        .ud-mspop { position: fixed; z-index: 1700; min-width: 230px; max-width: 340px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; box-shadow: 0 10px 30px rgba(16, 24, 40, .2); font: 13px 'Work Sans', sans-serif; color: var(--text); }
+        .ud-ms-h { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--panel-border); }
+        .ud-ms-h b { flex: 1; font-weight: 600; } .ud-ms-h input { flex: 1; min-width: 0; height: 28px; border: 1px solid var(--field-border); border-radius: 6px; background: var(--field-bg); color: var(--text); font: inherit; padding: 0 8px; }
+        .ud-ms-h button { height: 28px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: 6px; background: var(--panel); color: var(--accent-dark); font: 500 12px 'Work Sans', sans-serif; cursor: pointer; }
+        .ud-ms-l { overflow-y: auto; padding: 4px 0; } .ud-ms-l p { margin: 0; padding: 8px 12px; color: var(--dim); }
+        .ud-ms-l label { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 2px 12px; cursor: pointer; } .ud-ms-l label[hidden] { display: none; }
+        .ud-ms-l label:hover { background: #EEF3FB; } body.dark-theme .ud-ms-l label:hover { background: #26364D; } body.dark-theme .ud-ms-h button { color: #A9C7FF; }
         .rb-panel.ud-tight .ud-sel select { min-width: 112px; max-width: 130px; }
             .rb-panel.ud-tight .ud-sel span { min-width: 0; }
         #udPages .offer-tab { min-width: 0; padding: 0 14px; gap: 7px; }
@@ -15554,7 +15577,8 @@ function processProjectList(rows, filename){
     }
     rec._raw = r;   // every column of the list, for the Projects window
     return rec;
-  }).filter(rec => String(rec.PRJ_ID||'').trim() !== '');
+  }).filter(rec => String(rec.PRJ_ID||'').trim() !== '');
+  CTRY.learnFrom(PROGRESS);   // beta_6.71
 
   refreshProjectDatalist();
   try{ if(window.START_PAGE) window.START_PAGE.refresh(); }catch(e){}   // beta_6.58: the start page shows the list just read
@@ -16580,6 +16604,110 @@ function formatCountryLabel(code, title){
   return title || code || '';
 }
 
+// ---- beta_6.71: COUNTRY — one resolver for every view ----------------------------------------------
+// A country reaches the app in two ways: the Country lookup of the Progress tracker list (an id,
+// sometimes with its name) and the text kept in an offer file ("IT-Italy", older files "Italy").
+// Compared as text they are different countries: filters listed the same country twice and the
+// Projects window and the Dashboard could disagree. Here every form becomes the ISO 3166-1 alpha-2
+// code: the code is the identity (filters, groups, map) and the name comes from one built-in table.
+// The SharePoint country list is still read, only to turn a lookup id into its code and back (the
+// column is a lookup: it is written by id) and for the code used in the folder names.
+const CTRY = (() => {
+  const N2A = (() => { const s = '004AF008AL010AQ012DZ016AS020AD024AO028AG031AZ032AR036AU040AT044BS048BH050BD051AM052BB056BE060BM064BT068BO070BA072BW074BV076BR084BZ086IO090SB092VG096BN100BG104MM108BI112BY116KH120CM124CA132CV136KY140CF144LK148TD152CL156CN158TW162CX166CC170CO174KM175YT178CG180CD184CK188CR191HR192CU196CY203CZ204BJ208DK212DM214DO218EC222SV226GQ231ET232ER233EE234FO238FK239GS242FJ246FI248AX250FR254GF258PF260TF262DJ266GA268GE270GM275PS276DE288GH292GI296KI300GR304GL308GD312GP316GU320GT324GN328GY332HT334HM336VA340HN344HK348HU352IS356IN360ID364IR368IQ372IE376IL380IT384CI388JM392JP398KZ400JO404KE408KP410KR414KW417KG418LA422LB426LS428LV430LR434LY438LI440LT442LU446MO450MG454MW458MY462MV466ML470MT474MQ478MR480MU484MX492MC496MN498MD499ME500MS504MA508MZ512OM516NA520NR524NP528NL531CW533AW534SX535BQ540NC548VU554NZ558NI562NE566NG570NU574NF578NO580MP581UM583FM584MH585PW586PK591PA598PG600PY604PE608PH612PN616PL620PT624GW626TL630PR634QA638RE642RO643RU646RW652BL654SH659KN660AI662LC663MF666PM670VC674SM678ST682SA686SN688RS690SC694SL702SG703SK704VN705SI706SO710ZA716ZW724ES728SS729SD732EH740SR744SJ748SZ752SE756CH760SY762TJ764TH768TG772TK776TO780TT784AE788TN792TR795TM796TC798TV800UG804UA807MK818EG826GB831GG832JE833IM834TZ840US850VI854BF858UY860UZ862VE876WF882WS887YE894ZM';
+    const o = {}; for(let i = 0; i < s.length; i += 5) o[s.slice(i, i + 3)] = s.slice(i + 3, i + 5); return o; })();
+  const A2_OK = new Set([...Object.values(N2A), 'XK']);
+  const CODE_ALIAS = {UK: 'GB', EL: 'GR'};
+  const normName = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z]+/g, ' ').trim();
+  // names → code, for a country written without its code (the shape names are added when the map is read)
+  const NAME_A2 = Object.fromEntries(Object.entries({
+    US: 'usa|united states|united states of america|stati uniti', GB: 'uk|united kingdom|great britain|england|scotland|wales|northern ireland|regno unito|gran bretagna',
+    AE: 'uae|united arab emirates|emirati arabi uniti', SA: 'ksa|saudi arabia|kingdom of saudi arabia|arabia saudita', CZ: 'czech republic|czechia|repubblica ceca',
+    RU: 'russia|russian federation', KR: 'south korea|korea|republic of korea', NL: 'netherlands|the netherlands|holland|paesi bassi|olanda', CI: 'ivory coast|cote d ivoire',
+    TR: 'turkey|turkiye|turchia', MK: 'north macedonia|macedonia', BA: 'bosnia and herzegovina|bosnia and herz|bosnia', SZ: 'eswatini|swaziland', XK: 'kosovo', HK: 'hong kong',
+    IT: 'italy|italia', DE: 'germany|germania|deutschland', FR: 'france|francia', ES: 'spain|spagna|espana', CH: 'switzerland|svizzera|schweiz|suisse', AT: 'austria|osterreich',
+    BE: 'belgium|belgio', PT: 'portugal|portogallo', GR: 'greece|grecia', IE: 'ireland|irlanda', DK: 'denmark|danimarca', SE: 'sweden|svezia', NO: 'norway|norvegia',
+    FI: 'finland|finlandia', PL: 'poland|polonia', HU: 'hungary|ungheria', RO: 'romania', BG: 'bulgaria', HR: 'croatia|croazia', SI: 'slovenia', SK: 'slovakia|slovacchia',
+    RS: 'serbia', LU: 'luxembourg|lussemburgo', MT: 'malta', CY: 'cyprus|cipro', IS: 'iceland|islanda', QA: 'qatar', KW: 'kuwait', BH: 'bahrain', OM: 'oman', EG: 'egypt|egitto',
+    MA: 'morocco|marocco', TN: 'tunisia', DZ: 'algeria', ZA: 'south africa|sudafrica', NG: 'nigeria', KE: 'kenya', IN: 'india', SG: 'singapore', CN: 'china|cina', JP: 'japan|giappone',
+    AU: 'australia', CA: 'canada', MX: 'mexico|messico', BR: 'brazil|brasile', AR: 'argentina', CL: 'chile|cile', IL: 'israel|israele', JO: 'jordan|giordania', LB: 'lebanon|libano',
+    UA: 'ukraine|ucraina', EE: 'estonia', LV: 'latvia|lettonia', LT: 'lithuania|lituania', AL: 'albania', ME: 'montenegro', MD: 'moldova', BY: 'belarus|bielorussia', GE: 'georgia'
+  }).flatMap(([a2, n]) => n.split('|').map(x => [normName(x), a2])));
+  const NAME_FIX = {HK: 'Hong Kong', MO: 'Macao', MM: 'Myanmar', CD: 'DR Congo', CG: 'Congo', PS: 'Palestine'};
+  const dn = l => { try{ return new Intl.DisplayNames([l], {type: 'region'}); }catch(e){ return null; } };
+  const EN = dn('en');
+  const opts = () => (typeof countryOptions !== 'undefined' && Array.isArray(countryOptions)) ? countryOptions : [];
+  const fixCode = c => { c = String(c || '').trim().toUpperCase(); c = CODE_ALIAS[c] || c; return /^[A-Z]{2}$/.test(c) && A2_OK.has(c) ? c : ''; };
+  const nameOf = a2 => {
+    if(NAME_FIX[a2]) return NAME_FIX[a2];
+    let n = ''; try{ n = EN ? EN.of(a2) : ''; }catch(e){}
+    if(n && n !== a2) return n;
+    const al = Object.keys(NAME_A2).find(k => NAME_A2[k] === a2 && k.length > 3);   // no Intl in this browser
+    return al ? al.replace(/\b[a-z]/g, c => c.toUpperCase()) : a2;
+  };
+  let BY = null;   // the name of every country in the languages of the app → code (built at the first use)
+  const byName = t => {
+    let n = normName(t); if(!n) return '';
+    if(/^([a-z] )+[a-z]$/.test(n)) n = n.replace(/ /g, '');   // U.A.E. → uae
+    if(NAME_A2[n]) return NAME_A2[n];
+    if(!BY){ BY = {}; ['en', 'it', 'de', 'fr', 'es'].forEach(l => { const d = dn(l); if(!d) return; A2_OK.forEach(a2 => { try{ const k = normName(d.of(a2)); if(k && k.length > 2 && !BY[k]) BY[k] = a2; }catch(e){} }); });
+      Object.entries(NAME_FIX).forEach(([a2, x]) => { BY[normName(x)] = a2; }); }
+    if(BY[n]) return BY[n];
+    const o = opts().find(c => normName(c.title) === n);   // a name written as the SharePoint list writes it
+    return o ? fixCode(o.code) : '';
+  };
+  const EMPTY = Object.freeze({code: '', name: '', label: '', key: ''});
+  const made = (code, raw) => { if(code){ const name = nameOf(code); return {code, name, label: `${code}-${name}`, key: code}; }
+    raw = String(raw || '').replace(/\s+/g, ' ').trim(); return raw && raw !== '—' && raw !== '-' ? {code: '', name: raw, label: raw, key: 'name:' + normName(raw)} : EMPTY; };
+  // a row of the SharePoint list {id, code, title}: its code when it is an ISO code, else its name
+  const ofOption = o => { const c = fixCode(o && o.code) || byName(o && o.title); return c ? made(c) : made('', formatCountryLabel(o && o.code, o && o.title)); };
+  // lookup id → code, kept in this browser: learnt from the country list each time it is read and from the records that carry both
+  // the id and the name, so a project that gives only the id still has its country when the list is not reachable
+  const IDS_KEY = 'upsConfigurator.countryIds'; let IDS = null;
+  const ids = () => { if(!IDS){ try{ IDS = JSON.parse(localStorage.getItem(IDS_KEY) || '{}') || {}; }catch(e){ IDS = {}; } } return IDS; };
+  const learn = (pairs, spell) => { const m = ids(); let ch = false;
+    pairs.forEach(([id, code]) => { id = String(id ?? '').trim(); if(id && code && m[id] !== code){ m[id] = code; ch = true; } });
+    (spell || []).forEach(([code, as]) => { as = String(as || '').trim(); if(code && as && as !== code && m['=' + code] !== as){ m['=' + code] = as; ch = true; } });   // "=GB": "UK"
+    if(ch){ CACHE.clear(); try{ localStorage.setItem(IDS_KEY, JSON.stringify(m)); }catch(e){} } };
+  const byId = id => { const o = opts().find(c => String(c.id) === String(id)); if(o) return ofOption(o); const k = ids()[String(id ?? '').trim()]; return k ? made(k) : EMPTY; };
+  const CACHE = new Map(); let cacheN = -1;
+  // any way a country is written → {code, name, label "IT-Italy", key}; a text that is no country keeps its text and has no code
+  function parse(v){
+    if(v && typeof v === 'object') v = v.LookupValue ?? v.lookupValue ?? v.Value ?? v.label ?? v.Title ?? '';
+    const t = String(v ?? '').replace(/\s+/g, ' ').trim();
+    if(!t || t === '—' || t === '-') return EMPTY;
+    if(cacheN !== opts().length){ CACHE.clear(); cacheN = opts().length; learn(opts().map(o => [o.id, ofOption(o).code]), opts().map(o => [fixCode(o.code), o.code])); }
+    if(CACHE.has(t)) return CACHE.get(t);
+    const res = (() => {
+      if(/^\d+$/.test(t)) return byId(t);
+      let m, c;
+      if((m = /^([A-Z]{2})\s*[-–—:]\s*(.+)$/.exec(t)) && (c = fixCode(m[1]))) return made(c);                           // IT-Italy
+      if((m = /^(.+?)\s*(?:[-–—]\s*([A-Z]{2})|\(([A-Z]{2})\))$/.exec(t)) && (c = fixCode(m[2] || m[3]))) return made(c);   // Italy – IT · Italy (IT)
+      if(/^[A-Za-z]{2}$/.test(t) && (c = fixCode(t))) return made(c);                                                  // IT
+      if((c = byName(t))) return made(c);                                                                             // Italy · Italia
+      if((m = /^[A-Za-z]{2,3}\s*[-–—:]\s*(.+)$/.exec(t)) && (c = byName(m[1]))) return made(c);                          // a code that is not ISO, then the name
+      const n = normName(t), o = opts().find(x => normName(x.title) === n || normName(formatCountryLabel(x.code, x.title)) === n);
+      return o ? ofOption(o) : made('', t);
+    })();
+    CACHE.set(t, res); return res;
+  }
+  // the country of a record of the Progress tracker list: its lookup value, else its lookup id through the country list
+  function ofRecord(r){
+    if(!r) return EMPTY;
+    const id = r._countryLookupId; let c = parse(r['Country.lookupValue']);
+    if(!c.code && id != null && String(id).trim() !== ''){ const b = byId(id); if(b.key) c = b; }
+    return c;
+  }
+  // the records just read from the list: those with id and name teach the id to the others
+  function learnFrom(recs){ learn((recs || []).map(r => [r && r._countryLookupId, r ? parse(r['Country.lookupValue']).code : ''])); }
+  // the code as the SharePoint list writes it — the project folders are named with it (it differs from ISO only where the list does, e.g. UK for GB)
+  function listCode(c, id){
+    const o = (id != null && String(id).trim() !== '' && opts().find(x => String(x.id) === String(id))) || (c && c.code ? opts().find(x => fixCode(x.code) === c.code) : null);
+    const iso = (c && c.code) || (id != null ? ids()[String(id).trim()] : '') || '';
+    return (o && String(o.code || '').trim()) || ids()['=' + iso] || iso;
+  }
+  return {parse, ofRecord, ofOption, byId, nameOf, fixCode, listCode, learnFrom, label: v => parse(v).label, tables: {N2A, A2_OK, CODE_ALIAS, normName, NAME_A2}};
+})();
+
 // Fetches and caches the "Country REF_Alpha2" list (id, code, title per row) — shared by the
 // Country dropdown in "Create New Offer" and by "↑ Load"'s Code-Name Country display, so it's
 // only fetched once per session regardless of which one triggers it first.
@@ -16632,8 +16760,8 @@ async function loadCountryOptions(){
   try{
     await ensureCountryOptionsLoaded();
     select.title = '';
-    select.innerHTML = '<option value="">—</option>' + countryOptions.map(c=>
-      `<option value="${c.id}">${escapeHtml(formatCountryLabel(c.code, c.title))}</option>`
+    select.innerHTML = '<option value="">—</option>' + countryOptions.map(c => [c.id, CTRY.ofOption(c).label]).sort((a, b) => a[1].localeCompare(b[1])).map(([id, label]) =>
+      `<option value="${id}">${escapeHtml(label)}</option>`
     ).join('');
     const want = select.dataset.want;   // beta_6.47: country of a "Like <ref>" chosen while the list was loading
     if(want && countryOptions.some(c => String(c.id) === String(want))) select.value = want;
@@ -17759,16 +17887,12 @@ async function fillProjectDetailsFromRecord(rec){
   // Shows "Code-Name" (e.g. "IT-Italy") by cross-referencing the Country REF_Alpha2 list via the
   // Lookup's ID — falls back to just the resolved title alone if that lookup isn't available
   // (not signed in, or the cross-reference list couldn't be reached), rather than leaving it blank.
-  let countryLabel = rec['Country.lookupValue']||'';
+  // beta_6.71: one country resolver — the same "IT-Italy" as the Projects window and the Dashboard
   if(rec._countryLookupId){
-    try{
-      await ensureCountryOptionsLoaded();
-      const match = countryOptions.find(c=>String(c.id)===String(rec._countryLookupId));
-      if(match) countryLabel = formatCountryLabel(match.code, match.title);
-    }catch(err){
-      console.warn('Could not cross-reference Country REF_Alpha2 for "Code-Name" display — showing the plain value instead:', err);
-    }
+    try{ await ensureCountryOptionsLoaded(); }
+    catch(err){ console.warn('Country list not read — the country is shown from the value the Progress tracker list gives:', err); }
   }
+  const countryLabel = CTRY.ofRecord(rec).label;
   document.getElementById('prjCountry').value = countryLabel;
   document.getElementById('prjCountry').dataset.countryId = rec._countryLookupId || '';
   document.getElementById('prjCustomer').value = rec['Customer']||'';
@@ -24205,7 +24329,7 @@ async function projectFolderRelPath(){
       if(targetPath) return targetPath.replace(/\/02 OFFER$/i, '');
     }catch(err){ console.info('Project folder from SharePoint not available — rebuilding the name from Project Details:', err && (err.message || err)); }
   }
-  const cc = countryDisplay(document.getElementById('prjCountry').value).code;
+  const cEl = document.getElementById('prjCountry'), cc = CTRY.listCode(CTRY.parse(cEl.value), cEl.dataset.countryId);
   const name = buildFolderName(ref, document.getElementById('prjCustomer').value, document.getElementById('prjName').value, cc, document.getElementById('prjStdSpecial').value);
   const yy = ref.slice(0, 2);
   return /^\d{2}$/.test(yy) ? `01_DTBS Offer/20${yy}/${name}` : name;
@@ -24334,19 +24458,7 @@ const PS = {sort: {key: 'ref', dir: -1}, f: {ref: '', customer: '', name: '', co
   open: new Set(), allOpen: false};
 function psSavePrefs(){ try{ localStorage.setItem(PS_PREF_KEY, JSON.stringify({group: PS.group})); }catch(e){} }
 // Country is a lookup: Graph may give only its id — shown as "IT-Italy" through the country list.
-function psCountry(r){
-  const v = String(r['Country.lookupValue'] ?? '').trim();
-  const id = r._countryLookupId;
-  if(id != null && id !== '' && (!v || /^\d+$/.test(v))){
-    const m = (countryOptions || []).find(c => String(c.id) === String(id));
-    if(m) return formatCountryLabel(m.code, m.title);
-  }
-  if(/^\d+$/.test(v)){
-    const m = (countryOptions || []).find(c => String(c.id) === v);
-    if(m) return formatCountryLabel(m.code, m.title);
-  }
-  return v;
-}
+function psCountry(r){ return CTRY.ofRecord(r).label; }   // beta_6.71: the one country resolver
 // Every other column of the SharePoint list (those not already shown as Ref. / Customer / Project /
 // Country / Owner / Due date / Status), named as SharePoint names them — to be trimmed later.
 const PS_SKIP_KEYS = new Set(['@odata.etag', '__graphcreatedbyname', '__assignedtoname', '__itemid', '__graphcreatedbyemail', '__assignedtoemail']);
@@ -26962,11 +27074,13 @@ function openProjectSearch(){
   $('[data-export]').addEventListener('click', async () => {
     try{
       const ws = createXlsxSheet('Projects');
-      ws.cols = [10, 30, 40, 16, 18, 22];
+      ws.cols = [10, 30, 40, 24, 18, 22, 12];
       const head = {font: {b: true, color: 'FFFFFF'}, fill: '4472C4'};
-      ['Ref.', 'Customer', 'Project', 'Country', 'Status', 'Owner'].forEach((h, i) => xlsxSet(ws, 1, i + 1, {v: h, s: head}));
+      ['Ref.', 'Customer', 'Project', 'Country', 'Status', 'Owner', 'Due date'].forEach((h, i) => xlsxSet(ws, 1, i + 1, {v: h, s: head}));
       ws.freezeRow = 1;
-      psFiltered(psAll).forEach((x, i) => [x.ref, x.customer, x.name, x.country, x.status, x.owner].forEach((v, c) => xlsxSet(ws, i + 2, c + 1, {v})));
+      const out = psFiltered(psAll);   // the projects the window shows: its filters apply
+      out.forEach((x, i) => [x.ref, x.customer, x.name, x.country, x.status, x.owner, x.due && !isNaN(x.due) ? fmtDate(x.due.toISOString()) : ''].forEach((v, c) => xlsxSet(ws, i + 2, c + 1, {v})));
+      ws.autoFilter = `A1:G${out.length + 1}`;   // beta_6.72: filter buttons on the header row
       saveBlob(await buildXlsxBlob(ws), `Projects_${new Date().toISOString().slice(0, 10)}.xlsx`);
     }catch(err){ showExportToast(`Export failed: ${err.message || err}`, 'warn'); }
   });
@@ -27007,8 +27121,7 @@ async function openFolderForRecord(rec){
     catch(err){ console.info('Folder from SharePoint not available — rebuilding the name:', err && (err.message || err)); }
   }
   if(!rel){
-    const cv = String(rec['Country.lookupValue'] || '').trim();
-    const cc = countryDisplay(cv).code || (/^[A-Z]{2}$/.test(cv) ? cv : '');
+    const cc = CTRY.listCode(CTRY.ofRecord(rec), rec._countryLookupId);
     const name = buildFolderName(ref, rec.Customer || '', rec['Project Name'] || '', cc, rec['STD/SPECIAL'] || '');
     const yy = ref.slice(0, 2);
     rel = /^\d{2}$/.test(yy) ? `01_DTBS Offer/20${yy}/${name}` : name;
@@ -28252,7 +28365,7 @@ function applyLoadedState(state){
     const p = state.project || {};
     document.getElementById('prjRef').value = p.ref || '';
     document.getElementById('prjName').value = p.name || '';
-    document.getElementById('prjCountry').value = p.country || '';
+    document.getElementById('prjCountry').value = CTRY.label(p.country);   // beta_6.71: older files have the name alone
     document.getElementById('prjCustomer').value = p.customer || '';
     document.getElementById('prjDue').value = p.due || '';
     document.getElementById('prjOwner').value = p.owner || '';
@@ -29078,7 +29191,7 @@ async function buildXlsxBlob(wsArg){
   const lastRef = xlsxRef(Math.max(ws.maxRow, 1), Math.max(ws.maxCol, 1));
   const pane = ws.freezeRow ? `<pane ySplit="${ws.freezeRow}" topLeftCell="A${ws.freezeRow + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A${ws.freezeRow + 1}" sqref="A${ws.freezeRow + 1}"/>` : '';
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${lastRef}"/><sheetViews><sheetView workbookViewId="0" zoomScale="90" zoomScaleNormal="90">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>${ws.cols.length ? `<cols>${ws.cols.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols>` : ''}<sheetData>${rowsXml.join('')}</sheetData>${ws.merges.length ? `<mergeCells count="${ws.merges.length}">${ws.merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : ''}<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>${ws.footer ? `<headerFooter><oddFooter>${xlsxEsc(ws.footer)}</oddFooter></headerFooter>` : ''}${ws.image ? '<drawing r:id="rId1"/>' : ''}</worksheet>`;
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${lastRef}"/><sheetViews><sheetView workbookViewId="0" zoomScale="90" zoomScaleNormal="90">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>${ws.cols.length ? `<cols>${ws.cols.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols>` : ''}<sheetData>${rowsXml.join('')}</sheetData>${ws.autoFilter ? `<autoFilter ref="${ws.autoFilter}"/>` : ''}${ws.merges.length ? `<mergeCells count="${ws.merges.length}">${ws.merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : ''}<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>${ws.footer ? `<headerFooter><oddFooter>${xlsxEsc(ws.footer)}</oddFooter></headerFooter>` : ''}${ws.image ? '<drawing r:id="rId1"/>' : ''}</worksheet>`;
 
   };
   const sheetXmls = sheets.map(sheetXmlOf);
@@ -29093,7 +29206,9 @@ async function buildXlsxBlob(wsArg){
   zip.file('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Microsoft Excel</Application></Properties>`);
   zip.file('xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((w, i) => `<sheet name="${xlsxEsc(String(w.name).replace(/[\\/?*:\[\]]/g, ' ').slice(0, 31))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets>${(() => { const d = sheets.map((w, i) => w.printTitles ? `<definedName name="_xlnm.Print_Titles" localSheetId="${i}">'${xlsxEsc(String(w.name).replace(/[\\/?*:\[\]]/g, ' ').slice(0, 31).replace(/'/g, "''"))}'!${w.printTitles}</definedName>` : '').join(''); return d ? `<definedNames>${d}</definedNames>` : ''; })()}<calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`);
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((w, i) => `<sheet name="${xlsxEsc(String(w.name).replace(/[\\/?*:\[\]]/g, ' ').slice(0, 31))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets>${(() => { const q = w => `'${xlsxEsc(String(w.name).replace(/[\\/?*:\[\]]/g, ' ').slice(0, 31).replace(/'/g, "''"))}'`;
+      const d = sheets.map((w, i) => (w.autoFilter ? `<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">${q(w)}!${String(w.autoFilter).replace(/([A-Z]+)(\d+)/g, '$$$1$$$2')}</definedName>` : '')   // beta_6.72: filter buttons on the header row
+        + (w.printTitles ? `<definedName name="_xlnm.Print_Titles" localSheetId="${i}">${q(w)}!${w.printTitles}</definedName>` : '')).join(''); return d ? `<definedNames>${d}</definedNames>` : ''; })()}<calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`);
   zip.file('xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((w, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
   sheetXmls.forEach((x, i) => zip.file(`xl/worksheets/sheet${i + 1}.xml`, x));
@@ -29980,8 +30095,8 @@ function initialsName(name){
   return first && last && first !== last ? `${first[0]}.${last}` : s;
 }
 function countryDisplay(v){
-  const m = /^([A-Z]{2})\s*[-–]\s*(.+)$/.exec(String(v || '').trim());
-  return m ? {name: m[2].trim(), code: m[1], cover: `${m[2].trim()} – ${m[1]}`} : {name: String(v || ''), code: '', cover: String(v || '')};
+  const c = CTRY.parse(v);   // beta_6.71: the one country resolver
+  return {name: c.name, code: c.code, cover: c.code ? `${c.name} – ${c.code}` : c.name};
 }
 function loadTitleFor(lt){
   const s = String(lt || '').trim();
@@ -33068,10 +33183,10 @@ function gantt(el, list){
   const SP_VALUE_FIELDS = ['OfferValue_x20ac_', 'OfferValue', 'Offer Value €', 'Offer Value'];
   function toOffer(rec, st, file){
     const raw = rec._raw || {}, ref = String(rec.PRJ_ID).trim();
-    // beta_6.57: Country is a lookup – Graph gives only its id (Country0LookupId): the name comes from the Country REF_Alpha2 list
-    let spC = ''; try{ spC = typeof psCountry === 'function' ? psCountry(rec) : textOf(rec['Country.lookupValue']); }catch(e){ spC = textOf(rec['Country.lookupValue']); }
-    if(/^\d+$/.test(String(spC || '').trim())) spC = '';   // an id not resolved: no country rather than a number
-    const c = countryDisplay(textOf(st && st.project && st.project.country) || textOf(spC));
+    // beta_6.71: one country per project, by its ISO code — the Progress tracker list first (as the Projects window and
+    // Project Details), the offer file when the list gives no country. Before, the file came first and the two were compared as text.
+    const cL = CTRY.ofRecord(rec), cF = CTRY.parse(textOf(st && st.project && st.project.country));
+    const c = cL.code ? cL : cF.code ? cF : cL.key ? cL : cF;
     const itemId = String(raw.__itemId ?? raw.id ?? '').trim();
     const status = stageName(textOf(rec.Status));
     const positions = st && Array.isArray(st.positions) ? st.positions.map(toPosition).filter(p => p.units > 0 && p.model) : [];
@@ -33084,7 +33199,7 @@ function gantt(el, list){
     const valueJson = st ? t.value : 0, valueList = vk ? moneyOf(raw[vk]) : 0;
     const partsJson = {}; Object.entries(t.parts || {}).forEach(([k, v]) => { const key = k || (positions.length ? fam : 'Various'); partsJson[key] = (partsJson[key] || 0) + v; });
     const modified = dateOf(raw.Modified);
-    return {ref, key: itemId ? 'i' + itemId : 'r' + ref, itemId, customer: textOf(rec.Customer) || '—', project: textOf(rec['Project Name']), country: c.code || c.name || '—', countryName: c.name || '—',
+    return {ref, key: itemId ? 'i' + itemId : 'r' + ref, itemId, customer: textOf(rec.Customer) || '—', project: textOf(rec['Project Name']), country: c.code || c.name || '—', countryName: c.name || '—', countryDiff: !!(cL.key && cF.key && cL.key !== cF.key), countryFile: cF.label, countryList: cL.label,
       owner: shortName(textOf(rec['Created By.title'])) || '—', ownerId: String(raw[(typeof OWNER_PERSON_FIELD !== 'undefined' ? OWNER_PERSON_FIELD : 'AssignedTo0') + 'LookupId'] ?? ''), status, rawStatus: textOf(rec.Status), market: (st && st.market) || (/^M2[FU]$/.test(fam) ? 'UL' : 'IEC'), fam, positions,
       value: 0, valueJson, valueList, partsJson, parts: {}, cost: t.cost, sla: t.sla, fok: t.fok, revisions: st ? Number(st.revision) || 0 : 0,
       created: dateOf(raw.Created) || dateOf(st && st.savedAt) || new Date(TODAY), due: dateOf(rec['Due date']) ? dayOf(dateOf(rec['Due date'])) : null,
@@ -33220,7 +33335,10 @@ function gantt(el, list){
   const GUIDE_URL = (typeof MANUALS_BASE !== 'undefined' ? MANUALS_BASE : '') + 'UPS_Dashboard_Guide.pdf';   // the Dashboard Guide (PDF), next to the other manuals
   const PAGES = [['overview', 'Overview', I.overview], ['pipeline', 'Pipeline', I.pipeline], ['products', 'Products & services', I.products], ['map', 'Map', I.map], ['work', 'My workspace', I.work]];
   const S = {page: 'overview', rb: 'home', collapsed: false, cal: [TODAY.getFullYear(), TODAY.getMonth()]};
-  const FX = {period: '12', market: '', owner: '', country: '', status: '', fam: '', customer: ''};
+  // beta_6.72: a filter holds more than one value (a project passes with any of them); the filters together narrow the list (all of them)
+  const FX_KEYS = ['market', 'owner', 'country', 'status', 'fam', 'customer'];
+  const fxEmpty = () => ({period: '12', market: [], owner: [], country: [], status: [], fam: [], customer: []});
+  const FX = fxEmpty();
   const FXL = {period: 'Period', market: 'Price list', owner: 'Owner', country: 'Country', status: 'Status', fam: 'Family', customer: 'Customer'};
   const PERIODS = [['3', 'Last 3 months'], ['6', 'Last 6 months'], ['12', 'Last 12 months'], ['24', 'Last 24 months'], ['ytd', 'Year to date'], ['all', 'All']];
   const fxText = (k, v) => k === 'country' ? ((COUNTRIES.find(c => c[0] === v) || [v, v])[1]) : k === 'period' ? PERIODS.find(p => p[0] === v)[1] + (v === 'all' ? '' : ` (from ${fmtDY(win()[0])})`) : v;
@@ -33238,7 +33356,7 @@ function gantt(el, list){
   }
   function rows(shift, skip){
     const [from, to] = win(shift);
-    return OFFERS.filter(o => pDate(o) >= from && pDate(o) < to && ['market', 'owner', 'country', 'status', 'fam', 'customer'].every(k => k === skip || !FX[k] || (k === 'fam' ? o.famM : o[k]) === FX[k]));
+    return OFFERS.filter(o => pDate(o) >= from && pDate(o) < to && FX_KEYS.every(k => k === skip || !FX[k].length || FX[k].includes(k === 'fam' ? o.famM : o[k])));
   }
   const monthsInPeriod = () => { const n = Math.min(24, pMonths()); const out = []; for(let k = n - 1; k >= 0; k--) out.push(monthKey(new Date(TODAY.getFullYear(), TODAY.getMonth() - k, 1))); return out; };
 
@@ -33262,9 +33380,32 @@ function gantt(el, list){
 
   const big = (act, label, icon, on, cls = '') => `<button type="button" class="rb-big${on ? ' rb-on' : ''}${cls ? ' ' + cls : ''}" data-ud="${act}" title="${esc(label)}">${ic(icon, 24)}<span>${esc(label)}</span></button>`;
   const small = (act, label, icon, dis) => `<button type="button" class="rb-sm" data-ud="${act}" ${dis ? 'disabled' : ''}>${ic(icon, 15)}<span>${esc(label)}</span></button>`;
-  const sel = (k, opts) => `<label class="ud-sel"><span>${FXL[k]}</span><select data-fx="${k}" class="${FX[k] && !(k === 'period' && FX[k] === '12') ? 'set' : ''}">${k === 'period' ? '' : '<option value="">All</option>'}${opts.map(([v, t]) => `<option value="${esc(v)}" ${FX[k] === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  const fxList = k => FX[k].map(v => fxText(k, v)).join(', ');
+  const fxAll = () => [`Period: ${fxText('period', FX.period)}`, ...FX_KEYS.filter(k => FX[k].length).map(k => `${FXL[k]}: ${fxList(k)}`)].join(' · ');
+  const MS = {k: '', opts: {}};
+  const sel = (k, opts) => { if(k !== 'period'){ MS.opts[k] = opts;   // a list with check boxes: more than one value
+      return `<span class="ud-sel"><span>${FXL[k]}</span><button type="button" class="ud-ms${FX[k].length ? ' set' : ''}" data-ms="${k}" aria-haspopup="true" aria-expanded="${MS.k === k}" aria-label="${FXL[k]} filter: ${esc(fxList(k) || 'all')}" title="${esc(fxList(k) || 'All')}"><em>${esc(!FX[k].length ? 'All' : FX[k].length === 1 ? fxText(k, FX[k][0]) : FX[k].length + ' selected')}</em><i aria-hidden="true">▾</i></button></span>`; }
+    return `<label class="ud-sel"><span>${FXL[k]}</span><select data-fx="${k}" class="${FX[k] !== '12' ? 'set' : ''}">${opts.map(([v, t]) => `<option value="${esc(v)}" ${FX[k] === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`; };
+  function msClose(){ const p = document.getElementById('udMsPop'); if(p) p.remove(); MS.k = ''; }
+  function msOpen(btn){
+    const k = btn.dataset.ms; if(MS.k === k){ msClose(); return; }
+    msClose(); MS.k = k;
+    const opts = MS.opts[k] || [], pop = document.createElement('div');
+    pop.id = 'udMsPop'; pop.className = 'ud-mspop'; pop.setAttribute('role', 'group'); pop.setAttribute('aria-label', `${FXL[k]} filter`);
+    pop.innerHTML = `<div class="ud-ms-h">${opts.length > 10 ? `<input type="search" placeholder="Search…" aria-label="Search in ${FXL[k]}">` : `<b>${FXL[k]}</b>`}<button type="button" data-all title="Remove this filter">All</button></div>
+      <div class="ud-ms-l">${opts.map(([v, t]) => `<label><input type="checkbox" value="${esc(v)}" ${FX[k].includes(v) ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('') || '<p>No value to choose.</p>'}</div>`;
+    document.body.appendChild(pop);
+    const r = btn.getBoundingClientRect();
+    pop.style.left = Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8)) + 'px'; pop.style.top = (r.bottom + 4) + 'px'; pop.style.maxHeight = Math.max(180, innerHeight - r.bottom - 16) + 'px';
+    pop.addEventListener('change', e => { const c = e.target.closest('input[type=checkbox]'); if(!c) return; FX[k] = c.checked ? [...FX[k].filter(v => v !== c.value), c.value] : FX[k].filter(v => v !== c.value); render(); });
+    pop.addEventListener('input', e => { if(e.target.type !== 'search') return; const q = e.target.value.trim().toLowerCase(); pop.querySelectorAll('.ud-ms-l label').forEach(l => { l.hidden = !!q && !l.textContent.toLowerCase().includes(q); }); });
+    pop.querySelector('[data-all]').addEventListener('click', () => { FX[k] = []; pop.querySelectorAll('input[type=checkbox]').forEach(c => { c.checked = false; }); render(); });
+    const first = pop.querySelector('input'); if(first) first.focus();
+  }
+  document.addEventListener('pointerdown', e => { if(MS.k && !(e.target.closest && e.target.closest('#udMsPop, [data-ms]'))) msClose(); }, true);
+  document.addEventListener('keydown', e => { if(MS.k && e.key === 'Escape'){ e.stopPropagation(); e.preventDefault(); const b = document.querySelector(`[data-ms="${MS.k}"]`); msClose(); if(b) b.focus(); } }, true);
   function ribbon(){
-    const anyF = ['market', 'owner', 'country', 'status', 'fam', 'customer'].some(k => FX[k]) || FX.period !== '12';
+    const anyF = FX_KEYS.some(k => FX[k].length) || FX.period !== '12';
     const grp = (lab, items) => `<div class="rb-grp"><div class="rb-items">${items}</div><div class="rb-lab">${esc(lab)}</div></div>`;
     const me = meName();
     let h;
@@ -33273,7 +33414,7 @@ function gantt(el, list){
       + grp('Data', big('refresh', 'Refresh', I.refresh) + `<div class="rb-col">${small('cfg', 'Back to the configurator', I.cfg)}${small('planner', 'Delivery planner', I.planned)}</div>`)
       // beta_6.67: Forecasted (codes of the open offers) and Planned (codes of the won projects by requested delivery month), in Excel
       + grp('Report', big('rep:pdf', 'PDF report', I.rpdf) + `<div class="rb-col">${small('rep:xlsx', 'Excel', I.rxls)}${small('rep:forecast', 'Forecasted', I.forecast)}${small('rep:planned', 'Planned', I.planned)}</div>`);   // beta_6.62: to print / Excel; no manual on the ribbon
-    else h = grp('Offers shown', big('who:me', 'My offers', I.me, !!FX.owner && nameKey(FX.owner) === nameKey(me)) + big('who:team', 'All team', I.team, !FX.owner))
+    else h = grp('Offers shown', big('who:me', 'My offers', I.me, FX.owner.length === 1 && nameKey(FX.owner[0]) === nameKey(me)) + big('who:team', 'All team', I.team, !FX.owner.length))
       + grp('Data source', big('src:sp', 'SharePoint', I.sp, SRC === 'sp') + big('page:check', 'Data check', I.check, S.page === 'check'))
       + grp('Value', big('vfirst:offer', 'Offer file first', I.csv, VALUE_FIRST === 'offer') + big('vfirst:list', 'Offer Value € first', I.euro, VALUE_FIRST === 'list'))
       + grp('Ribbon', big('collapse', S.collapsed ? 'Pin the ribbon' : 'Collapse the ribbon', S.collapsed ? I.pin : I.up));
@@ -33290,10 +33431,10 @@ function gantt(el, list){
 
   /* ---------- filter chips ---------- */
   function chips(){
-    const set = Object.keys(FX).filter(k => k === 'period' ? FX.period !== '12' : FX[k]);
+    const set = [...(FX.period !== '12' ? [['period', FX.period]] : []), ...FX_KEYS.flatMap(k => FX[k].map(v => [k, v]))];   // one chip per value
     const src = SCAN.running ? `<span class="src"><span class="prog"><i style="width:${SCAN.total ? SCAN.done / SCAN.total * 100 : 5}%"></i></span>Reading the offers ${SCAN.done} / ${SCAN.total || '…'}</span>`
       : SRC === 'sp' ? `<span class="src"><span class="dot"></span>SharePoint · ${OFFERS.length} projects${SCAN.at ? ' · ' + SCAN.at.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}) : ''}</span>` : '';
-    return `<div class="chips"><span class="lab">Filters</span>${set.length ? set.map(k => `<span class="chip">${FXL[k]} is <b>${esc(fxText(k, FX[k]))}</b><button type="button" data-act="unset:${k}" title="Remove">✕</button></span>`).join('') : `<span class="chip none">none – from ${fmtDY(win()[0])} (last 12 months). Click a chart (status, family, customer, owner) to filter.</span>`}${src}</div>`;
+    return `<div class="chips"><span class="lab">Filters</span>${set.length ? set.map(([k, v]) => `<span class="chip">${FXL[k]} is <b>${esc(fxText(k, v))}</b><button type="button" data-act="unset:${k}:${esc(v)}" title="Remove" aria-label="Remove ${FXL[k]} ${esc(fxText(k, v))}">✕</button></span>`).join('') : `<span class="chip none">none – from ${fmtDY(win()[0])} (last 12 months). Click a chart or a country of the map to filter; click others to add them.</span>`}${src}</div>`;
   }
   const panel = (cls, title, body, right = '') => `<section class="panel ${cls}"><div class="ptitle">${title}${right ? `<span class="r">${right}</span>` : ''}</div>${body}</section>`;
   const nothing = msg => `<p class="sub">${msg || 'No offers with these filters.'}</p>`;
@@ -33319,14 +33460,14 @@ function gantt(el, list){
     const NOTE = {Services: 'services chapter (SLA levels, start-up, training…)', Delivery: 'delivery line', Various: 'no offer file and no sales split: Offer Value € of the list'};
     const CLR = {Services: '#4B5B7A', Delivery: '#9AA3B2', Various: 'var(--other)'};   // neutral: not a UPS family colour
     $('ov3').innerHTML = ROWKEYS.length ? `<table class="t mx"><thead><tr><th>Family</th>${STATUS.map(s => `<th>${s}</th>`).join('')}<th>Total</th></tr></thead><tbody>${ROWKEYS.map(f => { const isFam = !['Services', 'Delivery'].includes(f);
-      return `<tr class="${isFam ? 'fr' : ''} ${FX.fam === f ? 'sel' : ''}" ${isFam ? `data-x="fam:${esc(f)}"` : ''}><td${NOTE[f] ? ` title="${esc(NOTE[f])}"` : ''}><b style="color:${CLR[f] || fc[f] || 'var(--other)'}">■</b> ${esc(f)}${f === 'Various' ? ' <span style="color:var(--dim);font-size:11px">(no offer file)</span>' : ''}</td>${STATUS.map(s => { const v = part(Af.filter(o => o.status === s), f); return `<td style="background:rgba(68,114,196,${(v / mx * 0.5).toFixed(2)})" data-tip="<b>${esc(f)} · ${s}</b><br>${eur(v)}">${v ? eurK(v) : ''}</td>`; }).join('')}<td><b>${eurK(part(Af, f))}</b></td></tr>`; }).join('')}<tr class="tot"><td>Total</td>${STATUS.map(s => `<td>${eurK(val(Af.filter(o => o.status === s)))}</td>`).join('')}<td>${eurK(val(Af))}</td></tr></tbody></table>
+      return `<tr class="${isFam ? 'fr' : ''} ${FX.fam.includes(f) ? 'sel' : ''}" ${isFam ? `data-x="fam:${esc(f)}"` : ''}><td${NOTE[f] ? ` title="${esc(NOTE[f])}"` : ''}><b style="color:${CLR[f] || fc[f] || 'var(--other)'}">■</b> ${esc(f)}${f === 'Various' ? ' <span style="color:var(--dim);font-size:11px">(no offer file)</span>' : ''}</td>${STATUS.map(s => { const v = part(Af.filter(o => o.status === s), f); return `<td style="background:rgba(68,114,196,${(v / mx * 0.5).toFixed(2)})" data-tip="<b>${esc(f)} · ${s}</b><br>${eur(v)}">${v ? eurK(v) : ''}</td>`; }).join('')}<td><b>${eurK(part(Af, f))}</b></td></tr>`; }).join('')}<tr class="tot"><td>Total</td>${STATUS.map(s => `<td>${eurK(val(Af.filter(o => o.status === s)))}</td>`).join('')}<td>${eurK(val(Af))}</td></tr></tbody></table>
       <div class="sub">Each offer is split by chapter: the UPS chapters go to their family, the services chapter to Services, the delivery line to Delivery (project discount included). Other chapters go with the main family of the offer.</div>` : nothing();
     const bm = {}; A.forEach(o => o.positions.forEach(p => { bm[p.model] = bm[p.model] || {v: 0, f: p.fam}; bm[p.model].v += p.units; }));
     const bmi = Object.entries(bm).sort((a, b) => b[1].v - a[1].v).slice(0, 8);
     if(bmi.length) hbars($('ov4'), {items: bmi.map(([m, x]) => ({label: m, value: x.v, color: fc[x.f]})), fmt: num}); else $('ov4').innerHTML = nothing();
     const Ac = rows(0, 'customer'), byC = {}; Ac.forEach(o => { if(o.value > 0) byC[o.customer] = (byC[o.customer] || 0) + o.value; });
     const ranked = Object.entries(byC).sort((a, b) => b[1] - a[1]).map(x => x[0]), RAMP = ['#1F3F80', '#2F5597', '#3A64AE', '#4472C4', '#5F87C9', '#7A9BD3', '#8DACDE'];
-    const items = Object.entries(byC).map(([label, value]) => ({label, value, color: FX.customer && FX.customer !== label ? '#C9D0DB' : RAMP[Math.min(6, Math.floor(ranked.indexOf(label) / Math.max(1, ranked.length) * 7))]}));
+    const items = Object.entries(byC).map(([label, value]) => ({label, value, color: FX.customer.length && !FX.customer.includes(label) ? '#C9D0DB' : RAMP[Math.min(6, Math.floor(ranked.indexOf(label) / Math.max(1, ranked.length) * 7))]}));
     if(items.length){ treemap($('ov5'), {items, h: 220}); const order = items.slice().sort((a, b) => b.value - a.value);
       $('ov5').querySelectorAll('rect.mark').forEach((r, i) => { if(order[i]){ r.dataset.x = 'customer:' + order[i].label; r.style.cursor = 'pointer'; } }); }
     else $('ov5').innerHTML = nothing();
@@ -33357,7 +33498,7 @@ function gantt(el, list){
     const models = {}; all.forEach(p => { const m = models[p.model] = models[p.model] || {f: p.fam, u: 0, mo: 0, li: 0, kw: 0, o: new Set()}; m.u += p.units; m.mo += p.modules; m.kw += p.kw * p.units; m.li += p.lithium ? p.units : 0; m.o.add(p.o); });
     const U = sum(A, units), L = liUnits(A), withOffer = A.filter(o => o.hasOffer);
     M.innerHTML = chips() + `<div class="cv">
-      <div class="fam">${fam.map(x => `<div class="famc ${FX.fam === x.f ? 'sel' : ''}" style="--c:${fc[x.f]}" data-x="fam:${esc(x.f)}"><h3>${esc(x.f)}</h3><div class="m" title="${esc(x.models.join(' / '))}">${x.ul ? 'UL' : 'IEC'} · ${esc(x.models.join(' / '))}</div><div class="g"><div>UPS<b>${num(x.u)}</b></div><div>Modules<b>${num(x.m)}</b></div><div>Power<b>${x.mw.toFixed(1)} MW</b></div><div>Value<b>${eurK(x.v)}</b></div></div></div>`).join('') || `<div class="panel" style="grid-column:1/-1">${nothing()}</div>`}</div>
+      <div class="fam">${fam.map(x => `<div class="famc ${FX.fam.includes(x.f) ? 'sel' : ''}" style="--c:${fc[x.f]}" data-x="fam:${esc(x.f)}"><h3>${esc(x.f)}</h3><div class="m" title="${esc(x.models.join(' / '))}">${x.ul ? 'UL' : 'IEC'} · ${esc(x.models.join(' / '))}</div><div class="g"><div>UPS<b>${num(x.u)}</b></div><div>Modules<b>${num(x.m)}</b></div><div>Power<b>${x.mw.toFixed(1)} MW</b></div><div>Value<b>${eurK(x.v)}</b></div></div></div>`).join('') || `<div class="panel" style="grid-column:1/-1">${nothing()}</div>`}</div>
       ${panel('c8', 'UPS units by month and family', '<div id="pr1"></div>', 'by creation month')}
       ${panel('c4', 'Battery technology', '<div id="pr2"></div>', 'UPS units')}
       ${panel('c5', 'Services attached', '<div id="pr3"></div>', `share of the ${withOffer.length} offers with each SLA level`)}
@@ -33551,7 +33692,7 @@ function gantt(el, list){
   }
 
   function pWork(M){
-    const A = rows(), sc = SC(), mine = !!FX.owner && nameKey(FX.owner) === nameKey(meName());
+    const A = rows(), sc = SC(), mine = FX.owner.length === 1 && nameKey(FX.owner[0]) === nameKey(meName());
     const late = A.filter(overdue).sort((a, b) => dueT(a) - dueT(b)), soon = A.filter(o => open(o) && o.due && o.due >= TODAY && daysTo(o.due) <= 14).sort((a, b) => dueT(a) - dueT(b));
     const task = (o, cls) => `<div class="task ${cls}"><b>${esc(o.ref)}${penTag(o)} · ${esc(o.customer)}</b>${esc(o.project)}${o.value > 0 ? ' · ' + eurK(o.value) : ''}${mine ? '' : ' · ' + esc(o.owner)}<br><span class="w" style="color:${cls === 'late' ? 'var(--st-lost)' : 'var(--st-rev)'}">${cls === 'late' ? 'late by ' + -daysTo(o.due) + ' days' : 'due ' + fmtD(o.due) + ' · in ' + daysTo(o.due) + ' days'}</span> · ${esc(o.rawStatus || o.status)}<div class="a"><button type="button" class="btn" data-ref="${esc(o.key)}">Details</button><button type="button" class="btn" data-menu="${esc(o.key)}">Status / owner</button><button type="button" class="btn pri" data-cfg="${esc(o.ref)}" title="Open in configurator">${ic(I.cfg, 13)}Configurator</button></div></div>`;
     const lanes = LANES.map(([s]) => { let l = A.filter(o => o.status === s); if(s === 'Won' || s === 'Lost') l = l.filter(o => !o.closed || (TODAY - o.closed) / 864e5 < 90); return [s, l.sort((a, b) => dueT(a) - dueT(b))]; });
@@ -33567,7 +33708,7 @@ function gantt(el, list){
         <div class="m"><span>${o.value > 0 ? eurK(o.value) + ' · ' : ''}${esc(o.fam)}${units(o) ? ' · ' + units(o) + ' UPS' : ''}</span></div>
         <div class="m"><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtD(o.due)}</span><button type="button" class="av" data-menu="${esc(o.key)}" data-focus="owner" title="${esc(o.owner)} – click to assign to someone else">${esc(ini(o.owner))}</button></div></div>`;
     M.innerHTML = chips() + `<div class="wsb">
-      <section class="panel"><div class="ptitle">Offers board<span class="hint">drag a post-it to another column to change its status · ⋯ or the initials to change status and assignment</span><span class="r"><span class="seg"><button type="button" data-act="who:me" class="${mine ? 'on' : ''}">Mine</button><button type="button" data-act="who:team" class="${!FX.owner ? 'on' : ''}">Team</button></span></span></div>
+      <section class="panel"><div class="ptitle">Offers board<span class="hint">drag a post-it to another column to change its status · ⋯ or the initials to change status and assignment</span><span class="r"><span class="seg"><button type="button" data-act="who:me" class="${mine ? 'on' : ''}">Mine</button><button type="button" data-act="who:team" class="${!FX.owner.length ? 'on' : ''}">Team</button></span></span></div>
         <div class="hello">${hi}${firstName(meName()) ? ', ' + esc(firstName(meName())) : ''}</div><p>${A.filter(open).length} open offers · ${eurK(val(A.filter(open)))} · ${late.length} late · ${soon.length} due in the next 14 days${SRC === 'sp' ? '' : ' · <b>example data: changes are not saved</b>'}</p>
         <div class="board">${lanes.map(([s, l]) => `<div class="lane" data-lane="${s}"><h4><span><i style="background:${sc[s]}"></i>${s}${s === 'Won' || s === 'Lost' ? ' · 90 days' : ''}</span><span>${l.length}</span></h4><div class="lane-b">${l.map(card).join('') || '<div class="lane-e">drop here</div>'}</div></div>`).join('')}</div></section>
       <div class="ws-row">
@@ -33598,12 +33739,13 @@ function gantt(el, list){
       ['w-nomark', 'Won: no revision marked won (highest closed revision counts)', all.filter(o => won(o) && o.hasOffer && !o.wonMark).length, 'var(--st-rev)'],
       ['draft', 'Value from a draft (_ongoing): no closed revision', all.filter(o => o.fileKind === 'draft' && o.valueSrc === 'offer').length, 'var(--st-new)'],
       ['w-split', 'Won, value from the list: sales split entered', all.filter(o => won(o) && o.valueSrc === 'list' && o.split).length, 'var(--st-won)'],
-      ['w-nosplit', 'Won, value from the list: no sales split (Various)', all.filter(o => won(o) && o.valueSrc === 'list' && !o.split).length, 'var(--st-rev)']];
+      ['w-nosplit', 'Won, value from the list: no sales split (Various)', all.filter(o => won(o) && o.valueSrc === 'list' && !o.split).length, 'var(--st-rev)'],
+      ['c-diff', 'Country: the offer file says another one (the list counts)', all.filter(o => o.countryDiff).length, 'var(--st-rev)'], ['c-none', 'No country, or a country without ISO code', all.filter(o => !CTRY.fixCode(o.country)).length, 'var(--other)']];
     // Won: the same projects counted three ways, in the period of the filters and over the whole list
     const W = a => { const w = a.filter(won); return {n: w.length, counted: val(w), file: sum(w, o => o.valueJson || 0), list: sum(w, o => o.valueList || 0), none: w.filter(o => !(o.value > 0)).length, onlyList: w.filter(o => !(o.valueJson > 0) && o.valueList > 0).length, marked: w.filter(o => o.wonMark).length, onDue: w.filter(o => o.pdSrc === 'due').length}; };
     const wp = W(P), wa = W(all);
     const wonVals = [...new Set(all.filter(won).map(o => o.rawStatus || '—'))].map(v => `${esc(v)} (${all.filter(o => won(o) && (o.rawStatus || '—') === v).length})`).join(' · ');
-    const pass = o => !CHK.f || (CHK.f === 'w-split' ? won(o) && o.valueSrc === 'list' && !!o.split : CHK.f === 'w-nosplit' ? won(o) && o.valueSrc === 'list' && !o.split : CHK.f === 'won' ? won(o) : CHK.f === 'dup' ? o.dup > 1 : CHK.f === 'diff' ? diff(o) : CHK.f === 'w-mark' ? won(o) && !!o.wonMark : CHK.f === 'w-nomark' ? won(o) && o.hasOffer && !o.wonMark : CHK.f === 'draft' ? o.fileKind === 'draft' && o.valueSrc === 'offer' : CHK.f.startsWith('v-') ? (CHK.f === 'v-none' ? !(o.value > 0) : o.valueSrc === CHK.f.slice(2)) : res(o) === CHK.f);
+    const pass = o => !CHK.f || (CHK.f === 'c-diff' ? !!o.countryDiff : CHK.f === 'c-none' ? !CTRY.fixCode(o.country) : CHK.f === 'w-split' ? won(o) && o.valueSrc === 'list' && !!o.split : CHK.f === 'w-nosplit' ? won(o) && o.valueSrc === 'list' && !o.split : CHK.f === 'won' ? won(o) : CHK.f === 'dup' ? o.dup > 1 : CHK.f === 'diff' ? diff(o) : CHK.f === 'w-mark' ? won(o) && !!o.wonMark : CHK.f === 'w-nomark' ? won(o) && o.hasOffer && !o.wonMark : CHK.f === 'draft' ? o.fileKind === 'draft' && o.valueSrc === 'offer' : CHK.f.startsWith('v-') ? (CHK.f === 'v-none' ? !(o.value > 0) : o.valueSrc === CHK.f.slice(2)) : res(o) === CHK.f);
     const list = all.filter(pass).sort((a, b) => String(b.ref).localeCompare(String(a.ref)));
     const money = v => v > 0 ? eur(v) : '–';
     M.innerHTML = `<div class="chips"><span class="lab">Data check</span><span class="chip none">every project of the Progress tracker list and what was read in its 02 OFFER folder</span></div>
@@ -33613,39 +33755,16 @@ function gantt(el, list){
           <tr><td><b>Whole list</b> <span class="sub">every date, no filter</span></td><td class="n">${wa.n}</td><td class="n"><b>${eur(wa.counted)}</b></td><td class="n">${eur(wa.file)}</td><td class="n">${eur(wa.list)}</td><td class="n">${wa.none}</td><td class="n">${wa.onlyList}</td><td class="n">${wa.marked}</td></tr></tbody></table></div>
         <div class="sub">Counted = ${VALUE_FIRST === 'list' ? 'Offer Value € of the list; the offer file only when the list has no value' : 'the offer file (net, after the project discount); Offer Value € of the list only when the file has no value'} (View › Value). Statuses counted as Won: ${wonVals || '–'}. Won with no revision marked, counted on the Due date: ${wp.onDue} in the period, ${wa.onDue} in the whole list. Period: a won project counts on the day its win was recorded (revision marked won), without a mark on its Due date, with neither on its creation date; every other project on the date it was created in the list. Offer file of a project: the revision marked won (Project › Mark as won in the configurator), else the highest closed revision, a draft only when no revision is closed.</div></section>
       <div class="ckt">${tiles.map(([k, t, n, c]) => `<button type="button" class="ck${CHK.f === k ? ' on' : ''}" data-chk="${k}" style="--c:${c}"><b>${n}</b><span>${esc(t)}</span></button>`).join('')}</div>
-      <section class="panel" style="margin-top:16px"><div class="ptitle">Projects<span class="r">${list.length} shown${CHK.f ? ' · <a href="#" data-chk="">show all</a>' : ''}</span></div><div style="overflow-x:auto"><table class="t"><thead><tr><th>Project</th><th>Customer</th><th>SharePoint status</th><th>Counted as</th><th>Created</th><th>Counts on</th><th>Owner</th><th>Offer file</th><th class="n">.json</th><th class="n">Offer file €</th><th class="n">Offer Value € (list)</th><th class="n">Counted</th><th>Family</th><th>In period</th></tr></thead><tbody>
-      ${list.map(o => { const r = res(o), [t, c] = SCAN_TXT[r] || ['—', 'var(--dim)']; return `<tr class="click" data-ref="${esc(o.key)}"><td><b>${esc(o.ref)}</b>${o.dup > 1 ? ` <span style="color:var(--st-lost)" title="${o.dup} items with this PRJ_ID in the list: each is counted as its own project. The configurator does not write to SharePoint for this PRJ_ID until each project has its own">×${o.dup}</span>` : ''}</td><td>${esc(o.customer)}</td><td>${esc(o.rawStatus || '—')}</td><td>${pill(o.status)}</td><td>${fmtDY(o.created)}</td><td>${fmtDY(pDate(o))} <span class="sub">${PD_TXT[o.pdSrc] || ''}</span></td><td>${esc(o.owner)}</td><td><span style="color:${c};font-weight:600">●</span> ${o.file && o.file !== 'example' ? esc(o.file) : esc(t)}${wonTag(o)}${o.fileKind === 'draft' ? ' <span class="sub">draft</span>' : ''}</td><td class="n">${o.nfiles ?? '–'}</td><td class="n">${money(o.valueJson)}</td><td class="n" style="${diff(o) ? 'color:var(--st-rev);font-weight:600' : ''}">${money(o.valueList)}</td><td class="n"><b>${money(o.value)}</b></td><td>${esc(o.famM || o.fam)}</td><td>${inP.has(o) ? 'yes' : '<span style="color:var(--dim)">no</span>'}</td></tr>`; }).join('')}
+      <section class="panel" style="margin-top:16px"><div class="ptitle">Projects<span class="r">${list.length} shown${CHK.f ? ' · <a href="#" data-chk="">show all</a>' : ''}</span></div><div style="overflow-x:auto"><table class="t"><thead><tr><th>Project</th><th>Customer</th><th>Country</th><th>SharePoint status</th><th>Counted as</th><th>Created</th><th>Counts on</th><th>Owner</th><th>Offer file</th><th class="n">.json</th><th class="n">Offer file €</th><th class="n">Offer Value € (list)</th><th class="n">Counted</th><th>Family</th><th>In period</th></tr></thead><tbody>
+      ${list.map(o => { const r = res(o), [t, c] = SCAN_TXT[r] || ['—', 'var(--dim)']; return `<tr class="click" data-ref="${esc(o.key)}"><td><b>${esc(o.ref)}</b>${o.dup > 1 ? ` <span style="color:var(--st-lost)" title="${o.dup} items with this PRJ_ID in the list: each is counted as its own project. The configurator does not write to SharePoint for this PRJ_ID until each project has its own">×${o.dup}</span>` : ''}</td><td>${esc(o.customer)}</td><td>${esc(CTRY.fixCode(o.country) ? o.country + '-' + o.countryName : o.countryName)}${o.countryDiff ? ` <span class="sub" title="${esc('Progress tracker list: ' + o.countryList + ' — offer file: ' + o.countryFile)}">file: ${esc(o.countryFile)}</span>` : ''}</td><td>${esc(o.rawStatus || '—')}</td><td>${pill(o.status)}</td><td>${fmtDY(o.created)}</td><td>${fmtDY(pDate(o))} <span class="sub">${PD_TXT[o.pdSrc] || ''}</span></td><td>${esc(o.owner)}</td><td><span style="color:${c};font-weight:600">●</span> ${o.file && o.file !== 'example' ? esc(o.file) : esc(t)}${wonTag(o)}${o.fileKind === 'draft' ? ' <span class="sub">draft</span>' : ''}</td><td class="n">${o.nfiles ?? '–'}</td><td class="n">${money(o.valueJson)}</td><td class="n" style="${diff(o) ? 'color:var(--st-rev);font-weight:600' : ''}">${money(o.valueList)}</td><td class="n"><b>${money(o.value)}</b></td><td>${esc(o.famM || o.fam)}</td><td>${inP.has(o) ? 'yes' : '<span style="color:var(--dim)">no</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></section>`;
   }
   /* ---------- beta_6.56: Map — won and open offers by country (lost offers are not shown), density per country ----------
      The country shapes are Natural Earth (world-atlas 2.0.2, public domain), read once from the CDN when the page opens and
      drawn with the Natural Earth projection. The offers follow the filters, except the country (the map is where to pick it). */
   const MAP = {set: 'all', m: 'n', view: 'fit'};
-  const N2A = (() => { const s = '004AF008AL010AQ012DZ016AS020AD024AO028AG031AZ032AR036AU040AT044BS048BH050BD051AM052BB056BE060BM064BT068BO070BA072BW074BV076BR084BZ086IO090SB092VG096BN100BG104MM108BI112BY116KH120CM124CA132CV136KY140CF144LK148TD152CL156CN158TW162CX166CC170CO174KM175YT178CG180CD184CK188CR191HR192CU196CY203CZ204BJ208DK212DM214DO218EC222SV226GQ231ET232ER233EE234FO238FK239GS242FJ246FI248AX250FR254GF258PF260TF262DJ266GA268GE270GM275PS276DE288GH292GI296KI300GR304GL308GD312GP316GU320GT324GN328GY332HT334HM336VA340HN344HK348HU352IS356IN360ID364IR368IQ372IE376IL380IT384CI388JM392JP398KZ400JO404KE408KP410KR414KW417KG418LA422LB426LS428LV430LR434LY438LI440LT442LU446MO450MG454MW458MY462MV466ML470MT474MQ478MR480MU484MX492MC496MN498MD499ME500MS504MA508MZ512OM516NA520NR524NP528NL531CW533AW534SX535BQ540NC548VU554NZ558NI562NE566NG570NU574NF578NO580MP581UM583FM584MH585PW586PK591PA598PG600PY604PE608PH612PN616PL620PT624GW626TL630PR634QA638RE642RO643RU646RW652BL654SH659KN660AI662LC663MF666PM670VC674SM678ST682SA686SN688RS690SC694SL702SG703SK704VN705SI706SO710ZA716ZW724ES728SS729SD732EH740SR744SJ748SZ752SE756CH760SY762TJ764TH768TG772TK776TO780TT784AE788TN792TR795TM796TC798TV800UG804UA807MK818EG826GB831GG832JE833IM834TZ840US850VI854BF858UY860UZ862VE876WF882WS887YE894ZM';
-    const o = {}; for(let i = 0; i < s.length; i += 5) o[s.slice(i, i + 3)] = s.slice(i + 3, i + 5); return o; })();
-  const A2_OK = new Set([...Object.values(N2A), 'XK']);
-  const CODE_ALIAS = {UK: 'GB', EL: 'GR'};
-  const normName = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z]+/g, ' ').trim();
-  // names → code, for a country written without its code (the shape names are added when the map is read)
-  const NAME_A2 = Object.fromEntries(Object.entries({
-    US: 'usa|united states|united states of america|stati uniti', GB: 'uk|united kingdom|great britain|england|scotland|wales|northern ireland|regno unito|gran bretagna',
-    AE: 'uae|united arab emirates|emirati arabi uniti', SA: 'ksa|saudi arabia|kingdom of saudi arabia|arabia saudita', CZ: 'czech republic|czechia|repubblica ceca',
-    RU: 'russia|russian federation', KR: 'south korea|korea|republic of korea', NL: 'netherlands|the netherlands|holland|paesi bassi|olanda', CI: 'ivory coast|cote d ivoire',
-    TR: 'turkey|turkiye|turchia', MK: 'north macedonia|macedonia', BA: 'bosnia and herzegovina|bosnia and herz|bosnia', SZ: 'eswatini|swaziland', XK: 'kosovo', HK: 'hong kong',
-    IT: 'italy|italia', DE: 'germany|germania|deutschland', FR: 'france|francia', ES: 'spain|spagna|espana', CH: 'switzerland|svizzera|schweiz|suisse', AT: 'austria|osterreich',
-    BE: 'belgium|belgio', PT: 'portugal|portogallo', GR: 'greece|grecia', IE: 'ireland|irlanda', DK: 'denmark|danimarca', SE: 'sweden|svezia', NO: 'norway|norvegia',
-    FI: 'finland|finlandia', PL: 'poland|polonia', HU: 'hungary|ungheria', RO: 'romania', BG: 'bulgaria', HR: 'croatia|croazia', SI: 'slovenia', SK: 'slovakia|slovacchia',
-    RS: 'serbia', LU: 'luxembourg|lussemburgo', MT: 'malta', CY: 'cyprus|cipro', IS: 'iceland|islanda', QA: 'qatar', KW: 'kuwait', BH: 'bahrain', OM: 'oman', EG: 'egypt|egitto',
-    MA: 'morocco|marocco', TN: 'tunisia', DZ: 'algeria', ZA: 'south africa|sudafrica', NG: 'nigeria', KE: 'kenya', IN: 'india', SG: 'singapore', CN: 'china|cina', JP: 'japan|giappone',
-    AU: 'australia', CA: 'canada', MX: 'mexico|messico', BR: 'brazil|brasile', AR: 'argentina', CL: 'chile|cile', IL: 'israel|israele', JO: 'jordan|giordania', LB: 'lebanon|libano',
-    UA: 'ukraine|ucraina', EE: 'estonia', LV: 'latvia|lettonia', LT: 'lithuania|lituania', AL: 'albania', ME: 'montenegro', MD: 'moldova', BY: 'belarus|bielorussia', GE: 'georgia'
-  }).flatMap(([a2, n]) => n.split('|').map(x => [normName(x), a2])));
-  function ctryA2(o){
-    let c = String(o.country || '').trim().toUpperCase();
-    c = CODE_ALIAS[c] || c;
-    if(/^[A-Z]{2}$/.test(c) && A2_OK.has(c)) return c;
-    return NAME_A2[normName(o.countryName)] || NAME_A2[normName(o.country)] || '';
-  }
+  const {N2A, A2_OK, CODE_ALIAS, normName, NAME_A2} = CTRY.tables;   // beta_6.71: the same tables as the country resolver
+  function ctryA2(o){ return CTRY.fixCode(o.country) || CTRY.parse(o.countryName).code || CTRY.parse(o.country).code; }
   // where the won circle goes for the countries whose centre falls outside them (lon, lat)
   const MAP_LBL = {NO: [9, 61.3], SE: [15.5, 62.5], FI: [26, 62.5], HR: [15.8, 45.6], CL: [-71, -33.5], VN: [105.8, 21], JP: [138.5, 36.3], GB: [-1.6, 52.8], IT: [12.6, 42.7], GR: [22, 39.5],
     DK: [9.3, 56.1], ID: [113.5, -0.5], PH: [121.5, 15.5], MY: [102, 4], NZ: [175.5, -39.5], CA: [-100, 56], US: [-98, 39], RU: [90, 61], PT: [-8.2, 39.6], AR: [-64.5, -34], IL: [35, 31.3], LB: [35.9, 33.9]};
@@ -33770,7 +33889,7 @@ function gantt(el, list){
     let paths = '', dots = '';
     const bub = [], all = MAP.set === 'all', wmx = Math.max(0, ...agg.map(wonVal));
     GEO.feats.forEach(f => {
-      const x = f.a2 && byA2.get(f.a2), v = x ? fillVal(x) : 0, c = clsOf(cl, v), sel = x && FX.country && x.code === FX.country, hit = x && mapVal(x) > 0;
+      const x = f.a2 && byA2.get(f.a2), v = x ? fillVal(x) : 0, c = clsOf(cl, v), sel = x && FX.country.includes(x.code), hit = x && mapVal(x) > 0;
       const at = hit ? ` data-x="country:${esc(x.code)}" data-tip="${esc(tipOf(x.name, x))}"` : x ? ` data-tip="${esc(tipOf(x.name, x))}"` : '';
       paths += `<path${hit ? ` class="c${sel ? ' sel' : ''}"` : ''} d="${f.d}" fill="${c ? `var(--${g}${c.step})` : 'var(--map-0)'}"${at}/>`;
       if(c && f.area * z * z < 60)   // too small to see: a dot on it
@@ -33799,7 +33918,7 @@ function gantt(el, list){
     const wonLeg = z => MAP.set === 'all' && wmx > 0 ? `<span class="lt" style="margin-left:${cl.length ? 14 : 0}px">Won ${what}</span>${[...new Set([MAP.m === 'v' ? nice2(wmx / 10) : 1, wmx])].filter(v => v > 0 && v <= wmx).map(v => { const r = wonR(v, wmx, z || 1.2); return `<span><svg width="${2 * r + 2}" height="${2 * r + 2}"><circle class="wb" cx="${r + 1}" cy="${r + 1}" r="${r}"/></svg>${MAP.m === 'v' ? eurK(v) : num(v)}</span>`; }).join('')}` : '';
     const ranked = on.slice().sort((a, b) => mapVal(b) - mapVal(a)), mx = Math.max(1, ...ranked.map(x => MAP.m === 'v' ? x.wv + x.ov : x.wn + x.on));
     const share = (a, b) => (MAP.m === 'v' ? a : b) / mx * 100;
-    const tbl = ranked.length ? `<div style="overflow-x:auto"><table class="t map-t"><thead><tr><th>Country</th><th class="n">Won</th><th class="n">Open</th><th style="width:34%"></th></tr></thead><tbody>${ranked.slice(0, 18).map(x => `<tr class="click${FX.country && x.code === FX.country ? ' sel' : ''}" ${x.a2 ? `data-x="country:${esc(x.code)}"` : ''} data-tip="<b>${esc(x.name)}</b><br>Won: ${x.wn} · ${eurK(x.wv)}<br>Open: ${x.on} · ${eurK(x.ov)}">
+    const tbl = ranked.length ? `<div style="overflow-x:auto"><table class="t map-t"><thead><tr><th>Country</th><th class="n">Won</th><th class="n">Open</th><th style="width:34%"></th></tr></thead><tbody>${ranked.slice(0, 18).map(x => `<tr class="click${FX.country.includes(x.code) ? ' sel' : ''}" data-x="country:${esc(x.code)}" data-tip="<b>${esc(x.name)}</b><br>Won: ${x.wn} · ${eurK(x.wv)}<br>Open: ${x.on} · ${eurK(x.ov)}">
         <td>${esc(x.name)}${x.a2 ? '' : ' <span class="sub">not on the map</span>'}</td><td class="n">${MAP.set === 'open' || !x.wn ? '<span class="sub">–</span>' : mapFmt(MAP.m === 'v' ? x.wv : x.wn)}</td><td class="n">${MAP.set === 'won' || !x.on ? '<span class="sub">–</span>' : mapFmt(MAP.m === 'v' ? x.ov : x.on)}</td>
         <td><div class="mbar">${MAP.set !== 'open' ? `<i style="width:${share(x.wv, x.wn).toFixed(1)}%;background:var(--st-won)"></i>` : ''}${MAP.set !== 'won' ? `<i style="width:${share(x.ov, x.on).toFixed(1)}%;background:var(--st-prog)"></i>` : ''}</div></td></tr>`).join('')}</tbody></table></div>${ranked.length > 18 ? `<div class="sub">${ranked.length - 18} more countries — see the map.</div>` : ''}
       <div class="legend" style="margin-top:8px">${MAP.set !== 'open' ? '<span><i style="background:var(--st-won)"></i>Won</span>' : ''}${MAP.set !== 'won' ? '<span><i style="background:var(--st-prog)"></i>Open (new, in progress, offer review)</span>' : ''}</div>` : nothing('No won or open offers with these filters.');
@@ -33810,7 +33929,7 @@ function gantt(el, list){
         <div><span class="dot" style="background:var(--st-prog)"></span><div><b>${num(T('on'))}</b><span>open · ${eurK(T('ov'))}</span></div></div>
         <div><span class="dot" style="background:var(--s3)"></span><div style="min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${top ? esc(top.name) : '–'}</b><span>${top ? `first country · ${mapFmt(mapVal(top))}${on.length > 1 ? ` · ${pct(mapVal(top) / sum(on, mapVal))} of the total` : ''}` : 'no offers'}</span></div></div>
       </div>
-      ${panel('c8', 'Offers by country', `<div class="map-bar">${seg('set', [['all', 'Won + open'], ['won', 'Won'], ['open', 'Open']])}${seg('m', [['n', 'Offers'], ['v', 'Value']])}<span style="margin-left:auto"></span>${seg('view', [['fit', 'Fit'], ['eu', 'Europe'], ['world', 'World']])}</div><div id="mp1"></div>${legend}`, 'click a country to filter')}
+      ${panel('c8', 'Offers by country', `<div class="map-bar">${seg('set', [['all', 'Won + open'], ['won', 'Won'], ['open', 'Open']])}${seg('m', [['n', 'Offers'], ['v', 'Value']])}<span style="margin-left:auto"></span>${seg('view', [['fit', 'Fit'], ['eu', 'Europe'], ['world', 'World']])}</div><div id="mp1"></div>${legend}`, 'click the countries to filter: more than one can be chosen')}
       ${panel('c4', 'Countries', tbl, MAP.m === 'v' ? 'offer value (net)' : 'number of offers')}</div>`;
     if(!GEO && !GEO_BUSY && !GEO_ERR) loadGeo();   // first time: the shapes are read, then the page is drawn again
     const z = drawMap($('mp1'), agg, cl);
@@ -33857,9 +33976,9 @@ function gantt(el, list){
   function act(a){
     const i = a.indexOf(':'), k = i < 0 ? a : a.slice(0, i), v = i < 0 ? '' : a.slice(i + 1);
     if(k === 'page'){ S.page = v; window.scrollTo(0, 0); }
-    else if(k === 'clear') Object.assign(FX, {period: '12', market: '', owner: '', country: '', status: '', fam: '', customer: ''});
-    else if(k === 'unset') FX[v] = v === 'period' ? '12' : '';
-    else if(k === 'who'){ const me = meName(); FX.owner = v === 'me' ? (OWN.find(o => nameKey(o) === nameKey(me)) || me) : ''; }
+    else if(k === 'clear') Object.assign(FX, fxEmpty());
+    else if(k === 'unset'){ const j = v.indexOf(':'), fk = j < 0 ? v : v.slice(0, j), fv = j < 0 ? '' : v.slice(j + 1); if(fk === 'period') FX.period = '12'; else FX[fk] = j < 0 ? [] : FX[fk].filter(x => x !== fv); }
+    else if(k === 'who'){ const me = meName(); FX.owner = v === 'me' ? [OWN.find(o => nameKey(o) === nameKey(me)) || me] : []; }
     else if(k === 'collapse') S.collapsed = !S.collapsed;
     else if(k === 'vfirst'){ VALUE_FIRST = v === 'list' ? 'list' : 'offer'; OFFERS.forEach(applyValue); refreshRowKeys(); }
     else if(k === 'map'){ const [a, b] = v.split(':'); if(a === 'retry'){ GEO_ERR = ''; loadGeo(); } else MAP[a] = b; }
@@ -33889,7 +34008,7 @@ function gantt(el, list){
       return {k: w, n: a.length, open: op.length, openV: val(op), late: a.filter(overdue).length, won: wn.length, wonV: val(wn), rate: winRate(a), decided: wn.length + a.filter(lost).length, margin: marginOf(a), hasCost: a.some(o => o.cost > 0)}; })
       .sort((x, y) => y.openV - x.openV || y.n - x.n);
     const funnelRows = Object.keys(REACH).map(s => { const a = A.filter(REACH[s]); return {s, n: a.length, v: val(a)}; });
-    return {A, ms, period: fxText('period', FX.period), filters: Object.keys(FX).filter(k => k !== 'period' && FX[k]).map(k => `${FXL[k]}: ${fxText(k, FX[k])}`),
+    return {A, ms, period: fxText('period', FX.period), filters: FX_KEYS.filter(k => FX[k].length).map(k => `${FXL[k]}: ${fxList(k)}`),
       at: new Date(), by: meName(), read: SCAN.at, total: OFFERS.length, valueFirst: VALUE_FIRST,
       won: A.filter(won), lost: A.filter(lost), open: A.filter(open), late: A.filter(overdue),
       status: STATUS.map(s => { const a = A.filter(o => o.status === s); return {s, n: a.length, v: val(a)}; }),
@@ -34026,11 +34145,12 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
       let r1 = r0 + data.length;
       if(totals && data.length){
         heads.forEach(([, k], j) => { const t = totals[j], col = xlsxColName(j + 1);
-          if(t === 'sum') xlsxSet(ws, r1, j + 1, {f: `SUM(${col}${r0}:${col}${r1 - 1})`, v: sum(data, d => Number(d[j]) || 0), s: tot(k)});
+          if(t === 'sum') xlsxSet(ws, r1, j + 1, {f: `SUBTOTAL(109,${col}${r0}:${col}${r1 - 1})`, v: sum(data, d => Number(d[j]) || 0), s: tot(k)});
           else if(t && typeof t === 'object') xlsxSet(ws, r1, j + 1, {f: t.f(r0, r1 - 1, r1), v: t.v, s: tot(k)});
           else xlsxSet(ws, r1, j + 1, {v: t === undefined ? '' : t, s: tot(typeof t === 'number' ? k : 'b')}); });
         r1++;
       }
+      if(ws.freezeRow === r || ws.filterAt === r) ws.autoFilter = `A${r}:${xlsxColName(heads.length)}${Math.max(r, r0 + data.length - 1)}`;   // beta_6.72: filter buttons; the total row stays out and is a SUBTOTAL, so it follows them
       return {r0, end: r1 - 1, next: r1 + 1};
     };
     // Summary
@@ -34077,6 +34197,7 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
     const heads = [['Project', 't'], ['Customer', 't'], ['Project name', 't'], ['Country', 't'], ['Owner', 't'], ['Status', 't'], ['SharePoint status', 't'], ['Price list', 't'], ['Family', 't'],
       ['UPS', 'n'], ['Power modules', 'n'], ['Installed kW', 'n'], ['Counted value', 'e'], ['Value from', 't'], ['Offer file value', 'e'], ['Offer Value € (list)', 'e'], ['Services', 'e'], ['Delivery', 'e'],
       ['Cost', 'e'], ['Margin', 'p'], ['Created', 'd'], ['Due', 'd'], ['Counts on', 'd'], ['Offer file', 't']];
+    s6.filterAt = 6;
     T = table(s6, 6, heads, R.list.map(o => [o.ref, o.customer, o.project, o.countryName, shortName(o.owner), o.status, o.rawStatus || '', o.hasOffer ? o.market : '', o.famM || o.fam || '',
       units(o), modules(o), Math.round(kwOf(o)), Math.round(o.value || 0), o.valueSrc === 'list' ? 'Offer Value € (list)' : o.valueSrc ? 'offer file' : '', Math.round(o.valueJson || 0), Math.round(o.valueList || 0),
       Math.round((o.parts || {}).Services || 0), Math.round((o.parts || {}).Delivery || 0), Math.round(o.cost || 0), o.cost > 0 && o.value > 0 ? (o.value - o.cost) / o.value : '',
@@ -34110,7 +34231,7 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
       rest(o).forEach(([it, n]) => it.codes.forEach(c => put(o, c, c.qty * n, 'No date', {n: 0, requested: '', real: '', items: {}}, it)));   // not in any batch yet
     });
     const codes = [...by.values()].sort((a, b) => String(a.code || '~').localeCompare(String(b.code || '~')) || a.model.localeCompare(b.model));
-    return {kind, planned, set, skipped, months, cols, codes, detail, noFile: set.filter(o => !(o.codes && o.codes.length)),
+    return {kind, planned, set, skipped, months, cols, codes, detail, filters: fxAll(), noFile: set.filter(o => !(o.codes && o.codes.length)),
       noDate: planned ? set.filter(o => batchesOf(o).some(b => !batchDate(b)) || rest(o).length) : [], pen: set.filter(o => o.penalty), at: new Date()};
   }
   async function planningXlsxBlob(P){
@@ -34120,9 +34241,10 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
       const ws = createXlsxSheet(name); ws.cols = widths;
       xlsxSet(ws, 1, 1, {v: title, s: {font: {b: true, sz: 14, color: '00257A'}}});
       xlsxSet(ws, 2, 1, {v: sub, s: {font: {color: '595959'}}});
+      xlsxSet(ws, 3, 1, {v: `Filters of the dashboard — ${P.filters}`, s: {font: {color: '595959'}}});   // beta_6.72
       head.forEach((t, i) => xlsxSet(ws, 4, i + 1, {v: t, s: HS}));
       body.forEach((r, k) => r.forEach((v, i) => xlsxSet(ws, 5 + k, i + 1, v && typeof v === 'object' ? {v: v.v, s: WS} : {v: v === undefined || v === null ? '' : v, s: typeof v === 'number' ? NS : TS})));
-      ws.freezeRow = 4; ws.printTitles = '$4:$4';
+      ws.freezeRow = 4; ws.printTitles = '$4:$4'; ws.autoFilter = `A4:${xlsxColName(head.length)}${4 + body.length}`;
       return ws;
     };
     const q = n => Math.round(n * 1000) / 1000, pen = o => o.penalty ? {v: 'YES'} : '';
@@ -34162,10 +34284,10 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
     document.getElementById('udPlannerOverlay')?.remove();
     const ov = document.createElement('div');
     ov.className = 'settings-overlay'; ov.id = 'udPlannerOverlay'; ov.style.display = 'flex'; ov.style.zIndex = '1650'; ov.style.padding = '2vh 2vw';
-    ov.innerHTML = `<div class="settings-modal pl-modal" role="dialog" aria-modal="true" aria-labelledby="udPlannerTitle">
+    ov.innerHTML = `<div class="settings-modal dp-modal" role="dialog" aria-modal="true" aria-labelledby="udPlannerTitle">
       <div class="acc-modal-header"><h3 id="udPlannerTitle">Delivery planner — won projects</h3><button type="button" class="acc-modal-close" data-cancel aria-label="Close">×</button></div>
-      <div class="ks-bar"><span>A won project is delivered in one or more <b>batches</b>. For each batch choose how many of each <b>ITEM</b> it carries, the date <b>requested</b> by the customer and the <b>real</b> date. The Planned report books production on the real date when there is one, else on the requested date. Projects in Project Closed are not listed.</span><span class="ks-count" id="udPlannerCount" role="status"></span></div>
-      <div class="ks-scroll pl-scroll" id="udPlannerBody"></div>
+      <div class="ks-bar"><span>A won project is delivered in one or more <b>batches</b>. Each row is an <b>ITEM</b> of the offer, each column a batch: type how many of the ITEM go in the batch, and give the batch the date <b>requested</b> by the customer and the <b>real</b> date. The Planned report books production on the real date when there is one, else on the requested date. Projects in Project Closed are not listed.</span><span class="ks-count" id="udPlannerCount" role="status"></span></div>
+      <div class="ks-scroll dp-scroll" id="udPlannerBody"></div>
       <div class="ks-foot"><span style="flex:1"></span><button type="button" class="btn-ghost act" data-cancel>Cancel</button><button type="button" class="act btn-primary" data-save disabled>Save</button></div></div>`;
     document.body.appendChild(ov);
     const body = ov.querySelector('#udPlannerBody'), count = ov.querySelector('#udPlannerCount'), save = ov.querySelector('[data-save]');
@@ -34173,40 +34295,50 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
     const left = (o, it) => it.qty - draft.get(o.key).reduce((a, b) => a + (b.items[it.key] || 0), 0);       // > 0: not assigned yet · < 0: too many
     const bad = o => (o.items || []).some(it => left(o, it) !== 0);
     const booked = b => { const t = batchDate(b); return t ? t.slice(0, 7) + (b.real ? ' · real' : ' · requested') : 'no date'; };
-    const warnText = o => (o.items || []).map(it => { const n = left(o, it); return n > 0 ? `ITEM ${it.no}: ${n} not in a batch` : n < 0 ? `ITEM ${it.no}: ${-n} too many` : ''; }).filter(Boolean).join(' · ');
+    const leftText = n => n > 0 ? `${n} not in a batch` : n < 0 ? `${-n} too many` : '';
+    const warnText = o => { const m = (o.items || []).map(it => { const t = leftText(left(o, it)); return t && `ITEM ${it.no}: ${t}`; }).filter(Boolean); return m.length > 2 ? `${m.length} ITEMs to assign` : m.join(' · '); };
     const status = () => {
       const wrong = list.filter(bad).length, nodate = list.filter(o => draft.get(o.key).some(b => !batchDate(b))).length;
       count.textContent = `${list.length} project${list.length === 1 ? '' : 's'}${nodate ? ` · ${nodate} with a batch without date` : ''}${dirty.size ? ` · ${dirty.size} changed` : ''}${wrong ? ` · ${wrong} with ITEMs to assign` : ''}`;
       count.classList.toggle('warn', !!(wrong || nodate)); save.disabled = !dirty.size || [...dirty].some(k => bad(byKey(k)));
-      body.querySelectorAll('.plp').forEach(el => { const o = byKey(el.dataset.k), w = el.querySelector('.plp-warn'); w.textContent = warnText(o); el.classList.toggle('bad', bad(o)); });
+      body.querySelectorAll('.dpp').forEach(el => { const o = byKey(el.dataset.k); el.querySelector('.dpp-warn').textContent = warnText(o); el.classList.toggle('bad', bad(o));
+        el.querySelectorAll('[data-lf]').forEach(td => { const n = left(o, (o.items || []).find(it => it.key === td.dataset.lf)); td.textContent = n < 0 ? leftText(n) : String(n); td.classList.toggle('bad', n !== 0); td.parentElement.classList.toggle('bad', n !== 0); }); });
     };
     const render = () => {
       body.innerHTML = list.map(o => { const bs = draft.get(o.key), its = o.items || [];
-        return `<section class="plp" data-k="${esc(o.key)}">
-          <div class="plp-h"><span><b>${esc(o.ref)}</b>${penTag(o)} · ${esc(o.customer)}${o.project ? ' — ' + esc(o.project) : ''} · ${esc(o.rawStatus || o.status)}</span><span class="plp-warn" role="status"></span><button type="button" class="pl-btn" data-add ${its.length ? '' : 'disabled'} title="A new batch: it takes the ITEMs not in a batch yet">+ Batch</button></div>
-          <table class="pl-table"><thead><tr><th>Batch</th><th>Requested date</th><th>Real date</th><th>Booked in</th>${its.map(it => `<th class="num" title="${esc(it.label)}">ITEM ${it.no}<small>${esc(it.label.length > 22 ? it.label.slice(0, 21) + '…' : it.label)} · ${it.qty}</small></th>`).join('')}<th></th></tr></thead><tbody>
-          ${bs.map((b, i) => `<tr data-i="${i}"><td>${i + 1} of ${bs.length}</td>
-            <td><input type="date" data-f="requested" value="${esc(b.requested)}" aria-label="Date requested by the customer, batch ${i + 1} of ${esc(o.ref)}"></td>
-            <td><input type="date" data-f="real" value="${esc(b.real)}" aria-label="Real date, batch ${i + 1} of ${esc(o.ref)}"></td>
-            <td class="bk">${esc(booked(b))}</td>
-            ${its.map(it => `<td class="num"><input type="number" min="0" max="${it.qty}" step="1" data-it="${esc(it.key)}" value="${b.items[it.key] || 0}" aria-label="ITEM ${it.no} in batch ${i + 1} of ${esc(o.ref)}, of ${it.qty}"></td>`).join('')}
-            <td class="act">${bs.length > 1 ? `<button type="button" class="pl-btn" data-del title="Remove this batch: its ITEMs go to the batch before">Remove</button>` : ''}</td></tr>`).join('')}
-          </tbody></table>${its.length ? '' : '<p class="pl-note">No offer file read for this project: only its dates can be set, its codes are not in the report.</p>'}</section>`; }).join('');
+        return `<section class="dpp" data-k="${esc(o.key)}">
+          <div class="dpp-h"><span><b>${esc(o.ref)}</b>${penTag(o)} · ${esc(o.customer)}${o.project ? ' — ' + esc(o.project) : ''} · ${esc(o.rawStatus || o.status)}</span><span class="dpp-warn" role="status"></span><button type="button" class="dp-btn" data-add ${its.length ? '' : 'disabled'} title="A new batch: it takes the ITEMs not in a batch yet">+ Batch</button></div>
+          <div class="dpp-x"><table class="dp-table"><thead><tr><th class="it" scope="col"><div>ITEM${its.length > 1 ? ` (${its.length})` : ''}</div></th><th class="num" scope="col">Qty</th><th class="num" scope="col" title="Quantity of the ITEM not in a batch yet: it must be 0 to save">To assign</th>
+          ${bs.map((b, i) => `<th class="bt" scope="col" data-i="${i}"><div class="bt-h"><span>Batch ${i + 1} of ${bs.length}</span>${bs.length > 1 ? `<button type="button" class="dp-btn" data-del title="Remove this batch: its ITEMs go to the batch before">Remove</button>` : ''}</div>
+            <label>Requested date<input type="date" data-f="requested" value="${esc(b.requested)}" aria-label="Date requested by the customer, batch ${i + 1} of ${esc(o.ref)}"></label>
+            <label>Real date<input type="date" data-f="real" value="${esc(b.real)}" aria-label="Real date, batch ${i + 1} of ${esc(o.ref)}"></label>
+            <span class="bk">Booked in: ${esc(booked(b))}</span></th>`).join('')}<th class="fill"></th></tr></thead><tbody>
+          ${its.map(it => `<tr><th class="it" scope="row" title="ITEM ${it.no} — ${esc(it.label)}"><div><b>ITEM ${it.no}</b><span>${esc(it.label)}</span></div></th><td class="num">${it.qty}</td><td class="num lf" data-lf="${esc(it.key)}"></td>
+            ${bs.map((b, i) => `<td class="bt" data-i="${i}"><input type="number" min="0" max="${it.qty}" step="1" data-it="${esc(it.key)}" value="${b.items[it.key] || 0}" title="ITEM ${it.no} · batch ${i + 1}" aria-label="ITEM ${it.no} in batch ${i + 1} of ${esc(o.ref)}, of ${it.qty}"></td>`).join('')}<td class="fill"></td></tr>`).join('')}
+          </tbody></table></div>${its.length ? '' : '<p class="dp-note">No offer file read for this project: only its dates can be set, its codes are not in the report.</p>'}</section>`; }).join('');
       status();
     };
     render();
+    const secOf = k => [...body.querySelectorAll('.dpp')].find(el => el.dataset.k === k);
     body.addEventListener('input', e => {
-      const el = e.target.closest('input'); if(!el) return; const sec = el.closest('.plp'), k = sec.dataset.k, b = draft.get(k)[+el.closest('tr').dataset.i];
+      const el = e.target.closest('input'); if(!el) return; const sec = el.closest('.dpp'), k = sec.dataset.k, i = +el.closest('[data-i]').dataset.i, b = draft.get(k)[i];
       if(el.dataset.it) b.items[el.dataset.it] = Math.max(0, Math.round(Number(el.value) || 0)); else b[el.dataset.f] = el.value;
-      dirty.add(k); el.closest('tr').querySelector('.bk').textContent = booked(b); status();
+      dirty.add(k); sec.querySelector(`thead [data-i="${i}"] .bk`).textContent = 'Booked in: ' + booked(b); status();
     });
+    body.addEventListener('keydown', e => {   // Enter / Shift+Enter: the same batch of the ITEM below / above, as in a sheet
+      if(e.key !== 'Enter' || !e.target.matches('[data-it]')) return; e.preventDefault();
+      const td = e.target.closest('td'), tr = e.shiftKey ? td.parentElement.previousElementSibling : td.parentElement.nextElementSibling, nx = tr && tr.querySelector(`td[data-i="${td.dataset.i}"] input`);
+      if(nx){ nx.focus(); nx.select(); }
+    });
+    body.addEventListener('focusin', e => { if(e.target.matches('[data-it]')) e.target.select(); });
     body.addEventListener('click', e => {
-      const sec = e.target.closest('.plp'); if(!sec) return; const k = sec.dataset.k, o = byKey(k), bs = draft.get(k);
-      if(e.target.closest('[data-add]')){ const last = bs[bs.length - 1];   // the new batch takes what is not in a batch yet
+      const sec = e.target.closest('.dpp'); if(!sec) return; const k = sec.dataset.k, o = byKey(k), bs = draft.get(k), top = body.scrollTop; let added = false;
+      if(e.target.closest('[data-add]')){ const last = bs[bs.length - 1]; added = true;   // the new batch takes what is not in a batch yet
         bs.push({n: bs.length + 1, requested: last ? last.requested : '', real: '', items: Object.fromEntries((o.items || []).map(it => [it.key, Math.max(0, left(o, it))]))}); }
-      else if(e.target.closest('[data-del]')){ const i = +e.target.closest('tr').dataset.i, [gone] = bs.splice(i, 1), to = bs[Math.max(0, i - 1)]; (o.items || []).forEach(it => { to.items[it.key] = (to.items[it.key] || 0) + (gone.items[it.key] || 0); }); }
+      else if(e.target.closest('[data-del]')){ const i = +e.target.closest('[data-i]').dataset.i, [gone] = bs.splice(i, 1), to = bs[Math.max(0, i - 1)]; (o.items || []).forEach(it => { to.items[it.key] = (to.items[it.key] || 0) + (gone.items[it.key] || 0); }); }
       else return;
-      dirty.add(k); render();
+      dirty.add(k); render(); body.scrollTop = top;
+      if(added){ const x = secOf(k).querySelector('.dpp-x'); x.scrollLeft = x.scrollWidth; }
     });
     const close = () => ov.remove();
     ov.querySelectorAll('[data-cancel]').forEach(x => x.addEventListener('click', close));
@@ -34279,7 +34411,7 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
     if(t.dataset.act) return act(t.dataset.act);
     if(t.dataset.cfg) return openInConfigurator(t.dataset.cfg);
     if(t.dataset.ref) return openOffer(t.dataset.ref);
-    if(t.dataset.x){ const i = t.dataset.x.indexOf(':'), k = t.dataset.x.slice(0, i), v = t.dataset.x.slice(i + 1); FX[k] = FX[k] === v ? '' : v; render(); }
+    if(t.dataset.x){ const i = t.dataset.x.indexOf(':'), k = t.dataset.x.slice(0, i), v = t.dataset.x.slice(i + 1); FX[k] = FX[k].includes(v) ? FX[k].filter(x => x !== v) : [...FX[k], v]; render(); }   // a click adds the value, a second click removes it
   });
   let DRAG = null;
   root.addEventListener('dragstart', e => { const c = e.target.closest && e.target.closest('[data-drag]'); if(!c) return; DRAG = c.dataset.drag; c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain', DRAG); }catch(x){} closeMenu(); tip.style.display = 'none'; });
@@ -34299,7 +34431,8 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
   root.addEventListener('keydown', e => { if(e.key === 'Escape' && MENU){ e.stopPropagation(); closeMenu(); return; } if(e.key === 'Escape' && $('ov').classList.contains('open')){ e.stopPropagation(); $('ov').classList.remove('open'); } });
   panelEl.addEventListener('click', e => { const b = e.target.closest('[data-ud]'); if(b) act(b.dataset.ud); });
   pagesEl.addEventListener('click', e => { const b = e.target.closest('[data-ud]'); if(b) act(b.dataset.ud); });
-  panelEl.addEventListener('change', e => { const s = e.target.closest('select[data-fx]'); if(s){ FX[s.dataset.fx] = s.value; render(); } });
+  panelEl.addEventListener('change', e => { const s = e.target.closest('select[data-fx]'); if(s && s.dataset.fx === 'period'){ FX.period = s.value; render(); } });
+  panelEl.addEventListener('click', e => { const m = e.target.closest('[data-ms]'); if(m) msOpen(m); });
   tabsEl.addEventListener('click', e => { const b = e.target.closest('[data-udtab]'); if(!b) return;
     if(S.rb === b.dataset.udtab && !S.collapsed) S.collapsed = true; else { S.rb = b.dataset.udtab; S.collapsed = false; } ribbon(); });
   document.addEventListener('keydown', e => { if(ACTIVE && e.key === 'Escape' && $('ov').classList.contains('open')) $('ov').classList.remove('open'); });
@@ -34326,6 +34459,7 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
   }
   function hide(){
     if(!ACTIVE) return;
+    msClose();
     ACTIVE = false; document.body.classList.remove('ud-mode', 'ud-collapsed'); setTabLabel();
     $('ov').classList.remove('open'); tip.style.display = 'none'; try{ closeMenu(); }catch(e){}
     try{ window.scrollTo(0, 0); }catch(e){}
@@ -34354,8 +34488,8 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
     return {won: w.length, total: val(w), chart: sum(ms, k => val(w.filter(o => monthKey(pDate(o)) === k))), outsideChart: w.filter(o => !ms.includes(monthKey(pDate(o)))).length,
       matrixRows: sum(ROWKEYS, f => sum(wf, o => (o.parts && o.parts[f]) || 0)), matrixTotal: val(wf), from: win()[0].toISOString().slice(0, 10)};
   }
-  return {show, hide, active, decorateMenu, render, reload: () => loadSharePoint(true), _data: () => OFFERS, _set: setData, report: reportPdf, reportXlsx, _repData: repData, _repHtml: () => repHtml(repData()), _repXlsx: () => repXlsxBlob(repData()), _planData: planningData, _planner: openPlanner, _items: offerItems, _planXlsx: k => planningXlsxBlob(planningData(k)), _codes: offerCodes, _toOffer: toOffer, _audit: audit, _stage: stageName, _totals: offerTotals, refreshProject,
-    _period: v => { FX.period = v; render(); }};
+  return {show, hide, active, decorateMenu, render, reload: () => loadSharePoint(true), _data: () => OFFERS, _rows: () => rows(), _set: setData, report: reportPdf, reportXlsx, _repData: repData, _repHtml: () => repHtml(repData()), _repXlsx: () => repXlsxBlob(repData()), _planData: planningData, _planner: openPlanner, _items: offerItems, _planXlsx: k => planningXlsxBlob(planningData(k)), _codes: offerCodes, _toOffer: toOffer, _audit: audit, _stage: stageName, _totals: offerTotals, refreshProject,
+    _period: v => { FX.period = v; render(); }, _fx: () => FX};
 })();
 
 </script>

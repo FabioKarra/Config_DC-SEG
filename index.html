@@ -13894,6 +13894,96 @@
 #ribbonPanel .rb-sm.rb-on { background: #E8EEF8; box-shadow: inset 0 0 0 1px #B4C6E6; color: #1F3F7A; font-weight: 600; }
         body.dark-theme #ribbonPanel .rb-sm.rb-on { background: #26364D; box-shadow: inset 0 0 0 1px #4F83D1; color: #CFE0FF; }
         .kb-data select.kb-in { width: 100%; }
+/* beta_6.63: the sheet (large Excel-like page) of the kit builder */
+        .ks-overlay { padding: 2vh 2vw; z-index: 1700; }
+        .ks-modal { width: min(1320px, 96vw); max-width: none; height: 94vh; max-height: none; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+        .ks-bar { display: flex; gap: 16px; align-items: center; justify-content: space-between; padding: 10px 18px; font-size: 12.5px; color: var(--dim); border-bottom: 1px solid var(--panel-border); }
+        .ks-bar b { color: var(--text); font-weight: 600; }
+        .ks-count { flex: none; font-weight: 600; color: var(--navy); white-space: nowrap; }
+        .ks-count.warn { color: #8F5600; }
+        .ks-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; background: var(--panel); overscroll-behavior: contain; }
+        .ks-table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; min-width: 100%; font-size: 13px; }
+        .ks-table thead th { position: sticky; top: 0; z-index: 3; height: 32px; padding: 0 8px; text-align: left; font-weight: 600; font-size: 12px; color: #fff; background: #4472C4; border-right: 1px solid rgba(255,255,255,.35); white-space: nowrap; }
+        .ks-table thead th.num { text-align: right; }
+        .ks-table .ks-rn { position: sticky; left: 0; z-index: 2; width: 46px; text-align: center; font-weight: 500; font-size: 11.5px; color: var(--dim); background: var(--field-bg); border-right: 1px solid var(--panel-border); border-bottom: 1px solid var(--panel-border); }
+        .ks-table thead .ks-rn { z-index: 4; background: #2F5597; }
+        .ks-table td { padding: 0; border-right: 1px solid var(--panel-border); border-bottom: 1px solid var(--panel-border); background: var(--panel); }
+        .ks-table td input, .ks-table td textarea { display: block; width: 100%; height: 30px; box-sizing: border-box; border: 0; border-radius: 0; background: transparent; color: var(--text); font: inherit; padding: 0 8px; outline: none; }
+        .ks-table td textarea { resize: none; overflow: hidden; white-space: pre; line-height: 30px; padding-top: 0; padding-bottom: 0; }
+        .ks-table td input.num { text-align: right; }
+        .ks-table td input:focus, .ks-table td textarea:focus { box-shadow: inset 0 0 0 2px #4472C4; background: #F4F8FE; }
+        .ks-table tr.ks-noqty td:first-of-type { background: #FFF4E0; }
+        .ks-foot { display: flex; gap: 10px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--panel-border); }
+.ks-top { display: flex; gap: 14px; align-items: flex-start; padding: 8px 18px; border-bottom: 1px solid var(--panel-border); font-size: 12.5px; }
+        .ks-def { display: flex; align-items: center; gap: 8px; flex: none; color: var(--dim); }
+        .ks-def select, .ks-def input { height: 30px; border: 1px solid var(--field-border); border-radius: 6px; background: var(--field-bg); color: var(--text); font: inherit; padding: 0 8px; max-width: 260px; }
+        .ks-sum { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; max-height: 62px; overflow: auto; }
+        .ks-chip { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 2px 10px; border-radius: 13px; background: #EEF3FB; color: #1F3F7A; font-size: 12px; }
+        .ks-chip.new { background: #FFF4E0; color: #7A4A00; }
+        .ks-table td.ks-ro { padding: 0 8px; font-size: 11.5px; color: var(--dim); white-space: nowrap; background: var(--field-bg); }
+        .ks-table tr.ks-list td.ks-ro { color: #1E6B3D; font-weight: 600; }
+        .ks-table tr.ks-title td { background: #FFF8E1; }
+        .ks-table tr.ks-title td input, .ks-table tr.ks-title td textarea { font-weight: 600; color: #003C78; }
+        .ks-table tr.ks-skip td input, .ks-table tr.ks-skip td textarea { color: var(--dim); text-decoration: line-through; }
+        .ks-foot .ks-file { border: 1px solid var(--accent); color: var(--accent-dark); font-weight: 600; }
+        body.dark-theme .ks-chip { background: #26364D; color: #CFE0FF; } body.dark-theme .ks-chip.new { background: #42351F; color: #F2C777; }
+        body.dark-theme .ks-table tr.ks-title td { background: #3A3320; } body.dark-theme .ks-table tr.ks-title td input, body.dark-theme .ks-table tr.ks-title td textarea { color: #F2C777; }
+        body.dark-theme .ks-table tr.ks-list td.ks-ro { color: #8FE0B3; }
+        .kb-sheet-open { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 1px dashed #9DB4DC; border-radius: 10px; background: #F7FAFE; color: var(--accent-dark); font: 600 13px 'Work Sans', sans-serif; text-align: left; cursor: pointer; }
+        .kb-sheet-open:hover { background: #EEF3FB; border-color: var(--accent); }
+        .kb-sheet-open small { display: block; margin-top: 2px; font-weight: 400; font-size: 11.5px; color: var(--dim); }
+        body.dark-theme .ks-table td input:focus, body.dark-theme .ks-table td textarea:focus { background: #26364D; box-shadow: inset 0 0 0 2px #78A9FF; }
+        body.dark-theme .ks-table tr.ks-noqty td:first-of-type { background: #42351F; }
+        body.dark-theme .ks-count { color: #A9C7FF; } body.dark-theme .ks-count.warn { color: #F2C777; }
+        body.dark-theme .kb-sheet-open { background: #26303F; border-color: #4F6FA5; color: #A9C7FF; }
+/* beta_6.64: kit type (tag in the BOM) */
+        .bom-tag-field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; margin-top: 4px; }
+        .bom-tag-field input { width: 100%; }
+        .pf-hint .bom-tag-field { flex-direction: row; align-items: center; margin-top: 0; }
+        .pf-hint .bom-tag-field input { flex: 1; min-width: 120px; height: 30px; border: 1px solid var(--field-border); border-radius: 6px; background: var(--field-bg); color: var(--text); font: inherit; padding: 0 8px; }
+        .bom-tag-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: none; }
+        .bom-tag-chip { height: 26px; padding: 0 10px; border: 1px solid #C9D3E3; border-radius: 13px; background: #fff; color: #2F5597; font: 600 11px 'Work Sans', sans-serif; letter-spacing: .03em; cursor: pointer; }
+        .bom-tag-chip.none { font-weight: 500; color: var(--dim); letter-spacing: 0; }
+        .bom-tag-chip:hover { background: #EEF3FB; }
+        .bom-tag-chip.on { background: #00257A; border-color: #00257A; color: #fff; }
+        body.dark-theme .bom-tag-chip { background: #292D36; border-color: #454B58; color: #A9C7FF; }
+        body.dark-theme .bom-tag-chip.on { background: #3E69B8; border-color: #3E69B8; color: #fff; }
+/* beta_6.67: late-delivery penalties */
+        .pd-pen { display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 13px; color: var(--text); cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 400; }
+        .pd-pen input { width: 18px; height: 18px; flex: none; }
+        .pd-pen-warn { margin: 0 0 12px; padding: 9px 12px; border-radius: 8px; background: #FBE7E9; border: 1px solid #F3C9CF; color: #9E1F2A; font-size: 13px; }
+        .pen-tag { display: inline-block; padding: 0 7px; border-radius: 9px; background: #FBE7E9; color: #9E1F2A; font-size: 10.5px; font-weight: 600; line-height: 17px; vertical-align: 1px; }
+        .pop-pen { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; background: #FBE7E9; border: 1px solid #F3C9CF; color: #9E1F2A; font-size: 12.5px; }
+        body.dark-theme .pd-pen-warn, body.dark-theme .pop-pen { background: #43272D; border-color: #6B3A44; color: #FF8FA0; }
+        body.dark-theme .pen-tag { background: #43272D; color: #FF8FA0; }
+/* beta_6.68: delivery planner */
+        .pl-modal { width: min(1240px, 96vw); max-width: none; height: 92vh; max-height: none; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+        .pl-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+        .pl-table thead th { position: sticky; top: 0; z-index: 2; height: 34px; padding: 0 10px; text-align: left; font-size: 12px; font-weight: 600; color: #fff; background: #4472C4; white-space: nowrap; }
+        .pl-table thead th.num { text-align: right; }
+        .pl-table td { padding: 5px 10px; border-bottom: 1px solid var(--panel-border); vertical-align: middle; }
+        .pl-table tr.first td { border-top: 2px solid var(--panel-border); }
+        .pl-table td small { display: block; color: var(--dim); font-size: 11.5px; }
+        .pl-table td input { height: 30px; border: 1px solid var(--field-border); border-radius: 6px; background: var(--field-bg); color: var(--text); font: inherit; padding: 0 8px; }
+        .pl-table td.num input { width: 74px; text-align: right; }
+        .pl-table tr.bad td.num input { border-color: #C8102E; background: #FBE7E9; }
+        .pl-table td.bk { color: var(--dim); white-space: nowrap; }
+        .pl-table td.act { white-space: nowrap; text-align: right; min-width: 176px; }
+        .pl-table td input[type=date] { width: 140px; }
+.pl-scroll { padding: 14px 18px; background: var(--bg); }
+        .plp { margin: 0 0 14px; border: 1px solid var(--panel-border); border-radius: 10px; background: var(--panel); overflow: hidden; }
+        .plp.bad { border-color: #E0A3AB; }
+        .plp-h { display: flex; align-items: center; gap: 12px; padding: 9px 12px; font-size: 13px; }
+        .plp-h > span:first-child { flex: 1; min-width: 0; }
+        .plp-warn { color: #9E1F2A; font-size: 12px; font-weight: 600; }
+        .plp .pl-table thead th { position: static; height: auto; padding: 6px 10px; background: #EEF3FB; color: #1F3F7A; text-transform: none; letter-spacing: 0; vertical-align: bottom; }
+        .plp .pl-table thead th small { display: block; font-weight: 400; color: var(--dim); white-space: nowrap; }
+        .plp .pl-table td.num input { width: 64px; }
+        .pl-note { margin: 0; padding: 8px 12px; font-size: 12px; color: var(--dim); }
+        body.dark-theme .plp .pl-table thead th { background: #26364D; color: #CFE0FF; } body.dark-theme .plp-warn { color: #FF8FA0; }
+        .pl-btn { height: 28px; margin-left: 6px; padding: 0 10px; border: 1px solid #C9D3E3; border-radius: 6px; background: var(--panel); color: var(--accent-dark); font: 500 12px 'Work Sans', sans-serif; cursor: pointer; }
+        .pl-btn:hover { background: #EEF3FB; }
+        body.dark-theme .pl-btn { border-color: #454B58; color: #A9C7FF; } body.dark-theme .pl-table tr.bad td.num input { background: #43272D; }
         .card-kw-sub { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--dim); }
         /* the SharePoint mark is 34 px, the line icons 24: its label sat lower than the labels beside it */
         #ribbonPanel .rb-big[data-cmd="saveSpData"] > svg { margin: -5px 0; }
@@ -14271,6 +14361,7 @@
                         </div>
                     </div>
                     <div id="pdForm">
+                        <div id="prjPenaltyWarn" class="pd-pen-warn" role="status" hidden><b>Late-delivery penalties</b> apply to this project<span></span></div>
                         <div class="grid">
                             <div class="field">
                                 <label for="prjRef" data-i18n="pd.projectRef">Project Reference</label>
@@ -14306,6 +14397,14 @@
                             <div class="field">
                                 <label data-i18n="pd.stdSpecial">STD/SPECIAL</label>
                                 <input id="prjStdSpecial" list="stdSpecialChoices" autocomplete="off">
+                            </div>
+                            <div class="field">
+                                <label for="prjPenalty">Late-delivery penalties</label>
+                                <label class="pd-pen"><input type="checkbox" id="prjPenalty"><span>The contract has penalties for late delivery</span></label>
+                            </div>
+                            <div class="field">
+                                <label for="prjPenaltyNote">Penalty terms (note)</label>
+                                <input id="prjPenaltyNote" maxlength="160" autocomplete="off" placeholder="e.g. 0.5 % per week, max 5 %">
                             </div>
                             <div class="field">
                                 <label data-i18n="pd.priceList">Price list</label>
@@ -14382,6 +14481,7 @@
                     <p id="offerGrandTotal" style="text-align:right; font-weight:600; color:var(--navy); font-size:14px; margin:14px 4px 0;">Project Total: €0.00</p>
                     <div style="margin-top:10px;">
                         <button type="button" class="btn-add" id="btnAddProjectSection" data-i18n="ol.addProjectSection">+ Add Project Section</button>
+                        <button type="button" class="btn-add" id="btnImportOffer" style="margin-left:8px;" title="Import the lines of an ITEM from Excel — open a file or paste the rows in the sheet; the name of the ITEM is asked when you import. No position in System Configuration is needed.">+ Import from Excel</button>
                     </div>
                 </section>
 
@@ -14915,6 +15015,46 @@ function escapeHtml(str){
 }
 // beta_6.60: the power shown in the title of a position is the power of the whole system: load of one UPS (Pload)
 // multiplied by the UPS per system. 800 kW with 2 UPS per system reads 1600 kW; with 1 UPS nothing changes.
+// beta_6.67: late-delivery penalties — a setting of the project, saved with the offer (Save / AutoSave), and a warning
+// in Project Details, when the offer is opened, when it is marked won and in the Dashboard.
+function setPenaltyFields(on, note){
+  const c = document.getElementById('prjPenalty'), n = document.getElementById('prjPenaltyNote');
+  if(c) c.checked = !!on; if(n) n.value = String(note || '');
+  updatePenaltyWarn();
+}
+function updatePenaltyWarn(){
+  const c = document.getElementById('prjPenalty'), n = document.getElementById('prjPenaltyNote'), w = document.getElementById('prjPenaltyWarn');
+  if(!c || !w) return;
+  w.hidden = !c.checked;
+  const t = n ? n.value.trim() : ''; w.querySelector('span').textContent = t ? ` — ${t}` : '';
+}
+document.getElementById('prjPenalty')?.addEventListener('change', updatePenaltyWarn);
+document.getElementById('prjPenaltyNote')?.addEventListener('input', updatePenaltyWarn);
+// The small window for the requested delivery date (and the penalties) of a won project. Resolves {delivery, penalty, penaltyNote} or null
+function askDeliveryInfo(o = {}){
+  return new Promise(resolve => {
+    document.getElementById('deliveryInfoOverlay')?.remove();
+    const ov = document.createElement('div');
+    ov.className = 'settings-overlay'; ov.id = 'deliveryInfoOverlay'; ov.style.display = 'flex'; ov.style.zIndex = '1710';
+    const css = 'width:100%; height:36px; box-sizing:border-box; border:1px solid var(--field-border); border-radius:8px; background:var(--field-bg); color:var(--text); font:inherit; padding:0 10px;';
+    ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="deliveryInfoTitle" style="max-width:520px;">
+      <div class="acc-modal-header"><h3 id="deliveryInfoTitle">${escapeHtml(o.title || 'Requested delivery date')}</h3><button type="button" class="acc-modal-close" data-cancel aria-label="Close">×</button></div>
+      <div style="padding:16px 18px;">
+        <p class="pf-hint" style="margin-top:0;">The project is won: the Planned report of the Dashboard books its codes in production in the month of this date.</p>
+        <label class="pf-hint" for="deliveryInfoDate" style="display:block; margin:0 0 4px;">Delivery date requested by the customer</label>
+        <input type="date" id="deliveryInfoDate" value="${escapeHtml(o.delivery || '')}" style="${css}">
+        <label class="pd-pen" style="margin-top:12px;"><input type="checkbox" id="deliveryInfoPen"${o.penalty ? ' checked' : ''}><span>The contract has penalties for late delivery</span></label>
+        <input type="text" id="deliveryInfoNote" maxlength="160" autocomplete="off" placeholder="Penalty terms, e.g. 0.5 % per week, max 5 %" value="${escapeHtml(o.penaltyNote || '')}" aria-label="Penalty terms" style="${css} margin-top:6px;">
+        <div class="pf-actions" style="justify-content:flex-end; margin-top:16px;"><button type="button" class="btn-ghost act" data-cancel>Not now</button><button type="button" class="act btn-primary" data-ok>Save</button></div>
+      </div></div>`;
+    document.body.appendChild(ov);
+    let done = false;
+    const finish = v => { if(done) return; done = true; ov.remove(); resolve(v); };
+    ov.querySelector('[data-ok]').addEventListener('click', () => finish({delivery: ov.querySelector('#deliveryInfoDate').value || '', penalty: ov.querySelector('#deliveryInfoPen').checked, penaltyNote: ov.querySelector('#deliveryInfoNote').value.trim()}));
+    ov.querySelectorAll('[data-cancel]').forEach(x => x.addEventListener('click', () => finish(null)));
+    setTimeout(() => ov.querySelector('#deliveryInfoDate').focus(), 30);
+  });
+}
 function positionTotalKw(pload, upsPerSys){
   const p = Number(pload), n = Math.max(1, Math.round(Number(upsPerSys) || 1));
   if(!(p > 0)) return String(pload ?? '');
@@ -17675,7 +17815,7 @@ document.getElementById('btnResetOfferConfirm').addEventListener('click', ()=>{
 // resets to R0 unlocked, regardless of whether the source was open or closed.
 // the offer on the page stays, the project is let go of: identity cleared, back to an open R0
 function detachOfferFromProject(){
-  ['prjRef','prjName','prjCountry','prjCustomer','prjDue','prjOwner','prjOfferType','prjStdSpecial'].forEach(id=>document.getElementById(id).value='');
+  ['prjRef','prjName','prjCountry','prjCustomer','prjDue','prjOwner','prjOfferType','prjStdSpecial'].forEach(id=>document.getElementById(id).value=''); setPenaltyFields(false, '');
   document.getElementById('prjRef').readOnly = true;
   REVISION = 0; REVISION_CLOSED = false; REVISION_DESCRIPTION = ''; REVISION_HISTORY = []; REPORT = null;
   setReadOnly(false);
@@ -17686,7 +17826,7 @@ document.getElementById('btnCloneOffer').addEventListener('click', ()=>{
     alert('Generate an Offer first — there is nothing to clone yet.');
     return;
   }
-  ['prjRef','prjName','prjCountry','prjCustomer','prjDue','prjOwner','prjOfferType','prjStdSpecial'].forEach(id=>document.getElementById(id).value='');
+  ['prjRef','prjName','prjCountry','prjCustomer','prjDue','prjOwner','prjOfferType','prjStdSpecial'].forEach(id=>document.getElementById(id).value=''); setPenaltyFields(false, '');
   document.getElementById('prjRef').readOnly = true;   // the project is chosen with 📁 Projects
 
   REVISION = 0;
@@ -18088,7 +18228,7 @@ function buildRow(prefill){
 function resetAll(){
   setPrjAutoLoadStatus('');
   autoLoadSeq++; // a lookup still running for the old project must not land on the fresh page
-  ['prjName','prjCountry','prjCustomer','prjDue','prjOwner','prjRef','prjBatteryBrand','prjOfferType','prjStdSpecial'].forEach(id=>document.getElementById(id).value='');
+  ['prjName','prjCountry','prjCustomer','prjDue','prjOwner','prjRef','prjBatteryBrand','prjOfferType','prjStdSpecial'].forEach(id=>document.getElementById(id).value=''); setPenaltyFields(false, '');
   document.getElementById('prjRef').readOnly = true;   // the project is chosen with 📁 Projects
   document.getElementById('prjProduct').selectedIndex = 0;
   document.getElementById('prjBattery').selectedIndex = 0;
@@ -19424,6 +19564,7 @@ function addBomRow(data, insertBeforeNode){
   if(data.manualEntry) row.dataset.manualEntry = 'true';
   if(Array.isArray(data.subBom) && data.subBom.length) row.dataset.subBom = JSON.stringify(data.subBom);
   if(data.bomType === 'code' || data.bomType === 'group') row.dataset.bomType = data.bomType;   // beta_6.61
+  if(data.bomTag) setBomTag(row, data.bomTag);   // beta_6.64
   if(data.kitId){
     row.dataset.kitId = data.kitId;
     if(data.kitParent) row.dataset.kitParent = 'true';
@@ -20402,6 +20543,7 @@ function openTechIntegrationModal(triggerRow){
 // New sections default to sitting right above SERVICES; the ↑/↓ buttons on each section's header
 // then let the person freely reposition it — including between two specific UPS positions — and
 // that position is remembered across a regenerate too. ----
+document.getElementById('btnImportOffer')?.addEventListener('click', () => openOfferImport());   // beta_6.65
 document.getElementById('btnAddProjectSection').addEventListener('click', ()=>{
   // No longer requires "Generate Offer" first — a project can be entirely custom sections with
   // no MP2/M2S/M2X positions at all (e.g. a Power Center-only quote). Services/Delivery still
@@ -20773,13 +20915,14 @@ function parseSubBomRows(aoa){
   const isCode = t => /^(cod|code|codice|part|p\/n|pn|articolo|item)/.test(t);
   const isDesc = t => /^(desc|descrizione|description|denominazione)/.test(t);
   const isCost = t => /^(cost|costo|unit cost|costo unitario|prezzo acquisto|purchase)/.test(t);
+  const isModel = t => /^(model|modello|mod\.|tipo|type)/.test(t);   // beta_6.63: optional column, found only by its title
   let hi = -1, cols = null;
   for(let i = 0; i < Math.min(aoa.length, 30); i++){
     const r = (aoa[i] || []).map(norm);
-    const c = {qty: r.findIndex(isQty), code: r.findIndex(isCode), desc: r.findIndex(isDesc), cost: r.findIndex(isCost)};
+    const c = {qty: r.findIndex(isQty), code: r.findIndex(isCode), desc: r.findIndex(isDesc), cost: r.findIndex(isCost), model: r.findIndex(isModel)};
     if(c.qty >= 0 && (c.code >= 0 || c.desc >= 0)){ hi = i; cols = c; break; }
   }
-  if(!cols){ hi = -1; cols = {qty: 0, code: 1, desc: 2, cost: 3}; }
+  if(!cols){ hi = -1; cols = {qty: 0, code: 1, desc: 2, cost: 3, model: 4}; }   // no titles: A–D as always, E = model (optional)
   const num = v => { if(v === '' || v === null || v === undefined) return 0; if(typeof v === 'number') return v; const t = String(v).replace(/[€$£\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); const n = Number(t); return Number.isFinite(n) ? n : 0; };
   const out = [];
   aoa.slice(hi + 1).forEach(r => {
@@ -20787,10 +20930,11 @@ function parseSubBomRows(aoa){
     const code = cols.code >= 0 ? String(r[cols.code] ?? '').trim() : '';
     const desc = cols.desc >= 0 ? String(r[cols.desc] ?? '').trim() : '';
     const qtyRaw = cols.qty >= 0 ? r[cols.qty] : '';
-    if(!code && !desc) return;
+    const model = cols.model >= 0 ? String(r[cols.model] ?? '').trim() : '';
+    if(!code && !desc && !model) return;
     const qty = num(qtyRaw);
     if(!qty && (qtyRaw === '' || qtyRaw === undefined)) return;   // a title or note line, not a component
-    out.push({qty, code, desc, cost: cols.cost >= 0 ? num(r[cols.cost]) : 0});
+    out.push({qty, code, desc, cost: cols.cost >= 0 ? num(r[cols.cost]) : 0, ...(model ? {model} : {})});
   });
   return out;
 }
@@ -20907,6 +21051,7 @@ function openSubBomView(row){
     <div style="padding:14px 18px; max-height:78vh; overflow:auto;">
       <p class="pf-hint" style="margin-top:0;">Composition listed under this line in the BOM documents (quantities there are multiplied by the line's ${escapeHtml(String(bomLineQty(row)))}).</p>
       <label class="pf-hint" style="display:flex; align-items:center; gap:8px; margin:0 0 10px;"><span style="flex:none;">In the BOM with kits exploded</span><select data-bomtype${READ_ONLY ? ' disabled' : ''} style="flex:1; min-width:0; height:30px; border:1px solid var(--field-border); border-radius:6px; background:var(--field-bg); color:var(--text); font:inherit; padding:0 6px;">${bomTypeOptionsHtml(row.dataset.bomType || '')}</select></label>
+      <div class="pf-hint" data-tagbox style="display:flex; align-items:center; gap:8px; margin:0 0 10px;"><span style="flex:none;">Type — tag in the BOM with kits exploded</span>${bomTagFieldHtml(bomTagOf(row))}</div>
       ${subBomTableHtml(items)}
       <div class="pf-actions" style="justify-content:flex-end;">
         <button type="button" class="btn-ghost act" data-close>Close</button>
@@ -20920,6 +21065,8 @@ function openSubBomView(row){
   const ed = ov.querySelector('[data-edit]');
   if(ed) ed.addEventListener('click', () => { close(); if(header) openSubBomImportDialog(header, row); });
   const bts = ov.querySelector('[data-bomtype]');
+  if(!READ_ONLY) wireBomTagField(ov.querySelector('[data-tagbox]'), v => { setBomTag(row, v); try{ if(typeof markDirty === 'function') markDirty(); }catch(e){} });
+  else ov.querySelectorAll('[data-tagbox] input, [data-tagbox] button').forEach(el => { el.disabled = true; });
   if(bts) bts.addEventListener('change', () => { setBomType(row, bts.value); try{ if(typeof markDirty === 'function') markDirty(); }catch(e){} });
 }
 // ---- beta_6.61: two BOM documents from the same offer lines ----
@@ -20942,6 +21089,24 @@ function bomTypeOf(r){
   return r && r.dataset.bomType === 'code' ? 'code' : 'group';
 }
 function setBomType(r, t){ if(!r) return; if(t === 'code') r.dataset.bomType = 'code'; else delete r.dataset.bomType; }
+// beta_6.64: the type of a kit — a tag (UPS, BATTERY, POWER CENTER or your own words) printed in the BOM documents on the
+// row before the kit, with no position number. With kits exploded the kit line is not printed: the tag says what
+// the sub-positions that follow are. Same for a line with a composition from Excel.
+const BOM_TAG_PRESETS = ['UPS', 'BATTERY', 'POWER CENTER'];
+const bomTagOf = r => String((r && r.dataset.bomTag) || '').replace(/\s+/g, ' ').trim();
+function setBomTag(r, t){ if(!r) return; const v = String(t || '').replace(/\s+/g, ' ').trim().slice(0, 40); if(v) r.dataset.bomTag = v; else delete r.dataset.bomTag; }
+function bomTagFieldHtml(cur){
+  const v = String(cur || '');
+  return `<span class="bom-tag-field"><input type="text" class="kb-in" data-bomtag maxlength="40" value="${escapeHtml(v)}" placeholder="none — pick one or type your own" aria-label="Kit type: tag printed in the BOM before the kit" autocomplete="off">
+    <span class="bom-tag-chips" role="group" aria-label="Kit types">${BOM_TAG_PRESETS.map(t => `<button type="button" class="bom-tag-chip${v.trim().toUpperCase() === t ? ' on' : ''}" data-bomtag-set="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}<button type="button" class="bom-tag-chip none${v.trim() ? '' : ' on'}" data-bomtag-set="">none</button></span></span>`;
+}
+function wireBomTagField(root, onChange){
+  const inp = root && root.querySelector('[data-bomtag]'); if(!inp) return;
+  const chips = [...root.querySelectorAll('[data-bomtag-set]')];
+  const sync = () => { const v = inp.value.trim().toUpperCase(); chips.forEach(c => c.classList.toggle('on', c.dataset.bomtagSet ? c.dataset.bomtagSet === v : !v)); };
+  inp.addEventListener('input', () => { sync(); onChange(inp.value); });
+  chips.forEach(c => c.addEventListener('click', () => { inp.value = c.dataset.bomtagSet; sync(); onChange(inp.value); }));
+}
 function bomTypeOptionsHtml(cur){
   const o = (v, t) => `<option value="${v}"${(cur === 'code' ? 'code' : '') === v ? ' selected' : ''}>${t}</option>`;
   return o('', 'Components only, as sub-positions (1.2.1, 1.2.2 …) — the kit line is not printed')
@@ -20957,14 +21122,18 @@ function bomDocumentRows(view){
   const out = [];
   const r3 = n => Math.round(n * 1000) / 1000;
   const lvl = pos => Math.max(0, String(pos).split('.').length - 2);
+  // beta_6.66: kits exploded only — before the sub-positions of a kit, a row with no position: the kit name on the left, its type (tag) on the right.
+  // In the BOM with kits the kit is its own line, so nothing is added. A kit that keeps its line ("Kit line too") only gets the tag.
+  const tag = (row, kept) => { if(kitsView) return; const t = bomTagOf(row), name = kept ? '' : (rowModelText(row).replace(/^↳\s*/, '') || rowCodeText(row) || ''); if(t || name) out.push({type: 'tag', label: t, name}); };
   const line = (row, qty, pos, extra) => Object.assign({type: 'line', pos, level: lvl(pos), qty: r3(qty), model: rowModelText(row).replace(/^↳\s*/, ''), code: rowCodeText(row),
     desc: String(rowDescText(row)).replace(/\r\n?/g, '\n')}, extra || {});
   // a line that is not a kit: itself, or — with a composition from Excel, kits exploded — its components as sub-positions
   const emit = (row, qty, pos) => {
     const comp = rowSubBom(row);
+    if(comp) tag(row, bomTypeOf(row) === 'code');
     if(!comp || kitsView){ out.push(line(row, qty, pos)); return; }
     if(bomTypeOf(row) === 'code') out.push(line(row, qty, pos, {parent: true}));
-    comp.forEach((it, i) => { const cp = `${pos}.${i + 1}`; out.push({type: 'line', pos: cp, level: lvl(cp), qty: r3((Number(it.qty) || 0) * qty), model: '', code: it.code || '', desc: it.desc || ''}); });
+    comp.forEach((it, i) => { const cp = `${pos}.${i + 1}`; out.push({type: 'line', pos: cp, level: lvl(cp), qty: r3((Number(it.qty) || 0) * qty), model: it.model || '', code: it.code || '', desc: it.desc || ''}); });
   };
   let item = 0, n = 0;
   [...bomBody.querySelectorAll('tr[data-kind]')].forEach(r => {
@@ -20980,6 +21149,7 @@ function bomDocumentRows(view){
     const pos = `${item || 1}.${++n}`;
     if(!isKitParent(r)){ emit(r, qty, pos); return; }
     if(kitsView){ out.push(line(r, qty, pos, {kit: true})); return; }
+    tag(r, bomTypeOf(r) === 'code');
     if(bomTypeOf(r) === 'code') out.push(line(r, qty, pos, {kit: true, parent: true}));
     kitMembersOf(r.dataset.kitId).forEach((m, j) => emit(m, (Number(rowQty(m)) || 0) * qty, `${pos}.${j + 1}`));
   });
@@ -21738,6 +21908,7 @@ function openKitPanel(opts = {}){
       comps: ordered.map(r => ({row: r, qty: Number(rowQty(r)) || 0, qty0: Number(rowQty(r)) || 0, added: true})), autoTexts: true};
   }
   Object.assign(d, {tab: 'comp', addOpen: d.mode === 'new' && !d.comps.length, addTab: 'rows', catQuery: '', catGroup: '', imported: null, importName: '', pasteText: '', pricing: 'list', markup: 35, msg: ''});
+  d.bomTag = d.parent ? bomTagOf(d.parent) : '';   // beta_6.64: kit type (tag in the BOM)
   d.bomType = d.parent ? (d.parent.dataset.bomType || '') : '';   // beta_6.61: article with its own code / commercial grouping (BOM with kits exploded)
   KB = d;
   const bd = document.createElement('div'); bd.className = 'kb-backdrop'; bd.id = 'kbBackdrop';
@@ -21835,9 +22006,9 @@ function kbCompHtml(){
       <span class="kb-cname">${escapeHtml(v.model || v.code || '—')}${badge}<small>${escapeHtml([v.code, formatMoney(v.net)].filter(Boolean).join(' · '))}</small></span>${right}</div>`;
   }).join('');
   return `<div class="kb-sec"><span>Components · drag to reorder</span><span>Per kit</span></div>
-    ${items || '<div class="kb-note">No components yet — add them below: lines of this chapter, the catalog, an Excel file or rows pasted from Excel.</div>'}
+    ${items || '<div class="kb-note">No components yet — add them below: lines of this chapter, the catalog, an Excel file or the sheet (rows pasted from Excel).</div>'}
     ${d.msg ? `<div class="kb-warn">${escapeHtml(d.msg)}</div>` : ''}
-    <button type="button" class="kb-add-toggle" data-addtoggle aria-expanded="${d.addOpen}">${d.addOpen ? '− Hide' : '+ Add components'} (chapter lines · catalog · Excel · paste) — or drop an Excel file here</button>
+    <button type="button" class="kb-add-toggle" data-addtoggle aria-expanded="${d.addOpen}">${d.addOpen ? '− Hide' : '+ Add components'} (chapter lines · catalog · Excel · sheet) — or drop an Excel file here</button>
     ${d.addOpen ? kbAddHtml() : ''}`;
 }
 function kbAddHtml(){
@@ -21867,11 +22038,11 @@ function kbAddHtml(){
     const isPaste = d.addTab === 'paste';
     const items = d.imported || [];
     body = (isPaste
-      ? `<label class="kb-lab">Copy the cells in Excel (Qty · Code · Description · Cost) and paste them here<textarea class="kb-ta" id="kbPaste" style="font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; min-height:90px" placeholder="1\t519100001304\tAmpace battery cabinet\t13711,75">${escapeHtml(d.pasteText)}</textarea></label>`
-      : `<label class="kb-drop">⤓ Drag an Excel BOM here, or click to choose it<small>columns: quantity · code · description · cost (cost may be empty; title and note rows are skipped)</small><input type="file" id="kbFile" accept=".xlsx,.xls,.xlsm,.csv" style="display:none"></label>${d.importName ? `<div class="kb-note">${escapeHtml(d.importName)}</div>` : ''}`)
+      ? `<button type="button" class="kb-sheet-open" data-sheet><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>${d.sheetRows ? 'Reopen the sheet' : 'Open the sheet'}<small>a large Excel-like page: paste the rows copied from Excel, close it and they are loaded here</small></span></button>`
+      : `<label class="kb-drop">⤓ Drag an Excel BOM here, or click to choose it<small>columns: quantity · code · description · cost · model (cost and model may be empty; title and note rows are skipped)</small><input type="file" id="kbFile" accept=".xlsx,.xls,.xlsm,.csv" style="display:none"></label><button type="button" class="kb-link" data-template style="align-self:flex-start">Download the Excel template</button>${d.importName ? `<div class="kb-note">${escapeHtml(d.importName)}</div>` : ''}`)
       + `<div id="kbImp">${kbImportHtml()}</div>`;
   }
-  return `<div class="kb-add"><div class="kb-subtabs">${st('rows', 'Chapter lines')}${st('cat', 'Catalog')}${st('excel', 'Excel')}${st('paste', 'Paste')}</div>${body}</div>`;
+  return `<div class="kb-add"><div class="kb-subtabs">${st('rows', 'Chapter lines')}${st('cat', 'Catalog')}${st('excel', 'Excel')}${st('paste', 'Sheet')}</div>${body}</div>`;
 }
 function kbCatResHtml(){
   const d = KB, res = d._catRes || [];
@@ -21881,10 +22052,10 @@ function kbCatResHtml(){
 }
 function kbImportHtml(){
   const d = KB, items = d.imported || [];
-  if(!items.length) return d.addTab === 'paste' && d.pasteText.trim() ? '<div class="kb-warn">No rows recognised — the columns are quantity, code, description, cost.</div>' : '';
+  if(!items.length) return '';
   const cost = items.reduce((a, it) => a + it.qty * (it.cost || 0), 0);
   return `<table class="kb-tbl"><thead><tr><th class="num">Qty</th><th>Code</th><th>Description</th><th class="num">Cost</th></tr></thead><tbody>
-    ${items.map(it => `<tr${it.cost ? '' : ' class="kb-flag"'}><td class="num">${escapeHtml(String(it.qty))}</td><td>${escapeHtml(it.code)}</td><td>${escapeHtml(it.desc)}</td><td class="num">${it.cost ? formatMoney(it.cost) : 'empty'}</td></tr>`).join('')}</tbody></table>
+    ${items.map(it => `<tr${it.cost ? '' : ' class="kb-flag"'}><td class="num">${escapeHtml(String(it.qty))}</td><td>${escapeHtml(it.code)}${it.model ? `<small style="display:block; color:var(--dim)">${escapeHtml(it.model)}</small>` : ''}</td><td>${escapeHtml(it.desc)}</td><td class="num">${it.cost ? formatMoney(it.cost) : 'empty'}</td></tr>`).join('')}</tbody></table>
     <fieldset style="border:none; padding:0; margin:0; display:flex; flex-direction:column; gap:5px; font-size:12px;">
       <legend class="kb-sec" style="padding:0; margin-bottom:4px;">Selling price of these components</legend>
       <label><input type="radio" name="kbPricing" value="list"${d.pricing === 'list' ? ' checked' : ''}> price list when the code is found, otherwise 0 (type it in later)</label>
@@ -21903,6 +22074,7 @@ function kbDataHtml(){
       <label class="kb-lab">Kit discount %<input type="number" class="kb-in" id="kbDiscount" min="0" max="100" step="0.1" value="${Number(d.discountTarget || 0)}"></label>
       <span class="kb-price-hint" id="kbPriceHint">${d.priceTarget != null ? `${escapeHtml(kbPriceHintText(d, t.sum))} <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>` : `Component total less ${Number(d.discountTarget || 0).toFixed(2)}% kit discount, spread over the component lines weighted on their value.${Number(d.discountTarget || 0) > 0 ? ' <button type="button" class="kb-link" data-pricereset>↺ Back to the component total</button>' : ''}`}</span></div>`; })()}
     <label class="kb-lab">In the BOM with kits exploded<select class="kb-in" id="kbBomType" title="Article with its own code: the kit line stays in the BOM and its content is listed under it. Commercial grouping: the BOM lists only its components.">${bomTypeOptionsHtml(d.bomType)}</select></label>
+    <div class="kb-lab" id="kbTagBox">Kit type — tag printed in the BOM with kits exploded, on the right of the kit name row${bomTagFieldHtml(d.bomTag)}</div>
     <label class="kb-lab">Description <span class="kit-alt-hint">— Alt+Enter: multiline editor (line breaks)</span><textarea class="kb-ta" id="kbDesc" rows="2" placeholder="What the offer says about this kit">${escapeHtml(d.desc)}</textarea></label>
     <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:11.5px; color:#4B5260"><span id="kbDataHint">${d.mode === 'new' && d.autoTexts ? 'Proposed from the first component — overwrite as you like.' : 'Price = sum of the components. BOM with kits: one line; kits exploded: as set here.'}</span>
     ${d.comps.length ? `<button type="button" class="kb-link" data-fromfirst>From the first component</button>` : ''}</div></div>`;
@@ -21938,7 +22110,290 @@ function kbAutoTexts(){
   if(KB.mode !== 'new' || !KB.autoTexts) return;
   const first = KB.comps.find(c => !c.removed);
   const v = first ? kbVals(first) : {model: '', code: '', desc: ''};
-  KB.name = v.model || ''; KB.code = v.code || ''; KB.desc = v.desc || '';
+  KB.name = v.model || String(v.desc || '').split('\n')[0].slice(0, 60) || ''; KB.code = v.code || ''; KB.desc = v.desc || '';   // no model: the name is proposed from the description
+}
+// ---- beta_6.63 / 6.65: the sheet — a large Excel-like page (kit components; offer lines from Excel) ----
+// One window for both uses: columns already there, a range copied from Excel pastes straight in (Ctrl+V on the first
+// cell); if the range includes its title row, the columns are matched by title, whatever their order. Titles stay
+// in view while scrolling, the sheet grows by itself, Enter and the arrows move between rows.
+const SHEET_RE = {
+  qty: /^(q\.?\s*t[àa']?|q\.?ty|qty|quantit|pz|pcs|n\.?\s*pz)/, code: /^(cod|code|codice|part|p\/n|pn|articolo)/, desc: /^(desc|descrizione|description|denominazione)/,
+  cost: /^(cost|costo|unit cost|costo unitario|prezzo acquisto|prezzo di acquisto|purchase)/, model: /^(model|modello|mod\.|tipo|type)/,
+  price: /^(gross|list price|prezzo lordo|prezzo di listino|prezzo listino|listino|unit price|prezzo unitario|price$|prezzo$|price \(|prezzo \()/,
+  disc: /^(disc|sconto|rabatt|remise|dto)/, item: /^(item|pos\.?$|posizione|position|voce|capitolo|chapter|sezione|section)/,
+};
+const kitSheetNum = v => { if(v === '' || v === null || v === undefined) return 0; if(typeof v === 'number') return v; const t = String(v).replace(/[€$£%\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); const n = Number(t); return Number.isFinite(n) ? n : 0; };
+// Text copied from Excel → rows of cells (tabs between cells; a cell with line breaks or quotes comes in double quotes)
+function parseClipboardTable(text){
+  let src = String(text ?? '').replace(/\r\n?/g, '\n');
+  if(!src.includes('\t') && src.split('\n').some(l => l.includes(';'))) src = src.replace(/;/g, '\t');   // a .csv opened as text
+  const rows = []; let row = [], cell = '', quoted = false;
+  for(let i = 0; i < src.length; i++){
+    const ch = src[i];
+    if(quoted){ if(ch === '"'){ if(src[i + 1] === '"'){ cell += '"'; i++; } else quoted = false; } else cell += ch; continue; }
+    if(ch === '"' && cell === ''){ quoted = true; continue; }
+    if(ch === '\t'){ row.push(cell); cell = ''; continue; }
+    if(ch === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; continue; }
+    cell += ch;
+  }
+  if(cell !== '' || row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => String(c).trim() !== ''));
+}
+// Which column of a title row is which column of the sheet (null: the row is not a title row)
+function sheetTitleMap(cols, titles){
+  const t = titles.map(v => String(v ?? '').trim().toLowerCase()), used = new Set(), map = {};
+  cols.forEach(c => { const k = c.re ? t.findIndex((x, i) => !used.has(i) && c.re.test(x)) : -1; map[c.k] = k; if(k >= 0) used.add(k); });
+  return map.qty >= 0 && (map.code >= 0 || map.desc >= 0) ? map : null;
+}
+// An Excel file → the rows of the sheet: by its title row when it has one (looked for in the first 40 rows), else column by column
+async function sheetRowsFromFile(file, cols){
+  if(typeof XLSX === 'undefined') throw new Error('the Excel reader did not load (no internet access?)');
+  const wb = XLSX.read(new Uint8Array(await file.arrayBuffer()), {type: 'array'});
+  const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1, defval: ''});
+  for(let i = 0; i < Math.min(aoa.length, 40); i++){
+    const map = sheetTitleMap(cols, aoa[i] || []);
+    if(map) return aoa.slice(i + 1).map(r => cols.map(c => map[c.k] >= 0 ? String((r || [])[map[c.k]] ?? '').trim() : '')).filter(r => r.some(v => v !== ''));
+  }
+  return aoa.map(r => cols.map((c, k) => String((r || [])[k] ?? '').trim())).filter(r => r.some(v => v !== ''));
+}
+function downloadSheetTemplate(t){
+  const csv = () => downloadBlobAs(new Blob(['﻿' + t.titles.join(';') + '\r\n'], {type: 'text/csv'}), t.name + '.csv');
+  if(typeof JSZip === 'undefined'){ csv(); return; }
+  const ws = createXlsxSheet(t.sheet);
+  ws.cols = t.widths;
+  t.titles.forEach((h, i) => xlsxSet(ws, 1, i + 1, {v: h, s: {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}}));
+  ws.freezeRow = 1;
+  buildXlsxBlob(ws).then(b => downloadBlobAs(b, t.name + '.xlsx')).catch(e => { console.warn('Template as CSV:', e); csv(); });
+}
+// cfg: {id, title, hint (html), cols [{k, t, w, num, re, ro}], rows, evaluate(data) → {n, text, warn, rowClass(i), note(i), summaryHtml},
+//       loadLabel(n), onLoad(data), template {titles, name, sheet, widths}, fileRows (true: "Open an Excel file…"), topHtml, wire(ov, api)}
+function openSheetWindow(cfg){
+  document.getElementById(cfg.id)?.remove();
+  const COLS = cfg.cols.filter(c => !c.ro), NC = COLS.length, MIN_ROWS = cfg.minRows || 60;
+  let data = (Array.isArray(cfg.rows) ? cfg.rows : []).map(r => COLS.map((c, i) => String((r && r[i]) ?? '')));
+  const pad = n => { while(data.length < n) data.push(Array(NC).fill('')); };
+  const lastUsed = () => { for(let i = data.length - 1; i >= 0; i--) if(data[i].some(v => String(v).trim() !== '')) return i; return -1; };
+  pad(MIN_ROWS);
+  const ov = document.createElement('div');
+  ov.className = 'settings-overlay ks-overlay'; ov.id = cfg.id; ov.style.display = 'flex';
+  ov.innerHTML = `<div class="settings-modal ks-modal" role="dialog" aria-modal="true" aria-label="${escapeHtml(cfg.title)}">
+    <div class="acc-modal-header"><h3>${escapeHtml(cfg.title)}</h3><button type="button" class="acc-modal-close" data-cancel aria-label="Close">×</button></div>
+    <div class="ks-bar"><span>${cfg.hint}</span><span class="ks-count" id="ksCount" role="status"></span></div>
+    ${cfg.topHtml ? `<div class="ks-top">${cfg.topHtml}</div>` : ''}
+    <div class="ks-scroll" id="ksScroll" tabindex="-1"><table class="ks-table">
+      <thead><tr><th class="ks-rn" style="width:46px" aria-label="Row"></th>${cfg.cols.map(c => `<th${c.num ? ' class="num"' : ''} style="width:${c.w}px">${escapeHtml(c.t)}</th>`).join('')}</tr></thead><tbody id="ksBody"></tbody></table></div>
+    <div class="ks-foot">${cfg.fileRows ? '<button type="button" class="act btn-ghost ks-file" data-file>Open an Excel file…</button><input type="file" data-fileinput accept=".xlsx,.xls,.xlsm,.csv" style="display:none">' : ''}${cfg.template ? '<button type="button" class="btn-ghost act" data-template>Download the Excel template</button>' : ''}<button type="button" class="btn-ghost act" data-clear>Clear the sheet</button><span style="flex:1"></span>
+      <button type="button" class="btn-ghost act" data-cancel>Cancel</button><button type="button" class="act btn-primary" data-load></button></div></div>`;
+  document.body.appendChild(ov);
+  const body = ov.querySelector('#ksBody'), scroll = ov.querySelector('#ksScroll'), countEl = ov.querySelector('#ksCount'), loadBtn = ov.querySelector('[data-load]'), sumEl = ov.querySelector('[data-summary]');
+  const cellHtml = (r, c) => { const col = COLS[c], v = escapeHtml(data[r][c]), lab = `${col.t}, row ${r + 1}`;
+    return col.k === 'desc' ? `<td><textarea rows="1" data-r="${r}" data-c="${c}" aria-label="${lab}" spellcheck="false">${v}</textarea></td>`
+      : `<td><input type="text" data-r="${r}" data-c="${c}" value="${v}" aria-label="${lab}"${col.num ? ' class="num" inputmode="decimal"' : ''} autocomplete="off" spellcheck="false"></td>`; };
+  const roHtml = cfg.cols.some(c => c.ro) ? '<td class="ks-ro"></td>' : '';
+  const rowHtml = r => `<tr data-row="${r}"><th class="ks-rn" scope="row">${r + 1}</th>${COLS.map((c, i) => cellHtml(r, i)).join('')}${roHtml}</tr>`;
+  const status = () => {
+    const ev = cfg.evaluate(data);
+    countEl.textContent = ev.text; countEl.classList.toggle('warn', !!ev.warn);
+    loadBtn.textContent = cfg.loadLabel(ev.n); loadBtn.disabled = !ev.n;
+    body.querySelectorAll('tr').forEach(tr => { const k = +tr.dataset.row; tr.className = ev.rowClass ? ev.rowClass(k) : ''; if(roHtml){ const ro = tr.lastElementChild; const t = ev.note ? ev.note(k) : ''; if(ro.textContent !== t) ro.textContent = t; } });
+    if(sumEl) sumEl.innerHTML = ev.summaryHtml || '';
+  };
+  const render = () => { body.innerHTML = data.map((x, r) => rowHtml(r)).join(''); status(); };
+  const grow = () => { const need = lastUsed() + 21; if(need > data.length){ const from = data.length; pad(need); body.insertAdjacentHTML('beforeend', data.slice(from).map((x, k) => rowHtml(from + k)).join('')); } };
+  const focusCell = (r, c) => { if(r < 0 || c < 0 || c >= NC) return; if(r >= data.length){ pad(r + 20); render(); } const el = body.querySelector(`[data-r="${r}"][data-c="${c}"]`); if(el){ el.focus(); try{ el.select(); }catch(e){} } };
+  const setRows = rows => { data = (rows || []).map(r => COLS.map((c, k) => String((r && r[k]) ?? ''))); pad(Math.max(MIN_ROWS, data.length + 20)); render(); scroll.scrollTop = 0; };
+  render();
+  body.addEventListener('input', e => { const el = e.target.closest('[data-r]'); if(!el) return; data[+el.dataset.r][+el.dataset.c] = el.value; grow(); status(); });
+  body.addEventListener('keydown', e => {
+    const el = e.target.closest('[data-r]'); if(!el) return;
+    const r = +el.dataset.r, c = +el.dataset.c, multi = el.tagName === 'TEXTAREA' && el.value.includes('\n');
+    if(e.key === 'Enter' && !e.altKey){ e.preventDefault(); e.stopPropagation(); focusCell(r + (e.shiftKey ? -1 : 1), c); }
+    else if(e.key === 'Enter' && e.altKey && el.tagName === 'TEXTAREA'){ e.preventDefault(); e.stopPropagation(); const a = el.selectionStart; el.setRangeText('\n', a, el.selectionEnd, 'end'); el.dispatchEvent(new Event('input', {bubbles: true})); }
+    else if(e.key === 'ArrowDown' && !multi){ e.preventDefault(); focusCell(r + 1, c); }
+    else if(e.key === 'ArrowUp' && !multi){ e.preventDefault(); focusCell(r - 1, c); }
+  });
+  body.addEventListener('paste', e => {
+    const el = e.target.closest('[data-r]'); if(!el) return;
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if(!/[\t\n\r]/.test(String(text).replace(/[\r\n]+$/, ''))) return;   // one value: the cell takes it as usual
+    e.preventDefault();
+    let rows = parseClipboardTable(text); if(!rows.length) return;
+    let r0 = +el.dataset.r, c0 = +el.dataset.c;
+    const map = sheetTitleMap(COLS, rows[0]);   // with its title row: columns by title, whatever their order
+    if(map){ rows = rows.slice(1).map(x => COLS.map(col => map[col.k] >= 0 ? (x[map[col.k]] ?? '') : '')); c0 = 0; }
+    pad(r0 + rows.length + 20);
+    rows.forEach((x, k) => x.forEach((v, m) => { if(c0 + m < NC) data[r0 + k][c0 + m] = String(v ?? '').trim(); }));
+    ov.__popupDraftDirty = true;
+    const top = scroll.scrollTop; render(); scroll.scrollTop = top; focusCell(r0, c0);
+  });
+  const close = () => ov.remove();
+  ov.querySelectorAll('[data-cancel]').forEach(b => b.addEventListener('click', close));
+  ov.querySelector('[data-clear]').addEventListener('click', () => { setRows([]); focusCell(0, 0); });
+  ov.querySelector('[data-template]')?.addEventListener('click', () => downloadSheetTemplate(cfg.template));
+  const fileIn = ov.querySelector('[data-fileinput]');
+  if(fileIn){
+    ov.querySelector('[data-file]').addEventListener('click', () => fileIn.click());
+    fileIn.addEventListener('change', async () => {
+      const f = fileIn.files && fileIn.files[0]; if(!f) return;
+      try{ const rows = await sheetRowsFromFile(f, COLS); setRows(rows); ov.__popupDraftDirty = true; if(!rows.length){ countEl.textContent = `No rows found in "${f.name}".`; countEl.classList.add('warn'); } }
+      catch(err){ countEl.textContent = `Could not read "${f.name}": ${err.message || err}`; countEl.classList.add('warn'); }
+      fileIn.value = '';
+    });
+  }
+  const api = {ov, data: () => data, setRows, refresh: status};
+  loadBtn.addEventListener('click', () => {
+    if(loadBtn.disabled) return;
+    const keep = data.slice(0, lastUsed() + 1).map(r => r.slice());
+    close(); cfg.onLoad(keep);
+  });
+  if(typeof cfg.wire === 'function') cfg.wire(ov, api);
+  setTimeout(() => focusCell(Math.max(0, lastUsed() + 1), 0), 30);
+  return api;
+}
+
+// ---- the sheet of the kit builder: the usual Excel BOM (quantity, code, description, unit cost) plus an optional Model
+// at the end. An empty Model stays empty. Rows without a quantity are notes: they are not loaded.
+const KIT_SHEET_COLS = [{k: 'qty', t: 'Qty', w: 84, num: true, re: SHEET_RE.qty}, {k: 'code', t: 'Code', w: 200, re: SHEET_RE.code}, {k: 'desc', t: 'Description', w: 560, re: SHEET_RE.desc},
+  {k: 'cost', t: 'Unit cost', w: 120, num: true, re: SHEET_RE.cost}, {k: 'model', t: 'Model (optional)', w: 230, re: SHEET_RE.model}];
+const KIT_SHEET_TEMPLATE = {titles: ['Qty', 'Code', 'Description', 'Unit cost', 'Model'], name: 'Kit_components_template', sheet: 'Kit components', widths: [9, 24, 70, 14, 28]};
+function kitSheetItems(rows){
+  const items = []; let noQty = 0;
+  (rows || []).forEach(r => {
+    const [qtyRaw, code, desc, costRaw, model] = KIT_SHEET_COLS.map((c, i) => String((r && r[i]) ?? '').trim());
+    if(!code && !desc && !model) return;
+    const qty = kitSheetNum(qtyRaw);
+    if(!(qty > 0)){ noQty++; return; }
+    items.push({qty, code, desc, cost: kitSheetNum(costRaw), ...(model ? {model} : {})});
+  });
+  return {items, noQty};
+}
+function downloadKitSheetTemplate(){ downloadSheetTemplate(KIT_SHEET_TEMPLATE); }
+function openKitSheet(opts = {}){
+  return openSheetWindow({id: 'kitSheetOverlay', title: 'Kit components — sheet', cols: KIT_SHEET_COLS, rows: opts.rows, template: KIT_SHEET_TEMPLATE,
+    hint: 'Copy the cells in Excel, click the first cell here and paste (Ctrl+V). Columns: <b>Qty · Code · Description · Unit cost · Model</b> — cost and model may be empty; with the title row copied too, the columns are matched by title.',
+    evaluate: data => { const {items, noQty} = kitSheetItems(data);
+      return {n: items.length, warn: noQty > 0, text: `${items.length} row${items.length === 1 ? '' : 's'} ready${noQty ? ` · ${noQty} without quantity (not loaded)` : ''}`,
+        rowClass: k => { const r = data[k]; return r && r.some((v, m) => m !== 0 && m !== 3 && String(v).trim()) && !(kitSheetNum(r[0]) > 0) ? 'ks-noqty' : ''; }}; },
+    loadLabel: n => n ? `Load ${n} row${n === 1 ? '' : 's'}` : 'Load rows',
+    onLoad: data => { const {items} = kitSheetItems(data); if(items.length && typeof opts.onLoad === 'function') opts.onLoad(items, data); }});
+}
+
+// ---- beta_6.65 / 6.66: offer lines from Excel, one ITEM at a time ----
+// The sheet holds the lines of ONE item (quantity, code, description, price, discount, cost, model): open an Excel file
+// or paste the cells. "Import" then asks the name of the ITEM in a small window — a chapter already in the offer (the
+// lines are added to it) or a new name (a project section is made for it). No System Configuration position is
+// needed or made: an offer can be made of imported items only. For every line: a code found in the price list takes
+// model and description from the list (and price and cost where the Excel has none); any other line is taken exactly
+// as written. Rows without a quantity (titles, notes, totals) are not loaded.
+const OFFER_IMPORT_COLS = [{k: 'qty', t: 'Qty', w: 70, num: true, re: SHEET_RE.qty}, {k: 'code', t: 'Code', w: 190, re: SHEET_RE.code}, {k: 'desc', t: 'Description', w: 420, re: SHEET_RE.desc},
+  {k: 'price', t: 'Gross price', w: 110, num: true, re: SHEET_RE.price}, {k: 'disc', t: 'Disc. %', w: 72, num: true, re: SHEET_RE.disc},
+  {k: 'cost', t: 'Unit cost', w: 110, num: true, re: SHEET_RE.cost}, {k: 'model', t: 'Model (optional)', w: 190, re: SHEET_RE.model}, {k: '_src', t: 'Source', w: 96, ro: true}];
+const OFFER_IMPORT_TEMPLATE = {titles: ['Qty', 'Code', 'Description', 'Gross price', 'Discount %', 'Unit cost', 'Model'], name: 'Offer_import_template', sheet: 'Offer lines', widths: [8, 24, 60, 14, 12, 14, 26]};
+let OFFER_IMPORT_ROWS = null;   // what was last put in the sheet (kept until it is imported)
+function priceListIndex(){
+  const idx = new Map(), key = c => String(c ?? '').replace(/\s+/g, '').toUpperCase();
+  const put = (code, o) => { const k = key(code); if(k && !idx.has(k)) idx.set(k, o); };
+  (typeof CATALOG_ROWS !== 'undefined' && CATALOG_ROWS ? CATALOG_ROWS : []).forEach(r => put(r.Code, {model: String(r.Model ?? '').trim(), desc: String(r.Description ?? '').trim(), price: kitSheetNum(r.Price), cost: kitSheetNum(r.Cost)}));
+  (typeof BATTERY_CATALOG !== 'undefined' ? BATTERY_CATALOG : []).forEach(x => put(x.code, {model: x.model || '', desc: x.description || '', price: Number(x.price) || 0, cost: Number(x.cost) || 0, ext: !!x.extSupplier}));
+  return {get: c => idx.get(key(c)) || null};
+}
+// The chapters of the offer an import can be added to (every chapter but SERVICES)
+function importChapters(){
+  return [...bomBody.querySelectorAll('tr[data-kind="header"]')].filter(h => h.dataset.isServices !== 'true').map(h => {
+    const m = /^(\d+)\.0$/.exec(h.dataset.pos || '');
+    return {header: h, id: h.dataset.rowId, no: m ? Number(m[1]) : null, label: String(h.cells[4].childNodes[0] && h.cells[4].childNodes[0].nodeType === 3 ? h.cells[4].childNodes[0].textContent : h.cells[4].textContent).replace(/\s+/g, ' ').trim()};
+  });
+}
+function analyseOfferImport(rows, pl){
+  const lines = [], notes = [], cls = []; let noQty = 0, fromList = 0;
+  const rate = typeof moneyRate === 'function' ? moneyRate() : 1;
+  (rows || []).forEach((r, k) => {
+    const [qtyRaw, code, desc, priceRaw, discRaw, costRaw, model] = OFFER_IMPORT_COLS.filter(c => !c.ro).map((c, i) => String((r && r[i]) ?? '').trim());
+    notes[k] = ''; cls[k] = '';
+    if(!qtyRaw && !code && !desc && !model) return;
+    const qty = kitSheetNum(qtyRaw);
+    if(!(qty > 0) || (!code && !desc && !model)){ notes[k] = qty > 0 ? 'no code / description' : 'no quantity'; cls[k] = 'ks-noqty'; noQty++; return; }
+    const cat = code ? pl.get(code) : null;
+    lines.push({qty, code, disc: Math.max(0, Math.min(100, kitSheetNum(discRaw))), model: cat ? (cat.model || model) : model, desc: cat ? (cat.desc || desc) : desc,
+      gross: priceRaw !== '' ? kitSheetNum(priceRaw) / rate : (cat ? cat.price : 0), cost: costRaw !== '' ? kitSheetNum(costRaw) / rate : (cat ? cat.cost : 0), ext: !!(cat && cat.ext)});
+    if(cat) fromList++;
+    notes[k] = cat ? 'price list' : 'Excel'; cls[k] = cat ? 'ks-list' : '';
+  });
+  return {lines, notes, cls, n: lines.length, noQty, fromList};
+}
+// target: {header} = a chapter of the offer, or {name} = a new project section
+function runOfferImport(lines, target){
+  let h = target.header && target.header.isConnected ? target.header : null, made = 0;
+  KIT_BULK++;
+  try{
+    if(!h){
+      const before = bomBody.querySelector('tr[data-kind="header"][data-is-services="true"]');
+      h = addBomRow({kind: 'header', label: target.name || 'Imported item', isCustomSection: true}, before);
+      addBomRow({kind: 'total', groupOf: h.dataset.rowId, isCustomSection: true}, before);
+      made = 1;
+    }
+    const owner = h.dataset.rowId, m = /^(\d+)\.0$/.exec(h.dataset.pos || '');
+    const tot = bomBody.querySelector(`tr[data-kind="total"][data-group-of="${owner}"]`) || bomBody.querySelector(`tr[data-kind="delivery"][data-group-of="${owner}"]`);
+    lines.forEach(l => addBomRow({kind: 'accessory', groupOf: owner, pos: m ? `${m[1]}.999` : '', qty: l.qty, model: l.model, code: l.code, desc: l.desc || l.model,
+      gross: l.gross, disc: l.disc, cost: l.cost, extSupplier: l.ext || undefined, manualEntry: true}, tot));
+  } finally { KIT_BULK--; }
+  const owner = h.dataset.rowId;
+  try{ bomRenumberChapter(owner); }catch(e){} try{ refreshKitsInChapter(owner); }catch(e){} try{ recalcGroupTotal(owner); }catch(e){}
+  try{ updateDeliveryRow(); }catch(e){}
+  try{ recalcProjectTotal(); }catch(e){}
+  return {made, header: h};
+}
+// The small window that asks the name of the ITEM. Resolves {header} (a chapter of the offer), {name} (a new one) or null (back to the sheet)
+function askImportItemName(n){
+  return new Promise(resolve => {
+    document.getElementById('importItemOverlay')?.remove();
+    const chapters = importChapters(), norm = t => String(t || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const shown = c => [c.no != null ? `${c.no}.0` : '', c.label].filter(Boolean).join(' ');
+    const match = v => { const t = norm(v); return t ? chapters.find(c => norm(c.label) === t || norm(shown(c)) === t || (c.no != null && (t === String(c.no) || t === `item ${c.no}`))) || null : null; };
+    const ov = document.createElement('div');
+    ov.className = 'settings-overlay'; ov.id = 'importItemOverlay'; ov.style.display = 'flex'; ov.style.zIndex = '1710';
+    ov.innerHTML = `<div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="importItemTitle" style="max-width:520px;">
+      <div class="acc-modal-header"><h3 id="importItemTitle">Name of the ITEM</h3><button type="button" class="acc-modal-close" data-cancel aria-label="Back to the sheet">×</button></div>
+      <div style="padding:16px 18px;">
+        <p class="pf-hint" style="margin-top:0;">The ${n} line${n === 1 ? '' : 's'} go under this ITEM. Type its name${chapters.length ? ', or choose a chapter already in the offer to add the lines to it' : ''}.</p>
+        <input type="text" id="importItemName" list="importItemList" maxlength="80" autocomplete="off" placeholder="e.g. Spare parts" aria-label="Name of the ITEM" style="width:100%; height:38px; box-sizing:border-box; border:1px solid var(--field-border); border-radius:8px; background:var(--field-bg); color:var(--text); font:inherit; font-size:14px; padding:0 10px;">
+        <datalist id="importItemList">${chapters.map(c => `<option value="${escapeHtml(c.label)}">${escapeHtml(shown(c))}</option>`).join('')}</datalist>
+        <p class="pf-hint" id="importItemMsg" role="status" style="min-height:18px; margin:8px 0 0;"></p>
+        <div class="pf-actions" style="justify-content:flex-end; margin-top:14px;"><button type="button" class="btn-ghost act" data-cancel>Back to the sheet</button><button type="button" class="act btn-primary" data-ok disabled>Import ${n} line${n === 1 ? '' : 's'}</button></div>
+      </div></div>`;
+    document.body.appendChild(ov);
+    const inp = ov.querySelector('#importItemName'), msg = ov.querySelector('#importItemMsg'), ok = ov.querySelector('[data-ok]');
+    let done = false;
+    const finish = v => { if(done) return; done = true; ov.remove(); resolve(v); };
+    const upd = () => { const v = inp.value.trim(), c = match(v); ok.disabled = !v; msg.textContent = !v ? '' : c ? `The lines are added to “${shown(c)}”, after the ones it has.` : `A new ITEM “${v}” is made.`; };
+    const go = () => { const v = inp.value.replace(/\s+/g, ' ').trim(); if(!v) return; const c = match(v); finish(c ? {header: c.header} : {name: v}); };
+    inp.addEventListener('input', upd);
+    inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); e.stopPropagation(); go(); } });
+    ok.addEventListener('click', go);
+    ov.querySelectorAll('[data-cancel]').forEach(x => x.addEventListener('click', () => finish(null)));
+    setTimeout(() => inp.focus(), 30);
+  });
+}
+function openOfferImport(){
+  if(typeof READ_ONLY !== 'undefined' && READ_ONLY){ showExportToast('This revision is closed (read only) — start a New Revision to import lines.', 'warn'); return; }
+  const pl = priceListIndex();
+  openSheetWindow({id: 'offerImportOverlay', title: 'Import an ITEM from Excel', cols: OFFER_IMPORT_COLS, rows: OFFER_IMPORT_ROWS, template: OFFER_IMPORT_TEMPLATE, fileRows: true,
+    hint: 'The lines of one ITEM: open an Excel file, or copy the cells in Excel and paste them on the first cell (Ctrl+V). A <b>code in the price list</b> takes model and description from the list; any other line is taken as written. The name of the ITEM is asked when you import.',
+    evaluate: data => { const an = analyseOfferImport(data, pl);
+      return {n: an.n, warn: an.noQty > 0, text: `${an.n} line${an.n === 1 ? '' : 's'} ready · ${an.fromList} from the price list${an.noQty ? ` · ${an.noQty} not loaded` : ''}`, rowClass: k => an.cls[k] || '', note: k => an.notes[k] || ''}; },
+    loadLabel: n => n ? `Import ${n} line${n === 1 ? '' : 's'}…` : 'Import lines',
+    wire: (ov, api) => { ov.addEventListener('input', () => { OFFER_IMPORT_ROWS = api.data().map(r => r.slice()); }); },
+    onLoad: async data => {
+      const an = analyseOfferImport(data, pl); if(!an.n) return;
+      OFFER_IMPORT_ROWS = data.map(r => r.slice());
+      const target = await askImportItemName(an.n);
+      if(!target){ openOfferImport(); return; }                 // back to the sheet, as it was
+      const res = runOfferImport(an.lines, target);
+      OFFER_IMPORT_ROWS = null;
+      try{ res.header.scrollIntoView({behavior: 'smooth', block: 'center'}); }catch(e){}
+      const where = String(res.header.cells[4].childNodes[0] ? res.header.cells[4].childNodes[0].textContent : '').trim();
+      showExportToast(`${an.n} line${an.n === 1 ? '' : 's'} imported into ${res.made ? 'the new ITEM' : ''} “${where}” · ${an.fromList} from the price list — Ctrl+Z takes them back`, 'ok');
+    }});
 }
 function kbParsePaste(text){
   const lines = String(text || '').split(/\r?\n/).filter(l => l.trim());
@@ -21993,7 +22448,7 @@ function kbWire(panel){
     const f = e.dataTransfer.files && e.dataTransfer.files[0];
     if(f) kbLoadExcel(f);
   });
-  $$('[data-addtab]').forEach(b => b.addEventListener('click', () => { d.addTab = b.dataset.addtab; d.imported = d.addTab === 'paste' ? kbParsePaste(d.pasteText) : null; d.importName = ''; renderKitPanel(); }));
+  $$('[data-addtab]').forEach(b => b.addEventListener('click', () => { d.addTab = b.dataset.addtab; d.imported = d.addTab === 'paste' ? (d.sheetItems || null) : null; d.importName = ''; renderKitPanel(); }));
   $$('[data-row]').forEach(cb => cb.addEventListener('change', () => {
     const r = d._rowList[Number(cb.dataset.row)];
     const i = d.comps.findIndex(c => c.row === r);
@@ -22012,10 +22467,9 @@ function kbWire(panel){
     d.msg = ''; kbAutoTexts(); renderKitPanel();
   }));
   $('#kbFile')?.addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if(f) kbLoadExcel(f); });
-  const pasteTa = $('#kbPaste');
-  if(pasteTa){
-    pasteTa.addEventListener('input', () => { d.pasteText = pasteTa.value; d.imported = kbParsePaste(d.pasteText); const box = document.getElementById('kbImp'); if(box){ box.innerHTML = kbImportHtml(); kbWireImport(panel); } });
-  }
+  // beta_6.63: the sheet (large Excel-like page) replaces the small paste box; what was pasted stays there until it is added to the kit
+  $('[data-sheet]')?.addEventListener('click', () => openKitSheet({rows: d.sheetRows, onLoad: (items, rows) => { d.sheetRows = rows; d.sheetItems = items; d.imported = items; d.importName = ''; renderKitPanel(); }}));
+  $('[data-template]')?.addEventListener('click', () => downloadKitSheetTemplate());
   kbWireImport(panel);
   // kit data
   const nm = $('#kbName'), cd = $('#kbCode'), qy = $('#kbQty'), ds = $('#kbDesc');
@@ -22023,6 +22477,7 @@ function kbWire(panel){
     const typed = () => { d.autoTexts = false; const hn = document.getElementById('kbDataHint'); if(hn) hn.textContent = 'Price = sum of the components. BOM with kits: one line; kits exploded: as set here.'; kbSetDirtyBadge(); };
     nm.addEventListener('input', () => { d.name = nm.value; typed(); });
     cd.addEventListener('input', () => { d.code = cd.value; typed(); });
+    wireBomTagField($('#kbTagBox'), v => { d.bomTag = v; kbSetDirtyBadge(); });
     const bt = $('#kbBomType'); if(bt) bt.addEventListener('change', () => { d.bomType = bt.value; kbSetDirtyBadge(); });
     qy.addEventListener('input', () => { d.qty = Math.max(0, Number(qy.value) || 0); kbRenderSummary(); });
     const discIn = $('#kbDiscount');
@@ -22077,9 +22532,10 @@ function kbWireImport(panel){
     (d.imported || []).forEach(it => {
       const cat = kbCatalogByCode(it.code);
       const gross = d.pricing === 'markup' ? Math.round((it.cost || 0) * (1 + d.markup / 100) * 100) / 100 : (cat ? cat.price : 0);
-      kbAddNew({model: cat ? cat.model : (it.code || it.desc), code: it.code, desc: it.desc || (cat ? cat.desc : ''), gross, cost: it.cost || (cat ? cat.cost : 0), disc: 0, ext: !!(cat && cat.ext)}, it.qty, src);
+      // beta_6.63: an Excel line without a model has NO model (it was filled with the code, which then showed twice — in Model and in Code)
+      kbAddNew({model: it.model || (cat ? cat.model : ''), code: it.code, desc: it.desc || (cat ? cat.desc : ''), gross, cost: it.cost || (cat ? cat.cost : 0), disc: 0, ext: !!(cat && cat.ext)}, it.qty, src);
     });
-    d.imported = null; d.importName = ''; d.pasteText = ''; d.msg = '';
+    d.imported = null; d.importName = ''; d.pasteText = ''; d.sheetRows = null; d.sheetItems = null; d.msg = '';
     kbAutoTexts(); renderKitPanel();
   });
 }
@@ -22131,7 +22587,7 @@ function applyKitPanel(){
   }
   rows.forEach(r => rowRecalcOutputs(r));
   if(kitId && parent){
-    setBomType(parent, d.bomType);
+    setBomType(parent, d.bomType); setBomTag(parent, d.bomTag);
     const kitGross = parent.querySelector('.in-gross');
     const kitDisc = parent.querySelector('.in-disc');
     const discount = Math.max(0, Math.min(100, Number(d.discountTarget) || 0));
@@ -22363,7 +22819,7 @@ function captureKitsForRegenerate(){
     const key = h.dataset.cfgPos ? `pos:${h.dataset.cfgPos}` : h.dataset.isServices === 'true' ? 'svc' : `sec:${h.cells[4].textContent}`;
     let defaults = null; try{ defaults = JSON.parse(p.dataset.kitDefaults || 'null'); }catch(e){}
     out.push({key, open: p.dataset.kitOpen === 'true', qty: rowQty(p),
-      parent: {model: rowModelText(p).replace(/^↳\s*/, ''), code: rowCodeText(p), desc: rowDescText(p), defaults, bomType: p.dataset.bomType || '', discount: Number(p.querySelector('.in-disc')?.value) || 0},
+      parent: {model: rowModelText(p).replace(/^↳\s*/, ''), code: rowCodeText(p), desc: rowDescText(p), defaults, bomType: p.dataset.bomType || '', bomTag: p.dataset.bomTag || '', discount: Number(p.querySelector('.in-disc')?.value) || 0},
       lines: kitMembersOf(p.dataset.kitId).map(m => ({kind: m.dataset.kind, model: rowModelText(m), code: rowCodeText(m), desc: rowDescText(m)}))});
   });
   return out;
@@ -22387,7 +22843,7 @@ function reapplyKitsAfterRegenerate(saved){
     const res = createKit(matched, null, {name: kit.parent.model, code: kit.parent.code, desc: kit.parent.desc, qty: kit.qty, open: kit.open});
     if(res){
       if(kit.parent.defaults) res.parent.dataset.kitDefaults = JSON.stringify(kit.parent.defaults);
-      setBomType(res.parent, kit.parent.bomType);
+      setBomType(res.parent, kit.parent.bomType); setBomTag(res.parent, kit.parent.bomTag);
       const dsc = res.parent.querySelector('.in-disc'); if(dsc) dsc.value = String(Math.max(0, Math.min(100, Number(kit.parent.discount) || 0)));
       refreshKitsInChapter(res.parent.dataset.groupOf); recalcGroupTotal(res.parent.dataset.groupOf);
     }
@@ -22414,7 +22870,7 @@ function bomRowCopyData(r){
     techCategory: r.dataset.techCategory || null,
     baseModel: r.dataset.baseModel || '',
     pos: r.dataset.pos || '',   // renumbered right after, but the copy has to start numbered
-    subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined,
+    subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined, bomTag: r.dataset.bomTag || undefined,
     svcLevel: r.dataset.svcLevel || undefined,
     svcPos: r.dataset.svcLevel ? svcRowPos(r) : undefined,
     svcFok: svcRowFok(r) || undefined,
@@ -23025,7 +23481,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       extSupplier: rowExtSupplier(r),
       techCategory: r.dataset.techCategory || null,
       manualEntry: r.dataset.manualEntry === 'true',
-      subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined,
+      subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined, bomTag: r.dataset.bomTag || undefined,
     }));
   });
 
@@ -23057,7 +23513,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       qty: rowQty(r),
       extSupplier: rowExtSupplier(r),
       manualEntry: r.dataset.manualEntry === 'true',
-      subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined,
+      subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined, bomTag: r.dataset.bomTag || undefined,
       svcLevel: r.dataset.svcLevel || undefined,
       svcPos: r.dataset.svcLevel ? svcRowPos(r) : undefined,
       svcFok: svcRowFok(r) || undefined,
@@ -23089,7 +23545,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         qty: rowQty(r),
         extSupplier: rowExtSupplier(r),
         manualEntry: r.dataset.manualEntry === 'true',
-        subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined,
+        subBom: rowSubBom(r), bomType: r.dataset.bomType || undefined, bomTag: r.dataset.bomTag || undefined,
       })),
     });
   });
@@ -23274,7 +23730,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
       carried.forEach(item=>{
         addBomRow({
           pos: `${gruppo}.${nextIdx}`, qty: item.qty, model: item.model, code: item.code, desc: item.desc,
-          gross: item.gross, disc: item.disc, cost: item.cost, extSupplier: item.extSupplier, techCategory: item.techCategory, subBom: item.subBom, bomType: item.bomType, kind:'accessory', groupOf:owner, manualEntry: item.manualEntry,
+          gross: item.gross, disc: item.disc, cost: item.cost, extSupplier: item.extSupplier, techCategory: item.techCategory, subBom: item.subBom, bomType: item.bomType, bomTag: item.bomTag, kind:'accessory', groupOf:owner, manualEntry: item.manualEntry,
         }, totalRow);
         nextIdx++;
       });
@@ -23294,7 +23750,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     savedServiceLines.forEach(item=>{
       addBomRow({
         qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-        gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, bomType:item.bomType, kind:'accessory', groupOf:servicesOwner, manualEntry:item.manualEntry,
+        gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, bomType:item.bomType, bomTag:item.bomTag, kind:'accessory', groupOf:servicesOwner, manualEntry:item.manualEntry,
         svcLevel:item.svcLevel, svcPos:item.svcPos, svcFok:item.svcFok,
       });
     });
@@ -23328,7 +23784,7 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
         section.items.forEach(item=>{
           addBomRow({
             qty:item.qty, model:item.model, code:item.code, desc:item.desc,
-            gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, bomType:item.bomType, kind:'accessory', groupOf:sectionOwner, manualEntry:item.manualEntry,
+            gross:item.gross, disc:item.disc, cost:item.cost, extSupplier:item.extSupplier, subBom:item.subBom, bomType:item.bomType, bomTag:item.bomTag, kind:'accessory', groupOf:sectionOwner, manualEntry:item.manualEntry,
           }, insertBeforeHeader);
         });
         addBomRow({kind:'total', groupOf:sectionOwner, isCustomSection:true}, insertBeforeHeader);
@@ -25666,7 +26122,8 @@ const RIBBON = (function(){
     cloudUp: '<path d="M7 18h10a4 4 0 0 0 .7-7.94A6 6 0 0 0 6.1 9.2 4.5 4.5 0 0 0 7 18z"/><path d="M12 11v6M9.5 13.5 12 11l2.5 2.5"/>',
     package: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8M7.5 5.5l9 5"/>',
     rowsPlus: '<path d="M4 6h16M4 11.5h9M4 17h9"/><path d="M18 13v7M14.5 16.5h7"/>',
-    listTree: '<path d="M4 6h16M10 12h10M10 18h10"/><path d="M5 9.5V18h2.5M5 12h2.5"/>'
+    listTree: '<path d="M4 6h16M10 12h10M10 18h10"/><path d="M5 9.5V18h2.5M5 12h2.5"/>',
+    tableImport: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18M9 9.5V20"/><path d="M15 12.3v5.2M12.7 15.2l2.3 2.3 2.3-2.3"/>'
   };
   const svg = (n, s) => {
     // Custom multicolour SharePoint mark with an overlaid floppy-disk save badge.
@@ -25691,7 +26148,7 @@ const RIBBON = (function(){
   const TX = {
     en: {home: 'Home', project: 'Project', documents: 'Documents', prices: 'Price list', settings: 'Settings', collapse: 'Collapse the ribbon (Ctrl+F1)', pin: 'Keep the ribbon open (Ctrl+F1)',
       g_project: 'Project', projects: 'Projects', newProject: 'New project', clone: 'Clone offer', resetOffer: 'Reset offer',
-      g_work: 'Project workflow', fileUpload: 'File upload', projectFolder: 'Project folder', kitManagement: 'Kit management', saveSpData: 'Save SharePoint data', g_offerCommand: 'Offer Command', projectDetails: 'Project details', systemConfig: 'System configuration', offerLines: 'Offer lines', addSection: 'Add project section',
+      g_work: 'Project workflow', fileUpload: 'File upload', projectFolder: 'Project folder', kitManagement: 'Kit management', importOffer: 'Import from Excel', saveSpData: 'Save SharePoint data', g_offerCommand: 'Offer Command', projectDetails: 'Project details', systemConfig: 'System configuration', offerLines: 'Offer lines', addSection: 'Add project section',
       g_rev: 'Revision', save: 'Save', report: 'Print report', close: 'Close offer', newRev: 'New revision', markWon: 'Mark as won', wonRev: 'Won revision…', history: 'Revision history', load: 'Load configuration',
       g_cfg: 'Configuration', addPos: 'Add position', generate: 'Generate offer', battSizing: 'Battery sizing',
       g_prev: 'Preview', prevOffer: 'Preview offer', prevBom: 'Preview BOM', g_offer: 'Offer', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'With kits', bomExploded: 'Kits exploded',
@@ -25700,7 +26157,7 @@ const RIBBON = (function(){
       g_page: 'Page', resetPage: 'Reset page', g_admin: 'Administration', admin: 'Admin', g_acc: 'Account', account: 'Microsoft 365 account', g_tco: 'Analysis', tco: 'TCO / Life cycle'},
     it: {home: 'Home', project: 'Progetto', documents: 'Documenti', prices: 'Listino', settings: 'Impostazioni', collapse: 'Comprimi la barra (Ctrl+F1)', pin: 'Tieni aperta la barra (Ctrl+F1)',
       g_project: 'Progetto', projects: 'Progetti', newProject: 'Nuovo progetto', clone: 'Clona offerta', resetOffer: 'Reset offerta',
-      g_work: 'Lavoro sul progetto', fileUpload: 'Carica file', projectFolder: 'Cartella progetto', kitManagement: 'Gestione kit', saveSpData: 'Salva dati SharePoint', g_offerCommand: 'Comandi offerta', projectDetails: 'Dati progetto', systemConfig: 'Configurazione sistema', offerLines: 'Righe offerta', addSection: 'Aggiungi sezione offerta',
+      g_work: 'Lavoro sul progetto', fileUpload: 'Carica file', projectFolder: 'Cartella progetto', kitManagement: 'Gestione kit', importOffer: 'Importa da Excel', saveSpData: 'Salva dati SharePoint', g_offerCommand: 'Comandi offerta', projectDetails: 'Dati progetto', systemConfig: 'Configurazione sistema', offerLines: 'Righe offerta', addSection: 'Aggiungi sezione offerta',
       g_rev: 'Revisione', save: 'Salva', report: 'Stampa report', close: 'Chiudi offerta', newRev: 'Nuova revisione', markWon: 'Segna come vinta', wonRev: 'Revisione vinta…', history: 'Storico revisioni', load: 'Carica configurazione',
       g_cfg: 'Configurazione', addPos: 'Aggiungi posizione', generate: 'Genera offerta', battSizing: 'Dimensionamento batterie',
       g_prev: 'Anteprima', prevOffer: 'Anteprima offerta', prevBom: 'Anteprima BOM', g_offer: 'Offerta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'Con kit', bomExploded: 'Kit esplosi',
@@ -25709,7 +26166,7 @@ const RIBBON = (function(){
       g_page: 'Pagina', resetPage: 'Reset pagina', g_admin: 'Amministrazione', admin: 'Admin', g_acc: 'Account', account: 'Account Microsoft 365', g_tco: 'Analisi', tco: 'TCO / Ciclo di vita'},
     de: {home: 'Start', project: 'Projekt', documents: 'Dokumente', prices: 'Preisliste', settings: 'Einstellungen', collapse: 'Menüband reduzieren (Strg+F1)', pin: 'Menüband fixieren (Strg+F1)',
       g_project: 'Projekt', projects: 'Projekte', newProject: 'Neues Projekt', clone: 'Angebot klonen', resetOffer: 'Angebot zurücksetzen',
-      g_work: 'Projektbearbeitung', fileUpload: 'Datei hochladen', projectFolder: 'Projektordner', kitManagement: 'Kit-Verwaltung', saveSpData: 'SharePoint-Daten speichern', g_offerCommand: 'Angebotsbefehle', projectDetails: 'Projektdetails', systemConfig: 'Systemkonfiguration', offerLines: 'Angebotspositionen', addSection: 'Angebotsabschnitt hinzufügen',
+      g_work: 'Projektbearbeitung', fileUpload: 'Datei hochladen', projectFolder: 'Projektordner', kitManagement: 'Kit-Verwaltung', importOffer: 'Aus Excel importieren', saveSpData: 'SharePoint-Daten speichern', g_offerCommand: 'Angebotsbefehle', projectDetails: 'Projektdetails', systemConfig: 'Systemkonfiguration', offerLines: 'Angebotspositionen', addSection: 'Angebotsabschnitt hinzufügen',
       g_rev: 'Revision', save: 'Speichern', report: 'Bericht drucken', close: 'Angebot schließen', newRev: 'Neue Revision', markWon: 'Als gewonnen markieren', wonRev: 'Gewonnene Revision…', history: 'Revisionsverlauf', load: 'Konfiguration laden',
       g_cfg: 'Konfiguration', addPos: 'Position hinzufügen', generate: 'Angebot erstellen', battSizing: 'Batterieauslegung',
       g_prev: 'Vorschau', prevOffer: 'Angebots\u00ADvorschau', prevBom: 'BOM-Vorschau', g_offer: 'Angebot', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'Mit Kits', bomExploded: 'Kits aufgelöst',
@@ -25718,7 +26175,7 @@ const RIBBON = (function(){
       g_page: 'Seite', resetPage: 'Seite zurücksetzen', g_admin: 'Administration', admin: 'Admin', g_acc: 'Konto', account: 'Microsoft 365-Konto', g_tco: 'Analyse', tco: 'TCO / Lebenszyklus'},
     fr: {home: 'Accueil', project: 'Projet', documents: 'Documents', prices: 'Tarif', settings: 'Paramètres', collapse: 'Réduire le ruban (Ctrl+F1)', pin: 'Épingler le ruban (Ctrl+F1)',
       g_project: 'Projet', projects: 'Projets', newProject: 'Nouveau projet', clone: "Cloner l'offre", resetOffer: "Réinitialiser l'offre",
-      g_work: 'Travail sur le projet', fileUpload: 'Téléverser des fichiers', projectFolder: 'Dossier du projet', kitManagement: 'Gestion des kits', saveSpData: 'Enregistrer les données SharePoint', g_offerCommand: 'Commandes de l’offre', projectDetails: 'Détails du projet', systemConfig: 'Configuration système', offerLines: 'Lignes d’offre', addSection: 'Ajouter une section',
+      g_work: 'Travail sur le projet', fileUpload: 'Téléverser des fichiers', projectFolder: 'Dossier du projet', kitManagement: 'Gestion des kits', importOffer: 'Importer depuis Excel', saveSpData: 'Enregistrer les données SharePoint', g_offerCommand: 'Commandes de l’offre', projectDetails: 'Détails du projet', systemConfig: 'Configuration système', offerLines: 'Lignes d’offre', addSection: 'Ajouter une section',
       g_rev: 'Révision', save: 'Enregistrer', report: 'Imprimer le rapport', close: "Clôturer l'offre", newRev: 'Nouvelle révision', markWon: 'Marquer comme gagnée', wonRev: 'Révision gagnée…', history: 'Historique des révisions', load: 'Charger une configuration',
       g_cfg: 'Configuration', addPos: 'Ajouter une position', generate: "Générer l'offre", battSizing: 'Dimensionnement batteries',
       g_prev: 'Aperçu', prevOffer: "Aperçu de l'offre", prevBom: 'Aperçu BOM', g_offer: 'Offre', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'Avec kits', bomExploded: 'Kits éclatés',
@@ -25727,7 +26184,7 @@ const RIBBON = (function(){
       g_page: 'Page', resetPage: 'Réinitialiser la page', g_admin: 'Administration', admin: 'Admin', g_acc: 'Compte', account: 'Compte Microsoft 365', g_tco: 'Analyse', tco: 'TCO / Cycle de vie'},
     es: {home: 'Inicio', project: 'Proyecto', documents: 'Documentos', prices: 'Tarifa', settings: 'Ajustes', collapse: 'Contraer la cinta (Ctrl+F1)', pin: 'Fijar la cinta (Ctrl+F1)',
       g_project: 'Proyecto', projects: 'Proyectos', newProject: 'Nuevo proyecto', clone: 'Clonar oferta', resetOffer: 'Restablecer oferta',
-      g_work: 'Trabajo del proyecto', fileUpload: 'Subir archivos', projectFolder: 'Carpeta del proyecto', kitManagement: 'Gestión de kits', saveSpData: 'Guardar datos de SharePoint', g_offerCommand: 'Comandos de oferta', projectDetails: 'Detalles del proyecto', systemConfig: 'Configuración del sistema', offerLines: 'Líneas de oferta', addSection: 'Añadir sección de oferta',
+      g_work: 'Trabajo del proyecto', fileUpload: 'Subir archivos', projectFolder: 'Carpeta del proyecto', kitManagement: 'Gestión de kits', importOffer: 'Importar de Excel', saveSpData: 'Guardar datos de SharePoint', g_offerCommand: 'Comandos de oferta', projectDetails: 'Detalles del proyecto', systemConfig: 'Configuración del sistema', offerLines: 'Líneas de oferta', addSection: 'Añadir sección de oferta',
       g_rev: 'Revisión', save: 'Guardar', report: 'Imprimir informe', close: 'Cerrar oferta', newRev: 'Nueva revisión', markWon: 'Marcar como ganada', wonRev: 'Revisión ganada…', history: 'Historial de revisiones', load: 'Cargar configuración',
       g_cfg: 'Configuración', addPos: 'Añadir posición', generate: 'Generar oferta', battSizing: 'Dimensionado de baterías',
       g_prev: 'Vista previa', prevOffer: 'Vista previa oferta', prevBom: 'Vista previa BOM', g_offer: 'Oferta', pdf: 'PDF', excel: 'Excel', word: 'Word', g_bom: 'BOM', bomKits: 'Con kits', bomExploded: 'Kits desglosados',
@@ -25748,7 +26205,7 @@ const RIBBON = (function(){
         big('lock', 'close', 'btnCloseOffer'),
         col(sm('filePlus', 'newRev', 'btnNewRevision', {when: () => REVISION_CLOSED}), sm('history', 'history', 'btnRevisionHistory'), sm('upload', 'load', 'btnLoadFile'))]],
       // without a project open there is no Project tab: Add position and Generate offer stay reachable here
-      ['g_cfg', [big('addpos', 'addPos', 'btnAddRow'), big('bolt', 'generate', 'btnGenerate'), big('battery', 'battSizing', 'btnBattSizing')], {noProject: true}],
+      ['g_cfg', [big('addpos', 'addPos', 'btnAddRow'), big('bolt', 'generate', 'btnGenerate'), big('tableImport', 'importOffer', 'btnImportOffer'), big('battery', 'battSizing', 'btnBattSizing')], {noProject: true}],
     ],
     project: [
       // Revision group follows the supplied ribbon reference: primary save/file actions first,
@@ -25783,7 +26240,8 @@ const RIBBON = (function(){
       ]],
       ['g_offerCommand', [
         big('rowsPlus', 'addSection', 'btnAddProjectSection', {run: () => { document.getElementById('pnlOffer')?.scrollIntoView({behavior:'smooth', block:'start'}); document.getElementById('btnAddProjectSection')?.click(); }}),
-        big('package', 'kitManagement', 'btnAddRow', {run: () => openKitOverview()})
+        big('package', 'kitManagement', 'btnAddRow', {run: () => openKitOverview()}),
+        big('tableImport', 'importOffer', 'btnImportOffer')
       ]]
     ],
     documents: [
@@ -26324,7 +26782,7 @@ function updatePdGuideSteps(){
   const g = document.getElementById('pdGuide'), c = document.getElementById('cfgBody'), b = document.getElementById('bomBody');
   if(!g || !c || !b) return;
   const steps = [...g.querySelectorAll('.pd-step')]; if(steps.length < 3) return;
-  const lines = !!b.querySelector('tr[data-kind="line"]');
+  const lines = !!b.querySelector('tr[data-kind="line"], tr[data-kind="accessory"]');   // beta_6.66: an offer made of imported items only counts too
   const cur = lines ? 3 : c.querySelector(':scope > tr') ? 2 : 1;
   steps.forEach((st, i) => { st.classList.toggle('on', i + 1 === cur); st.classList.toggle('done', i === 1 && lines); if(i + 1 === cur) st.setAttribute('aria-current', 'step'); else st.removeAttribute('aria-current'); });
 }
@@ -26640,6 +27098,7 @@ function buildConfigState(){
     batteryBrand: document.getElementById('prjBatteryBrand').value,
     offerType: document.getElementById('prjOfferType').value,
     stdSpecial: document.getElementById('prjStdSpecial').value,
+    ...(document.getElementById('prjPenalty')?.checked ? {penalty: true, penaltyNote: (document.getElementById('prjPenaltyNote')?.value || '').trim()} : {}),   // beta_6.67
   };
   const positions = [...cfgBody.querySelectorAll('tr')].map(tr=>({
     qty: tr.querySelector('.f-qty').value,
@@ -26675,6 +27134,7 @@ function buildConfigState(){
     if(r.dataset.svcLevel){ item.svcLevel = r.dataset.svcLevel; item.svcPos = svcRowPos(r); if(svcRowFok(r)) item.svcFok = true; }
     if(r.dataset.subBom){ try{ item.subBom = JSON.parse(r.dataset.subBom); }catch(e){} }
     if(r.dataset.bomType) item.bomType = r.dataset.bomType;   // beta_6.61
+    if(r.dataset.bomTag) item.bomTag = r.dataset.bomTag;   // beta_6.64
     if(r.dataset.kitId){
       item.kitId = r.dataset.kitId;
       if(r.dataset.kitParent === 'true'){ item.kitParent = true; try{ item.kitDefaults = JSON.parse(r.dataset.kitDefaults || 'null') || undefined; }catch(e){} }
@@ -27801,6 +28261,8 @@ function applyLoadedState(state){
     document.getElementById('prjBatteryBrand').value = p.batteryBrand || '';
     document.getElementById('prjOfferType').value = p.offerType || '';
     document.getElementById('prjStdSpecial').value = p.stdSpecial || '';
+    setPenaltyFields(p.penalty, p.penaltyNote);   // beta_6.67
+    if(p.penalty){ let rest = false; try{ rest = UNDO_RESTORING; }catch(e){} if(!rest) setTimeout(() => { try{ showExportToast(`Late-delivery penalties apply to this project${p.penaltyNote ? ' — ' + p.penaltyNote : ''}`, 'warn'); }catch(e){} }, 400); }
 
     const moneySnap = moneySnapshot();
     if(state.currency && state.currency.symbol) CURRENCY = state.currency;
@@ -28218,6 +28680,7 @@ function buildBomPdfDoc(view){
       if(title) body.push([{content: title, colSpan:5, styles:{fillColor:[255,242,204], textColor:[0,60,120], fontStyle:'bold', halign:'left'}}]);
       if(it.subtitle) body.push([{content: it.subtitle, colSpan:5, styles:{fillColor:[255,250,234], textColor:[60,60,60], fontStyle:'italic', halign:'left'}}]);
       it.lines.forEach(e => {
+        if(e.type === 'tag'){ const ts = {fillColor: [240,243,248], textColor: [0,37,122], fontStyle: 'bold', fontSize: 8}; body.push([{content: '', styles: ts}, {content: '', styles: ts}, {content: e.name || '', colSpan: 2, styles: Object.assign({halign: 'left'}, ts)}, {content: e.label || '', styles: Object.assign({halign: 'right'}, ts)}]); return; }   // kit name (left) and type (right): no position
         const st = e.parent ? {fontStyle: 'bold', fillColor: [238,243,251]} : {};   // a kit line kept with its components
         body.push([{content: e.pos || '', styles: st}, {content: String(e.qty), styles: st}, {content: e.model || '', styles: st}, {content: e.code || '', styles: st}, {content: e.desc || '', styles: st}]);
       });
@@ -28853,6 +29316,7 @@ function buildBomWorksheet(view){
       if(title){ xlsxMerge(ws, r, 1, r, 5, {v: title, s: {font: {b: true, color: '003C78'}, fill: 'FFF2CC', border: XLSX_GRID}}); ws.heights[r] = 19; r++; }
       if(it.subtitle){ xlsxMerge(ws, r, 1, r, 5, {v: it.subtitle, s: {font: {i: true, color: '404040'}, fill: 'FFFAEA', border: XLSX_GRID, align: {wrap: true}}}); ws.heights[r] = 18; r++; }
       it.lines.forEach(e => {
+        if(e.type === 'tag'){ const ts = {font: {b: true, color: '00257A', sz: 9.5}, fill: 'F0F3F8', border: XLSX_GRID}; xlsxSet(ws, r, 1, {v: '', s: ts}); xlsxSet(ws, r, 2, {v: '', s: ts}); xlsxMerge(ws, r, 3, r, 4, {v: e.name || '', s: Object.assign({align: {h: 'left'}}, ts)}); xlsxSet(ws, r, 5, {v: e.label || '', s: Object.assign({align: {h: 'right'}}, ts)}); r++; return; }   // kit name (left) and type (right): no position
         const look = e.parent ? {font: {b: true}, fill: 'EEF3FB'} : {};   // a kit line kept with its components
         const st = align => cellS(Object.assign({}, look, {align}));
         const qn = Number(e.qty);
@@ -30662,6 +31126,7 @@ function buildBomHtmlDoc(view){
       rowsHtml.push(`<tr><td colspan="5" style="background:#FFF2CC;color:#003C78;font-weight:bold;padding:6px 8px;">${escapeHtml([e.item ? `ITEM ${e.item}` : '', e.label].filter(Boolean).join(' — '))}</td></tr>`);
       return;
     }
+    if(e.type === 'tag'){ rowsHtml.push(`<tr><td style="background:#F0F3F8;"></td><td style="background:#F0F3F8;"></td><td colspan="2" style="background:#F0F3F8;color:#00257A;font-weight:bold;">${escapeHtml(e.name || '')}</td><td style="background:#F0F3F8;color:#00257A;font-weight:bold;text-align:right;">${escapeHtml(e.label || '')}</td></tr>`); return; }
     const descHtml = escapeHtml(e.desc).replace(/\n/g, '<br>');
     const lk = e.parent ? 'font-weight:bold;background:#EEF3FB;' : '';
     rowsHtml.push(`<tr><td style="mso-number-format:'\\@';${lk}">${escapeHtml(e.pos || '')}</td><td style="text-align:center;${lk}">${escapeHtml(String(e.qty))}</td><td style="${lk}">${escapeHtml(e.model)}</td><td style="${lk}">${escapeHtml(e.code)}</td><td style="white-space:pre-line;${lk}">${descHtml}</td></tr>`);
@@ -32509,6 +32974,78 @@ function gantt(el, list){
     });
     return {value: total * pd, cost: tcost, sla, fok, parts};
   }
+  // beta_6.67: every code of an offer file with its total quantity (line × systems of its position; kit components × kits;
+  // a line with a composition from Excel = its components). Services and delivery lines are not products.
+  function offerCodes(st){
+    const out = new Map(), kitQty = {}; let cur = null;
+    (st.bom || []).forEach(it => { if(it.kitId && it.kitParent) kitQty[it.kitId] = Number(it.qty) || 0; });
+    const add = (code, model, desc, qty) => {
+      const c = String(code || '').trim(), m = String(model || '').replace(/^↳\s*/, '').trim(), k = c || ('~' + (m || String(desc || '').trim()));
+      if(k === '~' || !(qty > 0)) return;
+      const e = out.get(k) || {code: c, model: m, desc: String(desc || '').replace(/\s+/g, ' ').trim(), qty: 0};
+      e.qty = Math.round((e.qty + qty) * 1000) / 1000; out.set(k, e);
+    };
+    (st.bom || []).forEach(it => {
+      if(it.kind === 'header'){ const p = it.cfgPos ? (st.positions || [])[Number(it.cfgPos) - 1] : null; cur = it.isServices ? null : {mult: p ? (Number(p.qty) || 1) : 1}; return; }
+      if(!cur || it.kind === 'total' || it.kind === 'delivery' || it.svcLevel || (it.kitId && it.kitParent)) return;
+      const q = (Number(it.qty) || 0) * cur.mult * (it.kitId ? (kitQty[it.kitId] ?? 1) : 1);
+      if(Array.isArray(it.subBom) && it.subBom.length) it.subBom.forEach(c => add(c.code, c.model, c.desc, (Number(c.qty) || 0) * q));
+      else add(it.code, it.model, it.desc, q);
+    });
+    return [...out.values()];
+  }
+  // beta_6.68 / 6.69: a won project is delivered in one or more batches. A batch is made of ITEMs and quantities — e.g.
+  // batch 1 = all of ITEM 2 and one ITEM 1, batch 2 = the other ITEM 1 — with the delivery date the customer asked for
+  // and, set by the admin in the Delivery planner, the real date. Production is booked on the real date when there
+  // is one, else on the requested date; the requested date always stays visible.
+  // The ITEMs of an offer file: each chapter with its quantity (the systems of its position; 1 for a project section)
+  // and its codes for ONE unit (line quantity; kit components × kits; a composition from Excel = its components).
+  function offerItems(st){
+    const items = [], kitQty = {}; let cur = null;
+    (st.bom || []).forEach(it => { if(it.kitId && it.kitParent) kitQty[it.kitId] = Number(it.qty) || 0; });
+    (st.bom || []).forEach(it => {
+      if(it.kind === 'header'){
+        if(it.isServices){ cur = null; return; }
+        const p = it.cfgPos ? (st.positions || [])[Number(it.cfgPos) - 1] : null;
+        cur = {key: 'i' + (items.length + 1), no: items.length + 1, label: String(it.label || '').replace(/\s+/g, ' ').trim(), qty: p ? Math.max(1, Math.round(Number(p.qty) || 1)) : 1, map: new Map()};
+        items.push(cur); return;
+      }
+      if(!cur || it.kind === 'total' || it.kind === 'delivery' || it.svcLevel || (it.kitId && it.kitParent)) return;
+      const q = (Number(it.qty) || 0) * (it.kitId ? (kitQty[it.kitId] ?? 1) : 1);
+      const add = (code, model, desc, qty) => {
+        const c = String(code || '').trim(), m = String(model || '').replace(/^↳\s*/, '').trim(), k = c || ('~' + (m || String(desc || '').trim()));
+        if(k === '~' || !(qty > 0)) return;
+        const e = cur.map.get(k) || {code: c, model: m, desc: String(desc || '').replace(/\s+/g, ' ').trim(), qty: 0};
+        e.qty = Math.round((e.qty + qty) * 1000) / 1000; cur.map.set(k, e);
+      };
+      if(Array.isArray(it.subBom) && it.subBom.length) it.subBom.forEach(c => add(c.code, c.model, c.desc, (Number(c.qty) || 0) * q));
+      else add(it.code, it.model, it.desc, q);
+    });
+    return items.filter(x => x.map.size).map((x, i) => ({key: 'i' + (i + 1), no: i + 1, label: x.label, qty: x.qty, codes: [...x.map.values()]}));
+  }
+  // whole numbers that add up to the total (largest remainders first) — for batches saved as a share (%) by beta_6.68
+  function splitQty(qty, shares){
+    if(!Number.isInteger(qty)) return shares.map(sh => Math.round(qty * sh / 100 * 1000) / 1000);
+    const raw = shares.map(sh => qty * sh / 100), fl = raw.map(Math.floor); let rest = qty - fl.reduce((a, b) => a + b, 0);
+    raw.map((r, i) => [r - fl[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if(rest > 0){ fl[i]++; rest--; } });
+    return fl;
+  }
+  function wonBatches(won, items){
+    if(!won) return [];
+    items = items || [];
+    const all = () => Object.fromEntries(items.map(it => [it.key, it.qty]));
+    const list = Array.isArray(won.batches) && won.batches.length ? won.batches : [{requested: won.delivery || '', real: ''}];
+    const byItem = list.some(b => b && b.items && typeof b.items === 'object');
+    const shares = list.map(b => Math.max(0, Number(b && b.share) || 0)), tot = shares.reduce((a, b) => a + b, 0);
+    const split = !byItem && tot > 0 ? Object.fromEntries(items.map(it => [it.key, splitQty(it.qty, shares.map(x => x / tot * 100))])) : null;
+    return list.map((b, i) => ({n: i + 1, requested: String((b && b.requested) || ''), real: String((b && b.real) || ''),
+      items: byItem ? Object.fromEntries(items.map(it => [it.key, Math.max(0, Math.round(Number(b.items && b.items[it.key]) || 0))]))
+        : split ? Object.fromEntries(items.map(it => [it.key, split[it.key][i]])) : (i === 0 ? all() : Object.fromEntries(items.map(it => [it.key, 0])))}));
+  }
+  const batchDate = b => (b && (b.real || b.requested)) || '';
+  const batchesOf = o => (o.batches && o.batches.length ? o.batches : wonBatches(o.wonMark || {delivery: ''}, o.items || []));
+  const batchText = (o, b) => (o.items || []).filter(it => (b.items[it.key] || 0) > 0).map(it => `${b.items[it.key]} × ITEM ${it.no}`).join(' + ') || 'nothing';
+  const closedProject = o => /clos|chius/i.test(String(o.rawStatus || ''));   // Project Closed: delivered, no longer booked in production
   function toPosition(p){
     const model = String(p.model || '').trim(), kwm = (typeof moduleKwForModel === 'function' && moduleKwForModel(model)) || (typeof MODULE_KW_ACTIVE !== 'undefined' ? MODULE_KW_ACTIVE : 0) || 0;
     const qty = Number(p.qty) || 0, ups = Number(p.upssys) || 1;
@@ -32553,6 +33090,7 @@ function gantt(el, list){
       created: dateOf(raw.Created) || dateOf(st && st.savedAt) || new Date(TODAY), due: dateOf(rec['Due date']) ? dayOf(dateOf(rec['Due date'])) : null,
       closed: ['Won', 'Lost', 'Offer review'].includes(status) ? modified : null, hasOffer: !!st, famM: positions.length ? fam : 'Various', valueSrc: '', file: file ? file.name : '', saved: file ? dateOf(file.lastModifiedDateTime) : null,
       fileKind: !file ? '' : /_ongoing\.json$/i.test(file.name) ? 'draft' : OFFER_FILE_RE.test(file.name) ? 'closed' : 'other', wonMark: st && st.won && typeof st.won === 'object' ? st.won : null,
+      codes: st ? offerCodes(st) : [], items: st ? offerItems(st) : [], batches: st && st.won ? wonBatches(st.won, st ? offerItems(st) : []) : [], delivery: st && st.won && batchDate(wonBatches(st.won, [])[0]) ? dateOf(batchDate(wonBatches(st.won, [])[0])) : null, penalty: !!(st && st.project && st.project.penalty), penaltyNote: (st && st.project && st.project.penaltyNote) || '',   // beta_6.67 / 6.69
       split: typeof parseSalesSplit === 'function' ? parseSalesSplit(raw[SALES_SPLIT_FIELD]) : null};   // beta_6.58: sales values entered at Won
   }
   // beta_6.56: which offer file of the "02 OFFER" folder counts. <ref>_R<n>.json = closed revision, <ref>_R<n>_ongoing.json = draft.
@@ -32657,6 +33195,7 @@ function gantt(el, list){
   /* ---------- icons ---------- */
   const ic = (d, s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const I = {
+    forecast: '<path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/>', planned: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15.5l2 2 4-4"/>',
     overview: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
     pipeline: '<path d="M3 4h18l-7 8v6l-4 2v-8z"/>',
     products: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
@@ -32731,8 +33270,9 @@ function gantt(el, list){
     let h;
     if(S.rb === 'home') h = grp('Pages', PAGES.map(([id, l, i]) => big('page:' + id, l, i, S.page === id)).join(''))
       + grp('Filters', `<div class="rb-col">${sel('period', PERIODS)}${sel('market', [['IEC', 'IEC'], ['UL', 'UL']])}</div><div class="rb-col">${sel('owner', OWN.map(o => [o, o]))}${sel('country', COUNTRIES)}</div><div class="rb-col">${sel('status', STATUS.map(s => [s, s]))}${sel('fam', FAMS_M.map(f => [f, f]))}</div>${big('clear', 'Clear filters', I.clear, false, anyF ? 'rb-red' : '')}`)
-      + grp('Data', big('refresh', 'Refresh', I.refresh) + `<div class="rb-col">${small('cfg', 'Back to the configurator', I.cfg)}</div>`)
-      + grp('Report', big('rep:pdf', 'PDF report', I.rpdf) + big('rep:xlsx', 'Excel report', I.rxls));   // beta_6.62: to print / Excel; no manual on the ribbon
+      + grp('Data', big('refresh', 'Refresh', I.refresh) + `<div class="rb-col">${small('cfg', 'Back to the configurator', I.cfg)}${small('planner', 'Delivery planner', I.planned)}</div>`)
+      // beta_6.67: Forecasted (codes of the open offers) and Planned (codes of the won projects by requested delivery month), in Excel
+      + grp('Report', big('rep:pdf', 'PDF report', I.rpdf) + `<div class="rb-col">${small('rep:xlsx', 'Excel', I.rxls)}${small('rep:forecast', 'Forecasted', I.forecast)}${small('rep:planned', 'Planned', I.planned)}</div>`);   // beta_6.62: to print / Excel; no manual on the ribbon
     else h = grp('Offers shown', big('who:me', 'My offers', I.me, !!FX.owner && nameKey(FX.owner) === nameKey(me)) + big('who:team', 'All team', I.team, !FX.owner))
       + grp('Data source', big('src:sp', 'SharePoint', I.sp, SRC === 'sp') + big('page:check', 'Data check', I.check, S.page === 'check'))
       + grp('Value', big('vfirst:offer', 'Offer file first', I.csv, VALUE_FIRST === 'offer') + big('vfirst:list', 'Offer Value € first', I.euro, VALUE_FIRST === 'list'))
@@ -32891,14 +33431,18 @@ function gantt(el, list){
       renderStatusBar();
     }catch(e){}
   }
-  async function autoMarkWon(o, status){
-    if(SRC !== 'sp'){ if(!o.wonMark){ o.wonMark = {at: new Date().toISOString(), by: meName(), status}; setPd(o); return {rev: o.revisions, demo: true}; } return {why: 'already'}; }
+  async function autoMarkWon(o, status, extra){
+    const dl = extra && extra.delivery ? {delivery: extra.delivery} : {};
+    if(extra){ o.delivery = extra.delivery ? dateOf(extra.delivery) : o.delivery; o.penalty = !!extra.penalty; o.penaltyNote = extra.penalty ? (extra.penaltyNote || '') : ''; }
+    if(SRC !== 'sp'){ if(!o.wonMark){ o.wonMark = {at: new Date().toISOString(), by: meName(), status, ...dl}; setPd(o); return {rev: o.revisions, demo: true}; } return {why: 'already'}; }
     const f = await wonFile(o);
     if(!f || !f.file || !f.st || !f.path) return {why: 'no-file'};
     if(f.st.won) return {why: 'already'};
     if(f.st.closed !== true || !OFFER_FILE_RE.test(f.file.name) || /_ongoing\.json$/i.test(f.file.name)) return {why: 'no-closed'};
-    const won = {at: new Date().toISOString(), by: typeof currentUserName === 'function' ? currentUserName() : meName(), status};
-    await putWonFile(f, Object.assign({}, f.st, {won}));
+    const won = {at: new Date().toISOString(), by: typeof currentUserName === 'function' ? currentUserName() : meName(), status, ...dl};
+    const project = Object.assign({}, f.st.project || {});
+    if(extra){ if(extra.penalty){ project.penalty = true; project.penaltyNote = extra.penaltyNote || ''; } else { delete project.penalty; delete project.penaltyNote; } }
+    await putWonFile(f, Object.assign({}, f.st, {won, project}));
     const rev = revOfName(f.file.name);
     onScreen(o.ref, rev, won);
     await refreshProject(o.ref).catch(() => {});
@@ -32922,7 +33466,8 @@ function gantt(el, list){
     try{
       await writeFields(o, {Status: value});
       let m = null;
-      if(toWon){ try{ m = await autoMarkWon(o, value); }catch(e){ console.warn('Dashboard: won mark not written', e); m = {err: String((e && e.message) || e)}; } render(); }
+      let extra = null; if(toWon){ try{ extra = await askDeliveryInfo({title: `${o.ref} won — requested delivery date`, delivery: o.delivery ? ymdOf(o.delivery) : '', penalty: o.penalty, penaltyNote: o.penaltyNote}); }catch(e){} }   // beta_6.67
+      if(toWon){ try{ m = await autoMarkWon(o, value, extra); }catch(e){ console.warn('Dashboard: won mark not written', e); m = {err: String((e && e.message) || e)}; } render(); }
       if(undo && mk && mk.rev >= 0){ try{ await unmarkAuto(o, mk); }catch(e){ console.warn('Dashboard: won mark not removed', e); } render(); }
       const mt = !m ? '' : m.rev >= 0 ? ` · 🏆 R${m.rev} marked won${m.demo ? '' : ' in its offer file'}` : m.err ? ` · <b>won mark not written</b>: ${esc(m.err)}` : m.why === 'no-closed' || m.why === 'no-file' ? ' · no closed revision to mark won (close the offer in the configurator)' : '';
       if(!undo) toast(`<b>${esc(o.ref)}</b> · status <b>${esc(value)}</b>${SRC === 'sp' ? ' – saved on SharePoint' : ' (example data)'}${mt}`, () => changeStatus(o, old.raw, true, m && m.rev >= 0 ? m : null), !!(m && m.err));
@@ -33008,7 +33553,7 @@ function gantt(el, list){
   function pWork(M){
     const A = rows(), sc = SC(), mine = !!FX.owner && nameKey(FX.owner) === nameKey(meName());
     const late = A.filter(overdue).sort((a, b) => dueT(a) - dueT(b)), soon = A.filter(o => open(o) && o.due && o.due >= TODAY && daysTo(o.due) <= 14).sort((a, b) => dueT(a) - dueT(b));
-    const task = (o, cls) => `<div class="task ${cls}"><b>${esc(o.ref)} · ${esc(o.customer)}</b>${esc(o.project)}${o.value > 0 ? ' · ' + eurK(o.value) : ''}${mine ? '' : ' · ' + esc(o.owner)}<br><span class="w" style="color:${cls === 'late' ? 'var(--st-lost)' : 'var(--st-rev)'}">${cls === 'late' ? 'late by ' + -daysTo(o.due) + ' days' : 'due ' + fmtD(o.due) + ' · in ' + daysTo(o.due) + ' days'}</span> · ${esc(o.rawStatus || o.status)}<div class="a"><button type="button" class="btn" data-ref="${esc(o.key)}">Details</button><button type="button" class="btn" data-menu="${esc(o.key)}">Status / owner</button><button type="button" class="btn pri" data-cfg="${esc(o.ref)}" title="Open in configurator">${ic(I.cfg, 13)}Configurator</button></div></div>`;
+    const task = (o, cls) => `<div class="task ${cls}"><b>${esc(o.ref)}${penTag(o)} · ${esc(o.customer)}</b>${esc(o.project)}${o.value > 0 ? ' · ' + eurK(o.value) : ''}${mine ? '' : ' · ' + esc(o.owner)}<br><span class="w" style="color:${cls === 'late' ? 'var(--st-lost)' : 'var(--st-rev)'}">${cls === 'late' ? 'late by ' + -daysTo(o.due) + ' days' : 'due ' + fmtD(o.due) + ' · in ' + daysTo(o.due) + ' days'}</span> · ${esc(o.rawStatus || o.status)}<div class="a"><button type="button" class="btn" data-ref="${esc(o.key)}">Details</button><button type="button" class="btn" data-menu="${esc(o.key)}">Status / owner</button><button type="button" class="btn pri" data-cfg="${esc(o.ref)}" title="Open in configurator">${ic(I.cfg, 13)}Configurator</button></div></div>`;
     const lanes = LANES.map(([s]) => { let l = A.filter(o => o.status === s); if(s === 'Won' || s === 'Lost') l = l.filter(o => !o.closed || (TODAY - o.closed) / 864e5 < 90); return [s, l.sort((a, b) => dueT(a) - dueT(b))]; });
     const [cy, cm] = S.cal, first = new Date(cy, cm, 1), off = (first.getDay() + 6) % 7; let cal = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => `<div class="h">${d}</div>`).join('');
     const same = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -33018,7 +33563,7 @@ function gantt(el, list){
     const hr = new Date().getHours(), hi = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
     const card = (o, i) => `<div class="kc st-${o.status.replace(/\s+/g, '-').toLowerCase()}" draggable="true" data-drag="${esc(o.key)}" data-ref="${esc(o.key)}" style="--r:${PI_ROT[i % PI_ROT.length]}">
         <div class="kc-t"><span class="kc-st" title="Status on SharePoint">${esc(o.rawStatus || o.status)}</span><button type="button" class="kc-m" data-menu="${esc(o.key)}" title="Status and assignment" aria-label="Status and assignment of ${esc(o.ref)}">⋯</button></div>
-        <b>${esc(o.customer)}</b><span class="kc-p">${esc(o.ref)}${o.project ? ' · ' + esc(o.project) : ''}</span>
+        <b>${esc(o.customer)}</b><span class="kc-p">${esc(o.ref)}${o.project ? ' · ' + esc(o.project) : ''}${penTag(o)}</span>
         <div class="m"><span>${o.value > 0 ? eurK(o.value) + ' · ' : ''}${esc(o.fam)}${units(o) ? ' · ' + units(o) + ' UPS' : ''}</span></div>
         <div class="m"><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtD(o.due)}</span><button type="button" class="av" data-menu="${esc(o.key)}" data-focus="owner" title="${esc(o.owner)} – click to assign to someone else">${esc(ini(o.owner))}</button></div></div>`;
     M.innerHTML = chips() + `<div class="wsb">
@@ -33039,7 +33584,8 @@ function gantt(el, list){
   const CHK = {f: ''};
   const SCAN_TXT = {ok: ['Offer file read', 'var(--st-won)'], 'no-json': ['No .json in 02 OFFER', 'var(--st-rev)'], invalid: ['.json not valid / of another project', 'var(--st-lost)'],
     'no-folder': ['02 OFFER folder not reachable', 'var(--st-lost)'], 'no-link': ['No project folder (FolderLink)', 'var(--st-new)']};
-  const wonTag = o => o.wonMark ? ` <span class="wmk" title="${esc(['Marked won', o.wonMark.at ? fmtDY(dateOf(o.wonMark.at)) : '', o.wonMark.by, o.wonMark.status ? '(' + o.wonMark.status + ')' : ''].filter(Boolean).join(' '))}">🏆</span>` : '';
+  const penTag = o => o.penalty ? ` <span class="pen-tag" title="${esc('Late-delivery penalties' + (o.penaltyNote ? ' — ' + o.penaltyNote : ''))}">penalties</span>` : '';   // beta_6.67
+  const wonTag = o => penTag(o) + (o.wonMark ? ` <span class="wmk" title="${esc(['Marked won', o.wonMark.at ? fmtDY(dateOf(o.wonMark.at)) : '', o.wonMark.by, o.wonMark.status ? '(' + o.wonMark.status + ')' : ''].filter(Boolean).join(' '))}">🏆</span>` : '');
   function pCheck(M){
     const all = OFFERS, P = rows(), inP = new Set(P);
     const res = o => o.scan || (o.hasOffer ? 'ok' : 'no-json');
@@ -33285,6 +33831,7 @@ function gantt(el, list){
     POPREF = key;
     const sc = SC();
     $('pop').innerHTML = `<div class="pop-h"><span class="ic">${ic(I.bolt, 20)}</span><div><h3>${esc(o.ref)} · ${esc(o.customer)}</h3><small>${esc(o.project)}${o.countryName && o.countryName !== '—' ? ' · ' + esc(o.countryName) : ''}</small></div><button type="button" class="x" data-act="close" title="Close">✕</button></div>
+      ${o.penalty ? `<div class="pop-pen" role="status"><b>Late-delivery penalties</b>${o.penaltyNote ? ' — ' + esc(o.penaltyNote) : ''}${o.delivery ? ' · delivery requested ' + fmtDY(o.delivery) : ''}</div>` : ''}
       <div class="pop-strip"><span style="color:${sc[o.status]};font-weight:600" title="SharePoint: ${esc(o.rawStatus || '—')}">● ${o.status}</span>${o.hasOffer ? `<span>${esc(o.market)} price list</span>` : ''}<span>${esc(o.owner)}</span>${o.dup > 1 ? `<span style="color:var(--st-lost);font-weight:600" title="Other items of the Progress tracker list have the same PRJ_ID. The status and owner changed here go to this item; the configurator does not write to SharePoint for this PRJ_ID until each project has its own.">PRJ_ID ×${o.dup} in the list</span>` : ''}<span>created ${fmtDY(o.created)}</span><span style="${overdue(o) ? 'color:var(--st-lost);font-weight:600' : ''}">due ${fmtDY(o.due)}</span>${o.closed ? `<span>${o.status === 'Offer review' ? 'sent' : 'closed'} ${fmtDY(o.closed)}</span>` : ''}${o.hasOffer ? `<span>R${o.revisions}${o.fileKind === 'draft' ? ' (draft)' : ''}</span>` : ''}${o.wonMark ? `<span style="color:var(--st-won);font-weight:600">🏆 won revision</span>` : ''}</div>
       <div class="pop-b">${o.hasOffer ? `<div class="kv"><div>${o.valueSrc === 'list' ? 'Offer value (SharePoint)' : 'Offer value (net)'}<b>${o.value > 0 ? eur(o.value) : '—'}</b>${o.valueJson > 0 && o.valueList > 0 ? `<span class="sub" style="display:block">file ${eurK(o.valueJson)} · list ${eurK(o.valueList)}</span>` : ''}</div><div>UPS units<b>${units(o)}</b></div><div>Power modules<b>${modules(o)}</b></div><div>Installed power<b>${(kwOf(o) / 1000).toFixed(2)} MW</b></div></div>
         <div class="ptitle">UPS configurations</div>${o.positions.length ? `<table class="t"><thead><tr><th>Model</th><th class="n">Load kW</th><th class="n">Systems × UPS</th><th class="n">Modules / UPS</th><th>Battery</th></tr></thead><tbody>${o.positions.map(p => `<tr><td><b>${esc(p.model)}</b></td><td class="n">${num(p.pload)}</td><td class="n">${p.qty} × ${p.ups}</td><td class="n">${p.npm}</td><td>${p.lithium ? 'Lithium' : 'VRLA / other'}</td></tr>`).join('')}</tbody></table>` : nothing('No UPS configuration in the offer.')}
@@ -33320,8 +33867,9 @@ function gantt(el, list){
     else if(k === 'close'){ $('ov').classList.remove('open'); return; }
     else if(k === 'refresh'){ loadSharePoint(true); return; }   // beta_6.62: SharePoint only (no example data)
     else if(k === 'src'){ setData([], 'none'); loadSharePoint(false); return; }
-    else if(k === 'rep'){ if(v === 'xlsx') reportXlsx(); else reportPdf(); return; }   // beta_6.62: the report
+    else if(k === 'rep'){ if(v === 'xlsx') reportXlsx(); else if(v === 'forecast' || v === 'planned') planningXlsx(v); else reportPdf(); return; }   // beta_6.62: the report
     else if(k === 'cfg'){ hide(); return; }
+    else if(k === 'planner'){ openPlanner(); return; }   // beta_6.68
     render();
   }
   /* ---------- beta_6.62: the report – the offers shown with the filters on screen, as a page to print (or save as PDF)
@@ -33537,6 +34085,152 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
     s6.freezeRow = 6; s6.printTitles = '$6:$6';
     return buildXlsxBlob(sheets);
   }
+  // ---- beta_6.67: production planning — two Excel reports by product code, from the offers the dashboard shows (its filters apply) ----
+  // Forecasted: the offers still open (New, In progress, Offer review). Planned: the won projects, by the month of the
+  // delivery date the customer asked for (entered when the project is marked won); a project in "Project Closed" is not counted.
+  function planningData(kind){
+    const A = rows(), planned = kind === 'planned';
+    const set = planned ? A.filter(o => won(o) && !closedProject(o)) : A.filter(open);
+    const skipped = planned ? A.filter(o => won(o) && closedProject(o)).length : 0;
+    const mk = t => t ? String(t).slice(0, 7) : '';
+    const months = planned ? [...new Set(set.flatMap(o => batchesOf(o).map(b => mk(batchDate(b)))).filter(Boolean))].sort() : [];
+    const cols = planned ? [...months, 'No date'] : ['New', 'In progress', 'Offer review'];
+    const by = new Map(), detail = [];
+    const put = (o, c, qty, col, b, it) => {
+      if(!(qty > 0)) return;
+      const k = c.code || '~' + c.model + '|' + c.desc;
+      const e = by.get(k) || {code: c.code, model: c.model, desc: c.desc, qty: 0, offers: new Set(), cols: {}};
+      e.qty += qty; e.offers.add(o.key); e.cols[col] = (e.cols[col] || 0) + qty; by.set(k, e);
+      detail.push({o, c: Object.assign({}, c, {qty}), b, it});
+    };
+    const rest = o => (o.items || []).map(it => [it, it.qty - batchesOf(o).reduce((a, b) => a + (b.items[it.key] || 0), 0)]).filter(x => x[1] > 0);
+    set.forEach(o => {
+      if(!planned){ (o.codes || []).forEach(c => put(o, c, c.qty, o.status, null, null)); return; }
+      batchesOf(o).forEach(b => (o.items || []).forEach(it => { const n = b.items[it.key] || 0; if(n > 0) it.codes.forEach(c => put(o, c, c.qty * n, mk(batchDate(b)) || 'No date', b, it)); }));
+      rest(o).forEach(([it, n]) => it.codes.forEach(c => put(o, c, c.qty * n, 'No date', {n: 0, requested: '', real: '', items: {}}, it)));   // not in any batch yet
+    });
+    const codes = [...by.values()].sort((a, b) => String(a.code || '~').localeCompare(String(b.code || '~')) || a.model.localeCompare(b.model));
+    return {kind, planned, set, skipped, months, cols, codes, detail, noFile: set.filter(o => !(o.codes && o.codes.length)),
+      noDate: planned ? set.filter(o => batchesOf(o).some(b => !batchDate(b)) || rest(o).length) : [], pen: set.filter(o => o.penalty), at: new Date()};
+  }
+  async function planningXlsxBlob(P){
+    const HS = {font: {b: true, color: 'FFFFFF'}, fill: '4472C4', border: XLSX_GRID}, TS = {border: XLSX_GRID, align: {v: 'top'}}, NS = {border: XLSX_GRID, align: {h: 'right', v: 'top'}}, WS = {border: XLSX_GRID, font: {b: true, color: '9C0006'}, fill: 'FFE7E9'};
+    const d = x => x ? ymdOf(x) : '';
+    const sheet = (name, title, sub, head, body, widths) => {
+      const ws = createXlsxSheet(name); ws.cols = widths;
+      xlsxSet(ws, 1, 1, {v: title, s: {font: {b: true, sz: 14, color: '00257A'}}});
+      xlsxSet(ws, 2, 1, {v: sub, s: {font: {color: '595959'}}});
+      head.forEach((t, i) => xlsxSet(ws, 4, i + 1, {v: t, s: HS}));
+      body.forEach((r, k) => r.forEach((v, i) => xlsxSet(ws, 5 + k, i + 1, v && typeof v === 'object' ? {v: v.v, s: WS} : {v: v === undefined || v === null ? '' : v, s: typeof v === 'number' ? NS : TS})));
+      ws.freezeRow = 4; ws.printTitles = '$4:$4';
+      return ws;
+    };
+    const q = n => Math.round(n * 1000) / 1000, pen = o => o.penalty ? {v: 'YES'} : '';
+    const what = P.planned ? 'Planned — won projects, booked in production by delivery month (real date of the batch, else the requested one)' : 'Forecasted — offers still open';
+    const sub = `${P.set.length} project${P.set.length === 1 ? '' : 's'} · ${P.codes.length} code${P.codes.length === 1 ? '' : 's'}${P.planned ? ` · ${P.skipped} closed project${P.skipped === 1 ? '' : 's'} not counted · ${P.noDate.length} without delivery date` : ''} · ${P.pen.length} with late-delivery penalties · ${fmtDY(P.at)}`;
+    const s1 = sheet(P.planned ? 'By code and month' : 'By code', what, sub, ['Code', 'Model', 'Description', 'Total qty', 'Projects', ...P.cols],
+      P.codes.map(c => [c.code, c.model, c.desc, q(c.qty), c.offers.size, ...P.cols.map(k => c.cols[k] ? q(c.cols[k]) : '')]), [22, 26, 54, 11, 10, ...P.cols.map(() => 12)]);
+    const s2 = sheet('Detail', what, 'One row per project and code', P.planned
+        ? ['Project', 'Customer', 'Country', 'Owner', 'Status', 'Won date', 'Batch', 'ITEM', 'Requested delivery', 'Real date (planner)', 'Penalties', 'Penalty terms', 'Code', 'Model', 'Description', 'Qty']
+        : ['Project', 'Customer', 'Country', 'Owner', 'Status', 'Offer due date', 'Penalties', 'Penalty terms', 'Code', 'Model', 'Description', 'Qty'],
+      P.detail.map(({o, c, b, it}) => P.planned
+        ? [o.ref, o.customer, o.countryName, o.owner, o.rawStatus || o.status, d(o.wonMark && o.wonMark.at ? dateOf(o.wonMark.at) : o.closed), b.n ? `${b.n} of ${batchesOf(o).length}` : {v: 'not in a batch'}, it ? `ITEM ${it.no} — ${it.label}` : '', b.requested || {v: 'missing'}, b.real || '', pen(o), o.penaltyNote, c.code, c.model, c.desc, q(c.qty)]
+        : [o.ref, o.customer, o.countryName, o.owner, o.rawStatus || o.status, d(o.due), pen(o), o.penaltyNote, c.code, c.model, c.desc, q(c.qty)]),
+      P.planned ? [16, 24, 14, 16, 18, 12, 9, 30, 14, 14, 10, 28, 22, 26, 50, 9] : [16, 24, 14, 16, 18, 13, 10, 28, 22, 26, 50, 9]);
+    const s3 = sheet('Projects', what, 'The projects of this report', ['Project', 'Customer', 'Status', P.planned ? 'Deliveries (batch: items · requested → real)' : 'Offer due date', 'Penalties', 'Penalty terms', 'Value €', 'Codes', 'Note'],
+      P.set.map(o => [o.ref, o.customer, o.rawStatus || o.status, P.planned ? ((t => batchesOf(o).some(b => !batchDate(b)) ? {v: t} : t)(batchesOf(o).map(b => `${b.n}: ${batchText(o, b)} · ${b.requested || 'missing'}${b.real ? ' → ' + b.real : ''}`).join('   '))) : d(o.due), pen(o), o.penaltyNote, Math.round(o.value || 0), (o.codes || []).length,
+        [!(o.codes && o.codes.length) ? 'no offer file read: its codes are not in the report' : '', P.planned && batchesOf(o).some(b => !batchDate(b)) ? 'delivery date missing: set it in the Delivery planner' : ''].filter(Boolean).join(' · ')]),
+      [16, 26, 18, P.planned ? 70 : 16, 10, 30, 13, 8, 60]);
+    return buildXlsxBlob([s1, s2, s3]);
+  }
+  async function saveBatches(o, batches){
+    const clean = batches.map((b, i) => ({n: i + 1, requested: b.requested || '', real: b.real || '', items: Object.assign({}, b.items)}));
+    if(SRC === 'sp'){
+      const f = await wonFile(o);
+      if(!f || !f.file || !f.st || !f.st.won) throw new Error('its won offer file was not found — mark the won revision in the configurator first (Project › Mark as won)');
+      const wonNew = Object.assign({}, f.st.won, {batches: clean, delivery: clean[0].requested || f.st.won.delivery || ''});
+      await putWonFile(f, Object.assign({}, f.st, {won: wonNew}));
+      try{ onScreen(o.ref, revOfName(f.file.name), wonNew); }catch(e){}
+    }
+    o.batches = clean; if(o.wonMark) o.wonMark = Object.assign({}, o.wonMark, {batches: clean});
+    o.delivery = batchDate(clean[0]) ? dateOf(batchDate(clean[0])) : null;
+  }
+  function openPlanner(){
+    const list = OFFERS.filter(o => won(o) && !closedProject(o)).sort((a, b) => String(batchDate(batchesOf(a)[0]) || '9').localeCompare(String(batchDate(batchesOf(b)[0]) || '9')) || a.ref.localeCompare(b.ref));
+    if(!list.length){ toast('No won project to plan (projects in Project Closed are not counted).', null, true); return; }
+    const draft = new Map(list.map(o => [o.key, batchesOf(o).map(b => ({n: b.n, requested: b.requested, real: b.real, items: Object.assign({}, b.items)}))])), dirty = new Set();
+    document.getElementById('udPlannerOverlay')?.remove();
+    const ov = document.createElement('div');
+    ov.className = 'settings-overlay'; ov.id = 'udPlannerOverlay'; ov.style.display = 'flex'; ov.style.zIndex = '1650'; ov.style.padding = '2vh 2vw';
+    ov.innerHTML = `<div class="settings-modal pl-modal" role="dialog" aria-modal="true" aria-labelledby="udPlannerTitle">
+      <div class="acc-modal-header"><h3 id="udPlannerTitle">Delivery planner — won projects</h3><button type="button" class="acc-modal-close" data-cancel aria-label="Close">×</button></div>
+      <div class="ks-bar"><span>A won project is delivered in one or more <b>batches</b>. For each batch choose how many of each <b>ITEM</b> it carries, the date <b>requested</b> by the customer and the <b>real</b> date. The Planned report books production on the real date when there is one, else on the requested date. Projects in Project Closed are not listed.</span><span class="ks-count" id="udPlannerCount" role="status"></span></div>
+      <div class="ks-scroll pl-scroll" id="udPlannerBody"></div>
+      <div class="ks-foot"><span style="flex:1"></span><button type="button" class="btn-ghost act" data-cancel>Cancel</button><button type="button" class="act btn-primary" data-save disabled>Save</button></div></div>`;
+    document.body.appendChild(ov);
+    const body = ov.querySelector('#udPlannerBody'), count = ov.querySelector('#udPlannerCount'), save = ov.querySelector('[data-save]');
+    const byKey = k => list.find(o => o.key === k);
+    const left = (o, it) => it.qty - draft.get(o.key).reduce((a, b) => a + (b.items[it.key] || 0), 0);       // > 0: not assigned yet · < 0: too many
+    const bad = o => (o.items || []).some(it => left(o, it) !== 0);
+    const booked = b => { const t = batchDate(b); return t ? t.slice(0, 7) + (b.real ? ' · real' : ' · requested') : 'no date'; };
+    const warnText = o => (o.items || []).map(it => { const n = left(o, it); return n > 0 ? `ITEM ${it.no}: ${n} not in a batch` : n < 0 ? `ITEM ${it.no}: ${-n} too many` : ''; }).filter(Boolean).join(' · ');
+    const status = () => {
+      const wrong = list.filter(bad).length, nodate = list.filter(o => draft.get(o.key).some(b => !batchDate(b))).length;
+      count.textContent = `${list.length} project${list.length === 1 ? '' : 's'}${nodate ? ` · ${nodate} with a batch without date` : ''}${dirty.size ? ` · ${dirty.size} changed` : ''}${wrong ? ` · ${wrong} with ITEMs to assign` : ''}`;
+      count.classList.toggle('warn', !!(wrong || nodate)); save.disabled = !dirty.size || [...dirty].some(k => bad(byKey(k)));
+      body.querySelectorAll('.plp').forEach(el => { const o = byKey(el.dataset.k), w = el.querySelector('.plp-warn'); w.textContent = warnText(o); el.classList.toggle('bad', bad(o)); });
+    };
+    const render = () => {
+      body.innerHTML = list.map(o => { const bs = draft.get(o.key), its = o.items || [];
+        return `<section class="plp" data-k="${esc(o.key)}">
+          <div class="plp-h"><span><b>${esc(o.ref)}</b>${penTag(o)} · ${esc(o.customer)}${o.project ? ' — ' + esc(o.project) : ''} · ${esc(o.rawStatus || o.status)}</span><span class="plp-warn" role="status"></span><button type="button" class="pl-btn" data-add ${its.length ? '' : 'disabled'} title="A new batch: it takes the ITEMs not in a batch yet">+ Batch</button></div>
+          <table class="pl-table"><thead><tr><th>Batch</th><th>Requested date</th><th>Real date</th><th>Booked in</th>${its.map(it => `<th class="num" title="${esc(it.label)}">ITEM ${it.no}<small>${esc(it.label.length > 22 ? it.label.slice(0, 21) + '…' : it.label)} · ${it.qty}</small></th>`).join('')}<th></th></tr></thead><tbody>
+          ${bs.map((b, i) => `<tr data-i="${i}"><td>${i + 1} of ${bs.length}</td>
+            <td><input type="date" data-f="requested" value="${esc(b.requested)}" aria-label="Date requested by the customer, batch ${i + 1} of ${esc(o.ref)}"></td>
+            <td><input type="date" data-f="real" value="${esc(b.real)}" aria-label="Real date, batch ${i + 1} of ${esc(o.ref)}"></td>
+            <td class="bk">${esc(booked(b))}</td>
+            ${its.map(it => `<td class="num"><input type="number" min="0" max="${it.qty}" step="1" data-it="${esc(it.key)}" value="${b.items[it.key] || 0}" aria-label="ITEM ${it.no} in batch ${i + 1} of ${esc(o.ref)}, of ${it.qty}"></td>`).join('')}
+            <td class="act">${bs.length > 1 ? `<button type="button" class="pl-btn" data-del title="Remove this batch: its ITEMs go to the batch before">Remove</button>` : ''}</td></tr>`).join('')}
+          </tbody></table>${its.length ? '' : '<p class="pl-note">No offer file read for this project: only its dates can be set, its codes are not in the report.</p>'}</section>`; }).join('');
+      status();
+    };
+    render();
+    body.addEventListener('input', e => {
+      const el = e.target.closest('input'); if(!el) return; const sec = el.closest('.plp'), k = sec.dataset.k, b = draft.get(k)[+el.closest('tr').dataset.i];
+      if(el.dataset.it) b.items[el.dataset.it] = Math.max(0, Math.round(Number(el.value) || 0)); else b[el.dataset.f] = el.value;
+      dirty.add(k); el.closest('tr').querySelector('.bk').textContent = booked(b); status();
+    });
+    body.addEventListener('click', e => {
+      const sec = e.target.closest('.plp'); if(!sec) return; const k = sec.dataset.k, o = byKey(k), bs = draft.get(k);
+      if(e.target.closest('[data-add]')){ const last = bs[bs.length - 1];   // the new batch takes what is not in a batch yet
+        bs.push({n: bs.length + 1, requested: last ? last.requested : '', real: '', items: Object.fromEntries((o.items || []).map(it => [it.key, Math.max(0, left(o, it))]))}); }
+      else if(e.target.closest('[data-del]')){ const i = +e.target.closest('tr').dataset.i, [gone] = bs.splice(i, 1), to = bs[Math.max(0, i - 1)]; (o.items || []).forEach(it => { to.items[it.key] = (to.items[it.key] || 0) + (gone.items[it.key] || 0); }); }
+      else return;
+      dirty.add(k); render();
+    });
+    const close = () => ov.remove();
+    ov.querySelectorAll('[data-cancel]').forEach(x => x.addEventListener('click', close));
+    save.addEventListener('click', async () => {
+      if(save.disabled) return; save.disabled = true; count.textContent = 'Saving…';
+      const failed = [];
+      for(const k of [...dirty]){ const o = byKey(k); try{ await saveBatches(o, draft.get(k)); dirty.delete(k); }catch(err){ failed.push(`${o.ref}: ${(err && err.message) || err}`); } }
+      render();
+      if(failed.length){ count.textContent = `Not saved — ${failed.join(' · ')}`; count.classList.add('warn'); return; }
+      close(); toast('Delivery planner saved — the Planned report uses these batches and dates.');
+    });
+  }
+  async function planningXlsx(kind){
+    const name = kind === 'planned' ? 'Planned' : 'Forecasted';
+    if(!OFFERS.length){ toast('No offers to put in the report.', null, true); return; }
+    if(typeof JSZip === 'undefined'){ openAppDialog({title: `${name} report`, message: 'The zip library did not load (no internet access?).'}); return; }
+    const P = planningData(kind);
+    if(!P.set.length){ toast(kind === 'planned' ? 'No won project to plan with these filters (closed projects are not counted).' : 'No open offer with these filters.', null, true); return; }
+    try{
+      await saveBlob(await planningXlsxBlob(P), `UPS_${name}_${ymdOf(P.at)}.xlsx`);
+      const w = [P.noFile.length ? `${P.noFile.length} without offer file` : '', P.noDate.length ? `${P.noDate.length} without delivery date` : '', P.pen.length ? `${P.pen.length} with late-delivery penalties` : ''].filter(Boolean);
+      if(w.length) toast(`${name}: ${esc(w.join(' · '))}`, null, !!(P.noDate.length || P.pen.length));
+    }catch(err){ openAppDialog({title: `${name} report`, message: 'The report could not be created: ' + (err.message || err)}); }
+  }
   async function reportXlsx(){
     if(!OFFERS.length){ toast('No offers to put in the report.', null, true); return; }
     if(typeof JSZip === 'undefined'){ openAppDialog({title: 'Excel report', message: 'The zip library did not load (no internet access?).'}); return; }
@@ -33660,7 +34354,7 @@ svg{display:block;max-width:100%}svg text{font-family:'Work Sans',sans-serif}
     return {won: w.length, total: val(w), chart: sum(ms, k => val(w.filter(o => monthKey(pDate(o)) === k))), outsideChart: w.filter(o => !ms.includes(monthKey(pDate(o)))).length,
       matrixRows: sum(ROWKEYS, f => sum(wf, o => (o.parts && o.parts[f]) || 0)), matrixTotal: val(wf), from: win()[0].toISOString().slice(0, 10)};
   }
-  return {show, hide, active, decorateMenu, render, reload: () => loadSharePoint(true), _data: () => OFFERS, _set: setData, report: reportPdf, reportXlsx, _repData: repData, _repHtml: () => repHtml(repData()), _repXlsx: () => repXlsxBlob(repData()), _toOffer: toOffer, _audit: audit, _stage: stageName, _totals: offerTotals, refreshProject,
+  return {show, hide, active, decorateMenu, render, reload: () => loadSharePoint(true), _data: () => OFFERS, _set: setData, report: reportPdf, reportXlsx, _repData: repData, _repHtml: () => repHtml(repData()), _repXlsx: () => repXlsxBlob(repData()), _planData: planningData, _planner: openPlanner, _items: offerItems, _planXlsx: k => planningXlsxBlob(planningData(k)), _codes: offerCodes, _toOffer: toOffer, _audit: audit, _stage: stageName, _totals: offerTotals, refreshProject,
     _period: v => { FX.period = v; render(); }};
 })();
 
@@ -33747,12 +34441,16 @@ const UPS_WON = (() => {
     try{ if(typeof UPS_DASH !== 'undefined' && UPS_DASH) UPS_DASH.refreshProject(ref).catch(e => console.warn('Dashboard: project not read again', e)); }catch(e){}
   }
   // marks revision rev won (and no other one), then writes the Status
-  async function mark(ctx, rev, status, at){
+  async function mark(ctx, rev, status, at, extra){
     const x = ctx.list.find(y => y.rev === rev && y.st);
     if(!x) throw new Error(`R${rev} is not a closed revision of ${ctx.ref}`);
-    const won = {at: at || new Date().toISOString(), by: currentUserName(), status: status || ''};
-    await writeFile(x, Object.assign({}, x.st, {won}));
-    x.st.won = won;
+    // beta_6.67: the delivery date the customer asked for (Planned report) goes with the won mark; the penalties are a setting of the project
+    const won = {at: at || new Date().toISOString(), by: currentUserName(), status: status || '', ...(extra && extra.delivery ? {delivery: extra.delivery} : {})};
+    const project = Object.assign({}, x.st.project || {});
+    if(extra){ if(extra.penalty){ project.penalty = true; project.penaltyNote = extra.penaltyNote || ''; } else { delete project.penalty; delete project.penaltyNote; } }
+    await writeFile(x, Object.assign({}, x.st, {won, project}));
+    x.st.won = won; x.st.project = project;
+    try{ if(extra && REVISION_CLOSED && REVISION === rev && (document.getElementById('prjRef')?.value || '').trim() === ctx.ref) setPenaltyFields(project.penalty, project.penaltyNote); }catch(e){}
     const failed = [];
     for(const y of ctx.list.filter(z => z !== x && z.st && z.st.won)){
       const st = Object.assign({}, y.st); delete st.won;
@@ -33811,10 +34509,15 @@ const UPS_WON = (() => {
           <div class="field" style="margin-top:12px"><label>Won date</label>
             <input type="date" data-dt value="${defDate}" max="${ymd(new Date())}" style="${fieldCss}">
             <div class="won-sub">The day the win counts in the budget of the dashboard${prevAt ? ' (the date already recorded)' : stage(cur) === 'Won' && defDate !== ymd(new Date()) ? ' (the Due date it is counted on now)' : ''}.</div></div>
+          <div class="field" style="margin-top:12px"><label>Delivery date requested by the customer</label>
+            <input type="date" data-dl value="${escapeHtml((already && already.delivery) || ((ctx.list.find(y => y.st && y.st.won && y.st.won.delivery) || {st: {won: {}}}).st.won.delivery) || '')}" style="${fieldCss}">
+            <div class="won-sub">The Planned report of the Dashboard books the codes of this offer in production in the month of this date. Without it the project is listed under “no delivery date”.</div></div>
+          <div class="field" style="margin-top:12px"><label class="pd-pen"><input type="checkbox" data-pen${x.st.project && x.st.project.penalty ? ' checked' : ''}><span>The contract has penalties for late delivery</span></label>
+            <input type="text" data-pennote maxlength="160" autocomplete="off" placeholder="Penalty terms, e.g. 0.5 % per week, max 5 %" value="${escapeHtml((x.st.project && x.st.project.penaltyNote) || '')}" style="${fieldCss} margin-top:6px;"></div>
         </div>
         <div class="acc-modal-footer"><button type="button" class="btn-ghost act" data-cancel>Cancel</button><button type="button" class="act btn-primary" data-ok>🏆 Mark R${rev} as won</button></div>`, 520);
       const done = v => { ov.remove(); resolve(v); };
-      ov.querySelector('[data-ok]').addEventListener('click', () => done({status: ov.querySelector('[data-st]').value, at: atOf(ov.querySelector('[data-dt]').value)}));
+      ov.querySelector('[data-ok]').addEventListener('click', () => done({status: ov.querySelector('[data-st]').value, at: atOf(ov.querySelector('[data-dt]').value), delivery: ov.querySelector('[data-dl]').value || '', penalty: ov.querySelector('[data-pen]').checked, penaltyNote: ov.querySelector('[data-pennote]').value.trim()}));
       ov.querySelectorAll('[data-x], [data-cancel]').forEach(b => b.addEventListener('click', () => done(null)));
       ov.addEventListener('keydown', e => { if(e.key === 'Escape') done(null); });
       ov.addEventListener('click', e => { if(e.target === ov) done(null); });
@@ -33827,7 +34530,7 @@ const UPS_WON = (() => {
     const status = ans.status;
     showExportToast(`Marking R${rev} as won…`);
     try{
-      const r = await mark(ctx, rev, status, ans.at);
+      const r = await mark(ctx, rev, status, ans.at, ans);
       const warn = [r.failed.length ? `${r.failed.join(', ')} could not be unmarked (the dashboard uses the revision marked last).` : '', r.statusErr ? `The Status was not written: ${r.statusErr}` : ''].filter(Boolean);
       if(warn.length) openAppDialog({title: `R${rev} marked as won`, message: `R${rev} is the won revision of ${ctx.ref}.\n\n${warn.join('\n')}`});
       else showExportToast(`🏆 R${rev} is the won revision of ${ctx.ref} — Status: ${status}`, 'ok');
